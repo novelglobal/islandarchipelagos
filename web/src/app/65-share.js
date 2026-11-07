@@ -116,7 +116,7 @@ setInterval(() => { if (!document.hidden && Object.values(SENT).some(v => v.id &
 let SITE_POSTERS = [];
 async function loadSitePosters() {
   try { const j = await apiJSON('/posters'); const mine = new Set(Object.values(SENT).map(v => v.id)); const next = (j.posters || []).filter(p => !mine.has(p.id)).map(p => ({ id: 'w' + p.id, site: true, code: p.code, at: p.at, said: p.said, quiet: p.quiet, img: '/api/posters/' + encodeURIComponent(p.id) }));
-    if (JSON.stringify(next.map(p => [p.id, p.said, p.quiet])) !== JSON.stringify(SITE_POSTERS.map(p => [p.id, p.said, p.quiet]))) { SITE_POSTERS = next; if (S.view === 3) showGallery(true); } } catch (e) { /* the wall as it was */ }
+    if (JSON.stringify(next.map(p => [p.id, p.said, p.quiet])) !== JSON.stringify(SITE_POSTERS.map(p => [p.id, p.said, p.quiet]))) { SITE_POSTERS = next; if (S.view === 3) { showGallery(true); flowFill(); } } } catch (e) { /* the wall as it was */ }
 }
 async function loadSettings() {
   try { const j = await apiJSON('/settings'); if (j && typeof j.exampleEdit === 'boolean' && j.exampleEdit !== !!CFG.exampleEdit) { CFG.exampleEdit = j.exampleEdit; store.set('da.cfg.v1', CFG); if (cv && boardId === 'b00') exFrame(); }

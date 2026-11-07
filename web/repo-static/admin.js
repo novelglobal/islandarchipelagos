@@ -454,9 +454,9 @@
   async function posts() {
     const r = await api('posts'); const { posts: list } = await r.json();
     const rows = list.map(x => { const img = x.cover ? el('img', { alt: '' }) : el('span', { class: 'ph' }); if (x.cover) coverOf(x.id, img);
-      return el('div', { class: 'post-row' }, img, el('div', {}, el('b', { text: x.title }), el('span', { class: 'note', text: `${{ published: 'PUBLISHED', deleted: 'ARCHIVED' }[x.status] || 'DRAFT'} · ${x.cat || 'WORK'} · ${x.day || ''} · /portfolio.html#${x.slug}` })),
+      return el('div', { class: 'post-row' }, img, el('div', {}, el('b', { text: x.title }), el('span', { class: 'note', text: `${{ published: 'PUBLISHED', deleted: 'ARCHIVED' }[x.status] || 'DRAFT'} · ${x.cat || 'WORK'} · ${x.day || ''} · /blog.html#${x.slug}` })),
         el('button', { type: 'button', text: 'EDIT', onclick: () => editor(x.id) })); });
-    main.replaceChildren(...head('Portfolio'), el('div', { class: 'acts', style: 'margin:0 0 12px' }, el('button', { type: 'button', class: 'on', text: 'NEW POST', onclick: () => editor(null) }), el('a', { href: 'portfolio.html', target: '_blank', rel: 'noopener', class: 'note', text: 'THE PORTFOLIO ↗' })),
+    main.replaceChildren(...head('Blog'), el('div', { class: 'acts', style: 'margin:0 0 12px' }, el('button', { type: 'button', class: 'on', text: 'NEW POST', onclick: () => editor(null) }), el('a', { href: 'blog.html', target: '_blank', rel: 'noopener', class: 'note', text: 'THE PORTFOLIO ↗' })),
       ...(rows.length ? rows : [el('p', { class: 'empty', text: 'NO POSTS YET' })]));
   }
   /* a cover chosen on this device: made smaller and re-encoded here, which also drops its location and camera details */
@@ -482,7 +482,7 @@
       id = j.id; if (status !== 'published') { note.textContent = 'SAVED AS A DRAFT'; return j; }
       /* published: checked against what everyone is served, so the word on the page is the truth */
       const live = await fetch('/api/posts', { cache: 'no-store' }).then(r => r.json()).then(x => (x.posts || []).some(q => q.slug === j.slug)).catch(() => false);
-      note.textContent = live ? `PUBLISHED · LIVE AT /portfolio.html#${j.slug}` : 'SAVED, BUT NOT YET LISTED FOR EVERYONE: PRESS PUBLISH AGAIN'; return j;
+      note.textContent = live ? `PUBLISHED · LIVE AT /blog.html#${j.slug}` : 'SAVED, BUT NOT YET LISTED FOR EVERYONE: PRESS PUBLISH AGAIN'; return j;
     };
     main.replaceChildren(el('form', { class: 'ed', onsubmit: e => e.preventDefault() },
       el('label', {}, 'TITLE', title), el('div', { class: 'two' }, el('label', {}, 'CURATION', cat, dl), el('label', {}, 'DATE', day)),
@@ -492,8 +492,8 @@
         el('button', { type: 'button', text: 'SAVE DRAFT', onclick: () => save('draft') }),
         el('button', { type: 'button', class: 'on', text: x.status === 'published' ? 'UPDATE' : 'PUBLISH', onclick: () => save('published') }),
         x.status === 'published' ? el('button', { type: 'button', text: 'UNPUBLISH', onclick: () => save('draft') }) : null,
-        el('button', { type: 'button', text: 'PREVIEW', onclick: async () => { await save(x.status === 'published' ? 'published' : 'draft'); window.open(`portfolio.html?preview=${encodeURIComponent(id)}`, '_blank'); } }),
-        id ? el('button', { type: 'button', class: 'no', text: 'ARCHIVE', onclick: async () => { if (!confirm('Archive this post? It comes off the portfolio and stays here as ARCHIVED.')) return; await api('posts/' + id, { method: 'POST', body: JSON.stringify({ action: 'delete' }) }); show('posts'); } }) : null,
+        el('button', { type: 'button', text: 'PREVIEW', onclick: async () => { await save(x.status === 'published' ? 'published' : 'draft'); window.open(`blog.html?preview=${encodeURIComponent(id)}`, '_blank'); } }),
+        id ? el('button', { type: 'button', class: 'no', text: 'ARCHIVE', onclick: async () => { if (!confirm('Archive this post? It comes off the blog and stays here as ARCHIVED.')) return; await api('posts/' + id, { method: 'POST', body: JSON.stringify({ action: 'delete' }) }); show('posts'); } }) : null,
         el('button', { type: 'button', text: 'BACK', onclick: () => show('posts') }), note)));
   }
 
@@ -577,7 +577,7 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ fx: fx.value, phreak: $('#phreak').checked }) })));
     /* the twelve curations of the portfolio */
     const curs = await curationsOf(); const rows = curs.map((c, i) => { const n = el('input', { type: 'text', maxlength: 40, placeholder: `CURATION ${String(i + 1).padStart(2, '0')}` }), a = el('input', { type: 'text', maxlength: 200, placeholder: 'A LINE ABOUT IT (OPTIONAL)' }); n.value = c.name || ''; a.value = c.about || ''; return [n, a]; });
-    const cur = el('section', { class: 'ed' }, el('h3', { text: 'PORTFOLIO · THE TWELVE CURATIONS' }), hint('NAME: up to 40 characters, the tab\'s title on the portfolio. ABOUT: up to 200 characters, one line under it (leave empty for none). A tab with no name is hidden. Renaming keeps the posts in it. Saved, the portfolio shows it straight away.'),
+    const cur = el('section', { class: 'ed' }, el('h3', { text: 'BLOG · THE TWELVE CURATIONS' }), hint('NAME: up to 40 characters, the tab\'s title on the blog. ABOUT: up to 200 characters, one line under it (leave empty for none). A tab with no name is hidden. Renaming keeps the posts in it. Saved, the portfolio shows it straight away.'),
       ...rows.map(([n, a], i) => el('div', { class: 'two' }, el('label', {}, String(i + 1).padStart(2, '0'), n), el('label', {}, 'ABOUT', a))),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ curations: JSON.stringify(rows.map(([n, a]) => ({ name: n.value.trim(), about: a.value.trim() }))) }) })));
     /* back to base: archived (so it can come back), never the printers, their tokens or the password */
@@ -754,7 +754,7 @@
     ['Species and offline', ['SPECIES lists every kind of life the devices have met, the newest first, learned from their pulls of sightings: no device is asked for anything extra. MARK ONLY are the kinds not yet in the field list (src/field.js); download them as a sheet and add the ones that matter, with their months, needs and who to call. Offline, each device keeps what it has met: sightings, photographs and map tiles once seen, the field list and the app. Nothing is asked of the site while a page is hidden or left untouched for a quarter of an hour, and nothing runs on the site while no one is using it.']],
     ['Signing in', ['The password is the ADMIN_KEY secret set in Cloudflare (Workers & Pages → front → Settings → Variables and Secrets). It is kept only in this browser tab until it is closed or LOCK is pressed.']],
     ['Devices and motion', ['SETTINGS → DEVICES: seven devices, each earned on its own after the number of posters set beside it (0: open from the start). The simple ones are the music, INTENTION with W.I.S.H., and art and print; the complex ones are the radio, the research board, design and the four-track desk. One never opens another. OPEN makes all open; CLOSED leaves only those set to 0.', 'MOTION: calm, as built or chaos; PHREAK lays faint lines of base64 under the stars. A visitor who asks their device for less motion always gets stillness.']],
-    ['Portfolio', ['Name up to twelve curations under SETTINGS; each named one is a tab on novel.global/portfolio.html. Write posts under PORTFOLIO and give each its curation. Drafts are seen only here (PREVIEW).']],
+    ['Blog', ['Name up to twelve curations under SETTINGS; each named one is a tab on novel.global/blog.html. Write posts under BLOG and give each its curation. Drafts are seen only here (PREVIEW).']],
     ['Going back to base', ['SETTINGS → BACK TO THE BASE VERSION: tick what goes back, then type RESET. Stories and places go to the ARCHIVE (they can come back); the printers, their tokens and the password are never touched.', 'CLEAR THIS BROWSER empties what was made in this browser (posters on its wall, songs, boards), for testing as a new visitor.']],
     ['Data and privacy', ['Counts are of things, never of people: no addresses, no visitors told apart. Everything sent is kept for a year (archived ones too), then goes. Photographs are seen only here unless shown.', 'DATA downloads everything as one file, or places, stories and counts as sheets.']],
     ['The stack', ['novel.global is one Cloudflare Worker (src/worker/index.js) serving the site from dist/ with a D1 database (stories, jobs, printers, places, posts, settings, counts). It asks iNaturalist and OpenStreetMap for everyone, and the browser asks them itself when they turn the Worker away.', 'The receipts print on an Epson TM-T88V through a Raspberry Pi (receiver/pull.py asks for jobs every 3 seconds), with a Meshtastic T-Beam for the mesh and an optional touch screen.', 'The site: plain JavaScript, MapLibre for the studio map, Fabric for the boards and print shop, Web Audio for every sound (nothing recorded). The staging branch is the preview; main is live.']],

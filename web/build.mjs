@@ -50,7 +50,8 @@ for (const name of ['config.js', 'places.js', 'examples.js', 'field.js', 'briefs
 fs.writeFileSync(path.join(out, 'marks.js'), min(read(path.join(src, 'marks.js')), 'js'));
 /* the guide reads the same marks and words as the app, in the same type */
 fs.writeFileSync(path.join(out, 'guide.html'), read(path.join(src, 'guide.html')).replace('/*FONTS*/', faces.join('\n')));
-fs.writeFileSync(path.join(out, 'portfolio.html'), read(path.join(src, 'portfolio.html')).replace('/*FONTS*/', faces.join('\n')));
+fs.writeFileSync(path.join(out, 'blog.html'), read(path.join(src, 'blog.html')).replace('/*FONTS*/', faces.join('\n')));
+fs.writeFileSync(path.join(out, 'portfolio.html'), '<!doctype html><meta charset="utf-8"><script>location.replace("blog.html" + location.search + location.hash)</script>');
 fs.appendFileSync(path.join(out, 'vendor/LICENSES.md'), '\n## Fonts, `fonts/`\n\nPoppins (Indian Type Foundry, Jonny Pinhorn), IBM Plex Mono (IBM, Mike Abbink, Bold Monday), VT323 (Peter Hull), Playfair Display (Claus Eggers Sorensen), UnifrakturMaguntia (j. "mach" wust), Sedgwick Ave Display (Kevin Burke, Pedro Vergani) and Rubik Bubbles (NaN, Luke Prowse), each under the SIL Open Font License 1.1: https://openfontlicense.org\n');
 const sw = read(path.join(out, 'sw.js')).replace("'vendor/qrcode.js', ", "'vendor/qrcode.js', " + files.map(f => `'${f}'`).join(', ') + ', ');
 fs.writeFileSync(path.join(out, 'sw.js'), sw);
@@ -87,7 +88,7 @@ fs.writeFileSync(path.join(out, 'studio.html'), `<!doctype html>
 <script>
 /* the studio is the devices site, the one for class: its devices on unless turned off in Settings; a link from the base still skips the first visit */
 try { var dp = JSON.parse(localStorage.getItem('da.prefs') || '{}'); if (localStorage.getItem('da.devices.v2') === '0') document.documentElement.classList.add('plain');
-  if (/[?&]from=base/.test(location.search)) { window.__fromBase = true; if ((dp.journey || 0) < 4) { dp.journey = 4; localStorage.setItem('da.prefs', JSON.stringify(dp)); } history.replaceState(null, '', location.pathname + location.hash); } } catch (e) { document.documentElement.classList.add('plain'); }
+  if ((function (h) { return h === 'localhost' || h === '127.0.0.1' || h.slice(-5) === '.test'; })(location.hostname) && /[?&]from=base/.test(location.search)) { window.__fromBase = true; if ((dp.journey || 0) < 4) { dp.journey = 4; localStorage.setItem('da.prefs', JSON.stringify(dp)); } history.replaceState(null, '', location.pathname + location.hash); } } catch (e) { document.documentElement.classList.add('plain'); }
 </script>
 </head>
 <body>

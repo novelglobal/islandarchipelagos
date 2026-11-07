@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>RESEARCH BOARD · novel.global</title>
+<link rel="icon" href="icon.svg">
+<style>
+  @font-face { font-family: 'Archivo Narrow'; src: url('vendor/archivo-narrow.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Departure Mono'; src: url('vendor/departure-mono.woff2') format('woff2'); font-display: swap; }
+  :root { --paper: #ECEBE7; --ink: #0B0B0B; --blue: #143D71; --own: #D9F24A; --dot: rgba(11, 11, 11, .3); --bar: #0B0B0B; --barink: #ECEBE7; }
+  html.night { --paper: #121314; --ink: #F1F0EC; --dot: rgba(241, 240, 236, .22); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  body { font: 600 14px/1 'Archivo Narrow', Arial, sans-serif; }
+  #wrap { position: fixed; inset: 0 0 calc(62px + env(safe-area-inset-bottom)) 0; background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.6px); background-size: 22px 22px; touch-action: none; }
+  #top { position: fixed; left: 10px; right: 10px; top: calc(env(safe-area-inset-top) + 10px); display: flex; gap: 6px; align-items: center; pointer-events: none; z-index: 2; }
+  #top > * { pointer-events: auto; }
+  #bname { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 7px 12px; font: 600 14px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .06em; cursor: pointer; }
+  #home { font: 400 12px/1 'Departure Mono', ui-monospace, monospace; color: var(--ink); text-decoration: none; margin-right: auto; }
+  html.in #home { visibility: hidden; }
+  #saved { margin-left: auto; font: 400 11px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .1em; opacity: .55; }
+  nav#tools { position: fixed; left: 0; right: 0; bottom: 0; height: calc(62px + env(safe-area-inset-bottom)); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); display: flex; gap: 2px; background: var(--bar); color: var(--barink); overflow-x: auto; scrollbar-width: none; z-index: 3; }
+  nav#tools::-webkit-scrollbar { display: none; }
+  nav#tools button { flex: 0 0 auto; width: 52px; display: grid; grid-template-rows: 1fr auto; place-items: center; gap: 2px; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; padding: 5px 0 4px; }
+  nav#tools button span { font: 400 9px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .06em; opacity: .8; }
+  nav#tools svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  nav#tools .f { fill: currentColor; stroke: none; }
+  nav#tools button[aria-pressed="true"] { background: var(--own); color: #0B0B0B; }
+  nav#tools button:disabled { opacity: .28; cursor: default; }
+  nav#tools button[hidden] { display: none; }
+  nav#tools .sep { flex: 0 0 1px; margin: 8px 3px; background: currentColor; opacity: .25; }
+  #menu { position: fixed; left: 10px; top: calc(env(safe-area-inset-top) + 50px); z-index: 4; min-width: 200px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 8px; padding: 4px; display: grid; }
+  #menu[hidden] { display: none; }
+  #menu button { text-align: left; border: 0; background: none; color: inherit; padding: 10px 10px; font: 600 15px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .04em; border-radius: 5px; cursor: pointer; }
+  #menu button.on { background: var(--ink); color: var(--paper); }
+  #menu hr { border: 0; border-top: 1px solid var(--ink); opacity: .25; margin: 4px 6px; }
+  #pr { position: fixed; right: 10px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 4; background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 10px; display: grid; gap: 8px; width: min(280px, calc(100vw - 20px)); }
+  #pr[hidden] { display: none; }
+  #pr select, #pr button { height: 42px; border-radius: 21px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font: 600 15px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .04em; padding: 0 12px; }
+  #pr .go { background: var(--ink); color: var(--paper); cursor: pointer; }
+  #pr .row { display: flex; gap: 8px; align-items: center; }
+  #pr .row > * { flex: 1; }
+  #prst { flex: 0 0 auto !important; font: 14px/1 ui-monospace, monospace; }
+  #drop { position: fixed; inset: 0; z-index: 5; display: none; place-items: center; background: rgba(217, 242, 74, .35); border: 4px dashed var(--ink); font: 600 40px/1 'Archivo Narrow', Arial, sans-serif; }
+  html.dragging #drop { display: grid; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="top"><a id="home" href="/">novel.global</a><button type="button" id="bname">BOARD 01</button><span id="saved"></span></div>
+<div id="menu" hidden></div>
+<div id="pr" hidden><select id="prto" aria-label="Printer"></select><div class="row"><button type="button" class="go" id="prgo">PRINT</button><span id="prst"></span></div><button type="button" id="prpng">SAVE PICTURE</button></div>
+<div id="drop">DROP</div>
+<nav id="tools">
+  <button type="button" data-t="note" aria-label="Note"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z" class="f"/></svg><span>NOTE</span></button>
+  <button type="button" data-t="sect" aria-label="Section"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg><span>SECT</span></button>
+  <button type="button" data-t="dot" aria-label="Dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" class="f"/></svg><span>DOT</span></button>
+  <button type="button" data-t="link" aria-label="Link" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M5 19L19 5"/><circle cx="5" cy="19" r="2.6" class="f"/><circle cx="19" cy="5" r="2.6" class="f"/></svg><span>LINK</span></button>
+  <button type="button" data-t="pencil" aria-label="Pencil" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg><span>PENCIL</span></button>
+  <button type="button" data-t="img" aria-label="Picture"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 16l5-5 4 4 2-2 5 5"/><circle cx="16" cy="9" r="1.6" class="f"/></svg><span>IMG</span></button>
+  <button type="button" data-t="paste" aria-label="Paste"><svg viewBox="0 0 24 24"><path d="M8 4h8v3H8z"/><path d="M6 6H5v15h14V6h-1"/></svg><span>PASTE</span></button>
+  <i class="sep"></i>
+  <button type="button" data-t="colour" aria-label="Colour" disabled><svg viewBox="0 0 24 24"><path d="M4 4h8v16H4z" class="f"/><path d="M12 4h8v16h-8z"/></svg><span>COLOUR</span></button>
+  <button type="button" data-t="front" aria-label="To the front" disabled><svg viewBox="0 0 24 24"><path d="M8 8h12v12H8z" class="f"/><path d="M4 4h12v3M4 4v12h3"/></svg><span>FRONT</span></button>
+  <button type="button" data-t="del" aria-label="Remove" disabled><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span>DEL</span></button>
+  <button type="button" data-t="undo" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/></svg><span>UNDO</span></button>
+  <i class="sep"></i>
+  <button type="button" data-t="lock" aria-label="Lock" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 11h12v9H6z"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>LOCK</span></button>
+  <button type="button" data-t="fit" aria-label="Fit"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span>FIT</span></button>
+  <button type="button" data-t="form" aria-label="W.I.S.H." aria-pressed="true" hidden><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>FORM</span></button>
+  <button type="button" data-t="out" aria-label="Out"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg><span>OUT</span></button>
+</nav>
+<input type="file" id="fi" accept="image/*" multiple hidden>
+<script src="vendor/fabric.min.js"></script>
+<script src="research.js"></script>
+</body></html>

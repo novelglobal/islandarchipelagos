@@ -3098,10 +3098,10 @@ html.night .mo .eq-c i.l{filter:brightness(1.08)}
    its foot, each module headed like a page of a field manual, its number on a terminal tab, its name in the terminal's type,
    a band of its colour ending in hazard stripes. The stories are tickets, their whole headline in view ═════════ */
 .lab-w{display:none}
-body[data-view="portfolio"] #view>:is(#sec-printer,#sec-quick){counter-increment:none}
-body[data-view="portfolio"] #view>:is(#sec-printer,#sec-quick)::after{display:none}
+body[data-view="portfolio"] #view>:is(#sec-printer,#sec-quick,#sec-flow){counter-increment:none}
+body[data-view="portfolio"] #view>:is(#sec-printer,#sec-quick,#sec-flow)::after{display:none}
 body[data-view="portfolio"] #view>#sec-printer::before{display:none}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick){--m:#7FFFE0;--navy:#141412;--white:#FFFFFF;--paper:#F4F2EA;--grey:#E6E4DD;--grey-text:#5B6166;color:#141412;margin:0 8px!important;padding:12px 16px 30px!important;border:solid transparent!important;border-width:8px 18px 0!important;border-radius:0!important;overflow:visible;
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow){--m:#7FFFE0;--navy:#141412;--white:#FFFFFF;--paper:#F4F2EA;--grey:#E6E4DD;--grey-text:#5B6166;color:#141412;margin:0 8px!important;padding:12px 16px 30px!important;border:solid transparent!important;border-width:8px 18px 0!important;border-radius:0!important;overflow:visible;
   background:
     radial-gradient(circle at 9px 26px,#8E979C 0 2.4px,#3A3F43 2.6px 3.6px,transparent 3.8px) 0 0/18px 96px repeat-y border-box,
     radial-gradient(circle at 9px 26px,#8E979C 0 2.4px,#3A3F43 2.6px 3.6px,transparent 3.8px) 100% 0/18px 96px repeat-y border-box,
@@ -3115,27 +3115,27 @@ body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick){--m:#7F
   background-size:18px 96px,18px 96px,12px 6px,12px 6px,100% 1px,100% 100%,7px 7px,100% 100%,100% 100%!important;
   background-repeat:repeat-y,repeat-y,repeat-x,repeat-x,no-repeat,no-repeat,repeat,no-repeat,no-repeat!important;
   box-shadow:none!important;-webkit-mask:none;mask:none}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick){--pp:color-mix(in srgb,var(--m) 14%,#FDFCF6)}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):nth-child(5n+2){--m:#FF9A2E}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):nth-child(5n+3){--m:#8DB8FF}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):nth-child(5n+4){--m:#FF7EB0}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):nth-child(5n){--m:#E6F84A}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow){--pp:color-mix(in srgb,var(--m) 14%,#FDFCF6)}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):nth-child(5n+2){--m:#FF9A2E}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):nth-child(5n+3){--m:#8DB8FF}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):nth-child(5n+4){--m:#FF7EB0}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):nth-child(5n){--m:#E6F84A}
 /* where the paper comes out of the deck: a deeper rail and the mouth */
 body[data-view="portfolio"] #view>#sec-quick+.sec{margin-top:18px!important;border-top-width:16px!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):last-child{border-bottom-width:12px!important;margin-bottom:12px!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):last-child{border-bottom-width:12px!important;margin-bottom:12px!important}
 /* the head: a band of the module's colour, the terminal tab with its number, the name in VT323, hazard stripes at its end */
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)::before{display:none}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)::after{top:12px;left:0;width:44px;height:30px;padding:0;border-radius:0;display:grid;place-items:center;background:#141412;color:var(--m);box-shadow:none;font:400 22px/1 VT323,ui-monospace,monospace;letter-spacing:.04em;z-index:2;text-shadow:0 0 6px color-mix(in srgb,var(--m) 60%,transparent)}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi){position:relative;display:flex;align-items:center;gap:6px;min-height:30px;margin:0 -16px 14px!important;padding:0 10px 0 54px!important;
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)::before{display:none}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)::after{top:12px;left:0;width:44px;height:30px;padding:0;border-radius:0;display:grid;place-items:center;background:#141412;color:var(--m);box-shadow:none;font:400 22px/1 VT323,ui-monospace,monospace;letter-spacing:.04em;z-index:2;text-shadow:0 0 6px color-mix(in srgb,var(--m) 60%,transparent)}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi){position:relative;display:flex;align-items:center;gap:6px;min-height:30px;margin:0 -16px 14px!important;padding:0 10px 0 54px!important;
   background:repeating-linear-gradient(-45deg,#141412 0 5px,transparent 5px 10px) 100% 0/46px 100% no-repeat,linear-gradient(90deg,var(--m),color-mix(in srgb,var(--m) 78%,#FFFFFF))!important;border-bottom:2px solid #141412;list-style:none;cursor:default}
 body[data-view="portfolio"] #view>details.sec:not(#sec-printer)>summary{cursor:pointer}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi)::-webkit-details-marker{display:none}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .labi{margin:0!important;color:#141412!important;display:flex;align-items:center;gap:6px}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .labi .i{width:13px;height:13px}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .lab-w{display:inline;font:400 21px/1 VT323,ui-monospace,monospace;letter-spacing:.08em;color:#141412}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .labi b{font:400 17px/1 VT323,ui-monospace,monospace;padding:1px 5px;background:#141412;color:var(--m);border-radius:2px}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi) .pill,body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi) .ib{margin-right:46px}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi)+*{position:relative}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi)::-webkit-details-marker{display:none}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .labi{margin:0!important;color:#141412!important;display:flex;align-items:center;gap:6px}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .labi .i{width:13px;height:13px}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .lab-w{display:inline;font:400 21px/1 VT323,ui-monospace,monospace;letter-spacing:.08em;color:#141412}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .labi b{font:400 17px/1 VT323,ui-monospace,monospace;padding:1px 5px;background:#141412;color:var(--m);border-radius:2px}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi) .pill,body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi) .ib{margin-right:46px}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi)+*{position:relative}
 /* the stories as tickets: hard-edged, offset in the module's colour, the picture beside, the whole headline, what it is of and
    where, and when */
 body[data-view="portfolio"] .sigs.cards.big{grid-template-columns:minmax(0,1fr)!important;gap:12px;padding-right:6px}
@@ -3150,24 +3150,24 @@ body[data-view="portfolio"] .sigs.cards .code{position:absolute;right:8px;top:6p
 body[data-view="portfolio"] .sigs.cards .sig-row.ex{box-shadow:4px 4px 0 #E6E4DD,4px 4px 0 2px #141412!important}
 body[data-view="portfolio"] .sigs.list{border-top:2px dashed #141412;margin-top:14px;padding-top:8px}
 body[data-view="portfolio"] .sigs.list .code{font-family:VT323,ui-monospace,monospace;font-size:14px}
-@media (max-width:759px){body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick){margin:0 2px!important;border-left-width:14px!important;border-right-width:14px!important}}
+@media (max-width:759px){body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow){margin:0 2px!important;border-left-width:14px!important;border-right-width:14px!important}}
 
 /* ═════════ 0.11: the receipt under the message form printed as a carbon copy: black ink on white paper alone, every head
    printed reversed, the pictures in grey until a hand is over them; the settings' keys in ink, readable by day ═════════ */
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick),body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):nth-child(n){--m:#141412;--pp:#F7F6F1}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi){background:repeating-linear-gradient(-45deg,#F7F6F1 0 5px,transparent 5px 10px) 100% 0/46px 100% no-repeat,#141412!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) :is(.lab-w,.labi,.labi .i){color:#F7F6F1!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .labi b{background:#F7F6F1;color:#141412}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)::after{background:#F7F6F1;color:#141412;text-shadow:none;box-shadow:inset 0 0 0 2px #141412}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick)>:is(.lab-row,summary,h3.labi) :is(.pill,.ib){background:#F7F6F1!important;color:#141412!important;border-color:#F7F6F1!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) img{filter:grayscale(1) contrast(1.08);transition:filter .3s}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) :is(li,button,a):hover img{filter:none}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow),body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow):nth-child(n){--m:#141412;--pp:#F7F6F1}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi){background:repeating-linear-gradient(-45deg,#F7F6F1 0 5px,transparent 5px 10px) 100% 0/46px 100% no-repeat,#141412!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) :is(.lab-w,.labi,.labi .i){color:#F7F6F1!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .labi b{background:#F7F6F1;color:#141412}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)::after{background:#F7F6F1;color:#141412;text-shadow:none;box-shadow:inset 0 0 0 2px #141412}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow)>:is(.lab-row,summary,h3.labi) :is(.pill,.ib){background:#F7F6F1!important;color:#141412!important;border-color:#F7F6F1!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) img{filter:grayscale(1) contrast(1.08);transition:filter .3s}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) :is(li,button,a):hover img{filter:none}
 body[data-view="portfolio"] .sigs.cards .sig-row{box-shadow:4px 4px 0 #C9C7BF,4px 4px 0 2px #141412!important}
 body[data-view="portfolio"] .sigs.cards .sig-row:hover{box-shadow:6px 6px 0 #C9C7BF,6px 6px 0 2px #141412!important}
 body[data-view="portfolio"] .sigs.cards .code{background:#141412!important;color:#F7F6F1}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .set :is(button,label,.tog){color:#141412!important;border-color:rgba(20,20,18,.55)!important;background-color:#FFFFFF!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .set :is(button,label,.tog)[aria-pressed="true"]{background-color:#141412!important;color:#F7F6F1!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .set .i{color:inherit!important;opacity:1!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .set :is(button,label,.tog){color:#141412!important;border-color:rgba(20,20,18,.55)!important;background-color:#FFFFFF!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .set :is(button,label,.tog)[aria-pressed="true"]{background-color:#141412!important;color:#F7F6F1!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .set .i{color:inherit!important;opacity:1!important}
 /* the songs, as albums: the radar's picture as the sleeve, its card slid out of it to the right */
 .albums{list-style:none;margin:0;padding:0 0 4px;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:18px 14px}
 .album{display:flex;flex-direction:column;gap:6px;min-width:0;padding-right:30px}
@@ -3212,9 +3212,9 @@ body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .set .i
 .jr-ph{position:absolute;z-index:3;margin:0;line-height:1.2;color:rgba(12,14,14,.42);font-family:"IBM Plex Mono",monospace;font-weight:500;white-space:nowrap;pointer-events:none;animation:idlein .7s ease both}
 @keyframes idlein{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.idle-tip,.jr-ph{animation:none}}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .tool{background:#FFFFFF!important;color:#141412!important;box-shadow:inset 0 0 0 1.5px #141412!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .tool :is(b,small,.go){color:#141412!important}
-body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick) .tool-art{filter:grayscale(1) contrast(1.15)}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .tool{background:#FFFFFF!important;color:#141412!important;box-shadow:inset 0 0 0 1.5px #141412!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .tool :is(b,small,.go){color:#141412!important}
+body[data-view="portfolio"] #view>.sec:not(#sec-printer):not(#sec-quick):not(#sec-flow) .tool-art{filter:grayscale(1) contrast(1.15)}
 /* the name over the map on W.I.S.H.'s front, as on RADIO: in light */
 body[data-view="signals"][data-face="front"]:not(.rec) .panel .lk-n{color:#F4F7F8!important;text-shadow:0 1px 10px rgba(0,0,0,.55)}
 body[data-view="signals"][data-face="front"]:not(.rec) .panel .lk-mark{color:#9FF0DF}
@@ -3380,3 +3380,24 @@ html.in-aura #sec-set{display:none!important}
 /* the printer's kit: four lines under it, nothing more */
 #zine-tools .zt.zlong { width: auto; padding: 0 9px; font: 600 11px/1 "Departure Mono", ui-monospace, monospace; letter-spacing: .08em; }
 #zine-tools .zt.zlong[aria-pressed="true"] { background: #111214; color: #F4F1E8; }
+html.only-portfolio #sec-printer, html.only-portfolio #sec-songs { display: none !important; }
+.flow{padding:0!important;background:none!important;box-shadow:none!important;border:0!important}
+.flow::before,.flow::after{display:none!important}
+.fl-track{list-style:none;margin:0;padding:6px calc(50% - min(29vw,140px)) 14px;display:flex;gap:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;height:min(44vh,440px);align-items:center}
+.fl-track::-webkit-scrollbar{display:none}
+.fl-c{flex:0 0 min(58vw,280px);height:100%;scroll-snap-align:center;display:grid;place-items:center;transform-origin:50% 50%;transition:opacity .2s;cursor:pointer;will-change:transform}
+.fl-c img{display:block;max-width:92%;max-height:100%;width:auto;height:auto;box-shadow:0 14px 30px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.08);-webkit-user-drag:none;user-select:none;background:#fff}
+.fl-c.on{cursor:default}
+html.only-portfolio .qp-paper textarea{min-height:96px}
+body[data-view="portfolio"] #view>#sec-flow{margin:0!important;padding:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;counter-increment:none}
+body[data-view="portfolio"] #view>#sec-flow::before,body[data-view="portfolio"] #view>#sec-flow::after{display:none!important}
+.fl-view{position:fixed;inset:0;z-index:9999;background:#0B0B0B;display:flex;flex-direction:column}
+.fv-stage{flex:1;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;cursor:zoom-in}
+.fv-stage img{max-width:100%;max-height:100%;width:auto;height:auto;transform-origin:50% 50%;-webkit-user-drag:none;user-select:none;background:#fff}
+.fv-bar{display:flex;align-items:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#0B0B0B;color:#F4F1E8}
+.fv-bar button{width:44px;height:44px;display:grid;place-items:center;border:1.5px solid #F4F1E8;border-radius:50%;background:none;color:inherit;cursor:pointer}
+.fv-bar .fv-go{background:#F4F1E8;color:#0B0B0B}
+.fv-bar button:disabled{opacity:.3;cursor:default}
+.fv-to{flex:1;min-width:0;height:44px;border:1.5px solid #F4F1E8;border-radius:22px;background:#0B0B0B;color:#F4F1E8;font:600 15px/1 'Archivo Narrow',Arial,sans-serif;letter-spacing:.04em;padding:0 14px}
+.fv-st{min-width:36px;font:14px/1 ui-monospace,monospace}
+@media (max-width:420px){.simple-r .dev.radio.jr-dev{grid-template-columns:52px 62px minmax(0,1fr)!important}.simple-r .rd-knob{width:30px;height:30px}.simple-r .rd-k .kn-ind{height:9px;transform-origin:50% 12px}}

@@ -1607,7 +1607,7 @@
      laid out still and whole, each with its word, so every way in is there to press. Only where the drawing has not run three seconds
      in, or has failed: a browser that draws keeps the creature as it is, whatever its name (DuckDuckGo's is counted apart). ?plain=1 or
      ?plain=0 to try it either way */
-  (function () { var q = /[?&]plain=([01])/.exec(location.search), on = function (why) { if (S.plain) return; S.plain = 1; root.classList.add('au-plain'); /* found frozen: the drawing's last picture, stuck, is put away */ if (why !== 'asked') document.documentElement.classList.add('au-frozen'); if (/^(bang|morph|unmorph)$/.test(S.mode)) setMode(S.mode); setTimeout(function () { beat('plain-' + why); }, 0); };
+  (function () { var q = window.__LH && /[?&]plain=([01])/.exec(location.search), on = function (why) { if (S.plain) return; S.plain = 1; root.classList.add('au-plain'); /* found frozen: the drawing's last picture, stuck, is put away */ if (why !== 'asked') document.documentElement.classList.add('au-frozen'); if (/^(bang|morph|unmorph)$/.test(S.mode)) setMode(S.mode); setTimeout(function () { beat('plain-' + why); }, 0); };
     /* and by hand: a small key at the start turns the still version on (kept on this phone) or back off, for a browser whose
        protections stop the motion without the drawing seeming to stall */
     var sk = document.createElement('button'); sk.className = 'au-stillk'; sk.id = 'au-stillk'; sk.textContent = '◌'; sk.setAttribute('aria-label', 'Still version on or off'); root.appendChild(sk);

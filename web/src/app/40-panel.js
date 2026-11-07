@@ -467,13 +467,13 @@ const mineOf = () => S.signals.filter(s => !s.ex && !s.shared);
 const STYLES = [{ k: 'paper', w: 'PAPER', ic: 'receipt' }, { k: 'tty', w: '>', ic: '' }, { k: 'conn', w: 'CONNECTION', ic: 'string' }];
 const styleNow = () => (isConn() ? 'conn' : isTty() ? 'tty' : 'paper');
 /* ───────── PORTFOLIO: what has been made, to learn from. Work written on the approval page, the board of stories, the
-   briefs they answer, the tools. The work opens on its own page, portfolio.html ───────── */
+   briefs they answer, the tools. The work opens on its own page, blog.html ───────── */
 const POSTS = store.get('da.posts.v1', []); let postsAsked = false;
 async function loadPosts() {
   if (postsAsked) return; postsAsked = true;
   try { const j = await apiJSON('/posts'); POSTS.splice(0, POSTS.length, ...((j && j.posts) || []).slice(0, 60)); store.set('da.posts.v1', POSTS); if (S.view === 3 && !S.mode) refreshPanel(); } catch (e) { /* as last heard */ }
 }
-const postsSection = () => (POSTS.length ? `<section class="sec" id="sec-work"><div class="lab-row">${labI('out', 'Work', POSTS.length)}<a class="pill" href="portfolio.html" target="_blank" rel="noopener">${icon('out', 'sm')}NOVEL.GLOBAL</a></div><ol class="sigs list">${POSTS.slice(0, 12).map(x => `<li><a class="sig-line" href="portfolio.html#${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">${x.cover ? `<img class="art" src="/api/posts/${encodeURIComponent(x.slug)}/cover" alt="" loading="lazy">` : `<span class="art mark">${icon('stories')}</span>`}<span class="hl">${esc(x.title)}</span><b class="mono code">${esc(x.cat || 'WORK')}</b></a></li>`).join('')}</ol></section>` : '');
+const postsSection = () => (POSTS.length ? `<section class="sec" id="sec-work"><div class="lab-row">${labI('out', 'Work', POSTS.length)}<a class="pill" href="blog.html" target="_blank" rel="noopener">${icon('out', 'sm')}NOVEL.GLOBAL</a></div><ol class="sigs list">${POSTS.slice(0, 12).map(x => `<li><a class="sig-line" href="blog.html#${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">${x.cover ? `<img class="art" src="/api/posts/${encodeURIComponent(x.slug)}/cover" alt="" loading="lazy">` : `<span class="art mark">${icon('stories')}</span>`}<span class="hl">${esc(x.title)}</span><b class="mono code">${esc(x.cat || 'WORK')}</b></a></li>`).join('')}</ol></section>` : '');
 const postersHero = () => (POSTERS2.length ? `<section class="sec posters-hero" id="sec-posters"><figure class="ph-hero"><img src="${POSTERS2[0].img}" alt=""></figure>${POSTERS2.length > 1 ? `<ol class="ph-more">${POSTERS2.slice(1).map(p => `<li><img src="${p.img}" alt=""></li>`).join('')}</ol>` : ''}</section>` : '');
 /* ───────── the quick print: a blank 80 mm receipt to write on, a photograph if wanted, and one key, the printer. Kept as it is
    typed (da.quick.v1). Sent as a story would be: it waits on the approval page, and novel.global's printer takes it ───────── */
@@ -704,6 +704,50 @@ function sure(btn, fn) {
    made in the print shop. A touch opens it full size, with its keys: back and on, full screen, save, onto the poster, and play for
    a song. The key above goes to the wall itself (in the aura: its window closed and the wall shown, never the site inside it) */
 const wallSection = () => `<section class="sec wall" id="sec-wall" hidden><div class="lab-row">${labI('stories', 'Wall')}<a class="pill" href="/" data-wall-go aria-label="To the wall on novel.global" data-tip="To the wall">${icon('next', 'sm')}</a></div><ol class="wall-g" id="wall-g"></ol></section>`;
+/* the made work, from every site, swept sideways */
+const flowSection = () => `<section class="sec flow" id="sec-flow" hidden><ol class="fl-track" id="fl-track" aria-label="Made work"></ol></section>`;
+function flowFill() {
+  const sec = $('#sec-flow'), tr = $('#fl-track'); if (!sec || !tr) return; const l = wallOf().filter(x => x.img).slice(0, 40);
+  sec.hidden = !l.length; if (!l.length) return; const at = tr.dataset.n === String(l.length) ? tr.scrollLeft : null;
+  tr.innerHTML = l.map((x, i) => `<li class="fl-c" data-i="${i}"><img src="${esc(x.img)}" alt="" draggable="false" decoding="async"${i > 3 ? ' loading="lazy"' : ''}></li>`).join(''); tr.dataset.n = String(l.length);
+  if (at != null) tr.scrollLeft = at; flowFx(tr);
+  if (!tr.dataset.on) { tr.dataset.on = '1'; tr.addEventListener('scroll', () => flowFx(tr), { passive: true }); addEventListener('resize', () => flowFx(tr));
+    tr.addEventListener('click', e => { const c = e.target.closest('.fl-c'); if (!c) return; if (c.classList.contains('on')) { const x = wallOf().filter(v => v.img)[+c.dataset.i]; if (x) flowView(x); return; } tr.scrollTo({ left: c.offsetLeft + c.offsetWidth / 2 - tr.clientWidth / 2, behavior: 'smooth' }); }); }
+}
+/* one piece full size: pinched or dragged closer, printed on a printer that is on */
+function flowView(x) {
+  const NGp = (() => { try { return window.parent !== window ? window.parent.NG : window.NG; } catch (e) { return null; } })();
+  const v = document.createElement('div'); v.className = 'fl-view'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'Made work');
+  const list = Object.entries(PSTATE).filter(([id, p]) => p.ready || id === 'novelglobal').map(([id, p]) => [id, p.name || id]);
+  const last = NGp && NGp.store ? NGp.store.get('da.base.printer', '') : '';
+  v.innerHTML = `<div class="fv-stage"><img src="${esc(x.img)}" alt="" draggable="false"></div><nav class="fv-bar"><button type="button" class="fv-x" aria-label="Close">${icon('close')}</button>`
+    + `<select class="fv-to" aria-label="Printer">${list.length ? list.map(([id, n]) => `<option value="${esc(id)}"${id === last ? ' selected' : ''}>${esc(String(n).toUpperCase())}</option>`).join('') : '<option value="">NO PRINTER ON</option>'}</select>`
+    + `<button type="button" class="fv-go" aria-label="Print"${list.length && NGp && NGp.printAgain ? '' : ' disabled'}>${icon('print')}</button><span class="fv-st"></span></nav>`;
+  document.body.appendChild(v); const im = v.querySelector('img'), st = v.querySelector('.fv-st');
+  let k = 1, tx = 0, ty = 0; const pts = new Map(); let base = null;
+  const put = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${k})`; };
+  const stage = v.querySelector('.fv-stage');
+  stage.addEventListener('pointerdown', e => { stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); base = null; });
+  stage.addEventListener('pointermove', e => { if (!pts.has(e.pointerId)) return; const was = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (base) k = Math.max(1, Math.min(6, k * d / base)); base = d; }
+    else if (k > 1) { tx += e.clientX - was[0]; ty += e.clientY - was[1]; } put(); });
+  const up = e => { pts.delete(e.pointerId); base = null; if (k <= 1.01) { k = 1; tx = ty = 0; put(); } };
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  stage.addEventListener('wheel', e => { e.preventDefault(); k = Math.max(1, Math.min(6, k * (e.deltaY < 0 ? 1.12 : 0.89))); if (k === 1) tx = ty = 0; put(); }, { passive: false });
+  stage.addEventListener('dblclick', () => { k = k > 1 ? 1 : 2.5; tx = ty = 0; put(); });
+  const shut = () => v.remove();
+  v.querySelector('.fv-x').addEventListener('click', shut);
+  addEventListener('keydown', function esc0(e) { if (e.key === 'Escape') { shut(); removeEventListener('keydown', esc0); } });
+  v.querySelector('.fv-go').addEventListener('click', function () { const to = v.querySelector('.fv-to').value; if (!to || !NGp) return; this.disabled = true;
+    try { NGp.store.set('da.base.printer', to); } catch (e) { /* the first on */ }
+    st.innerHTML = NGp.pips ? NGp.pips('sending') : '…';
+    NGp.printAgain(x.img, x.code || '').then(s => { st.innerHTML = NGp.pips ? NGp.pips(s) : s; }).catch(e => { st.innerHTML = NGp.pips ? NGp.pips(e && e.status ? 'failed' : 'outbox') : '✕'; }).then(() => { this.disabled = false; }); });
+}
+function flowFx(tr) {
+  if (tr._fx) return; tr._fx = requestAnimationFrame(() => { tr._fx = 0; const mid = tr.scrollLeft + tr.clientWidth / 2;
+    for (const c of tr.children) { const d = Math.max(-2, Math.min(2, (c.offsetLeft + c.offsetWidth / 2 - mid) / c.offsetWidth)), a = Math.abs(d);
+      c.style.transform = `perspective(900px) rotateY(${(-d * 32).toFixed(1)}deg) scale(${(1 - Math.min(1, a) * 0.2).toFixed(3)})`; c.style.zIndex = String(10 - Math.round(a * 4)); c.style.opacity = String((1 - Math.min(1, a) * 0.35).toFixed(2)); c.classList.toggle('on', a < 0.5); } });
+}
 function wallFill() {
   const sec = $('#sec-wall'), ol = $('#wall-g'); if (!sec || !ol || !window.indexedDB) return;
   let q; try { q = indexedDB.open('novelglobal', 2); } catch (e) { return; }
@@ -756,9 +800,9 @@ function viewPortfolio() {
   const det = ['iNaturalist', 'Field list: sources in field.html', ...OUT.src.map(x => x[0]), 'Canopy: council urban forest strategies; cooling near 40% (Ziter et al., PNAS 2019)', 'City of Melbourne open data', `${IMG.attribution} · AWS Terrain Tiles`, 'OpenStreetMap', 'MapLibre · Poppins · IBM Plex Mono', CONFIG.COUNTRY];
   const sigs = S.signals;
   /* the W.I.S.H.es made here are among the stories, marked as one's own: one module, not two */
-  setTimeout(wallFill, 30);
+  setTimeout(wallFill, 30); setTimeout(flowFill, 30);
   if (IN_AURA) setTimeout(talkFill, 60);
-  return printerTop() + quickHTML() + wallSection() + talkSection() + postsSection() + `<section class="sec board" id="sec-board"><div class="lab-row">${labI('stories', 'Stories', sigs.length)}<button type="button" class="pill sq" id="rx-open" aria-expanded="false" aria-label="Receive" data-tip="A code from a slip, or a link">${icon('receive', 'sm')}</button></div>`
+  return printerTop() + flowSection() + quickHTML() + wallSection() + talkSection() + postsSection() + `<section class="sec board" id="sec-board"><div class="lab-row">${labI('stories', 'Stories', sigs.length)}<button type="button" class="pill sq" id="rx-open" aria-expanded="false" aria-label="Receive" data-tip="A code from a slip, or a link">${icon('receive', 'sm')}</button></div>`
       + `<form class="rx" id="rx" hidden><textarea id="rx-t" rows="2" aria-label="A code from a slip, or a link" placeholder="DA-····" spellcheck="false" autocapitalize="characters"></textarea><button type="submit" class="ib" aria-label="Receive">${icon('check')}</button></form>`
       /* eight as cards; the rest as a list, a photograph and a headline each */
       + (() => { const all = boardOrder(sigs); const more = all.slice(8); askKindPhotos(all); return `<ol class="sigs cards big">${all.slice(0, 8).map(sigRow).join('')}</ol>` + (more.length ? `<ol class="sigs list">${more.map(sigLine).join('')}</ol>` : ''); })()

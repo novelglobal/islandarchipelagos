@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ISLAND ARCHIPELAGOS · novel.global</title>
+<link rel="icon" href="icon.svg">
+<style>
+  @font-face { font-family: 'Archivo Narrow'; src: url('vendor/archivo-narrow.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Departure Mono'; src: url('vendor/departure-mono.woff2') format('woff2'); font-display: swap; }
+  :root { --paper: #E2E0DD; --card: #F2F1EC; --ink: #0B0B0B; --blue: #143D71; --own: #F59878; --lime: #D9F24A; --dim: rgba(11, 11, 11, .45); --rail: rgba(11, 11, 11, .28); }
+  html.night { --paper: #121314; --card: #1B1C1E; --ink: #F1F0EC; --dim: rgba(241, 240, 236, .5); --rail: rgba(241, 240, 236, .25); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); -webkit-tap-highlight-color: transparent; }
+  body { font: 600 15px/1.1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; }
+  button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  button { cursor: pointer; }
+  .mono { font-family: 'Departure Mono', ui-monospace, monospace; font-weight: 400; letter-spacing: .04em; }
+  #home { display: block; padding: calc(env(safe-area-inset-top) + 12px) 16px 0; font: 400 12px/1 'Departure Mono', ui-monospace, monospace; color: var(--ink); text-decoration: none; }
+  html.in #home { display: none; }
+  main { max-width: 1100px; margin: 0 auto; padding: 12px 12px calc(96px + env(safe-area-inset-bottom)); display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 860px) { main { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } #slipcol { position: sticky; top: 12px; } }
+  h1 { margin: 4px 0 0; font: 600 clamp(40px, 12vw, 86px)/.84 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.02em; }
+  .starts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .starts button { border: 2px solid var(--ink); background: none; padding: 9px 13px 10px; border-radius: 999px; font-size: 15px; }
+  .starts button.on { background: var(--ink); color: var(--paper); }
+  /* the breadboard: two rails of holes, each part plugged across */
+  .bb { position: relative; background: var(--card); border-radius: 10px; padding: 14px 30px; min-height: 120px;
+    background-image: radial-gradient(circle, var(--rail) 1.6px, transparent 2.2px), radial-gradient(circle, var(--rail) 1.6px, transparent 2.2px);
+    background-size: 14px 14px, 14px 14px; background-repeat: repeat-y; background-position: 8px 8px, calc(100% - 8px) 8px; }
+  .bb::before, .bb::after { content: ''; position: absolute; top: 10px; bottom: 10px; width: 2px; background: var(--own); opacity: .8; }
+  .bb::before { left: 24px; } .bb::after { right: 24px; background: var(--blue); }
+  .bb:empty::after { opacity: .2; }
+  .pt { position: relative; margin: 0 0 10px; border-radius: 6px; background: var(--ink); color: var(--card); display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 9px 10px 10px; }
+  .pt::before, .pt::after { content: ''; position: absolute; top: 15px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); box-shadow: 0 0 0 2px currentColor; }
+  .pt::before { left: -19px; } .pt::after { right: -19px; }
+  .pt[data-g="in"] { background: var(--blue); color: #F1F0EC; }
+  .pt[data-g="do"] { background: var(--lime); color: #0B0B0B; }
+  .pt[data-g="mod"] { background: var(--own); color: #0B0B0B; }
+  .pt b { font-size: 17px; letter-spacing: .04em; align-self: center; }
+  .pt .ks { display: flex; gap: 2px; }
+  .pt .ks button { width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); display: grid; place-items: center; font-size: 15px; }
+  .pt[data-g="do"] .ks button, .pt[data-g="mod"] .ks button { background: rgba(0, 0, 0, .1); }
+  .pt .fs { grid-column: 1 / -1; display: grid; gap: 6px; }
+  .pt input[type="text"], .pt textarea { width: 100%; border: 0; border-radius: 4px; padding: 8px 9px; background: rgba(255, 255, 255, .94); color: #0B0B0B; font: 400 14px/1.3 'Departure Mono', ui-monospace, monospace; text-transform: uppercase; resize: vertical; }
+  .pt textarea { min-height: 70px; }
+  .pt .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .pt .pill { border: 1.5px solid currentColor; background: none; border-radius: 999px; padding: 6px 11px; font-size: 13px; }
+  .pt .val { font: 400 13px/1.2 'Departure Mono', ui-monospace, monospace; opacity: .85; }
+  .lab { margin: 6px 0 6px; font: 400 11px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .1em; color: var(--dim); }
+  .parts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .parts button { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 6px; padding: 9px 11px; background: var(--ink); color: var(--paper); font-size: 14px; }
+  .parts button i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .parts button[data-g="in"] { background: var(--blue); color: #F1F0EC; }
+  .parts button[data-g="do"] { background: var(--lime); color: #0B0B0B; }
+  .parts button[data-g="mod"] { background: var(--own); color: #0B0B0B; }
+  .parts button:disabled { opacity: .25; cursor: default; }
+  .mods { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .md { border: 2px solid var(--ink); border-radius: 8px; padding: 10px 11px; display: grid; gap: 6px; }
+  .md.off { opacity: .42; border-style: dashed; }
+  .md b { font-size: 17px; }
+  .md .io { display: flex; gap: 4px; flex-wrap: wrap; font: 400 11px/1 'Departure Mono', ui-monospace, monospace; }
+  .md .io span { border: 1px solid currentColor; padding: 3px 5px; border-radius: 3px; }
+  .md .io .to { border: 0; padding: 3px 0; }
+  .md .need { font: 400 12px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .1em; }
+  /* the slip, as it will print */
+  #slipcol { display: grid; gap: 8px; justify-items: center; }
+  #slip { width: min(100%, 300px); background: #fff; box-shadow: 0 16px 40px rgba(0, 0, 0, .22); }
+  #slip canvas { display: block; width: 100%; height: auto; }
+  .meter { width: min(100%, 300px); height: 8px; border-radius: 4px; background: var(--card); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .3s; }
+  .meter.full i { background: #E5402A; }
+  .len { font: 400 12px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .08em; }
+  nav#go { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; gap: 8px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--paper); }
+  nav#go select { flex: 1; min-width: 84px; height: 46px; border: 1.5px solid var(--paper); border-radius: 23px; background: var(--ink); color: var(--paper); padding: 0 14px; font-size: 16px; }
+  nav#go button { height: 46px; min-width: 46px; border-radius: 23px; border: 1.5px solid var(--paper); background: none; color: var(--paper); padding: 0 14px; font-size: 16px; letter-spacing: .06em; }
+  nav#go #pr { background: var(--paper); color: var(--ink); padding: 0 22px; }
+  nav#go button:disabled { opacity: .3; cursor: default; }
+  #st { min-width: 30px; font: 14px/1 ui-monospace, monospace; }
+  .tabs { display: none; }
+  @media (max-width: 859px) {
+    .tabs { display: flex; gap: 0; border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; align-self: start; width: max-content; }
+    .tabs button { border: 0; background: none; padding: 8px 12px; font-size: 15px; }
+    .tabs button.on { background: var(--ink); color: var(--paper); }
+    html.show-slip #boardcol { display: none; } html:not(.show-slip) #slipcol { display: none; }
+  }
+</style>
+</head>
+<body>
+<a id="home" href="/">novel.global</a>
+<main>
+  <section id="boardcol">
+    <h1>ISLAND<br>ARCHIPELAGOS</h1>
+    <p class="lab">START</p>
+    <div class="starts" id="starts"></div>
+    <p class="lab">BOARD</p>
+    <div class="bb" id="bb"></div>
+    <p class="lab">PARTS</p>
+    <div class="parts" id="parts"></div>
+    <p class="lab">MODULES · <span id="isl">1</span> ISLANDS</p>
+    <div class="mods" id="mods"></div>
+  </section>
+  <section id="slipcol">
+    <div id="slip"><canvas id="cv" width="512" height="200"></canvas></div>
+    <div class="meter" id="meter"><i></i></div>
+    <span class="len" id="len"></span>
+  </section>
+</main>
+<nav id="go">
+  <div class="tabs" id="tabs"><button type="button" data-t="board" class="on">BOARD</button><button type="button" data-t="slip">SLIP</button></div>
+  <select id="to" aria-label="Printer"><option value="">…</option></select>
+  <button type="button" id="pr" disabled>PRINT</button><span id="st"></span>
+  <button type="button" id="set" aria-label="Settings">⚙</button>
+</nav>
+<input type="file" id="fi" hidden>
+<script src="vendor/qrcode.js"></script>
+<script src="bench.js"></script>
+</body></html>
