@@ -3395,9 +3395,9 @@ body[data-view="portfolio"] #view>#sec-flow::before,body[data-view="portfolio"] 
 .fv-stage{flex:1;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;cursor:zoom-in}
 .fv-stage img{max-width:100%;max-height:100%;width:auto;height:auto;transform-origin:50% 50%;-webkit-user-drag:none;user-select:none;background:#fff}
 .fv-bar{display:flex;align-items:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#0B0B0B;color:#F4F1E8}
-.fv-bar button{width:44px;height:44px;display:grid;place-items:center;border:1.5px solid #F4F1E8;border-radius:50%;background:none;color:inherit;cursor:pointer}
+.fv-bar button{width:34px;height:34px;display:grid;place-items:center;border:1.5px solid #F4F1E8;border-radius:50%;background:none;color:inherit;cursor:pointer}
 .fv-bar .fv-go{background:#F4F1E8;color:#0B0B0B}
 .fv-bar button:disabled{opacity:.3;cursor:default}
-.fv-to{flex:1;min-width:0;height:44px;border:1.5px solid #F4F1E8;border-radius:22px;background:#0B0B0B;color:#F4F1E8;font:600 15px/1 'Archivo Narrow',Arial,sans-serif;letter-spacing:.04em;padding:0 14px}
+.fv-to{flex:1;min-width:0;height:34px;border:1.5px solid #F4F1E8;border-radius:17px;background:#0B0B0B;color:#F4F1E8;font:600 15px/1 'Archivo Narrow',Arial,sans-serif;letter-spacing:.04em;padding:0 14px}
 .fv-st{min-width:36px;font:14px/1 ui-monospace,monospace}
 @media (max-width:420px){.simple-r .dev.radio.jr-dev{grid-template-columns:52px 62px minmax(0,1fr)!important}.simple-r .rd-knob{width:30px;height:30px}.simple-r .rd-k .kn-ind{height:9px;transform-origin:50% 12px}}

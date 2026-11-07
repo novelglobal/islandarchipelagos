@@ -3,112 +3,138 @@
 <title>ISLAND ARCHIPELAGOS · novel.global</title>
 <link rel="icon" href="icon.svg">
 <style>
-  @font-face { font-family: 'Archivo Narrow'; src: url('vendor/archivo-narrow.woff2') format('woff2'); font-weight: 600; font-display: swap; }
-  @font-face { font-family: 'Departure Mono'; src: url('vendor/departure-mono.woff2') format('woff2'); font-display: swap; }
-  :root { --paper: #E2E0DD; --card: #F2F1EC; --ink: #0B0B0B; --blue: #143D71; --own: #F59878; --lime: #D9F24A; --dim: rgba(11, 11, 11, .45); --rail: rgba(11, 11, 11, .28); }
-  html.night { --paper: #121314; --card: #1B1C1E; --ink: #F1F0EC; --dim: rgba(241, 240, 236, .5); --rail: rgba(241, 240, 236, .25); }
+  @font-face { font-family: 'Poppins'; src: url('vendor/fonts/poppins-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Poppins'; src: url('vendor/fonts/poppins-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'IBM Plex Mono'; src: url('vendor/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+  :root { --sea: #17457F; --deep: #0C2546; --ink: #111; --paper: #FFFFFF; --sun: #E25C40; --lime: #D9F24A; --cells: .22; }
+  html.night { --sea: #0E2B52; --deep: #071425; --cells: .14; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); -webkit-tap-highlight-color: transparent; }
-  body { font: 600 15px/1.1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; }
-  button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  html, body { margin: 0; min-height: 100%; background: var(--deep); color: #F4F1E8; -webkit-tap-highlight-color: transparent; }
+  body { font: 500 13px/1.35 'IBM Plex Mono', ui-monospace, monospace; }
+  button, input, textarea, select { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  .mono { font-family: 'Departure Mono', ui-monospace, monospace; font-weight: 400; letter-spacing: .04em; }
-  #home { display: block; padding: calc(env(safe-area-inset-top) + 12px) 16px 0; font: 400 12px/1 'Departure Mono', ui-monospace, monospace; color: var(--ink); text-decoration: none; }
-  html.in #home { display: none; }
-  main { max-width: 1100px; margin: 0 auto; padding: 12px 12px calc(96px + env(safe-area-inset-bottom)); display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 860px) { main { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } #slipcol { position: sticky; top: 12px; } }
-  h1 { margin: 4px 0 0; font: 600 clamp(40px, 12vw, 86px)/.84 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.02em; }
-  .starts { display: flex; gap: 6px; flex-wrap: wrap; }
-  .starts button { border: 2px solid var(--ink); background: none; padding: 9px 13px 10px; border-radius: 999px; font-size: 15px; }
-  .starts button.on { background: var(--ink); color: var(--paper); }
-  /* the breadboard: two rails of holes, each part plugged across */
-  .bb { position: relative; background: var(--card); border-radius: 10px; padding: 14px 30px; min-height: 120px;
-    background-image: radial-gradient(circle, var(--rail) 1.6px, transparent 2.2px), radial-gradient(circle, var(--rail) 1.6px, transparent 2.2px);
-    background-size: 14px 14px, 14px 14px; background-repeat: repeat-y; background-position: 8px 8px, calc(100% - 8px) 8px; }
-  .bb::before, .bb::after { content: ''; position: absolute; top: 10px; bottom: 10px; width: 2px; background: var(--own); opacity: .8; }
-  .bb::before { left: 24px; } .bb::after { right: 24px; background: var(--blue); }
-  .bb:empty::after { opacity: .2; }
-  .pt { position: relative; margin: 0 0 10px; border-radius: 6px; background: var(--ink); color: var(--card); display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 9px 10px 10px; }
-  .pt::before, .pt::after { content: ''; position: absolute; top: 15px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); box-shadow: 0 0 0 2px currentColor; }
-  .pt::before { left: -19px; } .pt::after { right: -19px; }
-  .pt[data-g="in"] { background: var(--blue); color: #F1F0EC; }
-  .pt[data-g="do"] { background: var(--lime); color: #0B0B0B; }
-  .pt[data-g="mod"] { background: var(--own); color: #0B0B0B; }
-  .pt b { font-size: 17px; letter-spacing: .04em; align-self: center; }
-  .pt .ks { display: flex; gap: 2px; }
-  .pt .ks button { width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); display: grid; place-items: center; font-size: 15px; }
-  .pt[data-g="do"] .ks button, .pt[data-g="mod"] .ks button { background: rgba(0, 0, 0, .1); }
-  .pt .fs { grid-column: 1 / -1; display: grid; gap: 6px; }
-  .pt input[type="text"], .pt textarea { width: 100%; border: 0; border-radius: 4px; padding: 8px 9px; background: rgba(255, 255, 255, .94); color: #0B0B0B; font: 400 14px/1.3 'Departure Mono', ui-monospace, monospace; text-transform: uppercase; resize: vertical; }
-  .pt textarea { min-height: 70px; }
-  .pt .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .pt .pill { border: 1.5px solid currentColor; background: none; border-radius: 999px; padding: 6px 11px; font-size: 13px; }
-  .pt .val { font: 400 13px/1.2 'Departure Mono', ui-monospace, monospace; opacity: .85; }
-  .lab { margin: 6px 0 6px; font: 400 11px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .1em; color: var(--dim); }
-  .parts { display: flex; flex-wrap: wrap; gap: 6px; }
-  .parts button { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 6px; padding: 9px 11px; background: var(--ink); color: var(--paper); font-size: 14px; }
-  .parts button i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
-  .parts button[data-g="in"] { background: var(--blue); color: #F1F0EC; }
-  .parts button[data-g="do"] { background: var(--lime); color: #0B0B0B; }
-  .parts button[data-g="mod"] { background: var(--own); color: #0B0B0B; }
-  .parts button:disabled { opacity: .25; cursor: default; }
-  .mods { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .md { border: 2px solid var(--ink); border-radius: 8px; padding: 10px 11px; display: grid; gap: 6px; }
-  .md.off { opacity: .42; border-style: dashed; }
-  .md b { font-size: 17px; }
-  .md .io { display: flex; gap: 4px; flex-wrap: wrap; font: 400 11px/1 'Departure Mono', ui-monospace, monospace; }
-  .md .io span { border: 1px solid currentColor; padding: 3px 5px; border-radius: 3px; }
-  .md .io .to { border: 0; padding: 3px 0; }
-  .md .need { font: 400 12px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .1em; }
-  /* the slip, as it will print */
-  #slipcol { display: grid; gap: 8px; justify-items: center; }
-  #slip { width: min(100%, 300px); background: #fff; box-shadow: 0 16px 40px rgba(0, 0, 0, .22); }
-  #slip canvas { display: block; width: 100%; height: auto; }
-  .meter { width: min(100%, 300px); height: 8px; border-radius: 4px; background: var(--card); overflow: hidden; }
-  .meter i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .3s; }
-  .meter.full i { background: #E5402A; }
-  .len { font: 400 12px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .08em; }
-  nav#go { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; gap: 8px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--paper); }
-  nav#go select { flex: 1; min-width: 84px; height: 46px; border: 1.5px solid var(--paper); border-radius: 23px; background: var(--ink); color: var(--paper); padding: 0 14px; font-size: 16px; }
-  nav#go button { height: 46px; min-width: 46px; border-radius: 23px; border: 1.5px solid var(--paper); background: none; color: var(--paper); padding: 0 14px; font-size: 16px; letter-spacing: .06em; }
-  nav#go #pr { background: var(--paper); color: var(--ink); padding: 0 22px; }
-  nav#go button:disabled { opacity: .3; cursor: default; }
-  #st { min-width: 30px; font: 14px/1 ui-monospace, monospace; }
-  .tabs { display: none; }
-  @media (max-width: 859px) {
-    .tabs { display: flex; gap: 0; border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; align-self: start; width: max-content; }
-    .tabs button { border: 0; background: none; padding: 8px 12px; font-size: 15px; }
-    .tabs button.on { background: var(--ink); color: var(--paper); }
-    html.show-slip #boardcol { display: none; } html:not(.show-slip) #slipcol { display: none; }
-  }
+  svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  svg.i .f { fill: currentColor; stroke: none; }
+
+  /* three layers behind: the coast from above, the sea's cells drifting over it, the islands joined by lines */
+  .bg { position: fixed; inset: 0; pointer-events: none; }
+  #coast { background: var(--sea) url(cards/ref-coast.jpg) center / contain no-repeat; filter: grayscale(1) contrast(1.2) brightness(1.1); }
+  #tint { background: var(--sea); mix-blend-mode: multiply; opacity: .78; }
+  #cells { background: url(cards/ref-cells.jpg) center / contain no-repeat; mix-blend-mode: screen; opacity: var(--cells); animation: drift 38s ease-in-out infinite alternate; transform-origin: 40% 60%; }
+  @keyframes drift { to { transform: scale(1.5) translate(4%, -3%) rotate(4deg); } }
+  #isles { width: 100%; height: 100%; }
+  #isles line { stroke: rgba(244, 241, 232, .35); stroke-width: 1; stroke-dasharray: 3 5; animation: march 6s linear infinite; }
+  #isles circle { fill: #F4F1E8; }
+  #isles circle.me { fill: var(--sun); }
+  @keyframes march { to { stroke-dashoffset: -32; } }
+  @media (prefers-reduced-motion: reduce) { #cells, #isles line { animation: none; } }
+
+  header { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + 12px) 14px 10px; }
+  #mark { display: block; width: 46px; height: 22px; flex: 0 0 auto; }
+  #mark svg { width: 100%; height: 100%; display: block; }
+  #starts { margin-left: auto; display: flex; gap: 4px; }
+  #starts button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(12, 37, 70, .55); color: #F4F1E8; display: grid; place-items: center; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .15s, background .2s; }
+  #starts button.on { background: #F4F1E8; color: var(--ink); }
+  #starts button.arm { animation: arm .5s ease-in-out infinite alternate; background: var(--sun); color: #fff; }
+  @keyframes arm { to { transform: scale(1.1); } }
+
+  main { position: relative; z-index: 1; display: grid; justify-items: center; padding: 6px 22px calc(110px + env(safe-area-inset-bottom)); }
+  /* the slip: paper with feed holes on both edges, every part plugged across them */
+  #paper { position: relative; width: min(100%, 380px); background: var(--paper); color: var(--ink); padding: 18px 30px 26px; box-shadow: 0 30px 60px rgba(0, 0, 0, .35);
+    background-image: radial-gradient(circle, #D9D7D2 2.4px, transparent 3px), radial-gradient(circle, #D9D7D2 2.4px, transparent 3px); background-size: 14px 18px, 14px 18px; background-repeat: repeat-y; background-position: 4px 6px, calc(100% - 4px) 6px;
+    -webkit-mask: linear-gradient(#000, #000) top / 100% calc(100% - 8px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 8px repeat-x;
+    mask: linear-gradient(#000, #000) top / 100% calc(100% - 8px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 8px repeat-x; }
+  .pt { position: relative; padding: 6px 0; border-radius: 3px; outline: 0 solid transparent; transition: outline-color .15s; }
+  .pt::before { content: ''; position: absolute; left: -24px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--g, #111); }
+  .pt[data-g="in"] { --g: var(--sea); } .pt[data-g="do"] { --g: #9DB52A; } .pt[data-g="mod"] { --g: var(--sun); }
+  .pt.sel { outline: 2px solid var(--g, #111); outline-offset: 4px; }
+  .pt textarea, .pt input { display: block; width: 100%; border: 0; padding: 2px 0; background: transparent; color: var(--ink); resize: none; overflow: hidden; outline: 0; border-bottom: 1px dotted rgba(0, 0, 0, .3); border-radius: 0; }
+  .pt textarea:not(:placeholder-shown), .pt input:not(:placeholder-shown) { border-bottom-color: transparent; }
+  .pt textarea:focus, .pt input:focus { border-bottom-color: var(--g, #111); }
+  .pt textarea { font: 500 14px/20px 'IBM Plex Mono', monospace; min-height: 24px; }
+  .pt[data-k="title"] textarea { font: 700 30px/1.02 'Poppins', Arial, sans-serif; letter-spacing: -.02em; min-height: 36px; }
+  .pt[data-k="steps"] textarea, .pt[data-k="list"] textarea { padding-left: 24px; }
+  .pt .mk { position: absolute; left: 0; top: 8px; display: grid; font: 500 14px/20px 'IBM Plex Mono', monospace; pointer-events: none; }
+  .pt hr { border: 0; height: 4px; background: var(--ink); margin: 6px 0; }
+  .pt .row { display: flex; align-items: center; gap: 10px; min-height: 34px; }
+  .pt .ic { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--ink); background: none; display: grid; place-items: center; color: var(--ink); padding: 0; }
+  .pt .ic svg.i { width: 15px; height: 15px; }
+  .pt .ic.live { background: var(--ink); color: #fff; }
+  .pt .box { width: 100%; aspect-ratio: 4 / 3; border: 1.5px dashed rgba(0, 0, 0, .3); background: none; display: grid; place-items: center; color: rgba(0, 0, 0, .45); }
+  .pt .box.low { aspect-ratio: auto; height: 64px; }
+  .pt .pic { display: block; width: 100%; filter: grayscale(1) contrast(1.15); cursor: pointer; }
+  .pt .val { font: 500 14px/1.3 'IBM Plex Mono', monospace; overflow-wrap: anywhere; }
+  .pt .res { font: 700 18px/1.2 'Poppins', Arial, sans-serif; }
+  .pt canvas.moon { width: 64px; height: 64px; display: block; }
+  .pt canvas.qr { width: 96px; height: 96px; image-rendering: pixelated; flex: 0 0 auto; }
+  .pt svg.route { width: 100%; height: 120px; display: block; cursor: pointer; }
+  .pt svg.route path { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .pt[data-k="mesh"] input { border-top: 3px solid var(--ink); padding-top: 8px; }
+  .pt input.nm { font: 500 12px/1.3 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .08em; }
+  .pt input.v { font: 700 30px/1.1 'Poppins', Arial, sans-serif; }
+  .pt input.ln { font: 500 14px/1.3 'IBM Plex Mono', monospace; }
+  /* a socket between parts: where a new one goes */
+  .sk { position: relative; height: 14px; margin: 0 -8px; border: 0; padding: 0; background: none; display: block; width: calc(100% + 16px); }
+  .sk::after { content: ''; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .22); transform: scale(.36); transition: transform .15s, box-shadow .15s; }
+  .sk::before { content: '+'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); font: 400 18px/1 'Poppins', Arial; color: var(--ink); z-index: 1; opacity: 0; transition: opacity .15s; }
+  .sk:hover::after, .sk.on::after, .sk:focus-visible::after { transform: scale(1); box-shadow: inset 0 0 0 1.5px var(--ink); } .sk:hover::before, .sk.on::before, .sk:focus-visible::before { opacity: 1; }
+  .sk.end { height: 52px; margin-top: 6px; }
+  .sk.end::after { width: 40px; height: 40px; margin: -20px; transform: none; box-shadow: inset 0 0 0 2px var(--ink); }
+  .sk.end::before { opacity: 1; font-size: 26px; }
+  /* what a chosen part can do */
+  #ks { position: absolute; z-index: 4; display: flex; gap: 2px; padding: 3px; border-radius: 22px; background: var(--ink); box-shadow: 0 8px 20px rgba(0, 0, 0, .3); }
+  #ks[hidden] { display: none; }
+  #ks button { width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: #fff; display: grid; place-items: center; padding: 0; }
+  #ks button:disabled { opacity: .3; }
+  #ks svg.i { width: 15px; height: 15px; }
+  #len { margin-top: 12px; display: flex; align-items: center; gap: 8px; width: min(100%, 380px); }
+  #len i { flex: 1; height: 3px; border-radius: 2px; background: rgba(244, 241, 232, .25); position: relative; overflow: hidden; }
+  #len i b { position: absolute; inset: 0 auto 0 0; width: 0; background: #F4F1E8; transition: width .3s; }
+  #len.full i b { background: var(--sun); }
+  #len span { font-size: 11px; letter-spacing: .08em; opacity: .75; }
+
+  /* the parts tray */
+  #tray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 16px 12px calc(16px + env(safe-area-inset-bottom)); background: rgba(12, 37, 70, .96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 22px 22px 0 0; box-shadow: 0 -16px 40px rgba(0, 0, 0, .35); transform: translateY(105%); visibility: hidden; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s .3s; }
+  #tray.on { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+  #tray .grid { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  #tray button { position: relative; display: grid; justify-items: center; gap: 4px; padding: 10px 4px 8px; border: 0; border-radius: 12px; background: rgba(244, 241, 232, .08); color: #F4F1E8; font-size: 11px; letter-spacing: .04em; }
+  #tray button::before { content: ''; position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--g, #F4F1E8); }
+  #tray button[data-g="in"] { --g: #7FB0F0; } #tray button[data-g="do"] { --g: var(--lime); } #tray button[data-g="mod"] { --g: var(--sun); }
+  #tray button:disabled { opacity: .35; cursor: default; }
+  #tray button .pp { position: absolute; left: 8px; top: 5px; font-size: 8px; letter-spacing: 1px; }
+  #veil { position: fixed; inset: 0; z-index: 5; background: rgba(0, 0, 0, .3); }
+  #veil[hidden] { display: none; }
+
+  nav#go { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; gap: 8px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  nav#go select { flex: 1; min-width: 0; height: 36px; border: 0; border-radius: 18px; background: rgba(12, 37, 70, .82); color: #F4F1E8; padding: 0 16px; font-size: 13px; letter-spacing: .06em; }
+  nav#go button { height: 36px; min-width: 36px; border-radius: 18px; border: 0; background: rgba(12, 37, 70, .82); color: #F4F1E8; display: grid; place-items: center; padding: 0 14px; }
+  nav#go #pr { background: #F4F1E8; color: var(--ink); min-width: 52px; }
+  nav#go button:disabled { opacity: .4; cursor: default; }
+  nav#go svg.i { width: 18px; height: 18px; }
+  #st { min-width: 24px; font: 14px/1 ui-monospace, monospace; }
+  #cv { display: none; }
 </style>
 </head>
 <body>
-<a id="home" href="/">novel.global</a>
+<div class="bg" id="coast"></div><div class="bg" id="tint"></div><div class="bg" id="cells"></div>
+<div class="bg"><svg id="isles" aria-hidden="true"></svg></div>
+<header>
+  <a id="mark" href="/" aria-label="novel.global"><svg viewBox="0 0 237 112"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg></a>
+  <div id="starts"></div>
+</header>
 <main>
-  <section id="boardcol">
-    <h1>ISLAND<br>ARCHIPELAGOS</h1>
-    <p class="lab">START</p>
-    <div class="starts" id="starts"></div>
-    <p class="lab">BOARD</p>
-    <div class="bb" id="bb"></div>
-    <p class="lab">PARTS</p>
-    <div class="parts" id="parts"></div>
-    <p class="lab">MODULES · <span id="isl">1</span> ISLANDS</p>
-    <div class="mods" id="mods"></div>
-  </section>
-  <section id="slipcol">
-    <div id="slip"><canvas id="cv" width="512" height="200"></canvas></div>
-    <div class="meter" id="meter"><i></i></div>
-    <span class="len" id="len"></span>
-  </section>
+  <div id="paper"></div>
+  <div id="len"><i><b></b></i><span></span></div>
+  <div id="ks" hidden></div>
 </main>
+<div id="veil" hidden></div>
+<section id="tray" aria-label="Parts"><div class="grid"></div></section>
 <nav id="go">
-  <div class="tabs" id="tabs"><button type="button" data-t="board" class="on">BOARD</button><button type="button" data-t="slip">SLIP</button></div>
   <select id="to" aria-label="Printer"><option value="">…</option></select>
-  <button type="button" id="pr" disabled>PRINT</button><span id="st"></span>
-  <button type="button" id="set" aria-label="Settings">⚙</button>
+  <button type="button" id="pr" aria-label="Print" disabled><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg></button><span id="st"></span>
+  <button type="button" id="set" aria-label="Settings"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
 </nav>
+<canvas id="cv" width="512" height="200"></canvas>
 <input type="file" id="fi" hidden>
 <script src="vendor/qrcode.js"></script>
 <script src="bench.js"></script>

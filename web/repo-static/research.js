@@ -49,7 +49,7 @@
 
   /* ───── things on the board ───── */
   function note(t, x, y) { var c = NOTES[0]; var n = new F.Note(t || '', { left: x, top: y, width: 200, fontSize: 24, lineHeight: 1.05, fontFamily: 'Archivo Narrow', fontWeight: 600, fill: c[1], backgroundColor: c[0], pad: 12, padding: 16, daId: uid(), daKind: 'note', daC: 0, editable: true, textAlign: 'left' }); cv.add(n); return n; }
-  function sect(t, x, y) { var n = new F.Note(t || 'SECTION', { left: x, top: y, width: 360, fontSize: 56, lineHeight: .9, fontFamily: 'Archivo Narrow', fontWeight: 600, fill: INK, backgroundColor: '', pad: 0, daId: uid(), daKind: 'sect', daC: -1 }); cv.add(n); return n; }
+  function sect(t, x, y) { var n = new F.Note(t || '', { left: x, top: y, width: 360, fontSize: 56, lineHeight: .9, fontFamily: 'Archivo Narrow', fontWeight: 600, fill: INK, backgroundColor: '', pad: 0, daId: uid(), daKind: 'sect', daC: -1 }); cv.add(n); return n; }
   function dot(x, y) { var d = new F.Circle({ left: x, top: y, radius: 14, fill: INK, daId: uid(), daKind: 'dot', daC: 0, originX: 'center', originY: 'center' }); cv.add(d); return d; }
   function pic(url, x, y) { return new Promise(function (ok) { F.Image.fromURL(url, function (im) { if (!im || !im.width) return ok(null); var k = Math.min(1, 260 / Math.max(im.width, im.height)); im.set({ left: x, top: y, scaleX: k, scaleY: k, daId: uid(), daKind: 'img' }); cv.add(im); cv.setActiveObject(im); ok(im); }, { crossOrigin: 'anonymous' }); }); }
   /* a picture from anywhere made smaller first, never cropped */
@@ -62,6 +62,7 @@
   function join(a, b) { var was = cv.getObjects('line').filter(function (l) { return (l.daFrom === a.daId && l.daTo === b.daId) || (l.daFrom === b.daId && l.daTo === a.daId); })[0]; if (was) { cv.remove(was); return; }
     var ca = a.getCenterPoint(), cb = b.getCenterPoint(), l = new F.Line([ca.x, ca.y, cb.x, cb.y], { stroke: INK, strokeWidth: 3, selectable: false, evented: true, hoverCursor: 'pointer', daId: uid(), daKind: 'link', daFrom: a.daId, daTo: b.daId });
     cv.add(l); cv.sendToBack(l); cv.getObjects().filter(function (o) { return o.daKind === 'tpl'; }).forEach(function (o) { cv.sendToBack(o); }); }
+  cv.on('text:editing:exited', function (e) { var o = e.target; if (o && o.daKind === 'sect' && !String(o.text || '').trim()) { cv.remove(o); cv.requestRenderAll(); } });
   cv.on('object:moving', follow); cv.on('object:scaling', follow); cv.on('object:rotating', follow);
 
   /* ───── tools ───── */
@@ -78,7 +79,7 @@
   $('#tools').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return; var t = b.dataset.t, p = mid(), a = cv.getActiveObject();
     if (t === 'note') { var n = note('', p.x, p.y); cv.setActiveObject(n); n.enterEditing(); n.hiddenTextarea && n.hiddenTextarea.focus(); }
-    else if (t === 'sect') { var s = sect('SECTION', p.x, p.y); cv.setActiveObject(s); s.enterEditing(); s.selectAll(); }
+    else if (t === 'sect') { var s = sect('', p.x, p.y); cv.setActiveObject(s); s.enterEditing(); s.hiddenTextarea && s.hiddenTextarea.focus(); }
     else if (t === 'dot') cv.setActiveObject(dot(p.x, p.y));
     else if (t === 'link' || t === 'pencil') setMode(t);
     else if (t === 'img') $('#fi').click();
