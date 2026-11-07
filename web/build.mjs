@@ -153,3 +153,5 @@ fs.appendFileSync(path.join(out, '_headers'), `
 const listing = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => (d.isDirectory() ? listing(path.join(dir, d.name), base) : [path.relative(base, path.join(dir, d.name))])).sort();
 const all = listing(out);
 console.log(`${all.length} files, ${Math.round(all.reduce((n, f) => n + fs.statSync(path.join(out, f)).size, 0) / 1024)} KB in dist/, build ${sha}${preview ? `, PREVIEW ${branch}` : ''}`);
+/* on Cloudflare, the worker's config also at the repo root */
+if (process.env.WORKERS_CI && fs.existsSync(path.join(root, '..', 'engine'))) fs.writeFileSync(path.join(root, '..', 'wrangler.jsonc'), read(path.join(root, 'wrangler.jsonc')).replace('"node_modules/', '"web/node_modules/').replace('"src/worker/index.js"', '"web/src/worker/index.js"').replace('"./dist"', '"./web/dist"'));

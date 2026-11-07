@@ -8,3 +8,4 @@ web/test/shots/
 web/src/worker/stamp.js
 web/src/touch/*/build/
 kit/island-arm64
+/wrangler.jsonc
