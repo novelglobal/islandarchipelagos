@@ -1930,6 +1930,32 @@ if (run('base')) try {
   await pc.close();
 } catch (e) { results.push(`FAIL  section base: ${e.message.split('\n')[0]} — after: ${(results[results.length - 1] || '').slice(6, 90)} @${((e.stack || '').match(/run\.mjs:(\d+)/) || [])[1]}`); }
 
+// ───────── home: the switchboard (ONLY=home) ─────────
+for (const HD of [false, true]) if (run('home')) try {
+  const tag = HD ? 'desk' : 'phone';
+  const ctx = await newCtx(HD ? { viewport: { width: 1280, height: 800 }, timezoneId: 'Australia/Melbourne' } : { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, timezoneId: 'Australia/Melbourne' });
+  await wire(ctx, { plain: true }); await ctx.addInitScript(() => { try { localStorage.removeItem('da.sb.found'); } catch (e) { /* none */ } });
+  const page = await ctx.newPage(); watch(page, 'home-' + tag); await page.goto('https://oan.test/'); await page.waitForSelector('#hm-sb .sl'); await sleep(900);
+  const h0 = await page.evaluate(() => { const sb = document.querySelector('#hm-sb'); return { low: sb.classList.contains('low'), jacks: [...sb.querySelectorAll('.sl')].map(s => s.dataset.s), dark: sb.querySelectorAll('.sl.lk').length, wires: HOME.wires(), oc: sb.querySelector('.oc').textContent, wired: [...document.querySelectorAll('.hm-card.wired')].map(c => c.dataset.id).sort(), gets: document.querySelector('[data-id="wish"] .hm-lamps').textContent, sbH: sb.getBoundingClientRect().height, peek: innerHeight - sb.getBoundingClientRect().top, fit: [HOME.fits('zine', 'kit'), HOME.fits('wish', 'space'), HOME.fits('radio', 'wish')], mix: [HOME.mix('#FF5436', '#FFB000', 0), HOME.mix('#FF5436', '#FFB000', 1), HOME.mix('#FF5436', '#FFB000') === HOME.mix('#FFB000', '#FF5436')] }; });
+  check(`home (${tag}): idle the board sits low; only found jacks show, none dark; RADIO and W.I.S.H. start wired, both cards wear it, W.I.S.H. takes the song`, h0.low && h0.peek < 40 && !h0.dark && h0.jacks.slice(0, 7).join() === 'wish,radio,zine,kit,space,reef,eye' && h0.jacks.length <= 8 && JSON.stringify(h0.wires) === '[["radio","wish"]]' && /SONG CODE ON THE SLIP/.test(h0.oc) && h0.wired.join() === 'radio,wish' && /\+ SONG/.test(h0.gets), JSON.stringify(h0));
+  check(`home (${tag}): ports decide every cable; colours mix in OKLab, each end its own`, h0.fit.join() === 'false,false,true' && h0.mix[0] === '#FF5436' && h0.mix[1] === '#FFB000' && h0.mix[2], JSON.stringify(h0));
+  /* a cable from ZINE: KIT goes dull and takes nothing; ENGINE takes it */
+  const h1 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), sb = document.querySelector('#hm-sb');
+    sb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); await z(600);
+    const at = id => { const b = sb.querySelector('[data-j="' + id + '"]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }, j = sb.querySelector('[data-j="zine"]');
+    const drag = async to => { const [x, y] = at('zine'), [tx, ty] = at(to), ev = (t, X, Y) => j.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, clientX: X, clientY: Y, pointerId: 5, pointerType: 'touch' }));
+      ev('pointerdown', x, y); ev('pointermove', x + 12, y + 12); ev('pointermove', tx, ty); await z(120); const s = { ok: [...sb.querySelectorAll('.sl.ok')].map(q => q.dataset.s), dl: [...sb.querySelectorAll('.sl.dl')].map(q => q.dataset.s) }; ev('pointerup', tx, ty); await z(200); return s; };
+    const toKit = await drag('kit'), w1 = HOME.wires(), toSpace = await drag('space'), w2 = HOME.wires();
+    return { raised: !sb.classList.contains('low'), toKit, w1, toSpace, w2, oc: [...sb.querySelectorAll('.oc li')].map(li => li.textContent), space: (document.querySelector('[data-id="space"] .hm-lamps') || {}).textContent }; });
+  check(`home (${tag}): touched, it rises; a cable in hand lights what fits and dulls KIT, which takes nothing; ENGINE takes it, and the outcomes list it in wiring order`, h1.raised && h1.toKit.dl.includes('kit') && !h1.toKit.ok.includes('kit') && h1.toKit.ok.includes('space') && h1.w1.length === 1 && h1.w2.length === 2 && h1.oc.length === 2 && /ZINE · ENGINE/.test(h1.oc[1]) && /QR ON THE ZINE/.test(h1.oc[1]) && /\+ WORDS/.test(h1.space || '') === false && /\+ PHOTO/.test(h1.space || ''), JSON.stringify(h1));
+  const h2 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)); localStorage.setItem('da.sb.v2', JSON.stringify([['radio', 'wish'], ['zine', 'space'], ['kit', 'space'], ['reef', 'eye'], ['zine', 'kit']])); return 1; });
+  await page.reload(); await page.waitForSelector('#hm-sb .sl'); await sleep(600);
+  const h3 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)); const w = HOME.wires(); document.querySelector('#hm-sb').classList.remove('low'); document.querySelector('#hm-col').dispatchEvent(new Event('scroll')); await z(100); return { w, low: document.querySelector('#hm-sb').classList.contains('low') }; });
+  check(`home (${tag}): a saved board keeps four cables at most and drops a pair the ports refuse; scrolling sinks the board`, h2 && h3.w.length === 4 && !h3.w.some(x => x.join() === 'zine,kit') && h3.low, JSON.stringify(h3));
+  await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }
+
 // ───────── aura: the showcase at /. The seed, the bang, the globe, the irukandji, one piece through its four steps (ONLY=aura) ─────────
 for (const AD of (process.env.AURA_DESK ? [true] : [false, true])) if (run('aura')) try {
   const tag = AD ? 'desk' : 'phone', P = AD ? 'ad' : 'ap';

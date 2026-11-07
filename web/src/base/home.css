@@ -1,8 +1,8 @@
 /* the home of cards: one column of art cards, the sea over it (the Irukandji swimming at its surface), the switchboard under it.
    The cards are mostly black and white, a quarter blueprint blue (one band flowing down through them all), and one colour each.
    The sea and the switchboard are in full colour. The light switch changes the page and the sea, never the cards */
-html.hm-on { --hm-top: 52px; --hm-sbh: 104px; --title: 1.6;
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 -.12'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+html.hm-on { --hm-top: 52px; --hm-sbh: 84px; --hm-peek: 22px; --title: 1.6;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .25 -.06'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 #hm { --hm-bg: #E8E7E3; --hm-ink: #111214; --hm-dim: rgba(17, 18, 20, .5); --hm-line: rgba(17, 18, 20, .18); --hm-sb: #0C0D0E; --sea: #17457F; }
 #hm.night { --hm-bg: #0D0E0F; --hm-ink: #F4F1E8; --hm-dim: rgba(244, 241, 232, .5); --hm-line: rgba(244, 241, 232, .18); --sea: #06152A; }
 html.hm-on body { overscroll-behavior: none; }
@@ -32,11 +32,11 @@ html.hm-away #hm-top nav { display: none; }
 
 /* the column: one card to a screen, snapped as a page is turned */
 #hm-col { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; scroll-padding-top: calc(var(--hm-top) + env(safe-area-inset-top) + 10px);
-  padding: calc(var(--hm-top) + env(safe-area-inset-top) + 10px) 10px calc(var(--hm-sbh) + env(safe-area-inset-bottom) + 10px); display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; scrollbar-width: none; }
+  padding: calc(var(--hm-top) + env(safe-area-inset-top) + 10px) 10px calc(var(--hm-peek) + env(safe-area-inset-bottom) + 10px); display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; scrollbar-width: none; }
 #hm-col::-webkit-scrollbar { display: none; }
 .hm-card { position: relative; flex: none; scroll-snap-align: start; scroll-snap-stop: always; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; max-width: 560px; width: 100%; margin: 0 auto;
   container-type: size; --c-bg: #ECEBE7; --c-ink: #0A0A0A; background: var(--c-bg); color: var(--c-ink); box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 14px 30px -18px rgba(0, 0, 0, .45); }
-.hm-card.full, .hm-card.half { height: calc(100dvh - var(--hm-top) - var(--hm-sbh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px); min-height: 440px; }
+.hm-card.full, .hm-card.half { height: calc(100dvh - var(--hm-top) - var(--hm-peek) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px); min-height: 440px; }
 .hm-art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .hm-l { position: absolute; inset: -14% -4%; will-change: transform; }
 .hm-l > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -143,11 +143,11 @@ html.hm-away #hm-top nav { display: none; }
 
 /* on a wide screen: posters on a wall, the first one across it */
 @media (min-width: 900px) {
-  html.hm-on { --hm-top: 64px; --hm-sbh: 118px; }
+  html.hm-on { --hm-top: 64px; --hm-sbh: 88px; }
   #hm-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding-left: max(28px, calc((100vw - 1240px) / 2)); padding-right: max(28px, calc((100vw - 1240px) / 2)); align-content: start; }
   #hm-col .hm-card { max-width: none; margin: 0; }
   #hm-col .hm-card:first-child { grid-column: 1 / -1; }
-  .hm-card.full, .hm-card.half { height: calc(100dvh - var(--hm-top) - var(--hm-sbh) - 40px); min-height: 520px; }
+  .hm-card.full, .hm-card.half { height: calc(100dvh - var(--hm-top) - var(--hm-peek) - 40px); min-height: 520px; }
   .hm-dots { right: 10px; }
 }
 
@@ -177,11 +177,11 @@ html.hm-away #hm-top nav { display: none; }
 .hm-say { min-height: 1.2em; color: var(--hm-dim); }
 
 /* the switchboard: jacks for every card, cables between them */
-#hm-sb { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; height: calc(var(--hm-sbh) + env(safe-area-inset-bottom)); padding: 14px 14px env(safe-area-inset-bottom); background: var(--hm-sb); border-radius: 26px 26px 0 0; border-top: 1px solid var(--hm-line); box-shadow: 0 -8px 24px rgba(0, 0, 0, .25); transition: height .4s cubic-bezier(.2, .8, .2, 1); touch-action: none; user-select: none; -webkit-user-select: none; }
-#hm-sb.big { height: calc(min(58vh, 460px) + env(safe-area-inset-bottom)); }
+#hm-sb { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; height: calc(var(--hm-sbh) + env(safe-area-inset-bottom)); padding: 12px 12px env(safe-area-inset-bottom); background: var(--hm-sb); border-radius: 26px 26px 0 0; border-top: 1px solid var(--hm-line); box-shadow: 0 -8px 24px rgba(0, 0, 0, .25); transition: height .4s cubic-bezier(.2, .8, .2, 1), transform .45s cubic-bezier(.2, .8, .2, 1); touch-action: none; user-select: none; -webkit-user-select: none; }
+#hm-sb.big { height: calc(min(40vh, 320px) + env(safe-area-inset-bottom)); }
 #hm-sb .grab { position: absolute; left: 50%; top: 0; width: 64px; height: 18px; transform: translateX(-50%); display: grid; place-items: center; }
 #hm-sb .grab::after { content: ''; width: 28px; height: 3px; border-radius: 2px; background: var(--hm-dim); }
-#hm-sb .jk { position: relative; height: 100%; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(3, 1fr); align-items: center; justify-items: center; }
+#hm-sb .jk { position: relative; height: 100%; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(30px, 1fr); align-content: center; align-items: center; justify-items: center; }
 /* one slot to each thing: its mark, its small light, its single jack */
 #hm-sb .sl { position: relative; display: flex; align-items: center; gap: 4px; color: var(--hm-dim); }
 #hm-sb .sl .g { position: relative; width: 14px; height: 14px; display: grid; place-items: center; }
@@ -190,16 +190,16 @@ html.hm-away #hm-top nav { display: none; }
 #hm-sb .sl svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 #hm-sb .sl .f { fill: currentColor; stroke: none; }
 #hm-sb .sl:not(.lk) { color: color-mix(in srgb, var(--sc) 55%, #6B6B6B); }
-#hm-sb .sl.on { color: var(--sc); }
+#hm-sb .sl.on { color: var(--mx, var(--sc)); }
 #hm-sb .sl .led { position: absolute; right: -3px; top: -3px; width: 4px; height: 4px; border-radius: 50%; background: #2A2C2E; }
-#hm-sb .sl.on .led { background: var(--sc); box-shadow: 0 0 6px var(--sc); }
+#hm-sb .sl.on .led { background: var(--mx, var(--sc)); box-shadow: 0 0 6px var(--mx, var(--sc)); }
 #hm-sb .sl::after { content: attr(data-n); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 6px; border-radius: 3px; background: var(--hm-ink); color: var(--hm-sb); font-size: 9px; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 2; }
 #hm-sb .sl.say::after { opacity: 1; }
 @media (hover: hover) { #hm-sb .sl[data-n]:hover::after { opacity: 1; } }
 #hm-sb .j { position: relative; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--hm-dim) !important; background: #000 !important; box-shadow: inset 0 0 0 3px var(--hm-sb); touch-action: none; transition: transform .15s, border-color .2s, box-shadow .2s; }
 #hm-sb.big .j { width: 30px; height: 30px; }
 #hm-sb .j::before { content: ''; position: absolute; inset: -9px; }
-#hm-sb .sl.on .j { border-color: var(--sc) !important; box-shadow: inset 0 0 0 3px var(--hm-sb), 0 0 8px var(--sc); }
+#hm-sb .sl.on .j { border-color: var(--mx, var(--sc)) !important; box-shadow: inset 0 0 0 3px var(--hm-sb), 0 0 8px var(--mx, var(--sc)); }
 /* not found yet: a dark hole with no mark */
 #hm-sb .sl.lk .g { opacity: 0; }
 #hm-sb .sl.lk .j { border-color: rgba(255, 255, 255, .12) !important; }
@@ -208,14 +208,11 @@ html.hm-away #hm-top nav { display: none; }
 #hm-sb .sl.hot .j { transform: scale(1.25); border-color: #5CE07A !important; box-shadow: 0 0 10px #5CE07A; }
 #hm-sb .sl.zap .j { animation: hm-zap .6s ease-out; }
 @keyframes hm-zap { 0% { box-shadow: 0 0 0 0 rgba(233, 196, 106, .9); } 100% { box-shadow: 0 0 0 16px rgba(233, 196, 106, 0); } }
-#hm-sb svg.cab { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-#hm-sb svg.cab path { fill: none; stroke-width: 3.2; stroke-linecap: round; opacity: .92; }
-#hm-sb svg.cab path.fall { transition: d .5s cubic-bezier(.5, 0, .9, .5), opacity .5s; opacity: 0; }
-#hm-sb svg.cab circle { stroke: none; }
+#hm-sb canvas.cab { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: inherit; }
 #hm-sb .rs { position: absolute; right: 12px; top: 6px; font-size: 9px; color: var(--hm-dim); padding: 4px; display: none; }
 #hm-sb.big .rs { display: block; }
 
-@media (min-width: 760px) { html.hm-on { --hm-sbh: 118px; } #hm-sb .jk { max-width: 620px; margin: 0 auto; } }
+@media (min-width: 760px) { html.hm-on { --hm-sbh: 88px; } #hm-sb .jk { max-width: 620px; margin: 0 auto; } }
 @media (prefers-reduced-motion: reduce) { .hm-sweep { animation: none; } #hm-x, #hm-reef, #hm-sb { transition: none; } }
 .hm-t.lc { text-transform: none; }
 html.hm-on .au-sidek { display: none !important; } /* the island kit and the network are cards now */
@@ -223,7 +220,34 @@ html.hm-on .au-sidek { display: none !important; } /* the island kit and the net
 #hm-sb { --hm-ink: #F4F1E8; --hm-dim: rgba(244, 241, 232, .55); --hm-line: rgba(244, 241, 232, .2); color: var(--hm-ink); }
 /* the four cables each person has: hung at the top left, in their colours; one leaves the hook when it is plugged in */
 #hm-sb .cb { position: absolute; left: 14px; top: 7px; display: flex; gap: 4px; }
-#hm-sb .cb i { width: 3px; height: 9px; border-radius: 2px; }
+#hm-sb .cb i { width: 2px; height: 11px; border-radius: 2px; background: var(--hm-ink); opacity: .7; transform-origin: top; animation: hm-hang 4s ease-in-out infinite; }
+#hm-sb .cb i:nth-child(2) { animation-delay: -1s; } #hm-sb .cb i:nth-child(3) { animation-delay: -2s; } #hm-sb .cb i:nth-child(4) { animation-delay: -3s; }
+@keyframes hm-hang { 50% { transform: rotate(6deg); } }
 #hm-sb .cb i.in { opacity: .15; }
 #hm-sb.full .cb { animation: hm-full .5s; }
 @keyframes hm-full { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+/* idle */
+#hm-sb.low { transform: translateY(calc(100% - var(--hm-peek) - env(safe-area-inset-bottom))); cursor: pointer; }
+#hm-sb.low .jk, #hm-sb.low canvas.cab, #hm-sb.low .rs { opacity: .35; }
+#hm-sb .jk, #hm-sb canvas.cab { transition: opacity .3s; }
+/* fits, dull */
+#hm-sb .sl.ok .j { border-color: var(--sc) !important; box-shadow: inset 0 0 0 3px var(--hm-sb), 0 0 0 3px color-mix(in oklab, var(--sc) 35%, transparent); animation: hm-ok 1.2s ease-in-out infinite; }
+#hm-sb .sl.ok { color: var(--sc); }
+#hm-sb .sl.dl { color: #3A3B3D; opacity: .45; }
+#hm-sb .sl.dl .j { border-color: #2A2B2D !important; box-shadow: inset 0 0 0 3px var(--hm-sb); }
+#hm-sb .sl.dl .led { background: #2A2C2E !important; box-shadow: none !important; }
+@keyframes hm-ok { 50% { box-shadow: inset 0 0 0 3px var(--hm-sb), 0 0 0 6px color-mix(in oklab, var(--sc) 15%, transparent); } }
+#hm-sb .sl.hot .j { border-color: var(--sc) !important; box-shadow: 0 0 10px var(--sc); }
+/* outcomes */
+#hm-sb .oc { position: absolute; left: 12px; right: 12px; bottom: calc(100% + 8px); margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; transition: opacity .3s; }
+#hm-sb .oc[hidden], #hm-sb.low .oc { display: none; }
+#hm-sb .oc li { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 4px; background: rgba(10, 11, 12, .9); border-left: 3px solid var(--mx); font-size: 9px; letter-spacing: .06em; }
+#hm-sb .oc b { font-weight: 500; color: var(--mx); }
+#hm-sb .oc span { color: rgba(244, 241, 232, .82); }
+#hm-sb .oc span::before { content: '→ '; color: var(--mx); }
+/* wired card */
+.hm-card.wired::after { content: ''; position: absolute; inset: 0; border: 2px solid var(--mx); border-radius: inherit; pointer-events: none; z-index: 3; }
+.hm-lamps { align-items: center; flex-wrap: wrap; }
+.hm-lamps b { font: 500 9px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .06em; padding: 4px 6px; border-radius: 3px; background: var(--mx); color: #0A0A0A; }
+#hm-sb.big .jk { height: auto; grid-auto-rows: 58px; align-content: start; padding-top: 18px; }

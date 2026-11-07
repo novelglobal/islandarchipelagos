@@ -57,8 +57,8 @@
       if (how === 'tape') { g.fillStyle = BLUE; for (var e = 0; e < pts.length; e += 2) for (var sd = -1; sd <= 1; sd += 2) { var n2 = nrm(e); g.beginPath(); g.arc(pts[e][0] + n2[0] * bw * 0.5 * sd, pts[e][1] + n2[1] * bw * 0.5 * sd, 1 + r() * 3.2, 0, 7); g.fill(); } } }
     g.restore();
     /* its grain: lighter specks and a few darker, then the flaws knocked through */
-    g.save(); g.globalCompositeOperation = 'source-atop'; grain(g, w, h, Math.round(w * h / 90), 'rgba(255,255,255,.22)', 70 + i, 1.4); grain(g, w, h, Math.round(w * h / 160), 'rgba(4,14,30,.35)', 80 + i, 1.6); g.restore();
-    flaws(g, w, h, 90 + i, 0.6);
+    g.save(); g.globalCompositeOperation = 'source-atop'; grain(g, w, h, Math.round(w * h / 180), 'rgba(255,255,255,.22)', 70 + i, 1.4); grain(g, w, h, Math.round(w * h / 320), 'rgba(4,14,30,.35)', 80 + i, 1.6); g.restore();
+    flaws(g, w, h, 90 + i, 0.3);
   }
 
   /* the forms of the reef and the archipelagos, rounded and lit: soft coral, a chrome flower, glass with beads in it, a ribbed disc, honey */
@@ -143,7 +143,7 @@
     '<button id="hm-theme" aria-label="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header>' +
     '<main id="hm-col">' + CARDS.map(cardHTML).join('') + '</main><nav class="hm-dots" aria-hidden="true">' + CARDS.map(function () { return '<i></i>'; }).join('') + '</nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back">‹</button><b></b></header><div class="hm-body"></div></section>' +
-    '<section id="hm-sb" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><div class="jk"></div></section>';
+    '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
   D.body.appendChild(root);
   var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col);
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
@@ -274,7 +274,7 @@
   /* an island's experience (a stack) played in the sheet; wired to W.I.S.H., it starts from W.I.S.H.'s photograph and intention */
   function stackIn(body, id, opt) {
     body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.src = 'x.html?in=1#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
-    if (opt && opt.fill || wired('wish', 'zine')) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; if (p && (p.photo || p.say)) fr.contentWindow.postMessage({ hm: 'fill', img: p.photo || '', words: (p.say || '').toUpperCase().slice(0, 22) }, location.origin); });
+    if (opt && opt.fill || (wired('wish', 'zine') && carry('wish', 'zine').length)) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; if (p && (p.photo || p.say)) fr.contentWindow.postMessage({ hm: 'fill', img: p.photo || '', words: (p.say || '').toUpperCase().slice(0, 22) }, location.origin); });
   }
   /* the island kit: the checklist, kept with the aura's, and printed as a slip */
   function kitIn(body) {
@@ -302,7 +302,7 @@
       '<div id="hm-keeper"></div><p class="hm-h">THE NETWORK</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>';
     $$('[data-mo]', body).forEach(function (b) { b.addEventListener('click', function () { MOTION = b.dataset.mo === 'own' ? null : b.dataset.mo; store.set('da.hm.motion', MOTION); find('style'); cards.forEach(function (el) { var c = byId(el.dataset.id); el.classList.remove('shadow', 'speed'); el.classList.add(MOTION || c.motion); }); $$('[data-mo]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); beep(550, 0.05); }); });
     $$('[data-dk]', body).forEach(function (b) { b.addEventListener('click', function () { setNight(b.dataset.dk === '1'); $$('[data-dk]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); }); });
-    $('#hm-rewire', body).addEventListener('click', function () { WIRES = START.slice(); saveWires(); drawCables(); lamps(); beep(440, 0.08); });
+    $('#hm-rewire', body).addEventListener('click', function () { WIRES = START.slice(); saveWires(); board(); beep(440, 0.08); });
     keeperIn($('#hm-keeper', body));
     partners(true).then(function (l) { var ol = $('.hm-isles', body); if (ol) ol.innerHTML = l.length ? l.map(function (p) { return '<li class="' + (p.ready ? 'on' : '') + '"><i></i><span>' + esc(p.name || p.id) + (p.number ? ' · ' + p.number : '') + '</span></li>'; }).join('') : '<li>—</li>'; });
   }
@@ -516,56 +516,138 @@
   /* the third row: islands, each found by a code from its print or a visit; their marks are islands of their own shape */
   for (var si3 = 0; si3 < 7; si3++) (function (n) { var r = rnd(90 + n), pts = []; for (var q = 0; q < 9; q++) { var an = q / 9 * Math.PI * 2, rr = 5 + r() * 3.5; pts.push((12 + Math.cos(an) * rr).toFixed(1) + ' ' + (12 + Math.sin(an) * rr * 0.8).toFixed(1)); }
     SLOTS.push(['isle' + n, 'AN ISLAND', 0, '<path d="M' + pts.join('L') + 'Z"/>' + '<circle cx="12" cy="12" r="1" class="f"/>']); })(si3);
-  var FOUND = store.get('da.sb.found', []) || [];
+  var FOUND = store.get('da.sb.found', []) || [], jk = null;
   function found(id) { var s = SLOTS.filter(function (q) { return q[0] === id; })[0]; return !!s && (s[2] === 1 || FOUND.indexOf(id) >= 0); }
-  function find(id) { if (found(id) || !SLOTS.some(function (q) { return q[0] === id; })) return; FOUND.push(id); store.set('da.sb.found', FOUND); var sl = jk && jk.querySelector('[data-s="' + id + '"]'); if (sl) { var nm = SLOTS.filter(function (q) { return q[0] === id; })[0][1]; sl.classList.remove('lk'); sl.dataset.n = nm; sl.title = nm; sl.querySelector('.j').setAttribute('aria-label', nm); sl.classList.add('new'); setTimeout(function () { sl.classList.remove('new'); }, 2400); } beep(784, 0.08); setTimeout(function () { beep(1175, 0.1); }, 110); }
+  function find(id) { if (found(id) || !SLOTS.some(function (q) { return q[0] === id; })) return; FOUND.push(id); store.set('da.sb.found', FOUND); if (jk) { buildJacks(); board(); var sl = jk.querySelector('[data-s="' + id + '"]'); if (sl) { sl.classList.add('new'); setTimeout(function () { sl.classList.remove('new'); }, 2400); } } beep(784, 0.08); setTimeout(function () { beep(1175, 0.1); }, 110); }
   /* what is found already, from what this phone has done */
   (function () { var h = new Date().getHours(); if (h >= 19 || h < 6) FOUND.indexOf('moon') < 0 && FOUND.push('moon'); if (store.get('da.aura.printed', 0)) FOUND.indexOf('stamp') < 0 && FOUND.push('stamp'); if ((store.get('da.kin', []) || []).length) FOUND.indexOf('signal') < 0 && FOUND.push('signal'); if ((store.get('da.aura.songs', []) || []).length) FOUND.indexOf('folio') < 0 && FOUND.push('folio'); store.set('da.sb.found', FOUND); })();
 
-  /* the wiring: pairs of slots; the first cable, RADIO to W.I.S.H., is there from the start and can be pulled out */
-  var START = [['radio', 'wish']], MAXW = 4, CAB = ['#E9C46A', '#5CE07A', '#F07167', '#8ECAE6', '#F4F1E8', '#C77DFF'];
+  /* ports: outs, ins and the outcome of each in */
+  var PORTS = {
+    wish: { outs: ['WORDS', 'CODE'], ins: { PICTURE: 'PHOTO ON THE SLIP', SOUND: 'SONG CODE ON THE SLIP', LIST: 'NEXT STEP AT ITS FOOT', LENGTH: 'PRINTS LONG' } },
+    radio: { outs: ['SOUND', 'CODE'], ins: { WORDS: 'WORDS ON THE TAPE', PICTURE: 'COVER ON THE TAPE' } },
+    zine: { outs: ['LENGTH', 'PICTURE'], ins: { WORDS: 'WORDS ON THE ZINE', PICTURE: 'PHOTO IN THE ZINE', CODE: 'QR ON THE ZINE' } },
+    kit: { outs: ['LIST'], ins: { CODE: 'ISLAND CODE ON THE LIST' } },
+    space: { outs: ['WORDS', 'CODE'], ins: { PICTURE: 'PICTURE ON ITS CARD', LIST: 'BUILD LIST IN THE PANEL' } },
+    reef: { outs: ['PICTURE'], ins: { SOUND: 'THE REEF PLAYS IT' } },
+    eye: { outs: ['PICTURE', 'SOUND'], ins: { WORDS: 'WORDS UNDER THE PHOTO', PICTURE: 'PHOTO HELD' } },
+    moon: { outs: ['PICTURE'], ins: {} }, stamp: { outs: ['CODE'], ins: {} }, signal: { outs: ['WORDS'], ins: { CODE: 'CODE SENT TO KIN' } },
+    map: { outs: ['CODE'], ins: { WORDS: 'WORDS ON THE MAP' } }, style: { outs: ['LENGTH'], ins: {} }, booth: { outs: ['PICTURE'], ins: {} }, folio: { outs: ['SOUND'], ins: {} }
+  };
+  for (var pi = 0; pi < 7; pi++) PORTS['isle' + pi] = { outs: ['CODE'], ins: { WORDS: 'PRINTS ON THAT ISLAND', PICTURE: 'PRINTS ON THAT ISLAND' } };
+  var SHORT = { wish: 'W.I.S.H.', radio: 'RADIO', zine: 'ZINE', kit: 'ISLAND', space: 'ENGINE', reef: 'REEF', eye: 'EYE', moon: 'MOON', stamp: 'PRINT', signal: 'KIN', map: 'MAP', style: 'MOTION', booth: 'PHOTO', folio: 'SONG' };
+  var GETS = { WORDS: 'WORDS', PICTURE: 'PHOTO', SOUND: 'SONG', CODE: 'QR', LIST: 'LIST', LENGTH: 'LONG' };
+  function carry(a, b) { var A = PORTS[a], B = PORTS[b]; if (!A || !B || a === b) return []; return A.outs.filter(function (e) { return !!B.ins[e]; }); }
+  function fits(a, b) { return carry(a, b).length > 0 || carry(b, a).length > 0; }
+
+  /* OKLab mix */
+  function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  function gam(v) { v = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; return Math.round(Math.max(0, Math.min(1, v)) * 255); }
+  function toLab(hex) { var n = parseInt(hex.slice(1), 16), r = lin(n >> 16 & 255), g = lin(n >> 8 & 255), b = lin(n & 255);
+    var l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s]; }
+  function fromLab(L) { var l = Math.pow(L[0] + 0.3963377774 * L[1] + 0.2158037573 * L[2], 3), m = Math.pow(L[0] - 0.1055613458 * L[1] - 0.0638541728 * L[2], 3), s = Math.pow(L[0] - 0.0894841775 * L[1] - 1.2914855480 * L[2], 3);
+    var r = gam(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s), g = gam(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s), b = gam(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase(); }
+  function mix(a, b, t) { var A = toLab(a), B = toLab(b), k = t == null ? 0.5 : t; return fromLab([0, 1, 2].map(function (i) { return A[i] + (B[i] - A[i]) * k; })); }
+
+  /* wires: four */
+  var START = [['radio', 'wish']], MAXW = 4;
   var WIRES = store.get('da.sb.v2', null);
   if (!WIRES) { var old = store.get('da.sb.v1', null); WIRES = old ? old.map(function (w) { return w.map(function (x) { x = String(x).split('.')[0]; return x === 'iruk' ? 'eye' : x; }); }).filter(function (w) { return w[0] !== w[1]; }) : START.slice(); }
-  WIRES = WIRES.slice(-MAXW);
-  var sb = $('#hm-sb'), jk = sb.querySelector('.jk');
+  WIRES = WIRES.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW);
+  var sb = $('#hm-sb'); jk = sb.querySelector('.jk'); var oc = sb.querySelector('.oc');
   var SC = { wish: '#7CF2B0', radio: '#B9B2F6', zine: '#FF5436', kit: '#FFB000', space: '#F59878', reef: '#4FC3F7', eye: '#F4F1E8', moon: '#E9E4FF', stamp: '#FF8A5B', signal: '#5CE07A', map: '#FFD84D', style: '#FF6FB5', booth: '#9AE6FF', folio: '#C9F27C' };
-  jk.innerHTML = SLOTS.map(function (s, n) { var on = found(s[0]), sc = SC[s[0]] || ['#FF6FB5', '#9AE6FF', '#FFD84D', '#7CF2B0', '#FF8A5B', '#B9B2F6', '#4FC3F7'][n % 7]; return '<div class="sl' + (on ? '' : ' lk') + '" style="--sc:' + sc + '" data-s="' + s[0] + '"' + (on ? ' data-n="' + s[1] + '" title="' + s[1] + '"' : '') + '><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24">' + s[3] + '</svg><i class="led"></i></span><button class="j" data-j="' + s[0] + '" aria-label="' + (on ? s[1] : 'Not found yet') + '"></button></div>'; }).join('') + '<svg class="cab" aria-hidden="true"></svg>';
-  var cab = jk.querySelector('svg.cab');
+  SLOTS.forEach(function (s, n) { if (!SC[s[0]]) SC[s[0]] = ['#FF6FB5', '#9AE6FF', '#FFD84D', '#7CF2B0', '#FF8A5B', '#B9B2F6', '#4FC3F7'][n % 7]; });
+  var nameOf = function (id) { return SHORT[id] || (SLOTS.filter(function (q) { return q[0] === id; })[0] || [0, String(id).toUpperCase()])[1]; };
+  var wireCol = function (w) { return mix(SC[w[0]], SC[w[1]]); };
+  /* found jacks only */
+  function buildJacks() {
+    jk.innerHTML = SLOTS.filter(function (s) { return found(s[0]); }).map(function (s) { return '<div class="sl" style="--sc:' + SC[s[0]] + '" data-s="' + s[0] + '" data-n="' + s[1] + '" title="' + s[1] + '"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24">' + s[3] + '</svg><i class="led"></i></span><button class="j" data-j="' + s[0] + '" aria-label="' + s[1] + '"></button></div>'; }).join('');
+  }
+  buildJacks();
+  var cab = sb.querySelector('canvas.cab'), cg = cab.getContext('2d'), ckr = 1;
+  function cabSize() { ckr = Math.min(2, devicePixelRatio || 1); cab.width = Math.round(sb.clientWidth * ckr); cab.height = Math.round(sb.clientHeight * ckr); }
   function saveWires() { store.set('da.sb.v2', WIRES); }
   function wired(a, b) { return WIRES.some(function (w) { return (w[0] === a && w[1] === b) || (w[0] === b && w[1] === a); }); }
-  function jpos(id) { var j = jk.querySelector('[data-j="' + id + '"]'), r = j.getBoundingClientRect(), o = jk.getBoundingClientRect(); return [r.left + r.width / 2 - o.left, r.top + r.height / 2 - o.top]; }
-  function sag(a, b) { var d = Math.hypot(b[0] - a[0], b[1] - a[1]), s = 18 + d * 0.28; return 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'C' + a[0].toFixed(1) + ' ' + (a[1] + s).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + (b[1] + s).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); }
-  function drawCables(extra) {
-    var o = WIRES.map(function (w, i) { var a = jpos(w[0]), b = jpos(w[1]), c = CAB[i % CAB.length]; return '<path d="' + sag(a, b) + '" stroke="' + c + '"/><circle cx="' + a[0] + '" cy="' + a[1] + '" r="4" fill="' + c + '"/><circle cx="' + b[0] + '" cy="' + b[1] + '" r="4" fill="' + c + '"/>'; }).join('');
-    cab.innerHTML = o + (extra || ''); var cb = sb.querySelector('.cb'); if (cb) cb.innerHTML = CAB.slice(0, MAXW).map(function (c, i) { return '<i' + (i < WIRES.length ? ' class="in"' : '') + ' style="background:' + c + '"></i>'; }).join(''); $$('.sl', jk).forEach(function (sl) { sl.classList.toggle('on', WIRES.some(function (w) { return w[0] === sl.dataset.s || w[1] === sl.dataset.s; })); });
+  function jpos(id) { var j = jk.querySelector('[data-j="' + id + '"]'); if (!j) return null; var r = j.getBoundingClientRect(), o = sb.getBoundingClientRect(); return [r.left + r.width / 2 - o.left, r.top + r.height / 2 - o.top]; }
+  /* a cable as a tentacle */
+  function tentacle(a, b, ca, cb, t, seed, alpha) {
+    var A0 = alpha == null ? 0.95 : alpha, d = Math.hypot(b[0] - a[0], b[1] - a[1]), s = 18 + d * 0.28, P = [a, [a[0], a[1] + s], [b[0], b[1] + s], b], N = 30, pts = [];
+    for (var k = 0; k <= N; k++) { var u = k / N, v = 1 - u, c = [v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u], x = 0, y = 0; for (var q = 0; q < 4; q++) { x += c[q] * P[q][0]; y += c[q] * P[q][1]; }
+      var env = Math.sin(u * Math.PI), wv = RM.matches ? 0 : (Math.sin(u * 7 - t * 1.4 + seed) * 2.4 + noise(seed, u * 2, t * 0.5) * 2) * env; pts.push([x + wv * 0.6, y + wv]); }
+    var gr = cg.createLinearGradient(a[0], a[1], b[0] + 0.01, b[1]); [0, 0.25, 0.5, 0.75, 1].forEach(function (k) { gr.addColorStop(k, k === 0 ? ca : k === 1 ? cb : mix(ca, cb, k)); });
+    cg.lineCap = 'round'; cg.lineJoin = 'round'; cg.strokeStyle = gr; cg.globalAlpha = A0; cg.lineWidth = 2.6; trace(cg, pts); cg.stroke();
+    cg.globalAlpha = A0 * 0.35; cg.lineWidth = 0.7; trace(cg, pts.map(function (p) { return [p[0] + 1.6, p[1] - 1]; })); cg.stroke();
+    cg.fillStyle = gr; for (var e = 1; e < N * 0.2; e++) [e, N - e].forEach(function (i, side) { cg.globalAlpha = A0 * (0.45 + 0.35 * Math.sin(t * 1.4 - e * 0.5 + side + seed)); cg.beginPath(); cg.arc(pts[i][0], pts[i][1], e % 3 === 0 ? 1.7 : 1.15, 0, 7); cg.fill(); });
+    cg.globalAlpha = A0; [[a, ca], [b, cb]].forEach(function (p) { cg.fillStyle = p[1]; cg.beginPath(); cg.arc(p[0][0], p[0][1], 4, 0, 7); cg.fill(); }); cg.globalAlpha = 1;
   }
-  /* what a wire does, either way round: each known pair changes a card; anything else still answers, with a spark and a note */
-  var DOES = { 'radio+wish': 'song', 'wish+zine': 'strip', 'radio+zine': 'code', 'kit+wish': 'step', 'kit+zine': 'step' };
-  var pairKey = function (a, b) { return [a, b].sort().join('+'); };
+  var LOOSE = null;
+  function drawCables(t) {
+    if (t == null) t = performance.now() / 1000; if (cab.width !== Math.round(sb.clientWidth * ckr) || cab.height !== Math.round(sb.clientHeight * ckr)) cabSize();
+    cg.setTransform(1, 0, 0, 1, 0, 0); cg.clearRect(0, 0, cab.width, cab.height); cg.setTransform(ckr, 0, 0, ckr, 0, 0);
+    WIRES.forEach(function (w, i) { var a = jpos(w[0]), b = jpos(w[1]); if (a && b) tentacle(a, b, SC[w[0]], SC[w[1]], t, i * 2.1 + 1); });
+    if (LOOSE) { var a = jpos(LOOSE.from), to = LOOSE.to ? jpos(LOOSE.to) : null; if (a) tentacle(a, to || [LOOSE.x, LOOSE.y], SC[LOOSE.from], to ? SC[LOOSE.to] : INK, t, 9, LOOSE.fall != null ? Math.max(0, LOOSE.fall) : 0.9); }
+  }
+  /* outcomes, stacks, board, lamps */
+  function outcomes() {
+    var out = []; WIRES.forEach(function (w) { [[w[0], w[1]], [w[1], w[0]]].forEach(function (d) { carry(d[0], d[1]).forEach(function (e) { out.push({ from: d[0], to: d[1], el: e, line: PORTS[d[1]].ins[e], col: wireCol(w) }); }); }); });
+    return out; }
+  function stacks() { var g = []; WIRES.forEach(function (w) { var hit = g.filter(function (s) { return s.ids.indexOf(w[0]) >= 0 || s.ids.indexOf(w[1]) >= 0; }), s = hit[0];
+      if (!s) { s = { ids: [], wires: [] }; g.push(s); } hit.slice(1).forEach(function (o) { o.ids.forEach(function (x) { if (s.ids.indexOf(x) < 0) s.ids.push(x); }); s.wires = s.wires.concat(o.wires); g.splice(g.indexOf(o), 1); });
+      [w[0], w[1]].forEach(function (x) { if (s.ids.indexOf(x) < 0) s.ids.push(x); }); s.wires.push(w); });
+    return g; }
+  function board() {
+    $$('.sl', jk).forEach(function (sl) { var id = sl.dataset.s, ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; }); sl.classList.toggle('on', ws.length > 0); sl.style.setProperty('--mx', ws.length ? wireCol(ws[ws.length - 1]) : SC[id]); });
+    var cb = sb.querySelector('.cb'); if (cb) cb.innerHTML = [0, 1, 2, 3].map(function (i) { return '<i' + (i < WIRES.length ? ' class="in"' : '') + '></i>'; }).join('');
+    var outs = outcomes();
+    oc.innerHTML = stacks().map(function (s) { var lines = outs.filter(function (o) { return s.wires.some(function (w) { return (w[0] === o.from && w[1] === o.to) || (w[1] === o.from && w[0] === o.to); }); });
+      return '<li style="--mx:' + wireCol(s.wires[0]) + '"><b>' + s.ids.map(nameOf).map(esc).join(' · ') + '</b>' + lines.map(function (o) { return '<span style="--mx:' + o.col + '">' + esc(o.line) + '</span>'; }).join('') + '</li>'; }).join('');
+    oc.hidden = !WIRES.length;
+    lamps(); drawCables();
+  }
   function lamps() {
-    cards.forEach(function (el) { var id = el.dataset.id, l = el.querySelector('.hm-lamps'); if (!l) return; l.innerHTML = WIRES.filter(function (w) { return w[0] === id || w[1] === id; }).map(function (w) { var i = WIRES.indexOf(w); return '<i style="color:' + CAB[i % CAB.length] + '"></i>'; }).join(''); });
-    var st = $('[data-strip]'); if (st) st.hidden = !wired('wish', 'zine');
+    var outs = outcomes();
+    cards.forEach(function (el) { var id = el.dataset.id, l = el.querySelector('.hm-lamps'), ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; });
+      el.classList.toggle('wired', ws.length > 0); if (ws.length) el.style.setProperty('--mx', wireCol(ws[0])); else el.style.removeProperty('--mx');
+      if (!l) return; var got = outs.filter(function (o) { return o.to === id; });
+      l.innerHTML = ws.map(function (w) { return '<i style="color:' + wireCol(w) + '"></i>'; }).join('') + got.map(function (o) { return '<b style="--mx:' + o.col + '">+ ' + GETS[o.el] + '</b>'; }).join(''); });
+    var st = $('[data-strip]'); if (st) st.hidden = !(wired('zine', 'wish') && carry('zine', 'wish').indexOf('LENGTH') >= 0);
   }
-  var drag = null;
-  jk.addEventListener('pointerdown', function (e) { var j = e.target.closest('.j'); if (!j) return; e.preventDefault(); ac(); if (!found(j.dataset.j)) { spark(j.dataset.j); return; } drag = { from: j.dataset.j, x: e.clientX, y: e.clientY, moved: false }; j.setPointerCapture(e.pointerId); j.parentNode.classList.add('hot'); beep(330, 0.04); });
+  /* fits lit, the rest dull */
+  function fitsShow(from) { $$('.sl', jk).forEach(function (q) { var id = q.dataset.s; q.classList.toggle('ok', !!from && id !== from && fits(from, id)); q.classList.toggle('dl', !!from && id !== from && !fits(from, id)); }); }
+  var drag = null, showT = 0;
+  jk.addEventListener('pointerdown', function (e) { var j = e.target.closest('.j'); if (!j) return; e.preventDefault(); ac(); if (sb.classList.contains('low')) { rise(); return; }
+    clearTimeout(showT); drag = { from: j.dataset.j, x: e.clientX, y: e.clientY, moved: false }; try { j.setPointerCapture(e.pointerId); } catch (x) { /* none */ } j.parentNode.classList.add('hot'); fitsShow(drag.from); beep(330, 0.04); });
   jk.addEventListener('pointermove', function (e) { if (!drag) return; if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) drag.moved = true; if (!drag.moved) return;
-    var o = jk.getBoundingClientRect(), a = jpos(drag.from), b = [e.clientX - o.left, e.clientY - o.top]; drawCables('<path d="' + sag(a, b) + '" stroke="' + CAB[WIRES.length % CAB.length] + '"/>');
-    var over = D.elementFromPoint(e.clientX, e.clientY), osl = over && over.closest && over.closest('.sl'); $$('.sl', jk).forEach(function (q) { q.classList.toggle('hot', q.dataset.s === drag.from || q === osl); }); });
-  function up(e) { if (!drag) return; var from = drag.from, moved = drag.moved; drag = null; $$('.sl', jk).forEach(function (q) { q.classList.remove('hot'); });
-    if (!moved) { var at = -1; WIRES.forEach(function (w, i) { if (w[0] === from || w[1] === from) at = i; }); if (at >= 0) { WIRES.splice(at, 1); saveWires(); drawCables(); lamps(); beep(196, 0.1); } else say(from); return; }
-    var t = D.elementFromPoint(e.clientX, e.clientY), sl = t && t.closest && t.closest('.sl'), to = sl && sl.dataset.s;
-    if (to && to !== from && found(to) && !wired(from, to) && WIRES.length >= MAXW) { sb.classList.remove('full'); void sb.offsetWidth; sb.classList.add('full'); to = null; }
-    if (!to || to === from || !found(to)) { if (to && !found(to)) spark(to); var o = jk.getBoundingClientRect(), a = jpos(from), b = [e.clientX - o.left, e.clientY - o.top]; drawCables('<path class="fall" d="' + sag(a, [b[0], o.height + 30]) + '" stroke="' + CAB[WIRES.length % CAB.length] + '"/>'); setTimeout(function () { drawCables(); }, 520); beep(150, 0.12); return; }
-    if (!wired(from, to)) { WIRES.push([from, to]); saveWires(); } drawCables(); lamps();
-    if (DOES[pairKey(from, to)]) { beep(660, 0.06); setTimeout(function () { beep(880, 0.08); }, 80); } else spark(to); }
+    var o = sb.getBoundingClientRect(), over = D.elementFromPoint(e.clientX, e.clientY), osl = over && over.closest && over.closest('.sl'), to = osl && osl.dataset.s !== drag.from && fits(drag.from, osl.dataset.s) ? osl.dataset.s : null;
+    LOOSE = { from: drag.from, x: e.clientX - o.left, y: e.clientY - o.top, to: to }; $$('.sl', jk).forEach(function (q) { q.classList.toggle('hot', q.dataset.s === drag.from || q.dataset.s === to); }); });
+  function up(e) { if (!drag) return; var from = drag.from, moved = drag.moved; drag = null; $$('.sl', jk).forEach(function (q) { q.classList.remove('hot'); }); idleSoon();
+    if (!moved) { LOOSE = null; var at = -1; WIRES.forEach(function (w, i) { if (w[0] === from || w[1] === from) at = i; });
+      if (at >= 0) { WIRES.splice(at, 1); saveWires(); fitsShow(null); board(); beep(196, 0.1); } else { say(from); showT = setTimeout(function () { fitsShow(null); }, 1800); } return; }
+    fitsShow(null); var t = D.elementFromPoint(e.clientX, e.clientY), sl = t && t.closest && t.closest('.sl'), to = sl && sl.dataset.s;
+    if (to && to !== from && fits(from, to) && !wired(from, to) && WIRES.length >= MAXW) { sb.classList.remove('full'); void sb.offsetWidth; sb.classList.add('full'); to = null; }
+    if (!to || to === from || !fits(from, to)) { if (to && to !== from) spark(to); var o = sb.getBoundingClientRect(), f0 = performance.now(); LOOSE = { from: from, x: e.clientX - o.left, y: o.height + 40, fall: 0.9 };
+      (function fade() { if (!LOOSE || LOOSE.fall == null) return; LOOSE.fall = 0.9 - (performance.now() - f0) / 520; if (LOOSE.fall <= 0) LOOSE = null; else requestAnimationFrame(fade); })(); beep(150, 0.12); return; }
+    LOOSE = null; if (!wired(from, to)) { WIRES.push([from, to]); saveWires(); } board();
+    beep(660, 0.06); setTimeout(function () { beep(880, 0.08); }, 80); }
   jk.addEventListener('pointerup', up); jk.addEventListener('pointercancel', up);
-  /* a mistake still does something: the slot sparks and sings its own note */
+  /* spark */
   function spark(id) { var sl = jk.querySelector('[data-s="' + id + '"]'); if (!sl) return; sl.classList.remove('zap'); void sl.offsetWidth; sl.classList.add('zap'); beep(220 * Math.pow(2, (SLOTS.map(function (c) { return c[0]; }).indexOf(id) % 12) / 12), 0.18); }
-  /* its name, only for a moment, only once found */
-  function say(id) { var sl = jk.querySelector('[data-s="' + id + '"]'); if (!sl || !found(id)) { spark(id); return; } $$('.sl.say', jk).forEach(function (q) { if (q !== sl) q.classList.remove('say'); }); sl.classList.add('say'); clearTimeout(sl.__t); sl.__t = setTimeout(function () { sl.classList.remove('say'); }, 1800); beep(440, 0.04); }
-  sb.querySelector('.grab').addEventListener('click', function () { sb.classList.toggle('big'); setTimeout(drawCables, 420); beep(sb.classList.contains('big') ? 440 : 330, 0.05); });
-  sb.querySelector('.rs').addEventListener('click', function () { WIRES = START.slice(); saveWires(); drawCables(); lamps(); beep(440, 0.08); });
-  addEventListener('resize', function () { drawCables(); });
+  function say(id) { var sl = jk.querySelector('[data-s="' + id + '"]'); if (!sl) return; $$('.sl.say', jk).forEach(function (q) { if (q !== sl) q.classList.remove('say'); }); sl.classList.add('say'); clearTimeout(sl.__t); sl.__t = setTimeout(function () { sl.classList.remove('say'); }, 1800); beep(440, 0.04); }
+  /* idle: low */
+  var idleT = 0;
+  function rise() { clearTimeout(idleT); if (sb.classList.contains('low')) { sb.classList.remove('low'); beep(392, 0.04); } }
+  function idleSoon(ms) { clearTimeout(idleT); idleT = setTimeout(function () { if (!drag && !sb.classList.contains('big')) sb.classList.add('low'); }, ms || 3600); }
+  sb.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') rise(); });
+  sb.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && !drag) idleSoon(1400); });
+  sb.addEventListener('pointerdown', function (e) { if (sb.classList.contains('low')) { if (!e.target.closest('.j')) e.preventDefault(); rise(); } idleSoon(); }, true);
+  sb.addEventListener('focusin', rise); sb.addEventListener('focusout', function () { idleSoon(); });
+  col.addEventListener('scroll', function () { if (!drag && !sb.classList.contains('big')) { clearTimeout(idleT); sb.classList.add('low'); } }, { passive: true });
+  sb.querySelector('.grab').addEventListener('click', function () { rise(); sb.classList.toggle('big'); if (!sb.classList.contains('big')) idleSoon(); beep(sb.classList.contains('big') ? 440 : 330, 0.05); });
+  sb.querySelector('.rs').addEventListener('click', function () { WIRES = START.slice(); saveWires(); board(); beep(440, 0.08); });
+  addEventListener('resize', cabSize);
+  cabSize(); board();
 
   /* ───────── one loop for everything that moves ───────── */
   var last = performance.now(), wasOpen = false;
@@ -580,8 +662,9 @@
     tx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
     drawJelly(tx, t);
+    if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
   }
   seaSize(); requestAnimationFrame(frame);
-  requestAnimationFrame(function () { paintAll(); parallax(); drawCables(); lamps(); if (/[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
-  window.HOME = { open: open, home: home, wired: wired, find: find, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J };
+  requestAnimationFrame(function () { paintAll(); parallax(); board(); if (/[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
+  window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J };
 })();
