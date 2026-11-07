@@ -15,4 +15,5 @@
   ]
   // the full-size photographs, for the approval page only (free up to 10 GB); the bucket is made by itself on deploy (docs/rebuild.md)
   , "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "front-media" }]
+  , "previews": {}
 }
