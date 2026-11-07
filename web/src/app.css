@@ -3378,3 +3378,5 @@ html.in-aura #sec-set{display:none!important}
 /* the portfolio's sources: what novel.global is, small, above the list */
 #sec-src .src-about { margin: 6px 0 12px; max-width: 62ch; font-size: 11px; line-height: 1.5; opacity: .8; }
 /* the printer's kit: four lines under it, nothing more */
+#zine-tools .zt.zlong { width: auto; padding: 0 9px; font: 600 11px/1 "Departure Mono", ui-monospace, monospace; letter-spacing: .08em; }
+#zine-tools .zt.zlong[aria-pressed="true"] { background: #111214; color: #F4F1E8; }

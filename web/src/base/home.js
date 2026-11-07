@@ -23,14 +23,14 @@
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'full', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'zine', size: 'full', title: 'THERMAL ZINE MAKER', opens: 'stack:tall', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'zine', size: 'full', title: 'THERMAL ZINE MAKER', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'full', title: 'ISLAND', line: 'BUILD A THERMAL SOLAR PRINTER', tag: 'ONE CLICK INSTALL ISLAND', soon: 'MOD AND HACK SWAP COMING SOON', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', line: 'by novel.global', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'panel', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'kit', 'space'];
   var MOTION = store.get('da.hm.motion', null);   // null: each card's own; or 'shadow' / 'speed' for all
   var OWN = { portfolio: '#143D71', wish: '#24402E', radio: '#B9B2F6', zine: '#FF5436', kit: '#FFB000', space: '#F59878' };
-  var OWNPICS = { novelglobal: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return '/cards/chair-' + n + '.jpg'; }), radio: ['/cards/radio.jpg'], zine: ['/cards/zine.jpg'] };
+  var OWNPICS = { novelglobal: [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return '/cards/chair-' + n + '.jpg'; }), radio: ['/cards/radio.jpg'], zine: ['/cards/zine.jpg'] };
   var CPICS = {};   // each card's own pictures, from /api/cards: { pics: [url], speed, shade }
 
   /* ───────── the art: three layers to a card (back, middle, front), painted to the card's size ───────── */
@@ -108,7 +108,7 @@
   }
   var ART = {
     /* CIRCULAR STRATEGY: photographs above, turning; under them a dark patchy green with nothing on it; the band across both */
-    photos: function (L, w, h, i) { var g = L.b, seam = h * 0.56;
+    photos: function (L, w, h, i) { var g = L.b, seam = h * 0.14 / 1.28 + w / 1.08 * 4 / 3;
       g.fillStyle = '#16271C'; g.fillRect(0, seam, w, h - seam); var r = rnd(14);
       for (var k = 0; k < 90; k++) { var px = r() * w, py = seam + r() * (h - seam), pr = 20 + r() * Math.min(w, h) * 0.22; g.fillStyle = ['#24402E', '#1C3324', '#2D4C36', '#122016'][k % 4]; g.globalAlpha = 0.18 + r() * 0.3; g.beginPath(); g.ellipse(px, py, pr, pr * (0.5 + r() * 0.5), r() * 3, 0, 7); g.fill(); }
       g.globalAlpha = 1; grain(g, w, h, Math.round(w * h / 60), 'rgba(255,255,255,.08)', 15); flaws(g, w, h, 16, 0.4);
@@ -141,7 +141,7 @@
   D.body.appendChild(root);
   var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col);
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
-  var OPENS = /^(aura|radio|kit|panel|portfolio|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size'];
+  var OPENS = /^(aura|radio|kit|panel|portfolio|press|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size'];
   function applyCards(text) {
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
@@ -173,7 +173,7 @@
     var extra = sk === 'wish' || c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' || sk === 'zine' ? '<div class="hm-bgimg"></div>' : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="paper"></i><i class="led"></i></div>' : '';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
-      '<div class="hm-art"><div class="hm-l b">' + extra + '<canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
+      '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
       '<div class="hm-keys">' + keys + '</div><div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div></article></section>';
   }
@@ -256,10 +256,11 @@
 
   function open(id, opt) {
     var c = byId(id); if (!c) return; beep(660, 0.06);
-    if (c.opens === 'aura') return goAway(function () { var a = AU(); if (a && a.go) a.go('iruk', 0); });
+    if (c.opens === 'aura') return goAway(function () { var a = AU(); if (a && a.home) a.home(); });
     if (c.opens === 'radio') return goAway(function () { var a = AU(); if (a && a.dev) a.dev(0); });
     if (c.opens === 'portfolio') { vent(); var au = AU(); if (au && au.can && au.can(3)) return goAway(function () { au.dev(3); });
       return sheet(c.title, function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = c.title; fr.src = 'portfolio.html?in=1'; xv.appendChild(fr); }); }
+    if (c.opens === 'press') return sheet(c.title, function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = c.title; fr.src = 'studio?from=aura&only=print&fmt=long#print'; xv.appendChild(fr); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
@@ -674,7 +675,7 @@
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
     tx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
-    drawJelly(tx, t);
+    if (!away) drawJelly(tx, t);
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
   }
   seaSize(); requestAnimationFrame(frame);

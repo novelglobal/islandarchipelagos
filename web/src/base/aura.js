@@ -517,7 +517,7 @@
     dpr = Math.min(2, window.devicePixelRatio || 1); var W = innerWidth, H = root.clientHeight || innerHeight, sa = safeArea(), sat = sa[0], sab = sa[1]; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
     /* on a phone the rings take most of the width and sit higher; the eye in the middle keeps its own size (R0) */
     var mob = W < 760, R0 = Math.min(W * 0.86, H * 0.74, 560) * 150 / 400, R = mob ? Math.min(W * 0.45, H * 0.3) : R0;
-    var big = !mob && H > 760 && W > 1200, bw = mob ? 116 : big ? 196 : 160, bh = bw * 0.58, by = (mob ? 16 : 22) + sat, cr = mob ? 21 : big ? 26 : 23, gy = by + bh + (mob ? 30 : 38), hry = mob ? 12 : 15;
+    var big = !mob && H > 760 && W > 1200, bw = mob ? 116 : big ? 196 : 160, bh = bw * 0.58, by = (mob ? 16 : 22) + sat + (document.documentElement.classList.contains('hm-on') ? 34 : 0), cr = mob ? 21 : big ? 26 : 23, gy = by + bh + (mob ? 30 : 38), hry = mob ? 12 : 15;
     var tipY = H - (mob ? 34 : 42) - sab - Math.max(0, H - innerHeight), panelTop = gy + hry + cr + (mob ? 16 : 22), panelBot = tipY - (mob ? 44 : 52), pw = mob ? W - 40 : Math.min(big ? 720 : 640, W - 380);
     L = { W: W, H: H, mob: mob, big: big, R: R, R0: R0, cx: W / 2, cy: mob ? H * 0.42 : H / 2, bx: W / 2, by: by, bw: bw, bh: bh, gy: gy, cr: cr, hrx: bw * (mob ? 0.62 : 0.6) + cr, hry: hry,
       hold: [0, 1, 2, 3].map(function (i) { return [W / 2 + [-0.9, -0.3, 0.3, 0.9][i] * cr, gy + (i === 0 || i === 3 ? 0 : 4)]; }),
@@ -1614,7 +1614,7 @@
     sk.addEventListener('click', function (e) { e.stopPropagation(); if (S.plain) { store.set('da.plain', 0); location.replace(location.pathname + '?plain=0'); } else { store.set('da.plain', 1); on('asked'); } });
     if (q) { if (q[1] === '1') on('asked'); return; }
     if (+store.get('da.plain', 0) === 1) { on('asked'); return; }
-    var look = function () { if (document.hidden) { setTimeout(look, 3000); return; } var f0 = S.frames || 0, e0 = S.ferr || 0; setTimeout(function () { var df = (S.frames || 0) - f0, de = (S.ferr || 0) - e0; if (!document.hidden && (df < 4 || de > df / 2)) on(/DuckDuckGo\/|\bDdg\//.test(navigator.userAgent || '') ? 'ddg' : 'still'); }, 3000); };
+    var look = function () { if (document.hidden || asleep) { setTimeout(look, 3000); return; } var f0 = S.frames || 0, e0 = S.ferr || 0; setTimeout(function () { var df = (S.frames || 0) - f0, de = (S.ferr || 0) - e0; if (asleep) { setTimeout(look, 3000); return; } if (!document.hidden && (df < 4 || de > df / 2)) on(/DuckDuckGo\/|\bDdg\//.test(navigator.userAgent || '') ? 'ddg' : 'still'); }, 3000); };
     setTimeout(look, 1500); })();
 
   /* ───────── moving between them ───────── */
@@ -2749,7 +2749,7 @@
   api.awake = function () { return !asleep; };
   api.sleep = function () { asleep = true; devLetGo(); root.hidden = true; humSet(false); };
   var awakeFor = function () { return !location.hash || /^#booth/i.test(location.hash); };
-  api.wake = function () { if (!awakeFor()) return; asleep = false; root.hidden = false; humSet(S.mode !== 'seed'); go(); };
+  api.wake = function () { if (!awakeFor()) return; asleep = false; root.hidden = false; layout(); humSet(S.mode !== 'seed'); go(); };
   api.state = function () { return { mode: S.mode, stage: S.stage, deep: S.deep, sel: S.sel || null, piece: P ? { style: P.style || NG.styleOn(), say: P.say, lat: P.lat, lng: P.lng, photo: !!P.photo, eye: !!P.eye, art: P.art, lines: P.lines, code: P.note && P.note.code, sent: !!P.sent, caught: caught(P), pos: P.pos, adds: P.adds, cn: P.note ? P.note.cn : '', folioId: P.folioId || '', tf: P.tf, paper: P.paper, ptone: P.ptone, spPhoto: !!P.spPhoto } : null, boxes: lastBoxes, halo: S.halo || 0, slip: !!MINI.c, round: !!S.round, form: FORM.key, frames: S.frames || 0, me: S.me || null, folio: slides().length, zoom: SH.pswp && SH.pswp.currSlide ? SH.pswp.currSlide.currZoomLevel / SH.pswp.currSlide.zoomLevels.initial : 1, showing: !!SH.pswp, shows: [SH.n || 0, SH.d || 0], pix: { sub: PIX.sub, tone: PIX.tone }, print: S.lastPrint || null, hum: window.__auraHum || 0, layers: window.__auraLayers || 0, pf: !!PF, noise: !!N3 }; };
   /* the last receipt as it went to the printer, for a look at it */
   /* the receipt as it would print, drawn without sending it (for checking it against the poster) */

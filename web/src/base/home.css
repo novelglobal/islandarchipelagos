@@ -25,8 +25,10 @@ html.hm-away #hm > :not(#hm-top) { display: none; }
 #hm-top nav svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 #hm-top nav .f { fill: currentColor; stroke: none; }
 #hm-snork { background: rgba(244, 241, 232, .14) !important; }
-html.hm-away #hm-top { left: 50%; right: auto; width: 168px; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 6px); height: 40px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
+html.hm-away #hm-top { left: 50%; right: auto; width: 96px; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 8px); height: 32px; border-radius: 16px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
 html.hm-away #hm-top nav { display: none; }
+html.hm-away #hm-top canvas { visibility: hidden; }
+html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-left: 1.5px solid #F4F1E8; border-bottom: 1.5px solid #F4F1E8; transform: translate(-25%, -50%) rotate(45deg); }
 
 /* the column: one card to a screen, snapped as a page is turned */
 #hm-col { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; scroll-padding-top: calc(var(--hm-top) + env(safe-area-inset-top) + 10px);
@@ -90,20 +92,20 @@ html.hm-away #hm-top nav { display: none; }
 
 /* CIRCULAR STRATEGY */
 .hm-card.sk-wish { --c-bg: #16271C; --c-ink: #F4F1E8; }
-.sk-wish .hm-pics { position: absolute; inset: 0; overflow: hidden; background: #24402E; }
-.sk-wish .hm-pics img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .45s ease; will-change: opacity; }
+.hm-pics, .hm-bgimg { position: absolute; left: 0; right: 0; aspect-ratio: 3 / 4; overflow: hidden; }
+.sk-wish .hm-pics { top: 0; background: #16271C; }
+.sk-wish .hm-pics img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .45s ease; will-change: opacity; }
 .sk-wish .hm-l.b > canvas { opacity: .7; }
 .sk-wish .hm-l.m { opacity: .4; }
 .sk-wish .hm-pics img.on { opacity: 1; }
 .sk-wish .hm-in { padding: 0; }
-.sk-wish .hm-t { position: absolute; left: 4cqw; right: 4cqw; top: 57.5%; transform: translateY(-58%); font: 400 13cqw/.95 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; text-transform: none; color: #F4F1E8; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
+.sk-wish .hm-t { position: absolute; left: 4cqw; right: 4cqw; top: min(133.3cqw, 80cqh); transform: translateY(-58%); font: 400 13cqw/.95 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; text-transform: none; color: #F4F1E8; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
 .sk-wish .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 @container (min-aspect-ratio: 1/1) { .sk-wish .hm-t { font-size: 8.4cqw; white-space: nowrap; word-spacing: .14em; } }
 
 /* RADIO */
-.hm-card.sk-radio { --c-bg: #D9D8D4; --c-ink: #0B0B0B; }
-.hm-bgimg { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity .6s; }
-.sk-zine .hm-bgimg { background-position: 68% center; }
+.hm-card.sk-radio { --c-bg: #E7E5E1; --c-ink: #0B0B0B; }
+.hm-bgimg { bottom: 0; background: center / 100% 100% no-repeat; opacity: 0; transition: opacity .6s; -webkit-mask-image: linear-gradient(transparent, #000 14%); mask-image: linear-gradient(transparent, #000 14%); }
 .sk-radio .hm-in { padding: 5cqw 0 0 3cqw; gap: 0; }
 .sk-radio .kas { display: flex; flex-direction: column; align-items: flex-start; gap: .5cqw; margin: 0; }
 .sk-radio .hm-t.kas span, .sk-radio div.kas span { display: inline-block; background: #0B0B0B; color: #F1F0EC; font: 600 9.6cqw/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.012em; padding: .03em .14em .06em; white-space: nowrap; }
@@ -114,7 +116,7 @@ html.hm-away #hm-top nav { display: none; }
 .sk-radio .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 
 /* THERMAL ZINE MAKER */
-.hm-card.sk-zine { --c-bg: #F7F6F2; --c-ink: #0A0A0A; }
+.hm-card.sk-zine { --c-bg: #E4E4E2; --c-ink: #0A0A0A; }
 .sk-zine .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 
 /* ISLAND */
@@ -140,7 +142,7 @@ html.hm-away #hm-top nav { display: none; }
 .sk-space .hm-by { margin: 0; font: italic 900 7.2cqw/1 'Fraunces', Georgia, serif; letter-spacing: -.02em; }
 .sk-space .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 .hm-card.sk-isle { --c-bg: #16271C; --c-ink: #F4F1E8; }
-.sk-isle .hm-pics { position: absolute; inset: 0; } .sk-isle .hm-pics img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.6s; } .sk-isle .hm-pics img.on { opacity: 1; }
+.sk-isle .hm-pics { top: 0; } .sk-isle .hm-pics img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.6s; } .sk-isle .hm-pics img.on { opacity: 1; }
 .sk-isle .hm-t { font: 900 13cqw/.86 'Fraunces', Georgia, serif; text-transform: none; margin-top: auto; }
 
 /* the keeper's own pictures */

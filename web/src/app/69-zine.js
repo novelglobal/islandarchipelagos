@@ -7,8 +7,8 @@
 /* the longest receipt: 1.5 ft, 457 mm, on 80 or 58 mm paper (a canvas unit is its paper's width over its width in mm) */
 const MAX_MM = 457;
 const capH = () => { const F = FORMATS[PRESS.fmt] || {}; return F.n === '80' || F.n === '58' ? Math.round(F.w * MAX_MM / +F.n) : Infinity; };
-const FORMATS = { r80: { dots: 512, w: 320, ic: 'receipt', n: '80' }, r58: { dots: 384, w: 240, ic: 'receipt', n: '58' }, gb: { dots: 160, w: 160, levels: 4, ic: 'gb', n: '' }, zine: { w: 420, h: 595, ic: 'base', n: 'A5' } };
-const PRESS = { story: null, fmt: 'r80', pack: 'life', zl: 1, drawer: null };   /* every visit opens on the 80 mm receipt, the drawers shut */
+const FORMATS = { r80: { dots: 512, w: 320, ic: 'receipt', n: '80' }, long: { dots: 512, w: 320, h: 1200, ic: 'receipt', n: '80', long: 1 }, r58: { dots: 384, w: 240, ic: 'receipt', n: '58' }, gb: { dots: 160, w: 160, levels: 4, ic: 'gb', n: '' }, zine: { w: 420, h: 595, ic: 'base', n: 'A5' } };
+const PRESS = { story: null, fmt: /[?&]fmt=long\b/.test(location.search) ? 'long' : 'r80', pack: 'life', zl: 1, drawer: null };   /* every visit opens on the 80 mm receipt, the drawers shut */
 /* the stories made here that have not yet gone through the press: once one is printed, or sent to print, the press is done
    with it (PRESSED) and it lives on in the portfolio, in SELECT and on the board */
 const PRESSED = new Set(store.get('da.pressed.v1', []));
@@ -37,7 +37,7 @@ function zineTools() {
   const t = $('#zine-tools'); if (t.childElementCount) return;
   t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + ZTOOLS.map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
     + `<span class="swatches" role="group" aria-label="Ink">${SWATCH.map(c => `<button type="button" class="sw${c === ZCOL ? ' on' : ''}" data-ink="${c}" style="--c:${c}" aria-label="Ink ${c}"></button>`).join('')}<label class="sw pick" aria-label="Any ink" data-tip="Any ink"><input type="color" id="zine-col" value="${ZCOL}"></label></span>`
-    + '<input type="file" id="zine-file" accept="image/*" hidden>';
+    + `<button type="button" class="bt zt zlong" data-zlong aria-pressed="${PRESS.fmt === 'long'}" data-tip="Long strip">LONG</button>` + '<input type="file" id="zine-file" accept="image/*" hidden>';
   $('#zine-label').textContent = 'PRINT SHOP · MODEL DA-04 · THERMAL 80 MM / 58 MM · A5 · RUNS ON WHAT IS LEFT OVER · HEAT-SENSITIVE PAPER: KEEP FROM SUN · PRINT WHAT YOU WILL DO';
   edgeFade(t);
 }
@@ -134,7 +134,7 @@ function fitZ() {
 addEventListener('resize', () => { if (zc && !$('#zine').hidden) fitZ(); });
 /* the paper on the desk: the story set on it as it prints, and whatever is drawn over it */
 async function showZine(on) {
-  if (on && faceOf(2) === 'front' && PRESS.fmt !== 'r80') PRESS.fmt = 'r80';
+  if (on && faceOf(2) === 'front' && PRESS.fmt !== 'r80' && PRESS.fmt !== 'long') PRESS.fmt = 'r80';
   const host = $('#zine'); host.hidden = !on; if (!on) return null;
   zineTools(); const f = await loadFabric().catch(() => null); if (!f) return null;
   const F = FORMATS[PRESS.fmt]; host.dataset.fmt = PRESS.fmt;
@@ -670,12 +670,12 @@ async function pressOut(k, given) {
     else if (faceOf(2) === 'front' && S.view === 2) { setView(3); if (phone()) setPane('page'); }
   }
 }
-$('#zine').addEventListener('click', e => { const b = e.target.closest('[data-zt]'); if (b) { zineTool(b.dataset.zt); return; } const ink = e.target.closest('[data-ink]'); if (ink) { setInk(ink.dataset.ink); snd.tick(1300); } });
+$('#zine').addEventListener('click', e => { const lg = e.target.closest('[data-zlong]'); if (lg) { setFormat(PRESS.fmt === 'long' ? 'r80' : 'long'); lg.setAttribute('aria-pressed', String(PRESS.fmt === 'long')); return; } const b = e.target.closest('[data-zt]'); if (b) { zineTool(b.dataset.zt); return; } const ink = e.target.closest('[data-ink]'); if (ink) { setInk(ink.dataset.ink); snd.tick(1300); } });
 $('#zine').addEventListener('change', e => {
   const fl = e.target.files && e.target.files[0]; if (!fl || e.target.id !== 'zine-file') return;
-  const rd = new FileReader(); rd.onload = () => { const im = new Image(); im.onload = async () => { const k = Math.min(1, 1200 / Math.max(im.width, im.height)); const t = document.createElement('canvas'); t.width = Math.round(im.width * k); t.height = Math.round(im.height * k); t.getContext('2d').drawImage(im, 0, 0, t.width, t.height);
-    const c = await showZine(true); const src = t.toDataURL('image/jpeg', 0.85); const F = FORMATS[PRESS.fmt]; const w = c.getWidth() * 0.8; const at = viewSpot();
-    window.fabric.Image.fromURL(await inkPhoto(src, w * (F.dots || F.w * 2) / F.w), img => { img.set({ left: 10, top: Math.max(20, at.y - 60), angle: rnd(-3, 3), daKind: 'image', daSrc: src }); img.scaleToWidth(w); c.add(img); c.setActiveObject(img); c.renderAll(); saveZine(); }); }; im.src = rd.result; };
+  const rd = new FileReader(); rd.onload = () => { const im = new Image(); im.onload = async () => { const LG = FORMATS[PRESS.fmt].long, turn = LG && im.width > im.height, k = Math.min(1, (LG ? 2400 : 1200) / Math.max(im.width, im.height)); const t = document.createElement('canvas'), iw = Math.round(im.width * k), ih = Math.round(im.height * k); t.width = turn ? ih : iw; t.height = turn ? iw : ih; const tx = t.getContext('2d'); if (turn) { tx.translate(ih, 0); tx.rotate(Math.PI / 2); } tx.drawImage(im, 0, 0, iw, ih);
+    const c = await showZine(true); const src = t.toDataURL('image/jpeg', 0.85); const F = FORMATS[PRESS.fmt]; const w = c.getWidth() * (LG ? 1 : 0.8); const at = viewSpot();
+    window.fabric.Image.fromURL(await inkPhoto(src, w * (F.dots || F.w * 2) / F.w), img => { img.set({ left: LG ? 0 : 10, top: LG ? 0 : Math.max(20, at.y - 60), angle: LG ? 0 : rnd(-3, 3), daKind: 'image', daSrc: src }); img.scaleToWidth(w); if (LG && img.getScaledHeight() > c.getHeight()) c.setHeight(Math.min(capH(), Math.ceil(img.getScaledHeight()))); c.add(img); c.setActiveObject(img); c.renderAll(); saveZine(); }); }; im.src = rd.result; };
   rd.readAsDataURL(fl); e.target.value = '';
 });
 /* each reading's small strip, drawn from the story itself */
@@ -689,9 +689,9 @@ async function fillThumbs() {
 }
 /* ───────── the PRINT SHOP page: no words. A printer; the stories waiting; the paper; how it reads; where it goes; what to
    put on it ───────── */
-const PFMT_ICON = k => (k === 'gb' ? `${icon('gb')}` : k === 'zine' ? `${icon('base')}<b class="mono">A5</b>` : `${icon('receipt')}<b class="mono">${FORMATS[k].n}</b>`);
+const PFMT_ICON = k => (k === 'gb' ? `${icon('gb')}` : k === 'long' ? `${icon('receipt')}<b class="mono">LONG</b>` : k === 'zine' ? `${icon('base')}<b class="mono">A5</b>` : `${icon('receipt')}<b class="mono">${FORMATS[k].n}</b>`);
 /* each key says what it is for, small, under its mark: a sense check at a glance */
-const PFMT_W = { r80: 'receipt', r58: 'ticket', gb: '4 tones', zine: 'zine' };
+const PFMT_W = { r80: 'receipt', long: 'long', r58: 'ticket', gb: '4 tones', zine: 'zine' };
 const PHOTO_FOR = { atk: ['soft', 'faces, fur'], dots: ['halftone', 'posters'], bayer: ['grid', 'pixel art'], lines: ['engraved', 'plants, bark'], hard: ['bold', 'type, marks'] };
 const OUTS = [['print', 'print', 'PRINT<br>LOCAL', 'Print on this device'], ['poster', 'stories', 'SAVE<br>WALL', 'Save to the portfolio wall'], ['png', 'download', 'EXPORT<br>PNG', 'Export as a PNG image'], ['escpos', 'escpos', 'EXPORT<br>ESC/POS', 'Export printer bytes (.bin) for a receipt printer on a cable'], ['mesh', 'mesh', 'COPY<br>MESH', 'Copy as a mesh message, to send by radio'], ['oled', 'gb', 'OLED<br>128×64', 'For a LILYGO OLED screen: a 128 x 64 picture and its code']];
 const PACK_W = { paper: 'paper', pixel: 'pixel', life: 'life', jelly: 'jelly', zone: 'zone', goth: 'goth', witch: 'witch', ink: 'ink', turtle: 'turtles', words: 'words', ideas: 'ideas' };
