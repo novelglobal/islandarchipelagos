@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-eye",
+  "version": "1.0.0",
+  "title": "THE EYE",
+  "island": "novel-global",
+  "about": "The banner's eye: a fog horn, and a quick photo on a long press.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "art",
+  "gives": ["PICTURE","SOUND"],
+  "takes": ["WORDS","PICTURE"],
+  "needs": ["novel-global-reef@1"],
+  "settings": [],
+  "mark": "eye.svg",
+  "slip": "eye.slip.json"
+}

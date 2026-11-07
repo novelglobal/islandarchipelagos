@@ -1,0 +1,18 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "pickles-zine",
+  "version": "1.0.0",
+  "title": "LANDSCAPE ZINE",
+  "island": "pickles",
+  "about": "Pickles' long landscape zine.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "art",
+  "gives": ["LENGTH","PICTURE"],
+  "takes": ["WORDS","PICTURE","CODE"],
+  "needs": [],
+  "settings": [
+    {"key":"ink","kind":"switch","label":"HEAVY INK","default":false}
+  ],
+  "mark": "zine.svg",
+  "slip": "zine.slip.json"
+}

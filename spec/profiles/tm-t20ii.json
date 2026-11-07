@@ -1,0 +1,14 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "profile": "printer",
+  "id": "tm-t20ii",
+  "name": "Epson TM-T20II",
+  "protocol": "escpos",
+  "dpi": 203,
+  "papers": [{ "paper": 80, "dots": 576 }],
+  "cutter": "partial",
+  "speed": 250,
+  "darkness": { "min": 70, "max": 130, "default": 100 },
+  "usb": { "vendor": "04b8" },
+  "port": 9100
+}

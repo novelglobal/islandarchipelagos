@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schemas/lives.schema.json",
+  "pack": "lives",
+  "id": "novel-global/lives",
+  "version": "0.1.0",
+  "name": "Lives between Brunswick and the city",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "204 kinds of life and what each needs through the year; 53 things that worked elsewhere; the groups already caring for ground here; the five in greatest need; the El Niño outlook by month. Written by tools/export-front.mjs from novel.global's own files.",
+  "species": { "file": "species.json", "format": "json" },
+  "groups": {
+    "bird": { "w": "BIRDS" }, "parrot": { "w": "PARROTS" }, "waterbird": { "w": "WATERBIRDS" }, "owl": { "w": "OWLS" }, "raptor": { "w": "RAPTORS" },
+    "macropod": { "w": "KANGAROOS" }, "possum": { "w": "POSSUMS" }, "flyingfox": { "w": "FLYING-FOXES" }, "bat": { "w": "BATS" },
+    "rodent": { "w": "RODENTS" }, "fox": { "w": "FOXES" }, "cat": { "w": "CATS" }, "dog": { "w": "DOGS" }, "rabbit": { "w": "RABBITS" },
+    "lizard": { "w": "LIZARDS" }, "snake": { "w": "SNAKES" }, "turtle": { "w": "TURTLES" }, "frog": { "w": "FROGS" },
+    "butterfly": { "w": "BUTTERFLIES" }, "moth": { "w": "MOTHS" }, "bee": { "w": "BEES" }, "wasp": { "w": "WASPS" }, "fly": { "w": "FLIES" },
+    "beetle": { "w": "BEETLES" }, "bug": { "w": "BUGS" }, "spider": { "w": "SPIDERS" }, "orb": { "w": "ORB WEAVERS" },
+    "grasshopper": { "w": "GRASSHOPPERS" }, "mantis": { "w": "MANTISES" }, "dragonfly": { "w": "DRAGONFLIES" },
+    "aquatic": { "w": "WATER LIFE" }, "snail": { "w": "SNAILS" }, "segmented": { "w": "WORMS" }
+  },
+  "stories": [
+    { "kind": "case", "file": "cases.json" },
+    { "kind": "group", "file": "groups.json" },
+    { "kind": "hero", "file": "heroes.json" }
+  ],
+  "calls": [
+    { "id": "000", "number": "000", "w": "EMERGENCY", "tel": "tel:000" },
+    { "id": "vicemergency", "number": "1800 226 226", "w": "VICEMERGENCY", "tel": "tel:1800226226" },
+    { "id": "ses", "number": "13 25 00", "w": "SES", "tel": "tel:132500" },
+    { "id": "wildlife", "number": "(03) 8400 7300", "w": "WILDLIFE VICTORIA", "tel": "tel:0384007300" },
+    { "id": "nurse", "number": "1300 606 024", "w": "NURSE-ON-CALL", "tel": "tel:1300606024" },
+    { "id": "lifeline", "number": "13 11 14", "w": "LIFELINE", "tel": "tel:131114" },
+    { "id": "beyondblue", "number": "1300 224 636", "w": "BEYOND BLUE", "tel": "tel:1300224636" },
+    { "id": "birds", "number": "1800 675 888", "w": "SICK OR DEAD WILD BIRDS", "tel": "tel:1800675888" },
+    { "id": "snake", "number": "136 186", "w": "DEECA · WILDLIFE", "tel": "tel:136186" }
+  ],
+  "seasons": { "file": "seasons.json", "format": "json" },
+  "live": { "adapter": "inaturalist", "place": 6744, "days": 60, "keep": "PT3M" }
+}

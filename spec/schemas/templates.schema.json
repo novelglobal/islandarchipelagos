@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:templates",
+  "title": "A templates pack: what a receipt holds, block by block",
+  "type": "object",
+  "allOf": [{ "$ref": "urn:island:0.1:common#/$defs/packHeader" }],
+  "required": ["templates"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": { "const": "templates" },
+    "templates": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/template" } }
+  },
+  "$defs": {
+    "from": {
+      "description": "A piece path (step.field, or step.field.line), what the engine reads from the piece against the packs (read.life, read.tied, read.join), an island value (island.name, island.code), or a quoted word ('fixed text')",
+      "type": "string", "maxLength": 120,
+      "pattern": "^(read\\.(life|threat|tied|join|data|season|place|call)|island\\.(name|country|line|place|url|code|moon)|[a-z0-9-]+\\.[a-z0-9-]+(\\.[a-z0-9-]+)?|'[^']{0,100}')$"
+    },
+    "template": {
+      "type": "object", "required": ["id", "name", "blocks"], "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "name": { "type": "string", "maxLength": 30 },
+        "paper": { "type": "array", "items": { "enum": [58, 80] } },
+        "style": { "description": "A style it is meant for; any style works", "$ref": "urn:island:0.1:common#/$defs/id" },
+        "blocks": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "#/$defs/block" } },
+        "mesh": {
+          "description": "The piece as one ng: line of 200 bytes at most, for the radio",
+          "type": "object", "additionalProperties": false,
+          "properties": { "fields": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/from" } } }
+        }
+      }
+    },
+    "block": {
+      "type": "object", "required": ["type"], "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["photo", "heading", "text", "lines", "data", "art", "image", "marks", "rule", "space", "qr", "code", "moon", "cut"] },
+        "from": { "$ref": "#/$defs/from" },
+        "file": { "$ref": "urn:island:0.1:common#/$defs/path" },
+        "size": { "enum": ["head", "body", "small"] },
+        "align": { "enum": ["left", "centre", "right"] },
+        "height": { "description": "half, full, or a share of the paper's width", "oneOf": [{ "enum": ["half", "full", "square"] }, { "type": "number", "minimum": 0.05, "maximum": 4 }] },
+        "dots": { "description": "Space or rule thickness, in dots", "type": "integer", "minimum": 1, "maximum": 400 },
+        "when": { "description": "Printed only when this piece path has a value", "$ref": "#/$defs/from" },
+        "label": { "description": "One of the step's word keys, printed before it", "type": "string", "maxLength": 40 },
+        "qr": { "enum": ["link", "mesh"] }
+      }
+    }
+  }
+}

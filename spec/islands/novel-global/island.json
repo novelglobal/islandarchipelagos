@@ -1,0 +1,122 @@
+{
+  "$schema": "../../schemas/island.schema.json",
+  "format": "island/0.1",
+  "id": "novel-global",
+  "name": "novel.global",
+  "about": {
+    "line": "A praxis poem: notice, W.I.S.H., direct action, printed at a partner place.",
+    "url": "https://novel.global"
+  },
+  "place": {
+    "name": "Brunswick to the city",
+    "centre": [
+      -37.769,
+      144.963
+    ],
+    "bbox": [
+      144.925,
+      -37.823,
+      145,
+      -37.748
+    ],
+    "timezone": "Australia/Melbourne",
+    "country": {
+      "name": "Wurundjeri Woi-wurrung Country",
+      "line": "Sovereignty has never been ceded"
+    }
+  },
+  "clock": "moon",
+  "packs": {
+    "map": "packs/map",
+    "lives": "packs/lives",
+    "sound": "packs/sound",
+    "steps": [
+      "packs/steps"
+    ],
+    "templates": "packs/templates",
+    "style": [
+      "packs/style-house"
+    ]
+  },
+  "cards": "cards.json",
+  "printers": [
+    {
+      "id": "novelglobal",
+      "name": "novel.global",
+      "profile": "tm-t88v",
+      "paper": 80,
+      "approval": "required",
+      "home": true
+    },
+    {
+      "id": "pickles",
+      "name": "Pickles Milk Bar",
+      "profile": "tm-t88v",
+      "paper": 80,
+      "at": [
+        -37.782166,
+        144.970341
+      ],
+      "approval": "required"
+    },
+    {
+      "id": "kines",
+      "name": "Kines",
+      "profile": "tm-t88v",
+      "paper": 80,
+      "at": [
+        -37.7642,
+        144.961028
+      ],
+      "approval": "required"
+    },
+    {
+      "id": "elsie",
+      "name": "Coffee Bar Elsie",
+      "profile": "tm-t88v",
+      "paper": 80,
+      "at": [
+        -37.765917,
+        144.972855
+      ],
+      "approval": "required"
+    }
+  ],
+  "access": {
+    "print": "approved",
+    "show": "approved",
+    "keepWaiting": "P30D",
+    "keepPrinted": "P7D"
+  },
+  "network": {
+    "online": true,
+    "hosted": "https://novel.global",
+    "hub": "https://novel.global",
+    "directory": true,
+    "feed": true,
+    "mesh": {
+      "channel": "LongFast",
+      "line": "ng"
+    },
+    "hosts": [
+      "api.inaturalist.org",
+      "inaturalist-open-data.s3.amazonaws.com",
+      "static.inaturalist.org",
+      "overpass-api.de",
+      "overpass.kumi.systems",
+      "api.open-meteo.com",
+      "data.melbourne.vic.gov.au",
+      "server.arcgisonline.com",
+      "s3.amazonaws.com"
+    ]
+  },
+  "codes": {
+    "prefix": "DA",
+    "showcase": "888"
+  },
+  "client": {
+    "shell": "aura",
+    "start": "notice",
+    "studio": "/studio"
+  }
+}

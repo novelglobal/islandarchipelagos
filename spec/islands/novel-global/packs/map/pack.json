@@ -1,0 +1,86 @@
+{
+  "$schema": "../../../../schemas/map.schema.json",
+  "pack": "map",
+  "id": "novel-global/map",
+  "version": "0.1.0",
+  "name": "Brunswick to the city",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "The ground in greys, the listed places of the human ecology, live sightings and open city data, and every approved noticing and cell pack.",
+  "sources": [
+    { "n": "Esri World Imagery", "url": "https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9", "licence": "view with credit; not open data" },
+    { "n": "OpenStreetMap", "url": "https://www.openstreetmap.org/copyright", "licence": "ODbL-1.0" },
+    { "n": "iNaturalist", "url": "https://www.inaturalist.org/", "licence": "per observation" },
+    { "n": "City of Melbourne open data", "url": "https://data.melbourne.vic.gov.au/", "licence": "CC-BY-4.0" }
+  ],
+  "area": {
+    "bbox": [144.925, -37.823, 145.0, -37.748],
+    "centre": [-37.769, 144.963],
+    "minzoom": 12,
+    "maxzoom": 19,
+    "reach": { "start": 500, "min": 250, "max": 1500 }
+  },
+  "basemap": {
+    "online": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    "kind": "raster",
+    "look": "greys",
+    "maxzoom": 19,
+    "attribution": "Imagery © Esri, Maxar, Earthstar Geographics",
+    "open": false
+  },
+  "terrain": { "online": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", "encoding": "terrarium", "exaggerate": 3 },
+  "kinds": {
+    "life": { "w": "LIFE", "icon": "glyph:life" },
+    "noticed": { "w": "NOTICED", "icon": "glyph:knot" },
+    "brand": { "w": "BRAND", "sound": "swish" },
+    "circular": { "w": "CIRCULAR", "sound": "taps" },
+    "service": { "w": "SERVICE", "sound": "cup" },
+    "artists": { "w": "ARTISTS", "sound": "pencil" },
+    "third": { "w": "THIRD SPACE", "sound": "hum" },
+    "network": { "w": "NETWORK", "sound": "hum" },
+    "fruit": { "w": "FRUIT", "icon": "glyph:fruit" },
+    "tree": { "w": "TREE", "icon": "glyph:tree" },
+    "garden": { "w": "GARDEN", "icon": "glyph:garden" },
+    "node": { "w": "MESH NODE", "icon": "glyph:node" },
+    "water": { "w": "WATER", "icon": "glyph:water" },
+    "shade": { "w": "SHADE", "icon": "glyph:shade" },
+    "refuge": { "w": "REFUGE", "icon": "glyph:refuge" },
+    "place": { "w": "PLACE", "icon": "glyph:place" },
+    "temp": { "w": "AIR NOW", "icon": "glyph:temp" }
+  },
+  "layers": [
+    {
+      "id": "living", "name": "Living", "track": "LIVING", "kind": "life", "locked": true, "sound": "drop", "max": 1600, "fresh": "PT24H",
+      "source": { "type": "live", "adapter": "inaturalist", "query": { "days": 60, "pages": 8, "per": 200 }, "keep": "PT3M", "offline": "offline/sightings.json" }
+    },
+    {
+      "id": "places", "name": "Listed places", "track": "COMMUNITY", "kind": "place",
+      "source": { "type": "geojson", "file": "places.geojson", "columns": { "name": "name", "kind": "kind", "note": "note", "url": "url", "id": "id" } }
+    },
+    {
+      "id": "suggested", "name": "Places suggested and shown", "track": "COMMUNITY", "kind": "place",
+      "source": { "type": "stories", "kinds": ["place"] }
+    },
+    {
+      "id": "osm", "name": "Places nearby", "track": "EXPOSURE", "kind": "brand", "max": 800,
+      "source": { "type": "live", "adapter": "overpass", "query": { "q": "places" }, "keep": "P14D", "offline": "offline/osm.json" }
+    },
+    {
+      "id": "fountains", "name": "Drinking fountains", "track": "CLIMATE", "kind": "water", "on": false,
+      "source": { "type": "live", "adapter": "opendatasoft", "query": { "dataset": "drinking-fountains" }, "keep": "P1D", "offline": "offline/fountains.json" }
+    },
+    {
+      "id": "sensors", "name": "Air temperature now", "track": "CLIMATE", "kind": "temp", "on": false,
+      "source": { "type": "live", "adapter": "opendatasoft", "query": { "dataset": "microclimate-sensors-data", "order_by": "received_at desc", "limit": 100 }, "keep": "PT15M", "offline": "offline/sensors.json" }
+    },
+    {
+      "id": "cells", "name": "Cell packs", "track": "COMMUNITY", "kind": "place",
+      "source": { "type": "stories", "kinds": ["cells"] }
+    },
+    {
+      "id": "noticed", "name": "Noticed", "kind": "noticed",
+      "source": { "type": "stories", "kinds": ["record", "story"] }
+    }
+  ]
+}

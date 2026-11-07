@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schemas/slip.schema.json",
+  "format": "slip/0.1",
+  "length": "slip",
+  "blocks": [
+    {"block":"picture"},
+    {"block":"words","setting":"name","text":"THIS SPACE IS YOURS","size":"big"},
+    {"block":"list","max":5,"if":"list"},
+    {"block":"code"}
+  ]
+}

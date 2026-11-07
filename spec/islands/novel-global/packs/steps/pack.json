@@ -1,0 +1,65 @@
+{
+  "$schema": "../../../../schemas/steps.schema.json",
+  "pack": "steps",
+  "id": "novel-global/wish",
+  "version": "0.1.0",
+  "name": "W.I.S.H.",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "The praxis poem. Four steps, the aura's four tentacles (notice, W.I.S.H., make, print), in three phases. Every word here is editable on the switchboard; these are the site's own.",
+  "journey": {
+    "name": "W.I.S.H.",
+    "again": "after-print",
+    "phases": [
+      { "id": "noticed", "name": "NOTICED", "means": "the intention to respond" },
+      { "id": "response", "name": "RESPONSE", "means": "the W.I.S.H. itself: responsibility, theory joined to action, reflection" },
+      { "id": "direct-action", "name": "DIRECT ACTION", "means": "a pledge: printed as a receipt at a partner place, sent by mesh, kept on novel.global" }
+    ],
+    "steps": [
+      {
+        "id": "notice", "name": "notice", "phase": "noticed", "icon": "glyph:hboard",
+        "words": {
+          "tab": "intention",
+          "ask": "what’s your intention?",
+          "say": "From something you noticed, write what you want to happen. It goes at the top of your poster."
+        },
+        "fields": [
+          { "id": "photo", "type": "photo", "from": ["camera", "file", "none"], "exif": true, "keep": "approval" },
+          { "id": "say", "type": "text", "max": 140 },
+          { "id": "catch", "type": "catch", "of": ["map", "life", "data", "season"] },
+          { "id": "place", "type": "place", "from": ["photo", "phone", "tap"], "reveal": 3 }
+        ]
+      },
+      {
+        "id": "wish", "name": "W.I.S.H.", "phase": "response", "icon": "glyph:hradio",
+        "words": { "tab": "wish" },
+        "fields": [
+          {
+            "id": "lines", "type": "lines", "max": 48,
+            "lines": [
+              { "id": "w", "letter": "W", "words": { "word": "theories", "head": "What we know", "how": "what you saw" } },
+              { "id": "i", "letter": "I", "words": { "word": "beliefs", "head": "It would be great", "how": "what you want to happen" } },
+              { "id": "s", "letter": "S", "words": { "word": "principles", "head": "So let’s create", "how": "one thing to do" } },
+              { "id": "h", "letter": "H", "words": { "word": "behaviours", "head": "Here’s how it works", "how": "who helps, and how" } }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "make", "name": "make", "phase": "direct-action", "icon": "glyph:hshop",
+        "fields": [
+          { "id": "art", "type": "art", "of": ["photo", "pixels", "net", "sign"] },
+          { "id": "style", "type": "choose", "of": "styles" },
+          { "id": "marks", "type": "choose", "of": ["star", "heart", "eye", "wave", "iruk", "sun", "leaf", "arrow", "moon", "shell", "feather"], "many": true }
+        ]
+      },
+      {
+        "id": "print", "name": "print", "phase": "direct-action", "icon": "glyph:poster",
+        "fields": [
+          { "id": "out", "type": "print", "templates": ["wish", "connection", "quick"], "ways": ["print", "keep", "link", "mesh"] }
+        ]
+      }
+    ]
+  }
+}

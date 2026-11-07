@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env
+__pycache__/
+web/test/shots/
+web/src/worker/stamp.js
+web/src/touch/*/build/
+kit/island-arm64

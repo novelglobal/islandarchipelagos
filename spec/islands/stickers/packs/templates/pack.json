@@ -1,0 +1,50 @@
+{
+  "$schema": "../../../../schemas/templates.schema.json",
+  "pack": "templates",
+  "id": "stickers/strip",
+  "version": "0.1.0",
+  "name": "Sticker strip",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "templates": [
+    {
+      "id": "strip",
+      "name": "STRIP",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "photo",
+          "from": "booth.photo",
+          "height": "square"
+        },
+        {
+          "type": "space",
+          "dots": 16
+        },
+        {
+          "type": "text",
+          "from": "island.name",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link",
+          "when": "booth.photo"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    }
+  ]
+}

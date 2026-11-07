@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:board",
+  "title": "A board pack: the ground progress grows on",
+  "description": "The board is the ground behind the island's games: a real piece of land redrawn, and the stages that grow on it as people play, make and print. Each stage is drawn in line and dot, flows on to others, and links to the real work it stands for.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "urn:island:0.1:common#/$defs/packHeader"
+    }
+  ],
+  "required": [
+    "ground",
+    "stages"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": {
+      "const": "board"
+    },
+    "ground": {
+      "type": "object",
+      "required": [
+        "from",
+        "tones"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "description": "A real piece of land from the map's imagery each visit, or a file in the pack",
+          "enum": [
+            "satellite",
+            "file"
+          ]
+        },
+        "file": {
+          "$ref": "urn:island:0.1:common#/$defs/path"
+        },
+        "pick": {
+          "description": "Where a satellite ground is picked from",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "landuse": {
+              "enum": [
+                "farm",
+                "grazing",
+                "cropping",
+                "any"
+              ]
+            },
+            "within": {
+              "$ref": "urn:island:0.1:common#/$defs/bbox"
+            },
+            "places": {
+              "description": "Ground known to fit, picked from at random",
+              "type": "array",
+              "items": {
+                "$ref": "urn:island:0.1:common#/$defs/latlng"
+              }
+            },
+            "size": {
+              "description": "Metres across",
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 5000
+            },
+            "zoom": {
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 19
+            }
+          }
+        },
+        "tones": {
+          "description": "The flat tones the ground is redrawn in, darkest last. Even opacity only, never a gradient",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "colour"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "urn:island:0.1:common#/$defs/id"
+              },
+              "colour": {
+                "$ref": "urn:island:0.1:common#/$defs/colour"
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "cells": {
+          "description": "Pixels across the redrawn ground",
+          "type": "integer",
+          "minimum": 24,
+          "maximum": 512
+        },
+        "grain": {
+          "description": "Paper grain: dots in each thousand pixels",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 50
+        },
+        "edge": {
+          "description": "How ragged a wash's edge is, 0 to 1",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "balance": {
+      "description": "The share left to nature that the board grows towards",
+      "type": "object",
+      "required": [
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "first": {
+      "description": "What a first visit sees before the board: a wider map, coloured by what the land is",
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "$ref": "urn:island:0.1:common#/$defs/path"
+        },
+        "tones": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "urn:island:0.1:common#/$defs/colour"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:island:0.1:common#/$defs/source"
+          }
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 60,
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    },
+    "farm": {
+      "description": "A farm is one real piece of ground, kept by its place. Everything placed on it stays with it",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "keep": {
+          "description": "Unlocks and what was placed belong to the farm (place), or to the person (person)",
+          "enum": [
+            "place",
+            "person"
+          ]
+        },
+        "reroll": {
+          "description": "A reroll deals new ground as a new, bare farm; the old farm keeps what is on it",
+          "enum": [
+            "new-farm",
+            "none"
+          ]
+        },
+        "farms": {
+          "description": "How many farms one person can keep",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    }
+  },
+  "$defs": {
+    "event": {
+      "description": "What unlocks a stage: a step of a journey played through, or something made",
+      "type": "string",
+      "pattern": "^(step:[a-z0-9-]+|story:[a-z0-9-]+|poster|song|download|box|print|visit|moon)$"
+    },
+    "stage": {
+      "type": "object",
+      "required": [
+        "id",
+        "draw",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "after": {
+          "description": "Stages that come first",
+          "type": "array",
+          "items": {
+            "$ref": "urn:island:0.1:common#/$defs/id"
+          }
+        },
+        "by": {
+          "description": "Any of these unlocks it, once the stages before are done",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "draw": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": [
+              "as",
+              "on"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "as": {
+                "enum": [
+                  "line",
+                  "dots",
+                  "area",
+                  "water",
+                  "ring",
+                  "strokes"
+                ]
+              },
+              "on": {
+                "description": "Where on the ground it fits; a hand-placed stage snaps to it near where it is put",
+                "enum": [
+                  "contour",
+                  "creek",
+                  "banks",
+                  "soil",
+                  "cells",
+                  "patches",
+                  "bare",
+                  "windward",
+                  "boundary",
+                  "corridor",
+                  "trees",
+                  "dam",
+                  "house",
+                  "rows",
+                  "refuge",
+                  "scrub",
+                  "between",
+                  "hollows",
+                  "half"
+                ]
+              },
+              "tone": {
+                "$ref": "urn:island:0.1:common#/$defs/id"
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 1
+              },
+              "moves": {
+                "description": "The one thing in it that moves, if any",
+                "enum": [
+                  "none",
+                  "birds",
+                  "water",
+                  "sway"
+                ]
+              }
+            }
+          }
+        },
+        "then": {
+          "description": "What follows on from it, drawn as it comes",
+          "type": "array",
+          "items": {
+            "$ref": "urn:island:0.1:common#/$defs/id"
+          }
+        },
+        "nature": {
+          "description": "The share of the ground it gives back to nature",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.5
+        },
+        "src": {
+          "$ref": "urn:island:0.1:common#/$defs/source"
+        },
+        "place": {
+          "description": "Who puts it on the ground: the person, where they choose (hand), or the engine (self)",
+          "enum": [
+            "hand",
+            "self"
+          ],
+          "default": "hand"
+        },
+        "acts": {
+          "description": "What it does once placed, shown only as the ground changing: never a stat, an icon or a word",
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": [
+              "does"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "does": {
+                "enum": [
+                  "spread",
+                  "hold",
+                  "thicken",
+                  "grow",
+                  "attract",
+                  "shade",
+                  "cool",
+                  "link"
+                ]
+              },
+              "tone": {
+                "$ref": "urn:island:0.1:common#/$defs/id"
+              },
+              "reach": {
+                "description": "How far it reaches, in metres on the ground",
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 800
+              },
+              "life": {
+                "description": "What arrives as it works",
+                "enum": [
+                  "none",
+                  "birds",
+                  "frogs",
+                  "insects",
+                  "grass",
+                  "trees",
+                  "water"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

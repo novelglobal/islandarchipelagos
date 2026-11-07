@@ -1,0 +1,1148 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.978209,
+     -37.771837
+    ]
+   },
+   "properties": {
+    "id": "brunswick-tool-library",
+    "name": "Brunswick Tool Library",
+    "kind": "circular",
+    "role": "repair",
+    "note": "A volunteer-run tool library with a monthly repair café",
+    "url": "https://www.brunswicktoollibrary.org/",
+    "addr": "Basement 1, 127 Nicholson Street",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.95749,
+     -37.7715
+    ]
+   },
+   "properties": {
+    "id": "circular-campus-to-community",
+    "name": "Circular Campus to Community",
+    "kind": "circular",
+    "role": "repair",
+    "note": "Clothing repair, mending and redesign sessions run by RMIT and Merri-bek",
+    "url": "https://www.rmit.edu.au/events/circular-campus-to-community-making-sessions",
+    "addr": "Building 516, RMIT Brunswick, 25 Dawson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.984639,
+     -37.766442
+    ]
+   },
+   "properties": {
+    "id": "the-bike-shed-at-ceres",
+    "name": "The Bike Shed at CERES",
+    "kind": "circular",
+    "role": "repair",
+    "note": "Volunteers refurbish donated bikes, with fix-your-own-bike sessions",
+    "url": "https://thebikeshed.org.au/",
+    "addr": "CERES, east end of Lee Street",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.962204,
+     -37.7756059
+    ]
+   },
+   "properties": {
+    "id": "condellos-shoe-repairs",
+    "name": "Condellos Shoe Repairs",
+    "kind": "service",
+    "role": "repair",
+    "note": "Shoe repairs inside Barkly Square",
+    "url": "https://barklysquare.com.au/stores/condellos-shoe-repairs/",
+    "addr": "Shop 14, Barkly Square, 90–106 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96063,
+     -37.77497
+    ]
+   },
+   "properties": {
+    "id": "vinnies-brunswick",
+    "name": "Vinnies Brunswick",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "St Vincent de Paul op shop: donated clothing and household goods",
+    "url": "https://www.vinnies.org.au/vic/shops/vinnies-brunswick",
+    "addr": "107 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96091,
+     -37.77335
+    ]
+   },
+   "properties": {
+    "id": "mutual-muse",
+    "name": "Mutual Muse",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Second-hand and vintage clothing, shoes and accessories",
+    "url": "https://mutualmuse.net/",
+    "addr": "171a Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961764,
+     -37.770197
+    ]
+   },
+   "properties": {
+    "id": "savers-brunswick",
+    "name": "Savers Brunswick",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "A second-hand superstore for clothing and household goods",
+    "url": "https://stores.savers.com.au/au-vic/brunswick/savers-recycle-superstore-3001.html",
+    "addr": "330 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96191,
+     -37.7693
+    ]
+   },
+   "properties": {
+    "id": "don-bosco-op-shop",
+    "name": "Don Bosco Op Shop",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Second-hand clothing and homewares, given and sold",
+    "url": "https://www.donbosco.org.au/op-shop/",
+    "addr": "368 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.962334,
+     -37.766746
+    ]
+   },
+   "properties": {
+    "id": "save-the-children-op-shop",
+    "name": "Save the Children Op Shop",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Second-hand clothing and homewares, given and sold",
+    "url": "https://www.savethechildren.org.au/about-us/save-the-childrens-charity-work/op-shop-brunswick",
+    "addr": "478 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.959063,
+     -37.766519
+    ]
+   },
+   "properties": {
+    "id": "brunswick-uniting-op-shop",
+    "name": "Brunswick Uniting Op Shop",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Second-hand clothing and homewares, given and sold",
+    "url": "https://www.unitingvictas.org.au/locations/brunswick-op-shop",
+    "addr": "331 Victoria Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.983406,
+     -37.765793
+    ]
+   },
+   "properties": {
+    "id": "ceres-market",
+    "name": "CERES Market",
+    "kind": "circular",
+    "role": "market",
+    "note": "A makers’ and flea market: handmade, second-hand and vintage",
+    "url": "https://ceres.org.au/makers-and-flea-market/",
+    "addr": "CERES, Roberts and Stewart Streets",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98288,
+     -37.76566
+    ]
+   },
+   "properties": {
+    "id": "ceres-nursery",
+    "name": "CERES Nursery",
+    "kind": "circular",
+    "role": "grower",
+    "note": "Organic seedlings, indigenous tubestock and a plastic pot exchange",
+    "url": "https://ceres.org.au/nursery/",
+    "addr": "CERES, Roberts and Stewart Streets",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98327,
+     -37.76559
+    ]
+   },
+   "properties": {
+    "id": "ceres-organic-grocery",
+    "name": "CERES Organic Grocery",
+    "kind": "circular",
+    "role": "coop",
+    "note": "An organic grocery with bulk dry goods and cleaning refills",
+    "url": "https://ceres.org.au/social-enterprises/grocery/",
+    "addr": "CERES, Roberts and Stewart Streets",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.973532,
+     -37.791125
+    ]
+   },
+   "properties": {
+    "id": "carlton-farmers-market",
+    "name": "Carlton Farmers’ Market",
+    "kind": "circular",
+    "role": "market",
+    "note": "A Saturday farmers’ market, run not for profit",
+    "url": "https://mfm.com.au/pages/carlton-farmers-market",
+    "addr": "Carlton North Primary School, 60 Lee Street",
+    "sub": "Carlton North"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9783288,
+     -37.8010603
+    ]
+   },
+   "properties": {
+    "id": "vinnies-fitzroy",
+    "name": "Vinnies Fitzroy",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "St Vincent de Paul op shop: donated clothing and household goods",
+    "url": "https://www.vinnies.org.au/vic/shops/vinnies-fitzroy",
+    "addr": "214 Brunswick Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.978524,
+     -37.799203
+    ]
+   },
+   "properties": {
+    "id": "hunter-gatherer-fitzroy",
+    "name": "Hunter Gatherer Fitzroy",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Brotherhood of St Laurence: second-hand and vintage clothing",
+    "url": "https://stores.bsl.org.au/our-locations/fitzroy-hg/",
+    "addr": "274 Brunswick Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96396,
+     -37.814594
+    ]
+   },
+   "properties": {
+    "id": "hunter-gatherer-city",
+    "name": "Hunter Gatherer City",
+    "kind": "circular",
+    "role": "reuse",
+    "note": "Brotherhood of St Laurence: second-hand and vintage clothing",
+    "url": "https://stores.bsl.org.au/our-locations/city-hg/",
+    "addr": "Royal Arcade",
+    "sub": "Melbourne"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9838116,
+     -37.8028743
+    ]
+   },
+   "properties": {
+    "id": "the-source-bulk-foods-fitzroy",
+    "name": "The Source Bulk Foods Fitzroy",
+    "kind": "circular",
+    "role": "coop",
+    "note": "Bulk wholefoods, filled into your own containers",
+    "url": "https://fitzroy.thesourcebulkfoods.com.au/",
+    "addr": "202 Smith Street",
+    "sub": "Collingwood"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.962086,
+     -37.766407
+    ]
+   },
+   "properties": {
+    "id": "clothing-the-gaps",
+    "name": "Clothing The Gaps",
+    "kind": "brand",
+    "role": "label",
+    "note": "An Aboriginal-led social enterprise label and its flagship store",
+    "url": "https://clothingthegaps.com.au",
+    "addr": "Shop 18, 459A Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961327,
+     -37.767057
+    ]
+   },
+   "properties": {
+    "id": "otto-spike",
+    "name": "Otto & Spike",
+    "kind": "brand",
+    "role": "label",
+    "note": "A family knitwear maker and shop: beanies, scarves, socks, blankets",
+    "url": "https://ottoandspike.com.au",
+    "addr": "324 Victoria Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96107,
+     -37.77239
+    ]
+   },
+   "properties": {
+    "id": "better-with-friends",
+    "name": "Better with Friends",
+    "kind": "brand",
+    "role": "label",
+    "note": "A store for small-batch clothing by independent designers",
+    "url": "https://betterwithfriends.store",
+    "addr": "209A Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.981261,
+     -37.806059
+    ]
+   },
+   "properties": {
+    "id": "honest-studios",
+    "name": "Honest Studios",
+    "kind": "brand",
+    "role": "label",
+    "note": "A slow-fashion label with make, mend and alter classes",
+    "url": "https://honeststudios.com.au",
+    "addr": "201 Gertrude Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.978257,
+     -37.805978
+    ]
+   },
+   "properties": {
+    "id": "friends-with-frank",
+    "name": "Friends with Frank",
+    "kind": "brand",
+    "role": "label",
+    "note": "An Australian outerwear and knitwear label",
+    "url": "https://friendswithfrank.com",
+    "addr": "120 Gertrude Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98655,
+     -37.79912
+    ]
+   },
+   "properties": {
+    "id": "the-social-studio",
+    "name": "The Social Studio",
+    "kind": "brand",
+    "role": "studio",
+    "note": "A not-for-profit fashion label and school with refugee creatives",
+    "url": "https://thesocialstudio.org",
+    "addr": "Collingwood Yards, 30 Perry Street",
+    "sub": "Collingwood"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.958539,
+     -37.771772
+    ]
+   },
+   "properties": {
+    "id": "rmit-school-of-fashion-and-textiles",
+    "name": "RMIT School of Fashion and Textiles",
+    "kind": "artists",
+    "role": "studio",
+    "note": "Fashion and textiles school with knit, weave and print labs",
+    "url": "https://www.rmit.edu.au/about/schools-colleges/fashion-and-textiles",
+    "addr": "25 Dawson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961037,
+     -37.772125
+    ]
+   },
+   "properties": {
+    "id": "counihan-gallery",
+    "name": "Counihan Gallery",
+    "kind": "artists",
+    "role": "space",
+    "note": "The council’s public art gallery, in Brunswick Town Hall",
+    "url": "https://www.merri-bek.vic.gov.au/exploring-merri-bek/arts-merri-bek/counihan-gallery/",
+    "addr": "233 Sydney Road, Brunswick Town Hall",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.960423,
+     -37.770995
+    ]
+   },
+   "properties": {
+    "id": "blak-dot-gallery",
+    "name": "Blak Dot Gallery",
+    "kind": "artists",
+    "role": "space",
+    "note": "A First Nations artist-run gallery for contemporary First Nations art",
+    "url": "https://blakdot.com.au",
+    "addr": "Balam Balam Place, 15 Phoenix Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961,
+     -37.768
+    ]
+   },
+   "properties": {
+    "id": "tcb-art-inc",
+    "name": "TCB art inc.",
+    "kind": "artists",
+    "role": "space",
+    "note": "An artist-run gallery kept by a volunteer committee of artists",
+    "url": "https://tcbartinc.net",
+    "addr": "1–5 Wilkinson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.960404,
+     -37.766683
+    ]
+   },
+   "properties": {
+    "id": "beinart-gallery",
+    "name": "Beinart Gallery",
+    "kind": "artists",
+    "role": "space",
+    "note": "A gallery with solo and group exhibitions about once a month",
+    "url": "https://beinart.org",
+    "addr": "307 Victoria Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961746,
+     -37.771346
+    ]
+   },
+   "properties": {
+    "id": "brunswick-mechanics-institute",
+    "name": "Brunswick Mechanics Institute",
+    "kind": "artists",
+    "role": "space",
+    "note": "A theatre and studio run by Next Wave, hired to artists at community rates",
+    "url": "https://nextwave.org.au/programs/our-space-brunswickmechanics",
+    "addr": "270 Sydney Road",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96093,
+     -37.76995
+    ]
+   },
+   "properties": {
+    "id": "maker-community",
+    "name": "Maker Community",
+    "kind": "artists",
+    "role": "studio",
+    "note": "A member makerspace with a textiles area, woodwork and laser cutting",
+    "url": "https://makercommunity.org.au",
+    "addr": "70 Saxon Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.978951,
+     -37.758129
+    ]
+   },
+   "properties": {
+    "id": "mycelium-studios",
+    "name": "Mycelium Studios",
+    "kind": "artists",
+    "role": "studio",
+    "note": "A warehouse creative hub: studios, co-working and workshops",
+    "url": "https://www.myceliumstudios.com",
+    "addr": "Factory 1, 10–12 Moreland Road",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.986449,
+     -37.799349
+    ]
+   },
+   "properties": {
+    "id": "collingwood-yards",
+    "name": "Collingwood Yards",
+    "kind": "artists",
+    "role": "space",
+    "note": "A not-for-profit arts precinct of galleries, studios and arts groups",
+    "url": "https://collingwoodyards.org",
+    "addr": "35 Johnston Street",
+    "sub": "Collingwood"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.981605,
+     -37.806349
+    ]
+   },
+   "properties": {
+    "id": "australian-print-workshop",
+    "name": "Australian Print Workshop",
+    "kind": "artists",
+    "role": "studio",
+    "note": "A printmaking workshop with studio access and a gallery",
+    "url": "https://www.australianprintworkshop.com",
+    "addr": "210 Gertrude Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9784366,
+     -37.7973048
+    ]
+   },
+   "properties": {
+    "id": "thread-den",
+    "name": "Thread Den",
+    "kind": "artists",
+    "role": "studio",
+    "note": "Sewing, dressmaking and knitting classes",
+    "url": "https://threadden.com",
+    "addr": "Level 1, 329 Brunswick Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9490121,
+     -37.8019735
+    ]
+   },
+   "properties": {
+    "id": "the-patternmaking-class",
+    "name": "The Patternmaking Class",
+    "kind": "artists",
+    "role": "studio",
+    "note": "Sewing and patternmaking classes taught by working pattern makers",
+    "url": "https://www.thepatternmakingclass.com",
+    "addr": "92 Leveson Street",
+    "sub": "North Melbourne"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.977223,
+     -37.79593
+    ]
+   },
+   "properties": {
+    "id": "the-rose-st-artists-market",
+    "name": "The Rose St. Artists’ Market",
+    "kind": "artists",
+    "role": "market",
+    "note": "An artists’ and makers’ market every weekend",
+    "url": "https://www.rosestmarket.com.au/",
+    "addr": "60 Rose Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.970341,
+     -37.782166
+    ]
+   },
+   "properties": {
+    "id": "pickles-milk-bar",
+    "name": "Pickles Milk Bar",
+    "kind": "third",
+    "role": "third",
+    "note": "A plant-based milk bar with a W.I.S.H. receipt printer: slips sent here print at the counter",
+    "url": "https://www.instagram.com/pickles_milkbar/",
+    "addr": "1008 Lygon Street",
+    "sub": "Carlton North",
+    "partner": "pickles"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.961028,
+     -37.7642
+    ]
+   },
+   "properties": {
+    "id": "kines",
+    "name": "Kines",
+    "kind": "third",
+    "role": "third",
+    "note": "A cafe and furniture workshop; slips can be sent here to print",
+    "url": "https://kines.com.au/",
+    "addr": "11 Hope Street",
+    "sub": "Brunswick",
+    "partner": "kines"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.972855,
+     -37.765917
+    ]
+   },
+   "properties": {
+    "id": "coffee-bar-elsie",
+    "name": "Coffee Bar Elsie",
+    "kind": "third",
+    "role": "third",
+    "note": "The morning coffee bar at Bar Elsie; slips can be sent here to print",
+    "url": "https://www.barelsie.com.au/",
+    "addr": "Hickford Street, at Bar Elsie",
+    "sub": "Brunswick East",
+    "partner": "elsie"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.960679,
+     -37.771761
+    ]
+   },
+   "properties": {
+    "id": "brunswick-library",
+    "name": "Brunswick Library",
+    "kind": "third",
+    "role": "third",
+    "note": "A free public library, open daily, with sewing machines in its makerspace",
+    "url": "https://www.merri-bek.vic.gov.au/exploring-merri-bek/libraries/services/visit-or-contact-us",
+    "addr": "Sydney Road and Dawson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96031,
+     -37.77069
+    ]
+   },
+   "properties": {
+    "id": "balam-balam-place",
+    "name": "Balam Balam Place",
+    "kind": "third",
+    "role": "third",
+    "note": "A council arts and community precinct: studios, rooms, a café, green space",
+    "url": "https://www.balambalamplace.com.au",
+    "addr": "15 Phoenix Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.959684,
+     -37.770745
+    ]
+   },
+   "properties": {
+    "id": "brunswick-baths",
+    "name": "Brunswick Baths",
+    "kind": "third",
+    "role": "third",
+    "note": "A council aquatic centre with a 50 m outdoor pool",
+    "url": "https://active.merri-bek.vic.gov.au/centres/brunswick-baths",
+    "addr": "14 Dawson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9603,
+     -37.7714
+    ]
+   },
+   "properties": {
+    "id": "ecological-justice-hub",
+    "name": "Ecological Justice Hub",
+    "kind": "third",
+    "role": "third",
+    "note": "A Jesuit Social Services permaculture garden: workshops and food relief",
+    "url": "https://jss.org.au/programs/ecological-justice-hub/",
+    "addr": "3 Saxon Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.945951,
+     -37.754305
+    ]
+   },
+   "properties": {
+    "id": "campbell-turnbull-library",
+    "name": "Campbell Turnbull Library",
+    "kind": "third",
+    "role": "third",
+    "note": "A branch library with a community meeting room",
+    "url": "https://www.merri-bek.vic.gov.au/exploring-merri-bek/libraries/services/visit-or-contact-us",
+    "addr": "220 Melville Road",
+    "sub": "Brunswick West"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98079,
+     -37.75976
+    ]
+   },
+   "properties": {
+    "id": "merri-corner-community-garden",
+    "name": "Merri Corner Community Garden",
+    "kind": "third",
+    "role": "third",
+    "note": "A community garden of about 40 plots, with working bees open to all",
+    "url": "https://www.merricorner.org/",
+    "addr": "194 Donald Street",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.97567,
+     -37.76871
+    ]
+   },
+   "properties": {
+    "id": "fleming-park-hall",
+    "name": "Fleming Park Hall",
+    "kind": "third",
+    "role": "third",
+    "note": "A council hall for hire, with a kitchen and a stage",
+    "url": "https://www.merri-bek.vic.gov.au/exploring-merri-bek/events/venues/halls-and-meeting-rooms/brunswick-halls-and-meeting-rooms/",
+    "addr": "102 Victoria Street",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.982795,
+     -37.784728
+    ]
+   },
+   "properties": {
+    "id": "bargoonga-nganjin-north-fitzroy-library",
+    "name": "Bargoonga Nganjin, North Fitzroy Library",
+    "kind": "third",
+    "role": "third",
+    "note": "A library with a rooftop garden and a food pantry; longer hours in heatwaves",
+    "url": "https://www.yarracity.vic.gov.au/library/bargoonga-nganjin-north-fitzroy-library",
+    "addr": "182–186 St Georges Road",
+    "sub": "Fitzroy North"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.971587,
+     -37.789455
+    ]
+   },
+   "properties": {
+    "id": "carlton-library",
+    "name": "Carlton Library",
+    "kind": "third",
+    "role": "third",
+    "note": "A library with a courtyard garden; longer hours in heatwaves",
+    "url": "https://www.yarracity.vic.gov.au/library/carlton-library",
+    "addr": "667 Rathdowne Street",
+    "sub": "Carlton North"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98093,
+     -37.79399
+    ]
+   },
+   "properties": {
+    "id": "fitzroy-swimming-pool",
+    "name": "Fitzroy Swimming Pool",
+    "kind": "third",
+    "role": "third",
+    "note": "A council 50 m outdoor pool",
+    "url": "https://www.yarracity.vic.gov.au/yarra-leisure/locations/fitzroy-swimming-pool",
+    "addr": "160 Alexandra Parade",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.964787,
+     -37.809801
+    ]
+   },
+   "properties": {
+    "id": "state-library-victoria",
+    "name": "State Library Victoria",
+    "kind": "third",
+    "role": "third",
+    "note": "The state library: free entry, reading rooms and exhibitions",
+    "url": "https://www.slv.vic.gov.au/",
+    "addr": "328 Swanston Street",
+    "sub": "Melbourne"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.97995,
+     -37.76735
+    ]
+   },
+   "properties": {
+    "id": "3rrr-triple-r",
+    "name": "3RRR (Triple R)",
+    "kind": "network",
+    "role": "network",
+    "note": "Community radio on 102.7 FM, with a live performance space",
+    "url": "https://www.rrr.org.au/",
+    "addr": "221 Nicholson Street",
+    "sub": "Brunswick East"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.96228,
+     -37.76713
+    ]
+   },
+   "properties": {
+    "id": "sydney-road-brunswick-association",
+    "name": "Sydney Road Brunswick Association",
+    "kind": "network",
+    "role": "network",
+    "note": "The trader association for the Sydney Road strip",
+    "url": "https://www.sydneyroad.com.au/",
+    "addr": "454 Sydney Road (mailing address)",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.95755,
+     -37.77212
+    ]
+   },
+   "properties": {
+    "id": "brunswick-design-district",
+    "name": "Brunswick Design District",
+    "kind": "network",
+    "role": "network",
+    "note": "A creative precinct of RMIT, Merri-bek Council and Creative Victoria",
+    "url": "https://bdd.org.au/",
+    "addr": "RMIT Brunswick, 25 Dawson Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.9617,
+     -37.77
+    ]
+   },
+   "properties": {
+    "id": "brunswick-music-festival",
+    "name": "Brunswick Music Festival",
+    "kind": "network",
+    "role": "network",
+    "note": "The council’s March festival, opened by the Sydney Road Street Party",
+    "url": "https://www.brunswickmusicfestival.com.au/",
+    "addr": "Sydney Road, Brunswick Road to Victoria Street",
+    "sub": "Brunswick"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.982388,
+     -37.807529
+    ]
+   },
+   "properties": {
+    "id": "3cr-community-radio",
+    "name": "3CR Community Radio",
+    "kind": "network",
+    "role": "network",
+    "note": "Community radio on 855 AM, with airtime for community groups",
+    "url": "https://www.3cr.org.au/",
+    "addr": "21 Smith Street",
+    "sub": "Fitzroy"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     144.98634,
+     -37.79958
+    ]
+   },
+   "properties": {
+    "id": "pbs-106-7fm",
+    "name": "PBS 106.7FM",
+    "kind": "network",
+    "role": "network",
+    "note": "Community music radio on 106.7 FM",
+    "url": "https://www.pbsfm.org.au/",
+    "addr": "Collingwood Yards, 35 Johnston Street",
+    "sub": "Collingwood"
+   }
+  }
+ ]
+}

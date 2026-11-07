@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/style.schema.json",
+  "pack": "style",
+  "id": "novel-global/house",
+  "version": "0.1.0",
+  "name": "novel.global house styles",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "The four house styles from 1.0 C's draft (src/base/thermal.js, T.HOUSE). HOUSE is the default and the current look.",
+  "styles": [
+    { "id": "house", "name": "HOUSE", "by": "novel.global", "fonts": { "head": "sans", "body": "sans", "small": "sans" }, "screen": { "head": "hand", "body": "narrow", "small": "sans:500" },
+      "size": 1.3, "lead": 1, "margin": 1, "photo": {}, "frame": "hand", "rule": "dots", "top": "mark", "night": "solid" },
+    { "id": "press", "name": "PRESS", "by": "novel.global", "fonts": { "head": "mono", "body": "mono", "small": "mono" }, "size": 1.25, "lead": 1.05, "margin": 0.8,
+      "photo": { "dither": "floyd", "contrast": 0.5, "sharpen": 1.3, "gamma": 0.7 }, "frame": "box", "rule": "solid", "top": "band", "night": "solid", "colours": { "paper": "#0E0F11", "ink": "#E8E6DF" } },
+    { "id": "quiet", "name": "QUIET", "by": "novel.global", "fonts": { "head": "narrow", "body": "narrow", "small": "narrow:500" }, "size": 1.2, "lead": 1.15, "margin": 1.25,
+      "photo": { "dither": "atkinson", "contrast": 0.15, "sharpen": 0.8 }, "frame": "none", "rule": "none", "top": "mark", "night": "solid", "colours": { "paper": "#F7F5EE", "ink": "#1B1B1B" } },
+    { "id": "loud", "name": "LOUD", "by": "novel.global", "fonts": { "head": "serif", "body": "sans", "small": "sans" }, "size": 1.5, "lead": 0.95, "margin": 0.7,
+      "photo": { "dither": "auto", "contrast": 0.65, "sharpen": 1.5, "gamma": 0.66 }, "frame": "rule", "rule": "solid", "top": "band", "night": "solid" }
+  ]
+}

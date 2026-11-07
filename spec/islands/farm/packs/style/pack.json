@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/style.schema.json",
+  "pack": "style",
+  "id": "farm/paddock",
+  "version": "0.1.0",
+  "name": "Paddock",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "One style for the farm's receipts: novel.global's hand frame and dotted rule, small and quiet.",
+  "styles": [
+    { "id": "paddock", "name": "PADDOCK", "fonts": { "head": "sans", "body": "sans", "small": "sans" }, "screen": { "head": "hand", "body": "narrow", "small": "sans:500" },
+      "size": 1.2, "lead": 1, "margin": 1, "photo": {}, "frame": "hand", "rule": "dots", "top": "mark", "night": "solid" }
+  ]
+}

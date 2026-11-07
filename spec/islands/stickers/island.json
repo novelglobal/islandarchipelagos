@@ -1,0 +1,24 @@
+{
+  "$schema": "../../schemas/island.schema.json",
+  "format": "island/0.1",
+  "id": "stickers",
+  "name": "sticker booth",
+  "about": { "line": "Three photographs, a frame, a strip of stickers. No internet." },
+  "place": {
+    "name": "anywhere",
+    "centre": [-37.7700, 144.9700],
+    "bbox": [144.9690, -37.7708, 144.9710, -37.7692]
+  },
+  "clock": "moon",
+  "packs": {
+    "steps": "packs/steps",
+    "templates": "packs/templates",
+    "style": ["packs/style"]
+  },
+  "printers": [
+    { "id": "booth", "name": "booth", "profile": "tm-t88v", "paper": 80, "approval": "auto", "home": true }
+  ],
+  "access": { "print": "anyone", "show": "approved", "keepWaiting": "P1D", "keepPrinted": "PT1H" },
+  "network": { "online": false, "directory": false, "hosts": [] },
+  "client": { "shell": "plain", "start": "booth" }
+}

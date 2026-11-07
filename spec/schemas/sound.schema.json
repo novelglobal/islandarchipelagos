@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:sound",
+  "title": "A sound pack: voices, moods and tempo",
+  "type": "object",
+  "allOf": [{ "$ref": "urn:island:0.1:common#/$defs/packHeader" }],
+  "required": ["tuning", "voices"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": { "const": "sound" },
+    "tuning": {
+      "type": "object", "required": ["root", "scale"], "additionalProperties": false,
+      "properties": {
+        "root": { "description": "A note and its octave", "type": "string", "pattern": "^[A-G][#b]?[0-8]$" },
+        "scale": {
+          "oneOf": [
+            { "enum": ["minor", "major", "pelog", "slendro", "harmonic", "pentatonic"] },
+            { "description": "The steps in cents from the root", "type": "array", "minItems": 2, "maxItems": 24, "items": { "type": "number", "minimum": 0, "maximum": 2400 } }
+          ]
+        }
+      }
+    },
+    "tempo": {
+      "type": "object", "required": ["bpm"], "additionalProperties": false,
+      "properties": { "bpm": { "type": "number", "minimum": 20, "maximum": 240 }, "grid": { "description": "Sounds land on the next step of the bar", "enum": [0, 4, 8, 16, 32] } }
+    },
+    "voices": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object", "required": ["id", "synth"], "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+              "synth": { "description": "One of the engine's recipes", "enum": ["bell", "breath", "bowed", "drop", "glitch", "thud", "pluck", "choir", "sub", "drone", "noise", "taps", "cup", "pencil", "hum", "swish", "gong", "chant"] },
+              "set": { "description": "The recipe's settings, numbers only", "type": "object", "additionalProperties": { "type": "number" } },
+              "gain": { "type": "number", "minimum": 0, "maximum": 2 }
+            }
+          },
+          {
+            "type": "object", "required": ["id", "sample"], "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+              "sample": { "description": "An ogg, mp3 or wav in the pack", "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9._/-]+\\.(ogg|mp3|wav|m4a)$" },
+              "note": { "description": "The note it was recorded at", "type": "string", "pattern": "^[A-G][#b]?[0-8]$" },
+              "gain": { "type": "number", "minimum": 0, "maximum": 2 }
+            }
+          }
+        ]
+      }
+    },
+    "moods": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["id", "name"], "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+          "name": { "type": "string", "maxLength": 20 },
+          "voices": { "type": "array", "items": { "$ref": "urn:island:0.1:common#/$defs/id" } },
+          "room": { "enum": ["dry", "small", "wide", "hall", "water"] },
+          "filter": { "enum": ["none", "mist", "dub", "ladder"] },
+          "gain": { "type": "number", "minimum": 0, "maximum": 2 }
+        }
+      }
+    },
+    "bind": {
+      "description": "Which voice something sounds in: group:<id>, kind:<id>, layer:<id>, family:<id>, step:<id>, or an event (done, print)",
+      "type": "object", "propertyNames": { "pattern": "^((group|kind|layer|family|step):[a-z0-9-]+|done|print|begin|drone)$" },
+      "additionalProperties": { "$ref": "urn:island:0.1:common#/$defs/id" }
+    },
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "voices": { "type": "integer", "minimum": 1, "maximum": 64 }, "loop": { "description": "The longest loop kept, in seconds", "type": "integer", "minimum": 5, "maximum": 300 } }
+    }
+  }
+}

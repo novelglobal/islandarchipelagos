@@ -1,0 +1,774 @@
+/* Direct Action · the approval page. Everything sent waits here until it is shown or refused; the printers are paired here.
+   The password is the ADMIN_KEY secret set in Cloudflare. It is kept in this tab only (sessionStorage) and sent with each
+   request; nothing here is cached. Everything shown is set as text, never as markup. */
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  /* an original upload's file ending, by its kind */
+  const extOf = t => ({ 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/gif': 'gif', 'image/avif': 'avif' })[String(t || '').split(';')[0]] || 'jpg';
+  const main = $('#main'); let KEY = sessionStorage.getItem('da.admin') || ''; let tab = 'overview';
+  /* each cell of a table carries its column's heading, so on a phone (headings hidden, cells in a row) a number still says what it is */
+  new MutationObserver(() => { for (const t of main.querySelectorAll('table.makers:not([data-h])')) { t.dataset.h = '1'; const hs = [...t.querySelectorAll('thead th')].map(th => th.textContent); if (hs.length) for (const tr of t.querySelectorAll('tbody tr')) [...tr.children].forEach((td, i) => { if (hs[i]) td.dataset.h = hs[i]; }); } }).observe(main, { childList: true, subtree: true });
+  const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') e.textContent = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v != null && v !== false) e.setAttribute(k, v === true ? '' : v); } for (const c of kids.flat()) if (c != null) e.append(c); return e; };
+  async function api(path, opt = {}) {
+    const r = await fetch('/api/admin/' + path, { ...opt, cache: 'no-store', headers: { authorization: `Bearer ${KEY}`, 'content-type': 'application/json' } });
+    if (r.status === 401 || r.status === 429 || r.status === 503) { const j = await r.json().catch(() => ({})); lock(r.status === 401 ? 'WRONG PASSWORD' : r.status === 429 ? 'TOO MANY TRIES · WAIT TEN MINUTES' : String(j.error || 'NOT SET UP').toUpperCase()); throw new Error('locked'); }
+    if (!r.ok) throw new Error(String(r.status)); return r;
+  }
+  const when = t => (t ? new Date(t).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' }) : '');
+  /* a story as it travels: base64url JSON, the same format as a slip's link */
+  const unpack = b => { try { return JSON.parse(decodeURIComponent(escape(atob(b.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b.length + 3) % 4))))); } catch (e) { return null; } };
+
+  function lock(note) { KEY = ''; sessionStorage.removeItem('da.admin'); $('#tabs').hidden = true; main.replaceChildren(gate()); if (note) $('#gate-note').textContent = note; }
+  function gate() {
+    const f = el('form', { class: 'gate', id: 'gate', onsubmit: e => { e.preventDefault(); KEY = $('#key').value.trim(); if (!KEY) return; sessionStorage.setItem('da.admin', KEY); open(); } },
+      el('b', { text: 'Approval' }), el('input', { id: 'key', type: 'password', autocomplete: 'current-password', 'aria-label': 'Password', placeholder: 'Password', required: true }),
+      el('button', { type: 'submit', text: 'OPEN' }), el('p', { class: 'note', id: 'gate-note' }));
+    return f;
+  }
+  async function open() { $('#tabs').hidden = false; if (/pair=/.test(location.hash)) tab = 'printers'; await show(tab); badges(); }
+  /* how many wait, beside their names in the rail */
+  async function badges() { try { const o = await (await api('overview')).json(); $('#n-waiting').textContent = o.stories.waiting || ''; $('#n-places').textContent = o.places.waiting || ''; } catch (e) { /* later */ } }
+  /* a page's own heading, and a line on what it is for */
+  const head = t => [el('h2', { text: t })];
+  async function show(t) {
+    tab = t; document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+    main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
+    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
+  }
+
+  /* ───────── species: every kind of life the devices have met, learned from their pulls. In the field list, a kind has its months,
+     needs and who to call; with a mark only, it is drawn by its group until it is added to src/field.js ───────── */
+  async function species(only) {
+    const [j, pack] = await Promise.all([api('species').then(r => r.json()), fetch('/base-db.json').then(r => r.json()).catch(() => ({ field: [] }))]);
+    const F = new Set((pack.field || []).map(f => String(f.n || '').toLowerCase())), G = new Set([...F].map(n => n.split(' ')[0]));
+    const where = n => { n = String(n || '').toLowerCase(); return F.has(n) || F.has(n.split(/\s+/).slice(0, 2).join(' ')) ? 'FIELD LIST' : G.has(n.split(/\s+/)[0]) ? 'BY ITS GENUS' : ''; };
+    const all = j.species || [], wk = Date.now() - 7 * 864e5, mark = all.filter(s => !where(s.n)), fresh = all.filter(s => s.first > wk);
+    const list = only === 'new' ? fresh : only === 'mark' ? mark : all;
+    const pick = (k, text) => el('button', { type: 'button', class: (only || '') === k ? 'on' : '', text, onclick: () => species(k).catch(() => {}) });
+    const row = s => el('tr', {}, el('td', {}, s.ph ? el('img', { src: s.ph, alt: '', loading: 'lazy', style: 'width:40px;height:40px;object-fit:cover;display:block' }) : el('span', { class: 'soft', text: '·' })),
+      el('td', { text: s.cn || '—' }), el('td', { class: 'soft', text: s.n }), el('td', { text: (s.ic || '').toUpperCase() }), el('td', { class: 'soft', text: s.g || '' }), el('td', { text: where(s.n) || 'MARK ONLY' }), el('td', { class: 'soft', text: when(s.first) }),
+      el('td', {}, el('a', { href: 'https://www.inaturalist.org/taxa/' + s.id, target: '_blank', rel: 'noopener', class: 'note', text: 'INATURALIST ↗' }), el('button', { type: 'button', class: 'no', text: 'REMOVE', onclick: async () => { if (!confirm('Remove this from the kinds met? A device that meets it again does not tell it again.')) return; await api('species/' + s.id, { method: 'POST', body: '{}' }); species(only).catch(() => {}); } })));
+    main.replaceChildren(...head('Species'),
+      el('p', { class: 'note', text: `${all.length} KINDS MET · ${fresh.length} NEW THIS WEEK · ${mark.length} WITH A MARK ONLY. EVERY PULL OF SIGHTINGS ADDS THE KINDS NO DEVICE HAD MET; THE FIRST DEVICE TO MEET ONE TELLS IT HERE ONCE. A KIND IN THE FIELD LIST HAS ITS MONTHS, NEEDS AND WHO TO CALL; ONE WITH A MARK ONLY IS DRAWN BY ITS GROUP UNTIL IT IS ADDED TO src/field.js (THE SHEET BELOW HAS WHAT TO ADD).` }),
+      el('p', { class: 'note', text: 'OFFLINE, EACH DEVICE KEEPS WHAT IT HAS MET: THE SIGHTINGS, EVERY PHOTOGRAPH AND MAP TILE ONCE SEEN (UP TO 3,000), THE FIELD LIST AND THE APP ITSELF. NOTHING IS ASKED WHILE A PAGE IS HIDDEN OR LEFT UNTOUCHED FOR A QUARTER OF AN HOUR.' }),
+      el('div', { class: 'acts' }, pick('', 'ALL'), pick('new', 'NEW THIS WEEK'), pick('mark', 'MARK ONLY'),
+        el('button', { type: 'button', text: 'MARK ONLY (.CSV)', onclick: () => save('novel-global-species-to-add.csv', csv(mark, ['id', 'n', 'cn', 'ic', 'g', 'ph']), 'text/csv') })),
+      list.length ? el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['', 'NAME', 'SCIENTIFIC', 'GROUP', 'MARK', 'IN THE ENGINE', 'FIRST MET', ''].map(h => el('th', { text: h })))), el('tbody', {}, ...list.map(row))) : el('p', { class: 'empty', text: 'NONE YET: THEY ARRIVE AS DEVICES PULL SIGHTINGS' }));
+  }
+
+  /* ───────── talk: the board, every post with its maker's code and kin; hidden ones stay here ───────── */
+  const KIN = ['Irukandji', 'Blue-ringed octopus', 'Weedy seadragon', 'Port Jackson shark', 'Little penguin', 'Australian fur seal', 'Southern right whale', 'Burrunan dolphin', 'Bluebottle', 'Biscuit star', 'Giant cuttlefish', 'Blue groper', 'Old wife', 'Sea hare', 'Spider crab', 'Pied oystercatcher', 'Crested tern', 'Hooded plover', 'Short-tailed shearwater', 'Australasian gannet', 'Silver gull', 'Black swan', 'Australian pelican', 'Superb fairy-wren', 'Rainbow lorikeet', 'Laughing kookaburra', 'Tawny frogmouth', 'Powerful owl', 'Australian magpie', 'Galah', 'Sulphur-crested cockatoo', 'Grey-headed flying-fox', 'Brushtail possum', 'Ringtail possum', 'Platypus', 'Echidna', 'Eastern grey kangaroo', 'Swamp wallaby', 'Common wombat', 'Koala', 'Sugar glider', 'Growling grass frog', 'Brown tree frog', 'Blue-tongue lizard', 'Eastern water dragon', 'Tiger snake', 'Golden sun moth', 'Bogong moth', 'Blue-banded bee', 'Common brown butterfly', 'Garden orb-weaver', 'Huntsman', 'Yabby', 'Murray cod', 'River blackfish', 'Short-finned eel', 'River red gum', 'Golden wattle', 'Coast banksia', 'Common heath', 'Bull kelp', 'Eelgrass', 'Coast saltbush', 'Mangrove'];
+  const kinName = k => (k == null ? '' : KIN[k % KIN.length]);
+  /* each step's talk and each poster's; one at a time when chosen (a poster's ITS TALK opens it here) */
+  let talkSec = '';
+  async function talk() {
+    const j = await (await api('talk')).json(), all = j.talk || [], secs = [...new Set(all.map(t => t.sec))].sort(), list = talkSec ? all.filter(t => t.sec === talkSec) : all;
+    const pick = el('select', { onchange: e => { talkSec = e.target.value; talk().catch(() => {}); } }, el('option', { value: '', text: 'EVERY TALK' }), ...secs.map(sc => { const o = el('option', { value: sc, text: (sc.startsWith('p.') ? 'POSTER ' + sc.slice(2) : sc).toUpperCase() }); o.selected = sc === talkSec; return o; }));
+    const row = t => el('li', { class: 'said' + (t.hidden ? ' soft' : '') }, el('div', { class: 'note', text: [(t.sec.startsWith('p.') ? 'POSTER ' + t.sec.slice(2) : t.sec).toUpperCase(), t.who, kinName(t.kin).toUpperCase(), when(t.at), t.hidden ? 'HIDDEN' : ''].filter(Boolean).join(' · ') }), el('p', { text: (t.k === 'swap' ? '⇄ ' : t.k === 'share' ? '↗ ' : '') + (t.re ? '↳ ' : '') + t.text }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: t.hidden ? 'SHOW' : 'HIDE', onclick: async () => { await api('talk/' + t.id, { method: 'POST', body: JSON.stringify({ action: t.hidden ? 'show' : 'hide' }) }); show('talk'); } }),
+        el('button', { type: 'button', class: 'no', text: 'DELETE', onclick: async () => { if (!confirm('Delete this for good?')) return; await api('talk/' + t.id, { method: 'POST', body: JSON.stringify({ action: 'delete' }) }); show('talk'); } })));
+    main.replaceChildren(...head('Talk'), el('div', { class: 'tools' }, pick), list.length ? el('ol', { class: 'talk' }, ...list.map(row)) : el('p', { class: 'empty', text: 'NOTHING YET' }));
+  }
+
+  /* ───────── use: how far people get, step by step, and what is opened and what is not (counts only, never who) ───────── */
+  async function use() {
+    const j = await (await api('traffic')).json(), rows = j.traffic || [], wk = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10), sum = (k, from) => rows.filter(r => r.k === k && (!from || r.day >= from)).reduce((n, r) => n + r.n, 0);
+    const PATH = [['open-aura', 'OPENED'], ['eye', 'EYE PRESSED'], ['booth-open', 'BOOTH OPENED'], ['booth-print', 'BOOTH PRINTED'], ['booth-save', 'BOOTH SAVED'], ['lv1', 'LEVEL 1 · PHOTO'], ['disc-0', 'MAP DISC'], ['step-0', 'INTENTION'], ['lv2', 'LEVEL 2 · INTENTION'], ['step-1', 'W.I.S.H.'], ['lv3', 'LEVEL 3 · MADE'], ['step-2', 'ART'], ['step-3', 'PRINT STEP'], ['print', 'PRINT PRESSED'], ['lv4', 'LEVEL 4 · POSTER'], ['plain-ddg', 'PLAIN · DUCKDUCKGO'], ['plain-still', 'PLAIN · NO MOTION'], ['showcase', 'SHOWCASE · 888']];
+    const top = Math.max(1, ...PATH.map(([k]) => sum(k, wk)));
+    const path = el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['STEP', '7 DAYS', '30 DAYS', 'OF THE STEP BEFORE', ''].map(h => el('th', { text: h })))), el('tbody', {}, ...PATH.map(([k, w], i) => { const n = sum(k, wk), p = i ? sum(PATH[i - 1][0], wk) : 0;
+      return el('tr', {}, el('td', { text: w }), el('td', { class: 'mono', text: String(n) }), el('td', { text: String(sum(k)) }), el('td', { class: 'soft', text: i && p ? Math.round(100 * n / p) + '%' : '' }), el('td', {}, el('i', { class: 'bar', style: `display:block;height:6px;background:var(--teal);width:${Math.round(100 * n / top)}%` }))); })));
+    const keys = [...new Set(rows.map(r => r.k))].filter(k => k[0] !== '~').sort((x, y) => sum(y, wk) - sum(x, wk));
+    const all = el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['WHAT', 'TODAY', '7 DAYS', '30 DAYS'].map(h => el('th', { text: h })))), el('tbody', {}, ...keys.map(k => el('tr', {}, el('td', { text: (TRAFFIC[k] || k).toUpperCase() }), el('td', { text: String(sum(k, new Date().toISOString().slice(0, 10))) }), el('td', { text: String(sum(k, wk)) }), el('td', { text: String(sum(k)) })))));
+    /* what the counts say, in a few plain lines: where people stop, what is growing, what is never touched */
+    const pct = (n, d) => d ? Math.round(100 * n / d) : 0, prev = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10), sumR = (k, a2, b2) => rows.filter(r => r.k === k && r.day >= a2 && r.day < b2).reduce((n, r) => n + r.n, 0);
+    const ins = []; let worst = null; PATH.forEach(([k, w], i) => { if (!i) return; const n = sum(k, wk), p2 = sum(PATH[i - 1][0], wk); if (p2 >= 5 && (!worst || n / p2 < worst[2])) worst = [w, PATH[i - 1][1], n / p2]; });
+    if (worst) ins.push(`Most stop between ${worst[1].toLowerCase()} and ${worst[0].toLowerCase()}: ${Math.round(worst[2] * 100)}% go on.`);
+    const op = sum('open-aura', wk), bp = sum('booth-print', wk) + sum('booth-save', wk); if (op) ins.push(`${pct(bp, op)}% of visits this week made a booth photo.`);
+    const growth = keys.map(k => [k, sum(k, wk), sumR(k, prev, wk)]).filter(r => r[2] >= 3).sort((p, n) => n[1] / n[2] - p[1] / p[2])[0]; if (growth && growth[1] > growth[2]) ins.push(`Rising fastest: ${(TRAFFIC[growth[0]] || growth[0]).toLowerCase()} (${growth[2]} the week before, ${growth[1]} this week).`);
+    const quiet = ['desk-open', 'dev-0', 'dev-1', 'dev-2', 'step-3', 'yours'].filter(k => !sum(k, wk)); if (quiet.length) ins.push('Not opened this week: ' + quiet.map(k => (TRAFFIC[k] || k).replace(/-/g, ' ')).join(', ') + '.');
+    const days = [...new Set(rows.map(r => r.day))]; const busiest = days.map(d => [d, rows.filter(r => r.day === d && r.k === 'open-aura').reduce((n, r) => n + r.n, 0)]).sort((p, n) => n[1] - p[1])[0]; if (busiest && busiest[1]) ins.push(`Busiest day: ${new Date(busiest[0]).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}, ${busiest[1]} visits.`);
+    main.replaceChildren(...head('Use'), ins.length ? el('ul', { class: 'insights' }, ...ins.map(t => el('li', { text: t }))) : null, el('h3', { text: 'THE JOURNEY' }), path, el('h3', { text: 'EVERYTHING COUNTED' }), all);
+  }
+
+  /* ───────── makers: each by their three characters, newest first; when seen by the moon, the date after ───────── */
+  const LUNA = 29.530588853 * 864e5, NEW0 = Date.UTC(2000, 0, 6, 18, 14), MOONS = ['NEW', 'WAXING CRESCENT', 'FIRST QUARTER', 'WAXING GIBBOUS', 'FULL', 'WANING GIBBOUS', 'LAST QUARTER', 'WANING CRESCENT'];
+  const moonOf = t => { const x = (t - NEW0) / LUNA, f = x - Math.floor(x); return MOONS[Math.floor(f * 8 + 0.5) % 8] + ' MOON'; };
+  const moonsAgo = t => { const k = Math.floor((Date.now() - NEW0) / LUNA) - Math.floor((t - NEW0) / LUNA); return k <= 0 ? 'THIS MOON' : k === 1 ? 'LAST MOON' : k + ' MOONS AGO'; };
+  /* one maker: what they sent (with its picture), what they said, their level; deleted, all of it goes (their stories to the archive) */
+  async function maker(who) {
+    const j = await (await api('makers/' + who)).json(), m = j.maker || {};
+    const st = (j.stories || []).map(x => el('tr', {}, el('td', {}, thumbCanvas(x.thumb) || ''), el('td', { class: 'mono', text: x.code }), el('td', { text: x.kind.toUpperCase() + ' · ' + x.status.toUpperCase() + (x.gone ? ' · TAKEN DOWN' : '') }), el('td', { text: (() => { try { const b = JSON.parse(x.body); return b.text || ''; } catch (e) { return ''; } })() }), el('td', { class: 'soft', text: when(x.created) })));
+    const tk = (j.talk || []).map(t => el('tr', {}, el('td', { text: t.sec.toUpperCase() }), el('td', { text: (t.re ? '↳ ' : '') + t.text }), el('td', { class: 'soft', text: when(t.at) + (t.hidden ? ' · HIDDEN' : '') })));
+    main.replaceChildren(...head(who + (m.kin != null ? ' · ' + kinName(m.kin) : '')),
+      el('p', { class: 'note', text: `LEVEL ${m.lv || 0} · ${m.posts || 0} SENT · FIRST ${when(m.first)} · LAST ${when(m.last)}${m.stage ? ' · ' + String(m.stage).toUpperCase() : ''}` }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: '← MAKERS', onclick: () => show('makers') }), el('button', { type: 'button', class: 'no', text: 'DELETE THIS MAKER', onclick: async () => { if (prompt('Type ' + who + ' to delete this maker: their stories go to the archive, their board posts and their record go.') !== who) return; await api('makers/' + who, { method: 'POST', body: JSON.stringify({ action: 'delete' }) }); show('makers'); } })),
+      el('h3', { text: 'SENT · ' + st.length }), st.length ? el('div', { class: 'tw' }, el('table', { class: 'makers' }, el('tbody', {}, ...st))) : el('p', { class: 'empty', text: 'NOTHING' }),
+      el('h3', { text: 'SAID · ' + tk.length }), tk.length ? el('div', { class: 'tw' }, el('table', { class: 'makers' }, el('tbody', {}, ...tk))) : el('p', { class: 'empty', text: 'NOTHING' }));
+  }
+  async function makers() {
+    const j = await (await api('makers')).json(), list = j.makers || [];
+    const rows = list.map(m => el('tr', { class: 'go', onclick: () => maker(m.who) }, el('td', { class: 'mono', text: m.who + (m.kin != null ? ' · ' + kinName(m.kin).toUpperCase() : '') }), el('td', { text: String(m.posts) }), el('td', { text: String(m.shown || 0) }), el('td', { text: m.gone ? String(m.gone) : '' }), el('td', { text: (m.stage || '').toUpperCase() }),
+      el('td', { text: moonsAgo(m.last) + ' · ' + moonOf(m.last) }), el('td', { class: 'soft', text: when(m.last) }), el('td', { class: 'soft', text: moonsAgo(m.first) })));
+    main.replaceChildren(...head('Makers'),
+      list.length ? el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['CODE', 'SENT', 'ON THE SITE', 'TAKEN DOWN', 'STAGE', 'LAST SEEN', 'DATE', 'FIRST SEEN'].map(h => el('th', { text: h })))), el('tbody', {}, ...rows)) : el('p', { class: 'empty', text: 'NO ONE YET' }));
+  }
+
+  /* ───────── stories: what each one says, its photograph, where it was sent ───────── */
+  async function photoOf(id, img) { try { const r = await api('photos/' + id); img.src = URL.createObjectURL(await r.blob()); } catch (e) { img.remove(); } }
+  async function act(id, action, card) {
+    if (action === 'purge' && !confirm('Delete this for good? It cannot be brought back.')) return;
+    await api('stories/' + id, { method: 'POST', body: JSON.stringify({ action }) });
+    card.querySelector('.acts').replaceChildren(el('span', { class: 'done', text: { show: 'SHOWN · AND SENT TO PRINT', refuse: 'REFUSED', delete: 'OFF NOVEL.GLOBAL, IN THE ARCHIVE · IT CAN BE BROUGHT BACK', restore: 'BACK IN WAITING', purge: 'DELETED FROM NOVEL.GLOBAL FOR GOOD' }[action] || 'DONE' }));
+    badges();
+  }
+  /* the print as it went to the printer: its small one-bit picture ("w,h,base64"), drawn crisp */
+  function thumbCanvas(t) { const m = /^(\d+),(\d+),(.+)$/.exec(t || ''); if (!m) return null; const w = +m[1], h = +m[2], bin = atob(m[3]), rb = Math.ceil(w / 8), c = el('canvas', { class: 'thumb' }); c.width = w; c.height = h; const x = c.getContext('2d'), im = x.createImageData(w, h);
+    for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const on = bin.charCodeAt(yy * rb + (xx >> 3)) & (0x80 >> (xx & 7)), i = (yy * w + xx) * 4; im.data[i] = im.data[i + 1] = im.data[i + 2] = on ? 20 : 250; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); return c; }
+  function storyCard(x) {
+    const card = el('article', { class: 'card' + (x.kind !== 'story' && x.kind !== 'message' ? ' rec' : '') });
+    const dest = x.dest ? `TO ${x.dest.toUpperCase()}` : 'THE BOARD ONLY'; const meta = `${x.code} · ${x.kind.toUpperCase()} · ${when(x.created)} · ${dest}${x.job ? ` · PRINT ${x.job.toUpperCase()}` : ''}${x.who ? ` · BY ${x.who}` : ''}${(() => { let o = {}; try { o = JSON.parse(x.origin || '{}'); } catch (e) { /* none */ } return [o.from ? ' · FROM ' + o.from.toUpperCase() : '', o.city || o.country ? ' · ' + [o.city, o.region, o.country].filter(Boolean).join(', ').toUpperCase() : '', o.dev ? ' · ' + o.dev.toUpperCase() : '', o.stage ? ' · STAGE ' + o.stage.toUpperCase() : '', o.mesh ? ' · MESH: ' + o.mesh : '', x.jobat ? ' · PRINTER ' + x.jobat.toUpperCase() : '', x.kind === 'message' ? ' · DIRECT TO THE PRINTER' : ''].join(''); })()}${x.gone ? ` · TAKEN DOWN BY ITS MAKER ${when(x.gone)} (OFF THE SITE, KEPT HERE)` : ''}`;
+    let body;
+    if (x.kind === 'story' || x.kind === 'message') {
+      const j = unpack(x.body) || {}; const p = j.p || []; const lines = (j.l || []).filter(Boolean);
+      body = [el('h3', { text: x.kind === 'message' ? 'MESSAGE · PRIVATE: PRINTS, NEVER ON THE MAP' : `${p[3] || p[4] || 'A life'}` }), el('div', { class: 'meta', text: `${meta} · ${p[5] || ''} ${(+p[0]).toFixed(4)} ${(+p[1]).toFixed(4)}` }),
+        typeof j.s === 'string' ? el('p', { text: j.s }) : null, lines.length ? el('ol', {}, lines.map(l => el('li', { text: l }))) : el('p', { class: 'note', text: 'NO LINES' }),
+        (j.k || []).length ? el('p', { class: 'note', text: 'RELATIONS · ' + j.k.map(k => k[2]).join(' · ') }) : null, j.o ? el('p', { text: 'NOTE · ' + j.o }) : null, j.y ? el('p', { class: 'note', text: '— ' + j.y }) : null];
+    } else if (x.kind === 'example') {
+      /* BOARD 00 rewritten: what it holds; shown, it becomes the example everyone sees */
+      let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ } const objs = Array.isArray(j.objects) ? j.objects : [];
+      const words = objs.filter(o => typeof o.text === 'string' && o.text.trim()).map(o => o.text.trim().split('\n')[0]).slice(0, 12);
+      body = [el('h3', { text: `EXAMPLE · BOARD 00 · ${objs.length} PIECES` }), el('div', { class: 'meta', text: meta }), el('p', { class: 'note', text: 'SHOW MAKES THIS THE EXAMPLE EVERY VISITOR SEES.' }),
+        words.length ? el('ol', {}, words.map(w => el('li', { text: w }))) : null];
+    } else if (x.kind === 'cells') {
+      /* a pack of cells: its title, who sent it, and every cell, to check before it goes on the map */
+      let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ } const cells = Array.isArray(j.cells) ? j.cells : [];
+      body = [el('h3', { text: `CELLS · ${j.title || 'A pack'} · ${cells.length}` }), el('div', { class: 'meta', text: `${meta} · AROUND ${x.lat} ${x.lng}` }), j.by ? el('p', { class: 'note', text: '— ' + j.by }) : null,
+        el('ol', {}, cells.slice(0, 60).map(c => el('li', { text: `${String(c.k || 'place').toUpperCase()} · ${c.n || ''} · ${(+c.lat).toFixed(4)} ${(+c.lng).toFixed(4)}${c.note ? ' · ' + c.note : ''}${c.url ? ' · ' + c.url : ''}` }))),
+        cells.length > 60 ? el('p', { class: 'note', text: `+ ${cells.length - 60} more` }) : null];
+    } else {
+      let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ }
+      body = [el('h3', { text: `${String(j.type || 'record').toUpperCase()} · ${j.text || (j.tx && j.tx.cn) || ''}` }), el('div', { class: 'meta', text: `${meta} · ${j.lat} ${j.lng}` }), j.who ? el('p', { class: 'note', text: '— ' + j.who }) : null];
+    }
+    const keys = [];
+    const acts = el('div', { class: 'acts' },
+      x.status === 'shown' && x.kind === 'story' ? el('button', { type: 'button', class: x.star ? 'on' : '', text: x.star ? '★ STARRED' : '☆ STAR', onclick: async () => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: x.star ? 'unstar' : 'star' }) }); show('shown'); } }) : null,
+      x.gone ? el('button', { type: 'button', class: 'on', text: 'BACK ON THE SITE', onclick: async () => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: 'ungone' }) }); x.gone = null; const fm = card.querySelector('.meta.full'); if (fm) fm.textContent = fm.textContent.replace(/ · TAKEN DOWN BY ITS MAKER.*$/, ''); } }) : null,
+      x.status === 'deleted' ? el('button', { type: 'button', class: 'on', text: 'BRING BACK', onclick: () => act(x.id, 'restore', card) }) : null,
+      x.status !== 'shown' && x.status !== 'deleted' ? el('button', { type: 'button', class: 'on', text: x.kind === 'message' ? 'PRINT' : 'SHOW', onclick: () => act(x.id, 'show', card) }) : null,
+      x.status !== 'refused' && x.status !== 'deleted' ? el('button', { type: 'button', text: 'REFUSE', onclick: () => act(x.id, 'refuse', card) }) : null,
+      x.status === 'deleted' ? el('button', { type: 'button', class: 'no', text: 'DELETE FROM NOVEL.GLOBAL FOR GOOD', onclick: () => act(x.id, 'purge', card) }) : el('button', { type: 'button', class: 'no', text: 'TAKE OFF NOVEL.GLOBAL (ARCHIVE)', onclick: () => act(x.id, 'delete', card) }),
+      x.status === 'shown' && x.code ? el('button', { type: 'button', text: `ITS TALK (${x.said || 0})`, onclick: () => { talkSec = 'p.' + x.code; show('talk'); } }) : null);
+    keys.push(
+      x.photo ? el('button', { type: 'button', text: 'PHOTO ↓', onclick: async () => { const r = await api('photos/' + x.id); const a = el('a', { href: URL.createObjectURL(await r.blob()), download: `novel-global-${x.code}.jpg` }); document.body.append(a); a.click(); a.remove(); } }) : null,
+      /* the poster as designed, and its own talk: read it, close it (nothing more said there) or open it again */
+      x.art ? el('button', { type: 'button', text: 'POSTER ↓', onclick: async () => { const r = await api('art/' + x.id); const a = el('a', { href: URL.createObjectURL(await r.blob()), download: `novel-global-${x.code}-poster.jpg` }); document.body.append(a); a.click(); a.remove(); } }) : null,
+      x.status === 'shown' && x.code ? el('button', { type: 'button', class: x.quiet ? 'on' : '', text: x.quiet ? 'TALK CLOSED' : 'CLOSE ITS TALK', onclick: async () => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: x.quiet ? 'unquiet' : 'quiet' }) }); show(tab); } }) : null,
+      x.full ? el('button', { type: 'button', text: 'ORIGINAL ↓', onclick: async () => { const r = await api('full/' + x.id); const bl = await r.blob(); const a = el('a', { href: URL.createObjectURL(bl), download: `novel-global-${x.code}-original.${extOf(bl.type)}` }); document.body.append(a); a.click(); a.remove(); } }) : null);
+    const img = x.photo ? el('img', { alt: '' }) : null; if (img) photoOf(x.id, img); const tc = thumbCanvas(x.thumb);
+    const [title, full, ...rest] = body; if (full) full.className = 'meta full';
+    const brief = el('div', { class: 'meta', text: [x.code, x.kind.toUpperCase(), when(x.created), x.who ? 'BY ' + x.who : '', x.gone ? 'TAKEN DOWN' : '', x.quiet ? 'TALK CLOSED' : ''].filter(Boolean).join(' · ') });
+    /* its mesh line and where it came from, each on a line of its own */
+    let o = {}; try { o = JSON.parse(x.origin || '{}'); } catch (e) { o = {}; }
+    const more = el('div', { class: 'more' }, o.mesh ? el('p', { class: 'mesh', text: 'MESH · ' + o.mesh }) : null, x.jobat ? el('p', { class: 'note', text: 'PRINTER · ' + String(x.jobat).toUpperCase() }) : null);
+    /* MORE: the pictures large, every detail, the files and the rest of the keys */
+    const big = el('div', { class: 'big' }), drop = el('details', { class: 'drop' }, el('summary', { text: 'MORE' }), big, full || null, ...rest, more, el('div', { class: 'acts' }, ...keys.filter(Boolean)));
+    drop.ontoggle = () => { if (!drop.open || big.childElementCount) return; if (img && img.src) big.append(el('img', { alt: '', src: img.src })); const t2 = thumbCanvas(x.thumb); if (t2) big.append(t2); };
+    const pic = el('button', { type: 'button', class: 'pics', 'aria-label': 'More', onclick: () => { drop.open = !drop.open; } }, img || tc || el('div', { class: 'nopic' }));
+    card.append(pic, el('div', { class: 'body' }, title, brief, acts, drop));
+    return card;
+  }
+  /* ───────── the gallery: a tile for each piece, and a piece opened on its own to answer it ───────── */
+  const wordsOf = x => { if (x.kind === 'story' || x.kind === 'message') { const j = unpack(x.body) || {}; return typeof j.s === 'string' ? j.s : ((j.p || [])[3] || ''); } try { const j = JSON.parse(x.body) || {}; return j.text || (j.tx && j.tx.cn) || j.title || ''; } catch (e) { return ''; } };
+  function galTile(x, onOpen) {
+    const img = x.photo ? el('img', { alt: '', loading: 'lazy' }) : null; if (img) photoOf(x.id, img);
+    return el('button', { type: 'button', class: 'tile s-' + x.status, onclick: onOpen }, el('span', { class: 'tp' }, img || thumbCanvas(x.thumb) || el('i', { class: 'nopic', text: (wordsOf(x) || x.kind).slice(0, 60) })),
+      el('span', { class: 'tm' }, el('b', { text: x.code || '—' }), el('small', { text: [x.kind.toUpperCase(), when(x.created)].join(' · ') })), x.grp ? el('em', { class: 'tg', text: x.grp.toUpperCase() }) : null);
+  }
+  function galOpen(list, i, st, groups) {
+    const old = $('#gal'); if (old) old.remove(); const x = list[i]; if (!x) return;
+    const go = d => { const n = i + d; if (n >= 0 && n < list.length) galOpen(list, n, st, groups); else shut(); };
+    const done = (text, gone) => { badges(); say.textContent = text; say.className = 'said on'; if (gone) { list.splice(i, 1); setTimeout(() => { if (list[i]) galOpen(list, i, st, groups); else { shut(); show(st); } }, 650); } };
+    const post = async (b) => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify(b) }); };
+    const shut = () => { box.remove(); document.removeEventListener('keydown', keys); if (!list.length) show(st); };
+    const pic = el('div', { class: 'gp' }); if (x.photo) { const im = el('img', { alt: '' }); photoOf(x.id, im); pic.append(im); } else { const tc = thumbCanvas(x.thumb); if (tc) pic.append(tc); else pic.append(el('p', { class: 'gw', text: wordsOf(x) || x.kind.toUpperCase() })); }
+    if (x.art) { const a = el('img', { alt: '', class: 'art' }); api('art/' + x.id).then(r => r.blob()).then(b => { a.src = URL.createObjectURL(b); pic.append(a); }).catch(() => {}); }
+    const say = el('span', { class: 'said' }), words = el('p', { class: 'gw', text: wordsOf(x) });
+    let o = {}; try { o = JSON.parse(x.origin || '{}'); } catch (e) { o = {}; }
+    const meta = el('p', { class: 'note', text: [x.code, x.kind.toUpperCase(), when(x.created), x.who ? 'BY ' + x.who : '', x.dest ? 'TO ' + x.dest.toUpperCase() : 'NO PRINTER', o.city || o.country ? [o.city, o.country].filter(Boolean).join(', ').toUpperCase() : '', x.jobat ? 'PRINT ' + String(x.jobat).toUpperCase() : ''].filter(Boolean).join(' · ') });
+    /* the one place to write: its words (EDIT) or a reply (REPLY), sent with the same key */
+    const ta = el('textarea', { rows: 3, maxlength: 280, hidden: true }), send = el('button', { type: 'button', class: 'on', hidden: true }); let mode = '';
+    const write = m => { mode = m; ta.hidden = send.hidden = false; ta.value = m === 'edit' ? wordsOf(x) : ''; ta.placeholder = m === 'edit' ? 'ITS WORDS' : 'A REPLY FROM NOVEL.GLOBAL, IN ITS TALK'; send.textContent = m === 'edit' ? 'SAVE ITS WORDS' : 'SEND THE REPLY'; ta.focus(); };
+    send.onclick = async () => { const t = ta.value.trim(); if (mode === 'reply' && !t) return; send.disabled = true; try { await post({ action: mode, text: t }); if (mode === 'edit') { words.textContent = t; try { const j = JSON.parse(x.body); j.text = t; x.body = JSON.stringify(j); } catch (e) { /* packed */ } } ta.hidden = send.hidden = true; done(mode === 'edit' ? 'WORDS SAVED' : 'REPLIED IN ITS TALK', false); } catch (e) { done('NOT SAVED', false); } send.disabled = false; };
+    const canEdit = x.kind !== 'story' && x.kind !== 'message';
+    const A = [
+      st !== 'shown' ? ['accept', x.kind === 'message' ? 'PRINT' : 'ACCEPT', 'A', async () => { await post({ action: st === 'deleted' ? 'restore' : 'show' }); if (st === 'deleted') await post({ action: 'show' }); done(x.kind === 'message' ? 'SENT TO PRINT' : 'ON NOVEL.GLOBAL', true); }] : null,
+      canEdit ? ['edit', 'EDIT', 'E', () => write('edit')] : null,
+      x.code && x.kind !== 'message' ? ['reply', 'REPLY', 'R', () => write('reply')] : null,
+      st !== 'deleted' ? ['archive', 'ARCHIVE', 'X', async () => { await post({ action: 'delete' }); done('IN THE ARCHIVE', true); }] : null,
+      st !== 'refused' && st !== 'deleted' ? ['decline', 'DECLINE', 'D', async () => { await post({ action: 'refuse' }); done('DECLINED', true); }] : null,
+    ].filter(Boolean);
+    const acts = el('div', { class: 'ga' }, ...A.map(([k, t, key, fn]) => el('button', { type: 'button', class: 'g-' + k, title: key, onclick: fn }, el('b', { text: t }), el('kbd', { text: key }))));
+    /* filed under a portfolio group: kept here only, until the portfolio shows its groups */
+    const gs = el('select', { 'aria-label': 'Group' }, el('option', { value: '', text: 'NO GROUP' }), ...groups.map(g => el('option', { value: g, text: g.toUpperCase() })), el('option', { value: '+', text: '+ A NEW GROUP' }));
+    gs.value = x.grp && groups.includes(x.grp) ? x.grp : ''; if (x.grp && !groups.includes(x.grp)) { gs.insertBefore(el('option', { value: x.grp, text: x.grp.toUpperCase() }), gs.lastChild); gs.value = x.grp; }
+    gs.onchange = async () => { let g = gs.value; if (g === '+') { g = (prompt('THE NEW GROUP\'S NAME') || '').trim().slice(0, 40); if (!g) { gs.value = x.grp || ''; return; } groups.push(g); await api('settings', { method: 'POST', body: JSON.stringify({ groups: groups.join('\n') }) }); gs.insertBefore(el('option', { value: g, text: g.toUpperCase() }), gs.lastChild); gs.value = g; }
+      await post({ action: 'group', grp: g }); x.grp = g || null; done(g ? 'IN ' + g.toUpperCase() : 'IN NO GROUP', false); };
+    const keys = e => { if (e.target === ta) { if (e.key === 'Escape') { ta.hidden = send.hidden = true; } return; } if (e.key === 'Escape') shut(); else if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); else { const a = A.find(r => r[2] === e.key.toUpperCase()); if (a) { e.preventDefault(); a[3](); } } };
+    document.addEventListener('keydown', keys);
+    const box = el('div', { id: 'gal', role: 'dialog', 'aria-label': 'A piece' },
+      el('div', { class: 'gtop' }, el('button', { type: 'button', class: 'gx', 'aria-label': 'Close', text: '×', onclick: shut }), el('span', { class: 'note', text: (i + 1) + ' / ' + list.length }), say,
+        el('span', { class: 'gnav' }, el('button', { type: 'button', text: '←', 'aria-label': 'Before', onclick: () => go(-1) }), el('button', { type: 'button', text: '→', 'aria-label': 'Next', onclick: () => go(1) }))),
+      el('div', { class: 'gbody' }, pic, el('div', { class: 'gside' }, words, meta, el('label', { class: 'gg' }, 'GROUP', gs), acts, ta, send,
+        el('div', { class: 'acts' }, x.full ? el('button', { type: 'button', text: 'ORIGINAL ↓', onclick: async () => { const r = await api('full/' + x.id); const bl = await r.blob(); const a = el('a', { href: URL.createObjectURL(bl), download: `novel-global-${x.code}-original.${extOf(bl.type)}` }); document.body.append(a); a.click(); a.remove(); } }) : null,
+          x.status === 'shown' && x.code ? el('button', { type: 'button', text: `ITS TALK (${x.said || 0})`, onclick: () => { shut(); talkSec = 'p.' + x.code; show('talk'); } }) : null))));
+    /* a swipe on a phone: left for the next, right for the one before */
+    let sx = null; box.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true }); box.addEventListener('touchend', e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 70 && !e.target.closest('textarea, select')) go(dx < 0 ? 1 : -1); });
+    document.body.append(box);
+  }
+  /* what people make, on the site or not: off, everything shown here is a draft that only this page sees */
+  async function madeSwitch() {
+    const s0 = await (await api('settings')).json(), on = !!s0.madeShow;
+    return el('section', { class: 'printer made' + (on ? ' on' : '') }, el('h3', { text: on ? 'ON NOVEL.GLOBAL: WHAT IS SHOWN HERE IS PUBLIC' : 'DRAFTS: NOTHING MADE IS ON NOVEL.GLOBAL' }),
+      el('div', { class: 'note', text: on ? 'EVERY STORY, POSTER, PACK AND PHOTOGRAPH SHOWN HERE IS ON THE MAP AND THE WALL FOR EVERY VISITOR.' : 'SHOW STILL APPROVES AND PRINTS, BUT VISITORS SEE NONE OF IT: NOT ON THE MAP, THE WALL OR IN ITS TALK. NOTHING IS DELETED. THE EXAMPLE IS SET APART, UNDER WORDS AND BOARDS.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: on ? 'on' : '', text: on ? 'SHOWN ON NOVEL.GLOBAL' : 'DRAFTS · HIDDEN', onclick: async () => { if (!on && !confirm('Show everything approved here on novel.global, to every visitor?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ madeShow: !on }) }); show(tab); } })));
+  }
+  async function stories(st) {
+    const r = await api('stories?status=' + st); const { stories: list } = await r.json();
+    const clear = st === 'waiting' && list.length ? [el('button', { type: 'button', text: `CLEAR ALL ${list.length} WAITING`, onclick: async () => { if (!confirm(`Refuse and clear all ${list.length} waiting, with their held prints?`)) return; await api('stories/clear', { method: 'POST', body: '{}' }); stories(st); } })] : [];
+    const T = { waiting: ['Waiting', ''], shown: ['Shown', 'On the map and the board for everyone. Star one to hold it up first.'], refused: ['Refused', 'Kept here, photographs and all, and never shown. Archive one to put it away.'], deleted: ['Archive', 'Everything archived or reset, kept for a year: bring one back to waiting, or delete it for good.'] }[st] || [st, ''];
+    let extra = []; if (st === 'deleted') { const gone = (await (await api('places?status=deleted')).json()).places || []; if (gone.length) extra = [el('h3', { class: 'lbl', text: `ARCHIVED PLACES · ${gone.length}` }), ...gone.map(p => el('article', { class: 'card' }, el('div', {}, el('b', { text: p.n }), el('p', { class: 'note', text: [p.cat, p.what, `${p.lat}, ${p.lng}`].filter(Boolean).join(' · ') }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'BRING BACK', onclick: async () => { await api('places/' + p.id, { method: 'POST', body: JSON.stringify({ action: 'restore' }) }); show('deleted'); } }), el('button', { type: 'button', class: 'no', text: 'DELETE FOR GOOD', onclick: async () => { if (!confirm('Delete this place for good?')) return; await api('places/' + p.id, { method: 'POST', body: JSON.stringify({ action: 'purge' }) }); show('deleted'); } })))))]; }
+    const q = el('input', { type: 'search', placeholder: 'SEARCH: WORDS, CODE, MAKER, PLACE, PRINTER', class: 'q' }), so = el('select', {}, ...[['new', 'NEWEST'], ['old', 'OLDEST'], ['kind', 'BY KIND'], ['who', 'BY MAKER'], ['pic', 'WITH A PICTURE FIRST']].map(([v, t]) => el('option', { value: v, text: t })));
+    const box = el('div', { class: 'list' }), count = el('span', { class: 'cnt' }), bulk = el('button', { type: 'button', class: 'no' });
+    const hay = x => [x.code, x.kind, x.who, x.dest, x.body, x.origin, x.jobat].join(' ').toLowerCase();
+    let shown = list;
+    let draw = () => { const w = q.value.trim().toLowerCase(); shown = list.filter(x => !w || hay(x).includes(w)).slice();
+      const by = { new: (p, n) => n.created - p.created, old: (p, n) => p.created - n.created, kind: (p, n) => String(p.kind).localeCompare(n.kind) || n.created - p.created, who: (p, n) => String(p.who || '~').localeCompare(n.who || '~') || n.created - p.created, pic: (p, n) => (!!(n.photo || n.thumb) - !!(p.photo || p.thumb)) || n.created - p.created }[so.value]; shown.sort(by);
+      count.textContent = shown.length + ' OF ' + list.length; bulk.textContent = st === 'deleted' ? 'DELETE THESE ' + shown.length + ' FOR GOOD' : 'TAKE THESE ' + shown.length + ' OFF NOVEL.GLOBAL'; bulk.hidden = !shown.length || !w;
+      box.replaceChildren(...(shown.length ? shown.map(storyCard) : [el('p', { class: 'empty', text: st === 'waiting' ? 'NOTHING WAITING' : 'NONE' })])); };
+    bulk.onclick = async () => { const n = shown.length, act2 = st === 'deleted' ? 'purge' : 'delete'; if (!confirm((act2 === 'purge' ? 'Delete for good ' : 'Archive ') + n + ' shown by this search?')) return; bulk.disabled = true;
+      for (const x of shown) await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: act2 }) }).catch(() => {}); bulk.disabled = false; show(st); badges(); };
+    q.oninput = draw; so.onchange = draw;
+    /* the gallery (as built): every piece a tile, its picture large; touched, it opens on its own with the five ways to answer it.
+       LIST is the long view, as before */
+    let groups = []; try { groups = String((await (await api('settings')).json()).groups || '').split('\n').map(s => s.trim()).filter(Boolean); } catch (e) { groups = []; }
+    const gf = el('select', {}, el('option', { value: '', text: 'EVERY GROUP' }), el('option', { value: '-', text: 'NO GROUP' }), ...groups.map(g => el('option', { value: g, text: g.toUpperCase() })));
+    const asGal = () => (localStorage.getItem('da.admin.view') || 'gallery') === 'gallery';
+    const vw = el('button', { type: 'button', class: 'on' }); const setVw = () => { vw.textContent = asGal() ? 'GALLERY · LIST' : 'LIST · GALLERY'; box.classList.toggle('gal', asGal()); };
+    vw.onclick = () => { localStorage.setItem('da.admin.view', asGal() ? 'list' : 'gallery'); setVw(); draw(); };
+    const draw0 = draw; const byG = x => !gf.value || (gf.value === '-' ? !x.grp : x.grp === gf.value);
+    draw = () => { draw0(); shown = shown.filter(byG); if (!asGal()) { if (gf.value) box.replaceChildren(...(shown.length ? shown.map(storyCard) : [el('p', { class: 'empty', text: 'NONE' })])); return; }
+      box.replaceChildren(...(shown.length ? shown.map((x, i) => galTile(x, () => galOpen(shown, i, st, groups))) : [el('p', { class: 'empty', text: st === 'waiting' ? 'NOTHING WAITING' : 'NONE' })])); };
+    gf.onchange = draw; setVw(); draw();
+    main.replaceChildren(...head(T[0]), ...(st === 'waiting' || st === 'shown' ? [await madeSwitch()] : []), ...clear, el('div', { class: 'tools' }, q, so, gf, vw, count, bulk), box, ...extra);
+  }
+
+  /* ───────── printers: paired with a token shown once; printing with or without approval; a test print ───────── */
+  async function setP(id, body) { const r = await api('printers/' + id, { method: 'POST', body: JSON.stringify(body) }); return r.json(); }
+  function printerCard(p) {
+    const seen = p.seen ? `HEARD ${when(p.seen)}` : 'NOT HEARD YET'; const card = el('section', { class: 'printer' });
+    /* TURN OFF shows only while its receiver is listening and says it can: the Pi prints a slip, then shuts down safely */
+    const fresh = t => t && Date.now() - t < 2 * 60e3; const canOff = p.paired && /\boff\b/.test(p.can || ''), listening = fresh(p.seen);
+    const tok = el('div', { class: 'token', hidden: true });
+    card.append(el('h3', { text: p.name || p.id }),
+      el('div', { class: 'note', text: `${p.id.toUpperCase()} · ${p.paper} MM · ${p.paired ? 'PAIRED' : 'NOT PAIRED'} · ${seen} · ${p.held} WAITING APPROVAL · ${p.queued} IN QUEUE · ${p.printed} PRINTED · ${p.failed} FAILED` }),
+      /* how it is, at a glance: each part ✓ or ✗, and the last slip sent here with what became of it */
+      (() => { let L = null; try { L = p.last ? JSON.parse(p.last) : null; } catch (e) { /* none */ } const ok = b => b ? '✓' : '✗';
+        const pi = `${ok(fresh(p.seen))} PI ${p.seen ? 'HEARD ' + when(p.seen) : 'NEVER HEARD'}`;
+        const scr = p.touch ? `${ok(fresh(p.touch_seen))} SCREEN ${p.touch_seen ? 'ASKED ' + when(p.touch_seen) : 'NEVER ASKED (its three lines, or its site?)'}` : '· NO SCREEN';
+        const mesh = `${p.mesh ? '✓ MESH ON' : '· MESH OFF'}`;
+        const last = L ? `LAST SLIP ${L.code || ''} ${String(L.status).toUpperCase()} ${when(L.at)}${L.paper ? '' : ' (RADIO ONLY)'}${L.mesh ? ' · WITH A MESH LINE' : ''}${L.error ? ' · ' + L.error : ''}` : '✗ NO SLIP HAS BEEN SENT TO THIS PRINTER';
+        const hint = !L ? 'Pieces go to the printer chosen on the site; make one on this site and print it here.' : L.status === 'held' ? (p.touch ? 'Waiting for a press on the touch screen.' : 'Waiting for approval below.') : L.status === 'queued' ? (fresh(p.seen) ? 'The Pi will take it in a moment.' : 'Waiting for the Pi to ask.') : L.status === 'failed' ? 'The Pi could not print it: see the error (printd answered 500 means the printer is off or unplugged).' : '';
+        let R = null; try { R = p.refused ? JSON.parse(p.refused) : null; } catch (e) { /* none */ } const ref = R && (!L || R.at > L.at) ? `  ·  ✗ LAST SEND REFUSED ${when(R.at)}: ${R.why}` : '';
+        return el('div', { class: 'note', text: `${pi}  ·  ${scr}  ·  ${mesh}  ·  ${last}${ref}${hint ? '  —  ' + hint : ''}` }); })(),
+      /* the Wi-Fi each is on, as each last said: the same, or not; and how strong */
+      (() => { const J = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } }; const a = J(p.net), b = J(p.touch_net); if (!a && !b) return null;
+        const bars = r => (r == null ? '' : r > -60 ? ' STRONG' : r > -70 ? ' GOOD' : r > -78 ? ' WEAK' : ' TOO WEAK'); const one = (who, x) => (x ? `${who} ON ${x.n} (${x.rssi} dBm${bars(x.rssi)})${x.ip ? ' AT ' + x.ip : ''}${x.v ? ' · ' + String(x.v).toUpperCase() : ' · OLDER VERSION'} ${when(x.at)}` : `${who} HAS NOT SAID`);
+        const same = a && b ? (a.n === b.n ? '✓ THE SAME WI-FI' : '✗ NOT THE SAME WI-FI: SET THE SCREEN (HOLD BOOT 3 S) OR THE PI (CHANGE WI-FI) TO ONE BOTH REACH') : '';
+        return el('div', { class: 'note', text: [one('PI', a), p.touch ? one('SCREEN', b) : '', same].filter(Boolean).join('  ·  ') }); })(),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', text: p.paired ? 'NEW TOKEN' : 'PAIR A PRINTER', onclick: async () => { if (p.paired && !confirm('A new token stops the old one working. Go on?')) return; const j = await setP(p.id, { action: 'token' }); tok.hidden = false; tok.textContent = `This token shows once. Put it on the receiver, in /etc/da-pull.env:\n\nDA_SERVER=${location.origin}\nDA_PRINTER=${p.id}\nDA_TOKEN=${j.token}`; } }),
+        p.id !== 'novelglobal' && p.number ? el('button', { type: 'button', text: `ISLAND ${p.number}`, onclick: async () => { const n = prompt('Its island number, 2 or more. Each number belongs to one island; the island takes it within a minute.', p.number); if (n == null || !/^\d+$/.test(n.trim())) return; try { await setP(p.id, { action: 'number', number: +n.trim() }); } catch (e) { alert('THAT NUMBER BELONGS TO ANOTHER ISLAND, OR IS BELOW 2.'); } show('printers'); } }) : null,
+        el('button', { type: 'button', text: 'RENAME', onclick: async () => { const n = prompt('Its name. The site shows the first word; links and tokens stay as they are.', p.name || p.id); if (n == null || !n.trim()) return; await setP(p.id, { action: 'name', name: n.trim() }); show('printers'); } }),
+        p.paired ? el('button', { type: 'button', class: 'no', text: 'UNPAIR', onclick: async () => { await setP(p.id, { action: 'unpair' }); show('printers'); } }) : null,
+        p.id !== 'novelglobal' ? el('button', { type: 'button', class: p.links === '*' ? 'on' : '', text: 'CONNECTIONS: ' + (p.links === '*' ? 'ALL' : (p.links || 'NONE').toUpperCase()), onclick: async () => { const n = prompt('Its connections, by name with commas: wish, radio, art, words, cards, codes. Or all.', p.links === '*' ? 'all' : (p.links || '')); if (n == null) return; const l = /^\s*all\s*$/i.test(n) ? ['wish', 'radio', 'art', 'words', 'cards', 'codes'] : n.toLowerCase().split(/[\s,]+/); await setP(p.id, { action: 'links', links: l }); show('printers'); } }) : null,
+        el('button', { type: 'button', class: p.auto ? 'on' : '', text: p.auto ? 'PRINTS WITHOUT APPROVAL' : 'PRINTS AFTER APPROVAL', onclick: async () => { await setP(p.id, { action: 'auto', on: !p.auto }); show('printers'); } }),
+        el('button', { type: 'button', class: p.mesh ? 'on' : '', text: p.mesh ? 'MESH ON' : 'MESH OFF', onclick: async () => { await setP(p.id, { action: 'mesh', on: !p.mesh }); show('printers'); } }),
+        /* a small touch screen beside the printer: every slip waits on it; one press of the jellyfish prints, a long press squashes it */
+        el('button', { type: 'button', class: p.touch ? 'on' : '', text: p.touch ? 'TOUCH SCREEN ON' : 'TOUCH SCREEN OFF', onclick: async () => {
+          if (p.touch) { if (!confirm('Turn the touch screen off? Slips go back to approval here.')) return; await setP(p.id, { action: 'touch', on: false }); show('printers'); return; }
+          const j = await setP(p.id, { action: 'touch', on: true }); tok.hidden = false;
+          tok.textContent = `This touch token shows once. Put these three lines in the screen's sketch (novel-touch.ino), then upload it:\n\n#define NG_HOST    "${location.host}"\n#define NG_PRINTER "${p.id}"\n#define NG_TOKEN   "${j.token}"\n\nEvery slip for this printer now waits on the screen. One press of the jellyfish prints it; a long press squashes it.`; } }),
+        /* the printer's icon on the map: online when switched on here, or while its Pi is listening */
+        el('button', { type: 'button', class: p.live ? 'on' : '', text: p.live ? 'ONLINE ON THE MAP' : 'NOT YET ONLINE ON THE MAP', onclick: async () => { await setP(p.id, { action: 'live', on: !p.live }); show('printers'); } }),
+        /* novel.global may always print on an island; TWO-WAY lets the island's own experiences print on novel.global's printer too */
+        p.id !== 'novelglobal' ? el('button', { type: 'button', class: p.two ? 'on' : '', text: p.two ? 'TWO-WAY' : 'ONE-WAY', onclick: async () => { if (!p.two && !confirm('Let this island print on novel.global too?')) return; await setP(p.id, { action: 'two', on: !p.two }); show('printers'); } }) : null,
+        el('button', { type: 'button', text: `PAPER ${p.paper === '80' ? '58' : '80'} MM`, onclick: async () => { await setP(p.id, { action: 'paper', paper: p.paper === '80' ? '58' : '80' }); show('printers'); } }),
+        !(p.paired && /\bwifi\b/.test(p.can || '')) ? el('button', { type: 'button', disabled: true, text: p.paired ? 'CHANGE WI-FI ONCE HEARD' : 'CHANGE WI-FI ONCE PAIRED' }) : null,
+        p.paired && /\bwifi\b/.test(p.can || '') ? el('button', { type: 'button', text: fresh(p.wifi) ? 'OPENING ITS WI-FI SETUP' : 'CHANGE WI-FI', onclick: async () => { if (!confirm('Open this printer\'s Wi-Fi setup? It leaves its Wi-Fi, prints its setup slip with a code to scan, and waits ten minutes for a phone to choose another.')) return; await setP(p.id, { action: 'wifi' }); show('printers'); } }) : null,
+        p.paired ? el('button', { type: 'button', text: 'TEST PRINT', onclick: async () => { await setP(p.id, { action: 'test' }); show('printers'); } }) : null,
+        !canOff ? el('button', { type: 'button', disabled: true, text: p.paired ? 'TURN OFF ONCE HEARD' : 'TURN OFF ONCE PAIRED' }) : null,
+        canOff && !listening ? el('button', { type: 'button', disabled: true, text: 'OFF OR OUT OF WI-FI' }) : null,
+        canOff && listening ? el('button', { type: 'button', class: 'no', text: fresh(p.off) ? 'TURNING OFF' : 'TURN OFF', onclick: async () => { if (!confirm('Turn this printer off? It prints a slip, then shuts down. Unplug it once its green light stops.')) return; await setP(p.id, { action: 'off' }); show('printers'); } }) : null),
+      tok);
+    return card;
+  }
+  /* ───────── tracks: LIVING, the lives, stays on the map for every visitor, unless unlocked here ───────── */
+  async function stations() {
+    const r = await api('settings'); const st = await r.json(); const card = el('section', { class: 'printer' });
+    card.append(el('h3', { text: 'LIVING' }), el('div', { class: 'note', text: st.lifeLock ? 'ALWAYS ON THE MAP FOR EVERY VISITOR. THEY CAN MUTE IT.' : 'UNLOCKED: VISITORS CAN TAKE IT OFF THE MAP.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.lifeLock ? 'on' : '', text: st.lifeLock ? 'LOCKED ON' : 'UNLOCKED', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ lifeLock: !st.lifeLock }) }); show('stations'); } })));
+    /* LOW RES: only the print-sized photograph kept, to save storage (off: the full-size one too, in R2, up to 8 GB) */
+    const lr = el('section', { class: 'printer' }); lr.append(el('h3', { text: 'PHOTOGRAPHS' }), el('div', { class: 'note', text: st.lowRes ? 'LOW RES: ONLY THE PRINT-SIZED PICTURE IS KEPT.' : 'FULL SIZE: EACH PHOTOGRAPH IS ALSO KEPT FULL SIZE IN R2 (UP TO 8 GB, THEN SMALL ONLY).' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.lowRes ? 'on' : '', text: st.lowRes ? 'LOW RES ON' : 'LOW RES OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ lowRes: !st.lowRes }) }); show('stations'); } })));
+    /* THE MOON: tonight's beside SOUND in the dark, and each thing's own in the corner of every print and piece kept */
+    const mo = el('section', { class: 'printer' }); mo.append(el('h3', { text: 'THE MOON' }), el('div', { class: 'note', text: st.moonShow ? 'SHOWN: TONIGHT\'S MOON BESIDE SOUND IN THE DARK, AND THE MOON EACH THING WAS MADE UNDER IN THE CORNER OF EVERY PRINT AND PIECE KEPT.' : 'OFF: NO MOON BESIDE SOUND, AND NONE ON PRINTS OR PIECES.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.moonShow ? 'on' : '', text: st.moonShow ? 'MOON ON' : 'MOON OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ moonShow: !st.moonShow }) }); show('stations'); } })));
+    /* BOARD 00, the example: as everyone sees it, or open to rewriting in the W.I.S.H. tab and sending here */
+    const setK = o => async () => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('stations'); };
+    const ex = el('section', { class: 'printer' }); ex.append(el('h3', { text: 'THE EXAMPLE · ITS POSTER AND BOARD 00' }),
+      el('div', { class: 'note', text: (st.exampleShow ? 'SHOWN TO VISITORS: THE EXAMPLE POSTER ON THE WALL AND BOARD 00 IN W.I.S.H.' : 'HIDDEN FROM VISITORS.') + ' ' + (st.exampleEdit ? 'OPEN TO EDITING (AND SHOWN WHILE IT IS): CHANGE BOARD 00 IN THE STUDIO, W.I.S.H. → BOARD 00, PRESS SEND, THEN SHOW IT UNDER WAITING. THE EXAMPLE POSTER IS MADE FROM BOARD 00, SO IT UPDATES WITH IT.' : 'LOCKED: NO ONE CAN CHANGE IT.') }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.exampleShow ? 'on' : '', text: st.exampleShow ? 'SHOWN TO VISITORS' : 'HIDDEN', onclick: setK({ exampleShow: !st.exampleShow }) }),
+        el('button', { type: 'button', class: st.exampleEdit ? 'on' : '', text: st.exampleEdit ? 'EDITING ON' : 'LOCKED', onclick: setK({ exampleEdit: !st.exampleEdit }) }),
+        el('button', { type: 'button', class: 'no', text: 'DELETE THE SHARED EDIT (BACK TO THE BUILT-IN EXAMPLE)', onclick: async () => { if (!confirm('Delete the edited BOARD 00 from novel.global for everyone? The example built into the site comes back. Copies on phones are not touched.')) return; await api('reset', { method: 'POST', body: JSON.stringify({ example: true }) }); show('stations'); } })));
+    /* the first board's template: its words, a note to a paragraph, its title on its first line; empty, the site's own */
+    const own = ((window.DA_CONFIG || {}).TEMPLATE || []).map(([, t, d]) => `${t}\n${d}`).join('\n\n');
+    const ta = el('textarea', { class: 'body', maxlength: 6000, spellcheck: 'true', 'aria-label': 'The first board, in words' }); ta.value = st.template || own;
+    const tp = el('section', { class: 'printer ed' }); tp.append(el('h3', { text: 'BOARD 01 · THE TEMPLATE' }),
+      el('div', { class: 'note', text: `EVERY NEW VISITOR'S FIRST BOARD: A BOX FOR EACH OF W, I, S AND H, AND A NOTE ON EACH TOOL. A BLANK LINE BETWEEN NOTES; A NOTE'S FIRST LINE IS ITS TITLE, AND ITS TITLE HOLDS ITS KEY (W, I, S, H, HOW, NOTE, SECT, LINK, IMG, ZOOM, LOCK, OUT). ${st.template ? 'REWRITTEN HERE.' : "THE SITE'S OWN WORDS."}` }), ta,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ template: ta.value.trim() === own.trim() ? '' : ta.value }) }); show('stations'); } }),
+        el('button', { type: 'button', text: "THE SITE'S OWN WORDS", onclick: async () => { if (!confirm("Go back to the site's own words for the template?")) return; await api('settings', { method: 'POST', body: JSON.stringify({ template: '' }) }); show('stations'); } })));
+    main.replaceChildren(...head('Words and boards'), card, lr, mo, ex, tp, wordsCard(st), citiesCard(st), cardsCard(st), picsCard());
+  }
+  /* ───────── places (stage 5): the listed places beyond the ones written into the site. Suggestions from visitors wait here, to show
+     or refuse; places shown can be changed or deleted; a new one can be added, shown at once ───────── */
+  const PCATS = [['service', 'SERVICE'], ['circular', 'CIRCULAR · REPAIR, REUSE, REFILL'], ['brand', 'BRAND'], ['artists', 'ARTISTS'], ['third', 'THIRD SPACE'], ['network', 'NETWORK']];
+  function placeForm(p, done) {
+    const f = {}; const row = (k, label, attrs = {}) => { f[k] = el('input', { type: 'text', 'aria-label': label, placeholder: label, ...attrs }); f[k].value = p && p[k] != null ? String(p[k]) : ''; return f[k]; };
+    const cat = el('select', { 'aria-label': 'Kind of place' }, ...PCATS.map(([v, t]) => el('option', { value: v, text: t }))); cat.value = (p && p.cat) || 'service';
+    const form = el('form', { class: 'pform', onsubmit: async e => { e.preventDefault(); const o = { cat: cat.value }; for (const k of Object.keys(f)) o[k] = f[k].value.trim();
+        if (!o.n || !Number.isFinite(+o.lat) || !Number.isFinite(+o.lng)) { alert('A name, and its latitude and longitude, are needed.'); return; } await done(o); } },
+      row('n', 'NAME', { maxlength: 80, required: true }), cat, row('what', 'WHAT IT DOES, IN A LINE', { maxlength: 200 }), row('addr', 'ADDRESS', { maxlength: 120 }), row('sub', 'SUBURB', { maxlength: 60 }),
+      row('url', 'ITS OWN SITE (https://…)', { maxlength: 300 }), row('lat', 'LATITUDE, e.g. -37.7718', { inputmode: 'decimal' }), row('lng', 'LONGITUDE, e.g. 144.9782', { inputmode: 'decimal' }), row('role', 'ROLE (one word, optional)', { maxlength: 20 }),
+      el('div', { class: 'acts' }, el('button', { type: 'submit', class: 'on', text: p ? 'SAVE' : 'ADD AND SHOW' })));
+    return form;
+  }
+  async function places() {
+    const get = async st => (await (await api('places?status=' + st)).json()).places || [];
+    const [wait, shown] = await Promise.all([get('waiting'), get('shown')]);
+    const post = async (path, o) => { await api(path, { method: 'POST', body: JSON.stringify(o) }); show('places'); };
+    const add = el('section', { class: 'printer ed' }); add.append(el('h3', { text: 'ADD A PLACE' }), el('div', { class: 'note', text: 'SHOWN AT ONCE ON NOVEL.GLOBAL: ON THE MAP, IN SEARCH AND ON THE RADAR, BESIDE THE PLACES ALREADY WRITTEN INTO THE SITE. RIGHT-CLICK A SPOT IN A MAP APP TO COPY ITS LATITUDE AND LONGITUDE.' }), placeForm(null, o => post('places', o)));
+    const card = (p, waiting) => { const c = el('article', { class: 'card' }); const ed = el('div', { hidden: true });
+      c.append(el('b', { text: p.n }), el('p', { text: [p.cat.toUpperCase(), p.what, [p.addr, p.sub].filter(Boolean).join(', '), `${p.lat}, ${p.lng}`].filter(Boolean).join(' · ') }),
+        p.url ? el('p', { class: 'note', text: p.url }) : null, el('p', { class: 'note', text: (p.src === 'suggested' ? 'SUGGESTED ' : 'ADDED ') + when(p.created) }),
+        el('div', { class: 'acts' }, ...(waiting ? [el('button', { type: 'button', class: 'on', text: 'SHOW', onclick: () => post('places/' + p.id, { action: 'show' }) }), el('button', { type: 'button', class: 'no', text: 'REFUSE', onclick: () => post('places/' + p.id, { action: 'refuse' }) })] : []),
+          el('button', { type: 'button', text: 'CHANGE', onclick: () => { ed.hidden = !ed.hidden; } }),
+          el('button', { type: 'button', class: 'no', text: 'ARCHIVE', onclick: () => post('places/' + p.id, { action: 'delete' }) })), ed);
+      ed.append(placeForm(p, o => post('places/' + p.id, { action: 'edit', ...o }))); return c; };
+    main.replaceChildren(...head('Places'), el('h3', { class: 'lbl', text: `SUGGESTED, WAITING · ${wait.length}` }), ...(wait.length ? wait.map(p => card(p, true)) : [el('p', { class: 'empty', text: 'NONE WAITING' })]),
+      add, el('h3', { class: 'lbl', text: `SHOWN · ${shown.length}` }), ...shown.map(p => card(p, false)));
+  }
+  /* INTENTION and W.I.S.H. on the aura (/): every heading, line and hover, and the one quick word shown first. Each field holds the site's
+     own words until changed; only the words changed are kept, and an emptied field goes back to the site's own */
+  const WORD_LABELS = [['intention.tab', 'INTENTION · ITS QUICK WORD'], ['intention.ask', 'INTENTION · THE QUESTION ON ITS LINE'], ['intention.say', 'INTENTION · THE LINE THAT COMES AND GOES'],
+    ['wish.tab', 'W.I.S.H. · ITS QUICK WORD'], ['wish.say', 'W.I.S.H. · THE LINE THAT COMES AND GOES'],
+    ...['w', 'i', 's', 'h'].flatMap(l => [[`${l}.word`, `${l.toUpperCase()} · ITS QUICK WORD`], [`${l}.head`, `${l.toUpperCase()} · ITS HEADING (ON HOVER)`], [`${l}.how`, `${l.toUpperCase()} · WHAT GOES ON ITS LINE (ON HOVER)`]])];
+  /* the home's cards: each card's words, place and look, in the order they stand on novel.global; a card not written here keeps its own */
+  const CARD_EG = '# wish\ntitle: I W.I.S.H.\nafter: helps you tell stories of change\ntag: STRATEGIC INNOVATION\nkey: MORE LIFE\nwhere: -37.8136, 144.9631\nmotion: shadow\n\n# zine\ntitle: PICKLES LANDSCAPE ZINE MAKER\nisland: pickles\nopens: stack:tall\n\n# radio\nhide';
+  /* a card's own pictures: the photographs CIRCULAR STRATEGY turns through (up to ten) and how fast; the picture behind DIRECT ACTION RADIO and how strongly it shows */
+  function picsCard() {
+    const sec = el('section', { class: 'printer ed' }), box = el('div');
+    sec.append(el('h3', { text: 'CARD PICTURES' }), el('div', { class: 'note', text: 'CIRCULAR STRATEGY TURNS THROUGH UP TO TEN PHOTOGRAPHS, SHOWN IN GREY. DIRECT ACTION RADIO HAS ONE PICTURE BEHIND ITS WORDS. EACH IS MADE SMALLER HERE BEFORE IT IS SENT.' }), box);
+    const shrink = file => new Promise((ok, no) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => (b ? ok(b) : no(new Error('shrink'))), 'image/jpeg', 0.84); }; im.onerror = no; im.src = u; });
+    const pick = () => new Promise(ok => { const i = el('input', { type: 'file', accept: 'image/*' }); i.addEventListener('change', () => ok(i.files && i.files[0])); i.click(); });
+    const slotOf = u => +(/\/(\d)\?/.exec(u) || [0, -1])[1];
+    async function fill() {
+      const cs = ((await (await fetch('/api/cards', { cache: 'no-store' })).json()).cards) || {}, w = cs.wish || { pics: [] }, r = cs.radio || { pics: [] };
+      const slot = (card, n, u) => el('button', { type: 'button', class: 'pslot' + (u ? ' on' : ''), 'aria-label': u ? 'Take this picture away' : 'Add a picture', onclick: async () => {
+        if (u) { if (!confirm('Take this picture off the card?')) return; await api(`cards/${card}/${n}`, { method: 'DELETE' }); return fill(); }
+        const file = await pick(); if (!file) return; await api(`cards/${card}/${n}`, { method: 'PUT', body: await shrink(file) }); fill(); } }, u ? el('img', { alt: '', src: u }) : '+');
+      const ws = Array.from({ length: 10 }, (_, n) => slot('wish', n, (w.pics || []).find(u => slotOf(u) === n)));
+      const speed = el('select', { 'aria-label': 'How often the photographs turn', onchange: async () => { await api('cards/wish', { method: 'POST', body: JSON.stringify({ speed: +speed.value }) }); } }, [1, 2, 3, 5, 8, 12].map(n => el('option', { value: n, text: `EVERY ${n} S` })));
+      speed.value = String(w.speed || 2);
+      const shade = el('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round((r.shade == null ? 0.35 : r.shade) * 100), 'aria-label': 'How strongly the radio picture shows', onchange: async () => { await api('cards/radio', { method: 'POST', body: JSON.stringify({ shade: shade.value / 100 }) }); } });
+      box.replaceChildren(el('div', { class: 'note', text: 'CIRCULAR STRATEGY' }), el('div', { class: 'pgrid' }, ws), el('div', { class: 'acts' }, speed),
+        el('div', { class: 'note', text: 'DIRECT ACTION RADIO' }), el('div', { class: 'pgrid' }, slot('radio', 0, (r.pics || [])[0])), el('div', { class: 'acts' }, el('span', { text: 'SHOWS AT ' }), shade));
+    }
+    fill().catch(() => box.replaceChildren(el('div', { class: 'note', text: 'THE PICTURES COULD NOT BE READ' })));
+    return sec;
+  }
+  function cardsCard(st) {
+    const ta = el('textarea', { class: 'body', maxlength: 8000, spellcheck: 'false', 'aria-label': 'The cards on the home', placeholder: CARD_EG }); ta.value = st.cards || '';
+    const sec = el('section', { class: 'printer ed' }); sec.append(el('h3', { text: 'CARDS' }),
+      el('div', { class: 'note', text: 'THE CARDS ON NOVEL.GLOBAL, IN THEIR ORDER. # AND A CARD\'S NAME (wish, radio, zine, kit, space, or a new one), THEN ITS LINES: title, line, after, tag, key, island, opens (aura, radio, kit, panel or stack:NAME), where (lat, lng: its radar\'s beacon), motion (shadow or speed), art (rings, radar, strip, kit, isles), skin (wish, radio, zine, kit, space: its look), size (full or half), hide. A CARD NOT WRITTEN HERE STAYS AS IT IS, AFTER THESE.' }), ta,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ cards: ta.value.trim() }) }); show('stations'); } }),
+        el('button', { type: 'button', text: 'AS THEY STARTED', onclick: async () => { if (!confirm('Put every card back as it started?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ cards: '' }) }); show('stations'); } })));
+    return sec;
+  }
+  /* cities and data packs: another place to make in, written plainly; the aura reads them, a chip each in its intel */
+  const CITY_EG = '# Sydney\ncentre, -33.8688, 151.2093\nPaddington Reservoir Gardens, -33.8843, 151.2262\nThe Rocks, -33.8599, 151.2090';
+  function citiesCard(st) {
+    const ta = el('textarea', { class: 'body', maxlength: 40000, spellcheck: 'false', 'aria-label': 'Cities and their places', placeholder: CITY_EG }); ta.value = st.cities || '';
+    const n = (st.cities || '').split(/\n/).filter(l => /^#/.test(l.trim())).length;
+    const sec = el('section', { class: 'printer ed' }); sec.append(el('h3', { text: 'CITIES AND DATA PACKS' }),
+      el('div', { class: 'note', text: `NEW PLACES TO MAKE IN. A LINE STARTING WITH # NAMES A CITY; "centre, lat, lng" PUTS IT ON THE MAP; EVERY OTHER LINE IS ONE OF ITS PLACES: NAME, LAT, LNG. EACH CITY BECOMES A CHIP IN THE INTEL ON NOVEL.GLOBAL, ITS PLACES FOUND BY SEARCH, SHOWN ON THE MAP, NEAR WHOEVER STANDS THERE AND IN THEIR SONGS. ${n ? `${n} ${n === 1 ? 'CITY' : 'CITIES'} NOW.` : 'NONE YET.'}` }), ta,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ cities: ta.value.trim() }) }); show('stations'); } }),
+        el('button', { type: 'button', text: 'NONE', onclick: async () => { if (!confirm('Take every city off?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ cities: '' }) }); show('stations'); } })));
+    return sec;
+  }
+  function wordsCard(st) {
+    const own = (window.DA_CONFIG || {}).WORDS || {}; let saved = {}; try { saved = st.words ? JSON.parse(st.words) : {}; } catch (e) { saved = {}; }
+    const fields = WORD_LABELS.map(([k, label]) => { const inp = el('input', { type: 'text', maxlength: 240, spellcheck: 'true', placeholder: own[k] || '' }); inp.value = saved[k] || own[k] || ''; inp.dataset.k = k; return el('label', { text: label }, inp); });
+    const changed = Object.keys(saved).filter(k => saved[k] && saved[k] !== own[k]).length;
+    const sec = el('section', { class: 'printer ed' }); sec.append(el('h3', { text: 'INTENTION AND W.I.S.H. · THE WORDS' }),
+      el('div', { class: 'note', text: `THE HEADINGS, LINES AND HOVERS ON THE FIRST TWO STEPS OF NOVEL.GLOBAL, AND THE ONE WORD SHOWN FIRST UNDER EACH. ${changed ? `${changed} REWRITTEN HERE.` : "THE SITE'S OWN WORDS."} SAVED WORDS REACH VISITORS THE NEXT TIME THEY OPEN THE SITE.` }), ...fields,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { const out = {}; fields.forEach(f => { const i = f.querySelector('input'), v = i.value.trim(); if (v && v !== own[i.dataset.k]) out[i.dataset.k] = v; });
+        await api('settings', { method: 'POST', body: JSON.stringify({ words: Object.keys(out).length ? JSON.stringify(out) : '' }) }); show('stations'); } }),
+        el('button', { type: 'button', text: "THE SITE'S OWN WORDS", onclick: async () => { if (!confirm("Go back to the site's own words for INTENTION and W.I.S.H.?")) return; await api('settings', { method: 'POST', body: JSON.stringify({ words: '' }) }); show('stations'); } })));
+    return sec;
+  }
+  /* an island pairs by the code it prints: scanned, the code arrives here in the address (#pair=CODE); approved, the island takes its token by itself */
+  function pairCard(list) {
+    const want = (location.hash.match(/pair=([\w-]+)/) || [])[1] || ''; const sec = el('section', { class: 'printer' }), out = el('div', {});
+    const code = el('input', { type: 'text', value: want, placeholder: 'CODE FROM THE SLIP', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Pairing code' });
+    const look = async () => { out.replaceChildren(); const c = code.value.trim(); if (!c) return; let j;
+      try { j = await (await api('pair/' + encodeURIComponent(c))).json(); } catch (e) { out.replaceChildren(el('p', { class: 'note', text: 'NO SUCH CODE, OR IT IS OLDER THAN A QUARTER OF AN HOUR. THE ISLAND PRINTS A NEW ONE BY ITSELF.' })); return; }
+      if (j.printer) { out.replaceChildren(el('p', { class: 'note', text: `APPROVED FOR ${j.printer.toUpperCase()}. THE ISLAND PRINTS A SLIP ONCE IT HAS ITS TOKEN.` })); return; }
+      const pick = el('select', { 'aria-label': 'Printer' }, el('option', { value: '', text: `A NEW PRINTER: ${(j.name || 'ISLAND').toUpperCase()}` }), ...list.map(p => el('option', { value: p.id, text: `${(p.name || p.id).toUpperCase()}${p.paired ? ' (ITS OLD PI STOPS)' : ''}` })));
+      /* a new printer takes the name the island was given at its setup, changed here first if need be */
+      const nm = el('input', { type: 'text', value: j.name || '', placeholder: 'ITS NAME', maxlength: '40', autocomplete: 'off', 'aria-label': 'Its name' }); pick.addEventListener('change', () => { nm.hidden = !!pick.value; });
+      out.replaceChildren(el('p', { class: 'note', text: `${j.code.replace(/(.{4})/, '$1-')} · ${(j.name || 'AN ISLAND').toUpperCase()} · ASKED ${when(j.created)}` }), el('div', { class: 'acts' }, pick, nm,
+        el('button', { type: 'button', class: 'on', text: 'APPROVE', onclick: async () => { await api('pair/' + j.code, { method: 'POST', body: JSON.stringify({ printer: pick.value, name: nm.value.trim() || j.name }) }); history.replaceState(null, '', location.pathname); show('printers'); } }))); };
+    sec.append(el('h3', { text: 'PAIR AN ISLAND' }), el('div', { class: 'note', text: "SCAN THE CODE ON THE ISLAND'S SLIP, OR TYPE ITS EIGHT LETTERS HERE." }), el('div', { class: 'acts' }, code, el('button', { type: 'button', text: 'LOOK UP', onclick: look })), out);
+    if (want) look(); return sec;
+  }
+  /* OPEN JOINING: while on (the pilot), a new island joins by itself the moment it asks, and its keeper gets their key; off, each waits for PAIR AN ISLAND here */
+  async function joinCard() { const st = await (await api('settings')).json(); const c = el('section', { class: 'printer' });
+    c.append(el('h3', { text: 'OPEN JOINING' }), el('div', { class: 'note', text: st.openJoin ? 'ON: A NEW ISLAND JOINS BY ITSELF (UP TO 160), WITHOUT APPROVAL HERE. IT PRINTS ONLY ON ITS OWN PRINTER UNTIL IT IS MADE TWO-WAY.' : 'OFF: EACH NEW ISLAND WAITS FOR ITS CODE TO BE APPROVED BELOW.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.openJoin ? 'on' : '', text: st.openJoin ? 'OPEN JOINING ON' : 'OPEN JOINING OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ openJoin: !st.openJoin }) }); show('printers'); } }))); return c; }
+  async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }
+
+  /* ───────── the portfolio: posts written here, kept as drafts until published; a cover, a category, links ───────── */
+  async function coverOf(id, img) { try { const r = await api(`posts/${id}/cover`); img.src = URL.createObjectURL(await r.blob()); } catch (e) { /* none */ } }
+  async function posts() {
+    const r = await api('posts'); const { posts: list } = await r.json();
+    const rows = list.map(x => { const img = x.cover ? el('img', { alt: '' }) : el('span', { class: 'ph' }); if (x.cover) coverOf(x.id, img);
+      return el('div', { class: 'post-row' }, img, el('div', {}, el('b', { text: x.title }), el('span', { class: 'note', text: `${{ published: 'PUBLISHED', deleted: 'ARCHIVED' }[x.status] || 'DRAFT'} · ${x.cat || 'WORK'} · ${x.day || ''} · /portfolio.html#${x.slug}` })),
+        el('button', { type: 'button', text: 'EDIT', onclick: () => editor(x.id) })); });
+    main.replaceChildren(...head('Portfolio'), el('div', { class: 'acts', style: 'margin:0 0 12px' }, el('button', { type: 'button', class: 'on', text: 'NEW POST', onclick: () => editor(null) }), el('a', { href: 'portfolio.html', target: '_blank', rel: 'noopener', class: 'note', text: 'THE PORTFOLIO ↗' })),
+      ...(rows.length ? rows : [el('p', { class: 'empty', text: 'NO POSTS YET' })]));
+  }
+  /* a cover chosen on this device: made smaller and re-encoded here, which also drops its location and camera details */
+  const shrink = file => new Promise((res, rej) => { const im = new Image(); im.onload = () => { const k = Math.min(1, 1400 / Math.max(im.naturalWidth, im.naturalHeight)); const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); let q = 0.82, u = c.toDataURL('image/jpeg', q); while (u.length > 400e3 && q > 0.4) { q -= 0.08; u = c.toDataURL('image/jpeg', q); } while (u.length > 400e3 && c.width > 320) { const t = document.createElement('canvas'); t.width = Math.round(c.width * 0.8); t.height = Math.round(c.height * 0.8); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height); c.width = t.width; c.height = t.height; c.getContext('2d').drawImage(t, 0, 0); u = c.toDataURL('image/jpeg', 0.7); } URL.revokeObjectURL(im.src); res(u); }; im.onerror = rej; im.src = URL.createObjectURL(file); });
+  async function editor(id) {
+    const x = id ? (await (await api('posts/' + id)).json()).post : { title: '', summary: '', body: '', cat: '', links: [], day: new Date().toISOString().slice(0, 10), status: 'draft' };
+    let cover; const cv = el('img', { class: 'cv', alt: '' }); if (id && x.cover) coverOf(id, cv);
+    const f = (n, tag = 'input', attrs = {}) => el(tag, { name: n, ...attrs });
+    const title = f('title', 'input', { maxlength: 140, required: true }); title.value = x.title;
+    const cat = f('cat', 'input', { maxlength: 40, placeholder: 'ONE OF THE TWELVE CURATIONS', list: 'cur-list' }); cat.value = x.cat || '';
+    const curs = await curationsOf(); const dl = el('datalist', { id: 'cur-list' }, ...curs.filter(c => c.name).map(c => el('option', { value: c.name })));
+    const day = f('day', 'input', { type: 'date' }); day.value = x.day || '';
+    const sum = f('summary', 'textarea', { rows: 2, maxlength: 400 }); sum.value = x.summary || '';
+    const body = f('body', 'textarea', { class: 'body', maxlength: 40000, placeholder: 'Paragraphs between blank lines. A line starting ## is a heading.' }); body.value = x.body || '';
+    const links = f('links', 'textarea', { rows: 3, placeholder: 'https://… one a line' }); links.value = (x.links || []).join('\n');
+    const pick = f('cover', 'input', { type: 'file', accept: 'image/*' }); pick.addEventListener('change', async () => { const fl = pick.files[0]; if (!fl) return; cover = await shrink(fl); cv.src = URL.createObjectURL(fl); });
+    const note = el('span', { class: 'note' });
+    const save = async status => {
+      if (!title.value.trim()) { title.focus(); return; }
+      note.textContent = 'SAVING…';
+      let j; try { const r = await api('posts', { method: 'POST', body: JSON.stringify({ id: id || undefined, title: title.value, cat: cat.value, day: day.value, summary: sum.value, body: body.value, links: links.value.split('\n').map(s => s.trim()).filter(Boolean), status, ...(cover ? { cover } : {}) }) }); j = await r.json(); }
+      catch (e) { if (e.message !== 'locked') note.textContent = `NOT SAVED · ${e.message === '413' ? 'TOO LARGE: A SMALLER COVER' : e.message === '400' ? 'THE COVER COULD NOT BE READ: TRY ANOTHER' : `THE SERVER SAID ${e.message}`}`; return null; }
+      id = j.id; if (status !== 'published') { note.textContent = 'SAVED AS A DRAFT'; return j; }
+      /* published: checked against what everyone is served, so the word on the page is the truth */
+      const live = await fetch('/api/posts', { cache: 'no-store' }).then(r => r.json()).then(x => (x.posts || []).some(q => q.slug === j.slug)).catch(() => false);
+      note.textContent = live ? `PUBLISHED · LIVE AT /portfolio.html#${j.slug}` : 'SAVED, BUT NOT YET LISTED FOR EVERYONE: PRESS PUBLISH AGAIN'; return j;
+    };
+    main.replaceChildren(el('form', { class: 'ed', onsubmit: e => e.preventDefault() },
+      el('label', {}, 'TITLE', title), el('div', { class: 'two' }, el('label', {}, 'CURATION', cat, dl), el('label', {}, 'DATE', day)),
+      el('label', {}, 'SUMMARY', sum), el('label', {}, 'BODY', body), el('label', {}, 'LINKS', links),
+      el('label', {}, 'COVER', cv, pick),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', text: 'SAVE DRAFT', onclick: () => save('draft') }),
+        el('button', { type: 'button', class: 'on', text: x.status === 'published' ? 'UPDATE' : 'PUBLISH', onclick: () => save('published') }),
+        x.status === 'published' ? el('button', { type: 'button', text: 'UNPUBLISH', onclick: () => save('draft') }) : null,
+        el('button', { type: 'button', text: 'PREVIEW', onclick: async () => { await save(x.status === 'published' ? 'published' : 'draft'); window.open(`portfolio.html?preview=${encodeURIComponent(id)}`, '_blank'); } }),
+        id ? el('button', { type: 'button', class: 'no', text: 'ARCHIVE', onclick: async () => { if (!confirm('Archive this post? It comes off the portfolio and stays here as ARCHIVED.')) return; await api('posts/' + id, { method: 'POST', body: JSON.stringify({ action: 'delete' }) }); show('posts'); } }) : null,
+        el('button', { type: 'button', text: 'BACK', onclick: () => show('posts') }), note)));
+  }
+
+  /* ───────── the overview: what waits, what is on, what happened today and this week ───────── */
+  const TRAFFIC = { 'open-aura': 'novel.global opened', 'open-studio': 'studio opened', 'open-portfolio': 'portfolio opened', begin: 'pieces begun', print: 'prints pressed', wall: 'hung on the wall', song: 'songs kept', device: 'devices opened', 'stories:sent': 'stories sent', stories: 'stories read', 'places:sent': 'places suggested', places: 'places read', inat: 'iNaturalist asked', osm: 'OpenStreetMap asked', img: 'photographs passed', posts: 'portfolio read', receipts: 'prints followed' };
+  /* the overview, as a dashboard: dark glass, thin lines, readouts in brackets, gauges, a two-week trace; it refreshes itself every
+     half minute while open, and a snapshot of it can be saved */
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = (tag, a) => { const e = document.createElementNS(svgNS, tag); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); return e; };
+  function gauge(parts, label) {   // a ring, each part an arc in its own shade; the total in its middle
+    const tot = parts.reduce((a, p) => a + (p[0] || 0), 0), g = svg('svg', { viewBox: '0 0 120 120', class: 'gauge' }); let at = -90;
+    g.append(svg('circle', { cx: 60, cy: 60, r: 46, fill: 'none', stroke: 'rgba(127,227,211,.12)', 'stroke-width': 8 }));
+    parts.forEach(([n, col]) => { if (!n || !tot) return; const a0 = at * Math.PI / 180, a1 = (at + 360 * n / tot - 1.5) * Math.PI / 180, big = n / tot > 0.5 ? 1 : 0;
+      g.append(svg('path', { d: `M${60 + 46 * Math.cos(a0)} ${60 + 46 * Math.sin(a0)} A46 46 0 ${big} 1 ${60 + 46 * Math.cos(a1)} ${60 + 46 * Math.sin(a1)}`, fill: 'none', stroke: col, 'stroke-width': 8 })); at += 360 * n / tot; });
+    const t = svg('text', { x: 60, y: 58, 'text-anchor': 'middle', class: 'gn' }); t.textContent = String(tot); const l = svg('text', { x: 60, y: 76, 'text-anchor': 'middle', class: 'gl' }); l.textContent = label; g.append(t, l); return g;
+  }
+  function trace(vals, w = 520, h = 90) {   // the days as a line, newest at the right, each day a tick
+    const g = svg('svg', { viewBox: `0 0 ${w} ${h}`, class: 'trace', preserveAspectRatio: 'none' }), top = Math.max(1, ...vals), n = vals.length;
+    for (let i = 0; i <= 4; i++) g.append(svg('line', { x1: 0, x2: w, y1: (h - 8) * i / 4 + 4, y2: (h - 8) * i / 4 + 4, stroke: 'rgba(127,227,211,.08)' }));
+    const pts = vals.map((v, i) => [n < 2 ? w / 2 : i * (w - 8) / (n - 1) + 4, h - 4 - (h - 8) * v / top]);
+    if (pts.length) { g.append(svg('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: '#7FE3D3', 'stroke-width': 1.5 })); pts.forEach(p => g.append(svg('circle', { cx: p[0], cy: p[1], r: 2, fill: '#7FE3D3' }))); }
+    return g;
+  }
+  let ovT = null;
+  async function overview() {
+    clearTimeout(ovT);
+    const o = await (await api('overview')).json(); const tr = (await (await api('traffic')).json()).traffic || [];
+    if (tab !== 'overview') return;
+    const S = o.stories, Pl = o.places, Po = o.posts, J = o.jobs, fresh = t => t && Date.now() - t < 2 * 60e3;
+    const read = (n, label, to, hot) => el('button', { type: 'button', class: 'rd' + (hot && n ? ' hot' : ''), onclick: () => to && show(to) }, el('b', { text: String(n || 0).padStart(3, '0') }), el('span', { text: label }));
+    const days = [...new Set(tr.map(r => r.day))].sort().slice(-14), per = (d, re) => tr.filter(r => r.day === d && re.test(r.k)).reduce((a, r) => a + r.n, 0);
+    const keys = Object.keys(TRAFFIC).filter(k => o.week[k] || o.today[k]), top = Math.max(1, ...keys.map(k => o.week[k] || 0));
+    const hud = el('section', { class: 'hud' },
+      el('header', {}, el('b', { text: 'NOVEL.GLOBAL // STATUS' }), el('span', { text: 'SYNC ' + new Date(o.at).toLocaleTimeString('en-AU') }),
+        el('button', { type: 'button', text: 'SAVE SNAPSHOT', onclick: () => { const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify({ ...o, traffic: tr }, null, 1)], { type: 'application/json' })), download: `novel-global-status-${new Date().toISOString().slice(0, 16).replace(':', '')}.json` }); document.body.append(a); a.click(); a.remove(); } })),
+      /* today against Cloudflare's free allowances: calm past 60%, resting past 85% (talk and new places wait for tomorrow; printing goes on) */
+      (() => { const U = o.use || { req: 0, w: 0, r2: 0, cap: { req: 1, w: 1, r2: 1 }, level: 0 }, bar = (n, cap, label, txt) => el('div', { class: 'act' }, el('span', { text: label }), el('i', { class: 'bar', style: `width:${Math.min(100, Math.round(100 * n / cap))}%${n / cap >= 0.85 ? ';background:#E25C40' : n / cap >= 0.6 ? ';background:#F2C14E' : ''}` }), el('b', { text: txt }));
+        return el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'FREE ALLOWANCE · TODAY · ' + ['ALL CLEAR', 'CALM: PRINTERS ASK LESS OFTEN', 'RESTING: TALK AND NEW PLACES WAIT FOR TOMORROW'][U.level || 0] }),
+          bar(U.req, U.cap.req, 'REQUESTS', `${U.req.toLocaleString()} / ${U.cap.req.toLocaleString()}`), bar(U.w, U.cap.w, 'ROWS WRITTEN', `${U.w.toLocaleString()} / ${U.cap.w.toLocaleString()}`),
+          bar(U.r2, U.cap.r2 * 0.8, 'PHOTOGRAPHS AND POSTERS (R2)', `${(U.r2 / 1e9).toFixed(2)} / ${(U.cap.r2 * 0.8 / 1e9).toFixed(0)} GB`)); })(),
+      el('div', { class: 'row' },
+        el('div', { class: 'cell g' }, gauge([[S.waiting, '#E25C40'], [S.shown, '#7FE3D3'], [S.refused, '#5F6B7A'], [S.deleted, '#2A3542']], 'SENT')),
+        el('div', { class: 'cell g' }, gauge([[Pl.waiting, '#E25C40'], [Pl.shown, '#7FE3D3'], [Pl.deleted, '#2A3542']], 'PLACES')),
+        el('div', { class: 'cell g' }, gauge([[J.printed, '#7FE3D3'], [(J.queued || 0) + (J.held || 0), '#F2C14E'], [J.failed, '#E25C40']], 'PRINTS 7D')),
+        el('div', { class: 'cell rds' }, read(S.waiting, 'WAITING', 'waiting', 1), read(Pl.waiting, 'PLACES IN', 'places', 1), read((J.queued || 0) + (J.held || 0), 'IN A QUEUE', 'printers', 1), read(J.failed, 'FAILED 7D', 'printers', 1), read(Po.published, 'POSTS LIVE', 'posts'), read(S.deleted, 'ARCHIVED', 'deleted'))),
+      el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'VISITS · 14 DAYS' }), trace(days.map(d => per(d, /^open-/))), el('div', { class: 'ticks' }, ...days.map(d => el('span', { text: d.slice(8) })))),
+      el('div', { class: 'row wide' },
+        el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'UNITS' }), ...o.printers.map(p => el('div', { class: 'unit' + (fresh(p.seen) ? ' live' : '') }, el('i', { class: 'led' }), el('b', { text: (p.name || p.id).toUpperCase() }),
+          el('span', { text: [p.paired ? 'PAIRED' : 'UNPAIRED', p.seen ? (fresh(p.seen) ? 'LISTENING' : 'LAST ' + new Date(p.seen).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) : 'NEVER HEARD', p.mesh ? 'MESH' : '', p.touch ? 'SCREEN' : ''].filter(Boolean).join(' · ') })))),
+        el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'ACTIVITY · TODAY / 7 DAYS' }), ...(keys.length ? keys.map(k => el('div', { class: 'act' }, el('span', { text: TRAFFIC[k].toUpperCase() }), el('i', { class: 'bar', style: `width:${Math.round(100 * (o.week[k] || 0) / top)}%` }), el('b', { text: `${o.today[k] || 0} / ${o.week[k] || 0}` }))) : [el('span', { class: 'cap', text: 'NOTHING COUNTED YET' })]))));
+    main.replaceChildren(...head('Overview'), hud);
+    const again = () => { ovT = setTimeout(() => { if (tab !== 'overview') return; if (document.hidden) return again(); overview().catch(() => {}); }, 30000); }; again();
+  }
+
+
+  /* ───────── settings: how the devices are earned, the aura's motion, the phreak, the twelve curations, and going back to base ───────── */
+  async function curationsOf() { try { const st = await (await api('settings')).json(); const c = st.curations ? JSON.parse(st.curations) : []; return Array.from({ length: 12 }, (_, i) => c[i] || { name: '', about: '' }); } catch (e) { return Array.from({ length: 12 }, () => ({ name: '', about: '' })); } }
+  async function site() {
+    const st = await (await api('settings')).json(); let g = {}; try { g = st.gates ? JSON.parse(st.gates) : {}; } catch (e) { g = {}; }
+    const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('site'); };
+    /* each setting says, in plain words, what it changes, what to type, and what a visitor then sees */
+    const hint = t => el('small', { class: 'hint', text: t });
+    /* the devices, like a game: earned one a poster (as set), all open, or all closed */
+    /* seven devices, each earned on its own: 0 is open from the start */
+    const mode = el('select', {}, ...[['earn', 'EARNED: EACH AFTER ITS OWN NUMBER OF POSTERS'], ['open', 'OPEN: ALL FROM THE START'], ['closed', 'CLOSED: ONLY THOSE SET TO 0']].map(([v, t]) => el('option', { value: v, text: t }))); mode.value = g.mode || 'earn';
+    const DEVS7 = [['music', 'MUSIC (THE SOUND KEY)', 0, 'The round sound key, top right of the first screen. Plays the music and the desk.'], ['intention', 'INTENTION AND W.I.S.H.', 0, 'Writing what was noticed and the four W.I.S.H. lines.'],
+      ['print', 'ART AND PRINT', 0, 'Making the poster (stickers, photos, pixel art) and printing it.'], ['radio', 'RADIO (COMPLEX)', 1, 'The full radio in the studio: layers, moods, the map.'], ['wish', 'RESEARCH BOARD', 2, 'The studio board for gathering species, notes and places.'],
+      ['design', 'DESIGN (COMPLEX ART)', 3, 'The studio print shop: full poster design.'], ['desk', 'FOUR-TRACK DESK', 4, 'The four-layer sound desk.']];
+    const old = Array.isArray(g.at) ? { radio: g.at[0], wish: g.at[1], design: g.at[2] } : (g.at || {});
+    const at = DEVS7.map(([k, , d]) => { const n = el('input', { type: 'number', min: 0, max: 50, step: 1 }); n.value = String(old[k] != null ? old[k] : d); n.dataset.k = k; return n; });
+    const gates = el('section', { class: 'ed' }, el('h3', { text: 'DEVICES' }),
+      hint('Each visitor opens the site step by step: the eye (photo booth) first; a photo opens the map disc and the sound; an intention opens W.I.S.H. and the radio; a song, art or a whole W.I.S.H. opens the pencil, art and print; a poster with art printed opens the wave and design; a second poster, the portfolio. A number here (whole posters, 0 to 50) also opens that part after that many posters, for everyone. Saved, it reaches visitors on their next load; what a visitor opened stays open.'),
+      el('label', {}, 'MODE', mode), hint('EARNED: each part opens at its own number. OPEN: all seven show to everyone straight away (the numbers are ignored). CLOSED: only parts set to 0 show, the rest stay hidden for everyone.'),
+      el('div', { class: 'three' }, ...DEVS7.map(([, t, , d], i) => el('label', {}, t, at[i], hint(d)))),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ gates: JSON.stringify({ mode: mode.value, at: Object.fromEntries(at.map(n => [n.dataset.k, Math.max(0, Math.min(50, Math.round(+n.value || 0)))])) }) }) })));
+    /* motion: calm, as built, or chaos; and the phreak, base64 drifting under the stars */
+    const fx = el('select', {}, ...[['calm', 'CALM: SLOWER, FEWER PARTICLES'], ['base', 'AS BUILT'], ['chaos', 'CHAOS: FASTER, MORE, RESTLESS']].map(([v, t]) => el('option', { value: v, text: t }))); fx.value = st.fx || 'base';
+    const motion = el('section', { class: 'ed' }, el('h3', { text: 'MOTION AND PHREAK' }), el('p', { class: 'note', text: 'HOW THE AURA MOVES FOR EVERY VISITOR. A VISITOR WHO ASKS THEIR DEVICE FOR LESS MOTION ALWAYS GETS STILLNESS. PHREAK: LINES OF BASE64, THE SHAPE A POSTER TRAVELS IN, DRIFT FAINTLY UNDER THE STARS.' }),
+      el('label', {}, 'MOTION', fx), hint('CALM: slower, with fewer stars and particles. AS BUILT: as designed. CHAOS: faster, more of them, restless. Applies to every visitor on their next load.'),
+      el('label', { class: 'check' }, (() => { const c = el('input', { type: 'checkbox' }); c.checked = !!st.phreak; c.id = 'phreak'; return c; })(), 'BASE64 PHREAK'), hint('Ticked: faint lines of base64 (the text a poster becomes when it travels by mesh radio) drift under the stars. Unticked: none.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ fx: fx.value, phreak: $('#phreak').checked }) })));
+    /* the twelve curations of the portfolio */
+    const curs = await curationsOf(); const rows = curs.map((c, i) => { const n = el('input', { type: 'text', maxlength: 40, placeholder: `CURATION ${String(i + 1).padStart(2, '0')}` }), a = el('input', { type: 'text', maxlength: 200, placeholder: 'A LINE ABOUT IT (OPTIONAL)' }); n.value = c.name || ''; a.value = c.about || ''; return [n, a]; });
+    const cur = el('section', { class: 'ed' }, el('h3', { text: 'PORTFOLIO · THE TWELVE CURATIONS' }), hint('NAME: up to 40 characters, the tab\'s title on the portfolio. ABOUT: up to 200 characters, one line under it (leave empty for none). A tab with no name is hidden. Renaming keeps the posts in it. Saved, the portfolio shows it straight away.'),
+      ...rows.map(([n, a], i) => el('div', { class: 'two' }, el('label', {}, String(i + 1).padStart(2, '0'), n), el('label', {}, 'ABOUT', a))),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ curations: JSON.stringify(rows.map(([n, a]) => ({ name: n.value.trim(), about: a.value.trim() }))) }) })));
+    /* back to base: archived (so it can come back), never the printers, their tokens or the password */
+    const R = ['stories', 'example', 'places', 'posts', 'words', 'settings', 'traffic', 'fresh'], RL = { fresh: 'A FRESH START, FOR GOOD: EVERY MAKER AND CODE, POSTER, TALK, TAPE AND PRINT DELETED (NOT ARCHIVED), AND EVERY PHONE CLEARED ON ITS NEXT VISIT. 888 STAYS. DOWNLOAD DATA FIRST', stories: 'EVERY STORY, NOTICING AND PACK (TO THE ARCHIVE)', example: 'BOARD 00 BACK TO THE SITE\'S OWN', places: 'EVERY PLACE ADDED OR SUGGESTED (TO THE ARCHIVE)', posts: 'EVERY PUBLISHED POST BACK TO A DRAFT', words: 'THE WORDS, THE TEMPLATE AND THE CITIES BACK TO THE SITE\'S OWN', settings: 'THESE SETTINGS BACK TO AS BUILT', traffic: 'THE COUNTS' };
+    const boxes = R.map(k => { const c = el('input', { type: 'checkbox' }); c.dataset.k = k; return el('label', { class: 'check' }, c, RL[k]); });
+    const reset = el('section', { class: 'ed' }, el('h3', { text: 'BACK TO THE BASE VERSION' }), el('p', { class: 'note', text: 'CHOOSE WHAT GOES BACK. STORIES AND PLACES GO TO THE ARCHIVE, WHERE THEY CAN BE BROUGHT BACK. THE PRINTERS, THEIR TOKENS AND THE PASSWORD ARE NEVER TOUCHED, SO EVERYTHING KEEPS WORKING.' }), hint('Tick each thing to put back, press RESET WHAT IS TICKED, then type RESET in capitals to confirm. Stories and places move to the Archive section (bring any back from there). Posts become drafts. Words, BOARD 00 and these settings return to how the site was built. The counts start again from zero. What visitors made on their own phones stays with them.'), ...boxes,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'no', text: 'RESET WHAT IS TICKED', onclick: async () => { const o = {}; boxes.forEach(b => { const c = b.querySelector('input'); if (c.checked) o[c.dataset.k] = true; }); if (!Object.keys(o).length) return; if (prompt('Type RESET to go back to the base version for what is ticked.') !== 'RESET') return; await api('reset', { method: 'POST', body: JSON.stringify(o) }); show('overview'); badges(); } })),
+      el('h3', { text: 'DRAFTS IN THIS BROWSER' }), el('p', { class: 'note', text: 'THE QUICKEST WIPE. CLEARS THE PIECE BEING MADE, THE W.I.S.H. AND INTENTION BEING WRITTEN, KEPT SONGS AND LOOPS, MIXES, TAPES, RECORDINGS AND CONSTELLATIONS. KEEPS EVERY FINISHED POSTER, THE WALL, THE BOARDS, THE CODE AND HOW FAR THE JOURNEY HAS COME.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'no', text: 'CLEAR DRAFTS', onclick: async () => { if (!confirm('Clear the drafts in this browser? Finished posters stay.')) return;
+        ['da.wish.v1', 'da.done.v1', 'da.figs.v1', 'da.aura.songs', 'da.base.song', 'da.base.songs', 'da.loops.v1', 'da.mixes.v1', 'da.tapes.v1'].forEach(k => localStorage.removeItem(k));
+        const idb = (name, v, fn) => new Promise(r => { try { const q = indexedDB.open(name, v); q.onupgradeneeded = () => { try { q.transaction.abort(); } catch (e) { /* new */ } r(); }; q.onerror = q.onblocked = () => r(); q.onsuccess = () => { const d = q.result; try { fn(d, r); } catch (e) { d.close(); r(); } }; } catch (e) { r(); } });
+        await idb('novelglobal', 2, (d, r) => { if (!d.objectStoreNames.contains('piece')) { d.close(); return r(); } const t = d.transaction('piece', 'readwrite'); t.objectStore('piece').clear(); t.oncomplete = t.onerror = () => { d.close(); r(); }; });
+        await idb('novelglobal-kept', 1, (d, r) => { if (!d.objectStoreNames.contains('kv')) { d.close(); return r(); } const t = d.transaction('kv', 'readwrite'), s = t.objectStore('kv'), c = s.openCursor(); c.onsuccess = () => { const k = c.result; if (k) { if (/^rec:/.test(k.key)) k.delete(); k.continue(); } }; t.oncomplete = t.onerror = () => { d.close(); r(); }; });
+        alert('Drafts cleared. Finished posters stay.'); } })),
+      el('h3', { text: 'THIS BROWSER' }), el('p', { class: 'note', text: 'CLEARS WHAT HAS BEEN MADE IN THIS BROWSER ON NOVEL.GLOBAL: POSTERS ON ITS WALL, THE PIECE BEING MADE, KEPT SONGS, BOARDS AND THE STUDIO\'S POSTERS. NOTHING ON THE SERVER, AND THIS PAGE STAYS OPEN.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'no', text: 'CLEAR THIS BROWSER', onclick: async () => { if (!confirm('Clear everything made in this browser on novel.global?')) return; Object.keys(localStorage).filter(k => /^da\./.test(k)).forEach(k => localStorage.removeItem(k)); await new Promise(r => { try { const q = indexedDB.deleteDatabase('novelglobal'); q.onsuccess = q.onerror = q.onblocked = r; } catch (e) { r(); } }); alert('Cleared. novel.global opens as new in this browser.'); } })));
+    /* the start and the booth: the discs' words, the checklist, how a print starts, the booth's timing */
+    let so = {}; try { so = st.start ? JSON.parse(st.start) : {}; } catch (e) { so = {}; }
+    const chk = (id, on, t) => el('label', { class: 'check' }, (() => { const c = el('input', { type: 'checkbox', id }); c.checked = on; return c; })(), t);
+    const pn = el('select', {}, ...[['paper', 'AS THE PAPER: BLUE PRINTS NIGHT, WHITE PRINTS DAY'], ['day', 'ALWAYS DAY: BLACK ON WHITE'], ['night', 'ALWAYS NIGHT: WHITE ON SOLID BLACK']].map(([v, t]) => el('option', { value: v, text: t }))); pn.value = so.printNight || 'paper';
+    const tq = el('select', {}, ...[['booth', 'THE PHOTO BOOTH'], ['home', 'THE START']].map(([v, t]) => el('option', { value: v, text: t }))); tq.value = so.touchTo === 'home' ? 'home' : 'booth';
+    const num = (v, mn, mx, stp) => { const n = el('input', { type: 'number', min: mn, max: mx, step: stp }); n.value = String(v); return n; };
+    const bh = num(so.boothHome != null ? so.boothHome : 15, 1, 60, 0.5), bg = num(so.boothGap != null ? so.boothGap : 10, 0, 240, 1), bl = el('input', { type: 'text', maxlength: 160, placeholder: 'EMPTY: EL NIÑO\'S LINE OF THE DAY' }); bl.value = so.boothLine || '';
+    const start = el('section', { class: 'ed' }, el('h3', { text: 'START AND BOOTH' }),
+      chk('so-words', so.discWords !== false, 'THE THREE DISCS SAY WHAT THEY DO, ONCE'), hint('Ticked: under the three round buttons on the first screen, their words (Share what you noticed, Make a song, Print a photo) show once, then fade. Unticked: the buttons alone, no words.'),
+      chk('so-check', so.checklist === true, 'THE CHECKLIST BESIDE DAY AND NIGHT'), hint('Off as built. Ticked: a short list sits top left of what each visitor has done (Photo, Intention, Song, W.I.S.H., Poster, Design), opening for ten seconds on each new one; it never shows for a visitor who opened everything at once. Unticked: never shown.'),
+      el('label', {}, 'THE TOUCH SCREEN\'S QR OPENS', tq), hint('Its QR is novel.global/t. THE PHOTO BOOTH: straight to taking a photo and printing it there, with the code on the slip. THE START: the site as it opens for anyone.'),
+      el('label', {}, 'A PRINT STARTS', pn), hint('How a poster first prints on the 80 mm paper. AS THE PAPER: a blue poster prints dark (white on a dark shade), a white poster prints light. ALWAYS DAY: black on white. ALWAYS NIGHT: white on solid black (a style can ask for a fine shade instead). A visitor can still flip it with the moon key before they print.'),
+      el('div', { class: 'three' }, el('label', {}, 'BOOTH: THE PASS SHOWS FOR (SECONDS)', bh, hint('After a booth print or save, a ring closes with "your code is on the paper" for this long, then the phone goes back to novel.global. 1 to 60, halves allowed. As built: 15.')),
+        el('label', {}, 'BOOTH: MINUTES BETWEEN PRINTS FROM ONE PHONE', bg, hint('After printing, the same phone can print again after this many minutes. Until then the print button counts down; save still works. Whole minutes, 0 to 240; 0 means no wait. As built: 10. Counted on each phone, so another phone can print straight away.'))),
+      el('label', {}, 'BOOTH: THE LINE UNDER THE PHOTO', bl), hint('Empty: El Niño\'s fact of the day, a new one each day. Your own words: printed under every booth photo instead. A single dash (-): no line. Either way a visitor can press ❝ for another of El Niño\'s lines or ⊘ to take it off.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ start: JSON.stringify({ boothLine: bl.value.trim(), touchTo: tq.value, discWords: $('#so-words').checked, checklist: $('#so-check').checked, printNight: pn.value, boothHome: Math.max(1, Math.min(60, +bh.value || 15)), boothGap: Math.max(0, Math.min(240, Math.round(+bg.value || 0))) }) }) })));
+    /* print quality: one of five sets, and any of its tweaks turned apart (each OFF goes back to the set's own) */
+    const PQS = { soft: { clip: 1, gamma: 0.8, contrast: 0, sharpen: 0.7, dither: 'atkinson', lineCut: 200, bolden: 0, minText: 14, heat: 0 }, crisp: { clip: 2, gamma: 0.72, contrast: 0.25, sharpen: 1.1, dither: 'auto', lineCut: 215, bolden: 0, minText: 18, heat: 2 }, bold: { clip: 3, gamma: 0.62, contrast: 0.4, sharpen: 1.3, dither: 'floyd', lineCut: 225, bolden: 1, minText: 20, heat: 4 }, screen: { clip: 2, gamma: 0.7, contrast: 0.3, sharpen: 0.9, dither: 'bayer', lineCut: 215, bolden: 0, minText: 18, heat: 2 }, graphic: { clip: 4, gamma: 0.75, contrast: 0.7, sharpen: 1.6, dither: 'none', lineCut: 230, bolden: 1, minText: 20, heat: 3 } };
+    let pqo = {}; try { pqo = st.printq ? JSON.parse(st.printq) : {}; } catch (e) { pqo = {}; }
+    const pqp = el('select', {}, ...[['soft', 'SOFT: AS BEFORE, LIGHT AND GENTLE'], ['crisp', 'CRISP: DARKER MID-TONES, SHARPER (AS BUILT)'], ['bold', 'BOLD: FULL BLACKS, THICKER WORDS'], ['screen', 'SCREEN: AN EVEN DOT PATTERN'], ['graphic', 'GRAPHIC: BLACK OR WHITE, NO GREYS']].map(([v, t]) => el('option', { value: v, text: t }))); pqp.value = PQS[pqo.preset] ? pqo.preset : 'crisp';
+    const PQT = [['clip', 'STRETCH (% LET GO AT EACH END)', 0, 10, 0.5, 'How far the darkest and lightest parts are pushed to pure black and white. Higher: punchier, less grey.'], ['gamma', 'MID-TONES (UNDER 1 DARKER)', 0.3, 1.6, 0.02, 'The fix for prints that look light grey: lower makes faces and skies darker.'], ['contrast', 'CONTRAST (0 TO 1)', 0, 1, 0.05, 'An S-curve: darks darker and lights lighter.'], ['sharpen', 'SHARPEN (0 TO 2.5)', 0, 2.5, 0.1, 'Edges lifted so lines read clearly. Too high looks crunchy.'], ['lineCut', 'WORDS AND LINES CUT (120 TO 250)', 120, 250, 1, 'Anything darker than this in words, lines and icons prints black. Higher: bolder, faint lines kept.'], ['bolden', 'BOLDER (DOTS ADDED, 0 TO 2)', 0, 2, 1, 'Thickens words and lines by a dot or two. Helps small text.'], ['minText', 'SMALLEST WORDS ON A BOOTH SLIP (DOTS)', 10, 28, 1, 'Small words on a booth slip are never set under this. 18 reads easily.'], ['heat', 'PRINTER DARKNESS (-6 TO 8)', -6, 8, 1, 'How hot the printer head runs. Higher: darker black, slower prints. 0 is as the printer comes. Works on the Epson TM-T88.']];
+    const pqRows = PQT.map(([k, t, mn, mx, stp, h]) => { const on = el('input', { type: 'checkbox' }), n = el('input', { type: 'number', min: mn, max: mx, step: stp }); on.checked = pqo[k] != null; n.value = String(pqo[k] != null ? pqo[k] : PQS[pqp.value][k]); n.disabled = !on.checked; on.addEventListener('change', () => { n.disabled = !on.checked; if (!on.checked) n.value = String(PQS[pqp.value][k]); }); return { k, on, n, row: el('div', { class: 'two' }, el('label', { class: 'check' }, on, t), el('label', {}, '', n), hint(h)) }; });
+    const pqd = el('select', {}, ...[['', 'DOTS: AS THE SET'], ['auto', 'CHOSEN FOR EACH PHOTOGRAPH'], ['atkinson', 'ATKINSON: CLEAN, BRIGHT'], ['floyd', 'FLOYD-STEINBERG: FULLER DARKS'], ['bayer', 'BAYER: EVEN SCREEN'], ['none', 'NONE: BLACK OR WHITE']].map(([v, t]) => el('option', { value: v, text: t }))); pqd.value = pqo.dither || '';
+    pqp.addEventListener('change', () => pqRows.forEach(r => { if (!r.on.checked) r.n.value = String(PQS[pqp.value][r.k]); }));
+    /* the curve: three patches read off the calibration strip, printed on the printer itself (thermal.js draws it and lays out its dots) */
+    const calOn = el('input', { type: 'checkbox' }); calOn.checked = !!pqo.cal; const K0 = THERMAL.cal(pqo.cal || THERMAL.CAL);
+    const cals = [['b', 'SOLID BLACK UP TO PATCH'], ['m', 'HALF GREY AT PATCH'], ['w', 'PAPER FROM PATCH']].map(([k, t]) => { const n = el('input', { type: 'number', min: 0, max: 10, step: 0.5 }); n.value = String(K0[k]); return { k, n, row: el('label', {}, t, n) }; });
+    const calOf = () => THERMAL.cal({ b: +cals[0].n.value, m: +cals[1].n.value, w: +cals[2].n.value });
+    let prs = []; try { prs = (await (await api('printers')).json()).printers || []; } catch (e) { prs = []; }
+    const pps = el('select', { 'aria-label': 'Printer for the strip' }, ...prs.map(p => el('option', { value: p.id, text: `${(p.name || p.id).toUpperCase()} · ${p.paper} MM${p.paired ? '' : ' · NOT PAIRED'}` })));
+    const stripOf = () => { const p = prs.find(q => q.id === pps.value) || { paper: '80' }, P2 = (window.DA_PRINTERS || {})[String(p.paper || 80)] || { dots: 512 }, hv = pqRows.find(r => r.k === 'heat');
+      return { c: THERMAL.strip({ dots: P2.dots, cal: calOf(), dither: pqd.value || PQS[pqp.value].dither, heat: +hv.n.value || 0 }), heat: +hv.n.value || 0 }; };
+    const stripBox = el('div', { class: 'big' }), stripSay = el('p', { class: 'note' });
+    const printq = el('section', { class: 'ed' }, el('h3', { text: 'PRINT QUALITY' }),
+      el('label', {}, 'SET', pqp), hint('Five ways a print is made. CRISP is as built. If prints come out light grey or muddy, try BOLD; for posters with lots of words, GRAPHIC. Each tweak below can be ticked to set it apart from the set; unticked, the set\'s own value is used.'),
+      el('label', {}, 'DOTS FOR PHOTOGRAPHS', pqd), hint('CHOSEN FOR EACH PHOTOGRAPH (as built): a graphic prints black or white, a busy picture Atkinson, a dark or soft one Floyd-Steinberg. Words are never dotted.'), ...pqRows.map(r => r.row),
+      el('h3', { text: 'THE CURVE, FROM THE CALIBRATION STRIP' }),
+      hint('1. Choose the printer and press PRINT THE STRIP. 2. On the paper, look at the top row of eleven grey patches, 0 (black) to 10 (paper). 3. Type the lightest patch that still looks solid black, the one that looks half way between black and paper, and the darkest that looks like bare paper. 4. Tick USE THE CURVE and press SAVE. Print the strip again: its second row should now go evenly from black to paper. If the solid black block shows stripes or looks grey, raise PRINTER DARKNESS above.'),
+      el('div', { class: 'acts' }, pps, el('button', { type: 'button', text: 'SEE THE STRIP', onclick: () => { stripBox.replaceChildren(stripOf().c); } }),
+        el('button', { type: 'button', text: 'PRINT THE STRIP', onclick: async () => { if (!pps.value) return; const s0 = stripOf(); stripBox.replaceChildren(s0.c); stripSay.textContent = 'SENDING…';
+          const r = await api('printers/' + pps.value, { method: 'POST', body: JSON.stringify({ action: 'strip', escpos: THERMAL.raster(s0.c, s0.heat) }) }).catch(() => null); stripSay.textContent = r && r.ok ? 'SENT. IT PRINTS THE NEXT TIME THE PI ASKS.' : 'NOT SENT. IS THE PRINTER PAIRED?'; } })),
+      stripSay, stripBox,
+      el('label', { class: 'check' }, calOn, 'USE THE CURVE'), el('div', { class: 'three' }, ...cals.map(c => c.row)),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = { preset: pqp.value }; if (pqd.value) o.dither = pqd.value; pqRows.forEach(r => { if (r.on.checked && r.n.value !== '') o[r.k] = +r.n.value; }); if (calOn.checked) o.cal = calOf(); save({ printq: JSON.stringify(o) }); } })));
+    /* styles: the house's, and artists' mod packs added here; each style shown to visitors or not. A pack is one JSON file (a style alone,
+       or { name, by, styles }), its fonts and pictures inside it; thermal.js checks every field before it is kept */
+    let sty = { packs: [] }; try { sty = st.styles ? JSON.parse(st.styles) : { packs: [] }; } catch (e) { sty = { packs: [] }; } sty.packs = (sty.packs || []).filter(p => THERMAL.pack(p));
+    const styList = el('div', {}), styIn = el('textarea', { rows: 5, placeholder: 'PASTE A MOD PACK (JSON) HERE, OR CHOOSE ITS FILE BELOW' }), styFile = el('input', { type: 'file', accept: '.json,application/json' }), stySay = el('p', { class: 'note' });
+    const styDraw = () => styList.replaceChildren(
+      el('p', { class: 'note', text: 'THE HOUSE: ' + THERMAL.HOUSE.map(h => h.name).join(' · ') + ' (ALWAYS SHOWN; HOUSE IS WHERE EVERY PHONE STARTS)' }),
+      ...sty.packs.map((p, i) => { const pk = THERMAL.pack(p), off = p.off || [];
+        return el('div', { class: 'printer' }, el('h3', { text: `${pk.name}${pk.by ? ' · ' + pk.by.toUpperCase() : ''}` }),
+          ...pk.styles.map(s2 => { const c = el('input', { type: 'checkbox' }); c.checked = off.indexOf(s2.id) < 0; c.addEventListener('change', () => { p.off = (p.off || []).filter(x => x !== s2.id).concat(c.checked ? [] : [s2.id]); });
+            return el('label', { class: 'check' }, c, `${s2.name} · ${s2.fonts.body.split(':')[0].toUpperCase()} · ${(s2.photo.dither || 'AS THE SET').toUpperCase()} · FRAME ${s2.frame.toUpperCase()}${s2.colours ? ' · ' + s2.colours.paper + ' / ' + s2.colours.ink : ''}`); }),
+          el('div', { class: 'acts' }, el('button', { type: 'button', class: 'no', text: 'REMOVE THIS PACK', onclick: () => { sty.packs.splice(i, 1); styDraw(); } }))); }));
+    const styAdd = txt => { const pk = THERMAL.pack(txt); if (!pk) { stySay.textContent = 'NOT A STYLE OR A MOD PACK.'; return; } let raw; try { raw = JSON.parse(txt); } catch (e) { raw = {}; }
+      sty.packs.push({ name: pk.name, by: pk.by, styles: Array.isArray(raw.styles) ? raw.styles : [raw], off: [] }); styIn.value = ''; stySay.textContent = `${pk.name}: ${pk.styles.length} STYLE${pk.styles.length > 1 ? 'S' : ''} ADDED. SAVE TO SHOW THEM.`; styDraw(); };
+    styFile.addEventListener('change', async () => { const f = styFile.files[0]; if (f) styAdd(await f.text()); styFile.value = ''; });
+    styDraw();
+    const styles = el('section', { class: 'ed' }, el('h3', { text: 'STYLES · MOD PACKS' }),
+      hint('A style sets a whole receipt in one touch: its fonts, the size of its words, the photograph\'s dots and contrast, its frame and top, and its colours on screen. Visitors choose one with the STYLE key at print, and can change it and keep it on their phone. Add an artist\'s mod pack below, tick the styles to show, then SAVE. Packs with fonts in them are large: every visitor loads them, so keep them under 100 KB in all.'),
+      styList, styIn, el('div', { class: 'acts' }, el('button', { type: 'button', text: 'ADD', onclick: () => styAdd(styIn.value) }), styFile), stySay,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const t = JSON.stringify({ packs: sty.packs }); if (t.length > 100000) { stySay.textContent = 'TOO LARGE: REMOVE A PACK (THE LIMIT IS 100 KB IN ALL).'; return; } save({ styles: t }); } })));
+    /* the notice on a first visit: shown or not, and its words (empty: the site's own) */
+    let nt = {}; try { nt = st.notice ? JSON.parse(st.notice) : {}; } catch (e) { nt = {}; }
+    const ntx = el('textarea', { rows: 8, maxlength: 1300, placeholder: 'EMPTY: THE SITE\'S OWN WORDS' }); ntx.value = nt.text || '';
+    const nth = el('input', { type: 'text', maxlength: 120, placeholder: 'SOLAR THERMAL PRINT ARCHIPELAGO · ISLAND COMMUNITY PATCH Nº 01' }); nth.value = nt.head == null ? '' : nt.head === '' ? '-' : nt.head;
+    const notice = el('section', { class: 'ed' }, el('h3', { text: 'NOTICE' }),
+      chk('nt-on', !nt.off, 'SHOWN ON A FIRST VISIT'), hint('Ticked: the words below are shown once, to someone opening novel.global for the first time, until they touch the screen. A blank line starts a new paragraph; the last paragraph is set in capitals.'),
+      el('label', {}, 'HEADING', nth), hint('One line above the words, in capitals. Empty: the site\'s own. A single dash (-): no heading.'),
+      el('label', {}, 'WORDS', ntx),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ notice: JSON.stringify({ off: !$('#nt-on').checked, head: nth.value.trim() === '-' ? '' : nth.value.trim() || null, text: ntx.value.trim() }) }) })));
+    /* the portfolio's Sources: the words above the list, and the list itself */
+    let sr = {}; try { sr = st.sources ? JSON.parse(st.sources) : {}; } catch (e) { sr = {}; }
+    const sra = el('textarea', { rows: 5, maxlength: 2000, placeholder: 'EMPTY: THE SITE\'S OWN WORDS' }); sra.value = sr.about || '';
+    const srl = el('textarea', { rows: 10, maxlength: 5000, placeholder: 'EMPTY: THE SITE\'S OWN LIST' }); srl.value = sr.list || '';
+    const sources = el('section', { class: 'ed' }, el('h3', { text: 'PORTFOLIO · SOURCES' }),
+      el('label', {}, 'THE WORDS ABOVE THE LIST', sra), hint('Shown in small type at the top of Sources on the portfolio. Empty: the site\'s own words. A single dash (-): no words.'),
+      el('label', {}, 'THE LIST, ONE SOURCE TO A LINE', srl), hint('Replaces the whole list of sources. Empty: the site\'s own list (iNaturalist, OpenStreetMap and the rest).'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sources: JSON.stringify({ about: sra.value.trim(), list: srl.value.trim() }) }) })));
+    /* the Country over El Niño's map, once on each phone */
+    let co = {}; try { co = st.country ? JSON.parse(st.country) : {}; } catch (e) { co = {}; }
+    const coh = el('input', { type: 'text', maxlength: 120, placeholder: 'EMPTY: THE COUNTRY FROM CONFIG.JS' }); coh.value = co.head == null ? '' : co.head === '' ? '-' : co.head;
+    const cot = el('textarea', { rows: 3, maxlength: 450, placeholder: 'EMPTY: SOVEREIGNTY HAS NEVER BEEN CEDED.' }); cot.value = co.text || '';
+    const country = el('section', { class: 'ed' }, el('h3', { text: 'COUNTRY' }),
+      chk('co-on', !co.off, 'SHOWN THE FIRST TIME EL NIÑO\'S MAP OPENS'), hint('Ticked: the first time someone opens the El Niño key on a phone, with a code or without, a dark veil with these lines comes over the map for a few moments (or until touched), then never again on that phone.'),
+      el('label', {}, 'HEADING', coh), hint('One line, in capitals. Empty: the Country from config.js. A single dash (-): no heading.'),
+      el('label', {}, 'WORDS', cot), hint('Set in capitals. A blank line starts a new line of its own. Empty: Sovereignty has never been ceded.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ country: JSON.stringify({ off: !$('#co-on').checked, head: coh.value.trim() === '-' ? '' : coh.value.trim() || null, text: cot.value.trim() }) }) })));
+    /* sent with no printer: waiting here, or on the site at once */
+    const sends = el('section', { class: 'ed' }, el('h3', { text: 'SENT WITHOUT A PRINT' }),
+      chk('sd-live', !!st.sendLive, 'STRAIGHT ON THE SITE'), hint('A piece sent to novel.global from a phone with no printer (the print key set to NOVEL.GLOBAL). Unticked, as built: it waits on the Approve page. Ticked: it is on the site for everyone at once. Either way it is not a print: the devices stay locked until a printer has printed something with that phone\'s code.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sendLive: $('#sd-live').checked }) })));
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, notice, country, motion, cur, sources, reset);
+  }
+
+  /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */
+  const save = (name, text, type) => { const a = el('a', { href: URL.createObjectURL(new Blob([text], { type })), download: name }); document.body.append(a); a.click(); a.remove(); };
+  const csv = (rows, cols) => [cols.join(','), ...rows.map(r => cols.map(c => { const v = r[c] == null ? '' : String(r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))].join('\n');
+  const PCOLS = ['n', 'cat', 'role', 'what', 'addr', 'sub', 'url', 'lat', 'lng'];
+  const parseCSV = t => { const rows = []; let row = [], v = '', q = false; for (let i = 0; i < t.length; i++) { const ch = t[i]; if (q) { if (ch === '"' && t[i + 1] === '"') { v += '"'; i++; } else if (ch === '"') q = false; else v += ch; } else if (ch === '"') q = true; else if (ch === ',') { row.push(v); v = ''; } else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; row.push(v); rows.push(row); row = []; v = ''; } else v += ch; } if (v || row.length) { row.push(v); rows.push(row); } return rows.filter(r => r.some(x => x.trim())); };
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = b => { let c = ~0; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return ~c >>> 0; };
+  function zip(files) {
+    const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+    for (const f of files) { const nm = enc.encode(f.name), c = crc32(f.data), n = f.data.length, h = new DataView(new ArrayBuffer(30)), d = new DataView(new ArrayBuffer(46));
+      [[0, 0x04034b50, 4], [4, 20], [6, 0x0800], [12, 0x21], [14, c, 4], [18, n, 4], [22, n, 4], [26, nm.length]].forEach(([o, v, w]) => (w ? h.setUint32(o, v, true) : h.setUint16(o, v, true)));
+      [[0, 0x02014b50, 4], [4, 20], [6, 20], [8, 0x0800], [14, 0x21], [16, c, 4], [20, n, 4], [24, n, 4], [28, nm.length], [42, off, 4]].forEach(([o, v, w]) => (w ? d.setUint32(o, v, true) : d.setUint16(o, v, true)));
+      parts.push(h, nm, f.data); cen.push(d, nm); off += 30 + nm.length + n; }
+    const size = cen.reduce((n, p) => n + p.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+    return new Blob([...parts, ...cen, e], { type: 'application/zip' });
+  }
+  /* the links to rebuild from: the code of everything (the site, the Pi's bridge, the touch screen's sketch) and how */
+  const GH = 'https://github.com/novelglobal/islandarchipelagos';
+  function rebuild() {
+    const out = el('span', { class: 'note' }), file = el('input', { type: 'file', accept: '.json,application/json' }), ln = (text, href) => el('a', { href, target: '_blank', rel: 'noopener', class: 'note', text });
+    const zipAll = async () => { const j = await all0(); const files = [{ name: 'novel-global.json', data: new TextEncoder().encode(JSON.stringify(j, null, 1)) }];
+      const pics = j.stories.filter(s => s.has_photo || s.full); let i = 0;
+      for (const s of pics) { i++; out.textContent = `PHOTOGRAPHS ${i} OF ${pics.length}…`;
+        for (const [k, p] of [['photos', s.has_photo], ['full', s.full]]) if (p) { try { const r = await api(`${k}/${s.id}`); files.push({ name: `${k}/${s.code}-${s.id}.${extOf(r.headers.get('content-type'))}`, data: new Uint8Array(await r.arrayBuffer()) }); } catch (e) { /* gone */ } } }
+      const a = el('a', { href: URL.createObjectURL(zip(files)), download: `novel-global-backup-${j.at.slice(0, 10)}.zip` }); document.body.append(a); a.click(); a.remove(); out.textContent = `SAVED · ${files.length} FILES`; };
+    const back = async () => { const f = file.files[0]; if (!f) { out.textContent = 'CHOOSE THE BACKUP (.JSON) FIRST'; return; } if (!confirm('BRING THIS BACKUP BACK? WHAT IS MISSING IS PUT BACK AND THE SETTINGS ARE SET AS THEY WERE. NOTHING ELSE IS CHANGED.')) return;
+      try { const r = await (await api('restore', { method: 'POST', body: await f.text() })).json(); out.textContent = `BACK · ${['stories', 'places', 'posts', 'makers', 'talk'].map(k => `${r[k] || 0} ${k.toUpperCase()}`).join(' · ')}`; badges(); } catch (e) { out.textContent = 'NOT A BACKUP FROM HERE'; } };
+    return el('section', { class: 'ed' }, el('h3', { text: 'BACKUP AND REBUILD' }),
+      el('p', { class: 'note', text: 'ONE ZIP OF EVERYTHING KEPT HERE (THE DATA FILE, EVERY PHOTOGRAPH AND FULL-SIZE PICTURE), AND ONE ZIP OF THE CODE THAT RUNS THE SITE, THE PI AND THE TOUCH SCREEN. WITH BOTH, ALL OF IT CAN BE BUILT AGAIN FROM NOTHING: THE GUIDE SAYS HOW. KEEP A COPY SOMEWHERE ELSE TOO.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'EVERYTHING KEPT (.ZIP)', onclick: () => zipAll().catch(() => { out.textContent = 'NO ANSWER · TRY AGAIN'; }) }),
+        el('a', { href: GH + '/archive/refs/heads/main.zip', class: 'note', text: 'THE CODE (.ZIP) ↓' }), ln('THE REBUILD GUIDE ↗', GH + '/blob/main/docs/rebuild.md'), ln('TOUCH SCREEN SKETCH ↗', GH + '/blob/main/src/touch/novel-touch/novel-touch.ino'), ln('DEVICES GUIDE ↗', GH + '/blob/main/docs/devices.md')),
+      el('p', { class: 'note', text: 'THE PI, BUILT AGAIN OR UPDATED (ON THE PI, OVER SSH): curl -fsSL https://raw.githubusercontent.com/novelglobal/islandarchipelagos/main/web/receiver/setup/install.sh | sh' }),
+      el('h3', { text: 'BRING A BACKUP BACK' }), el('p', { class: 'note', text: 'THE .JSON FROM A BACKUP (OR EVERYTHING .JSON). PRINTERS ARE PAIRED AGAIN BY HAND; PHOTOGRAPHS STAY IN THE ZIP.' }), file,
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'BRING IT BACK', onclick: back }), out));
+  }
+  const all0 = async () => (await api('export')).json();
+  async function data() {
+    const all = async () => (await api('export')).json();
+    const dl = el('section', { class: 'ed' }, el('h3', { text: 'DOWNLOAD' }), el('p', { class: 'note', text: 'EVERYTHING AS ONE FILE (STORIES, PLACES, POSTS, PRINTERS WITHOUT THEIR TOKENS, SETTINGS, COUNTS), OR THE PLACES AND STORIES AS SHEETS FOR A SPREADSHEET. PHOTOGRAPHS DOWNLOAD ONE AT A TIME FROM EACH STORY (PHOTO ↓).' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'EVERYTHING (.JSON)', onclick: async () => { const j = await all(); save(`novel-global-${j.at.slice(0, 10)}.json`, JSON.stringify(j, null, 1), 'application/json'); } }),
+        el('button', { type: 'button', text: 'PLACES (.CSV)', onclick: async () => { const j = await all(); save('novel-global-places.csv', csv(j.places, [...PCOLS, 'status', 'src']), 'text/csv'); } }),
+        el('button', { type: 'button', text: 'STORIES (.CSV)', onclick: async () => { const j = await all(); save('novel-global-stories.csv', csv(j.stories, ['code', 'kind', 'status', 'who', 'gone', 'lat', 'lng', 'dest', 'created', 'decided', 'has_photo']), 'text/csv'); } }),
+        el('button', { type: 'button', text: 'COUNTS (.CSV)', onclick: async () => { const j = await all(); save('novel-global-counts.csv', csv(j.traffic, ['day', 'k', 'n']), 'text/csv'); } })));
+    const ta = el('textarea', { class: 'body', spellcheck: 'false', placeholder: 'n,cat,role,what,addr,sub,url,lat,lng\nBrunswick Tool Library,circular,repair,A tool library with a repair café,127 Nicholson St,Brunswick East,https://www.brunswicktoollibrary.org/,-37.7718,144.9782' });
+    const file = el('input', { type: 'file', accept: '.csv,.json,text/csv,application/json' }); file.addEventListener('change', async () => { const f = file.files[0]; if (f) ta.value = await f.text(); });
+    const out = el('span', { class: 'note' });
+    const imp = el('section', { class: 'ed' }, el('h3', { text: 'BRING IN PLACES' }),
+      el('p', { class: 'note', text: 'A SHEET (CSV) WITH A FIRST ROW OF COLUMN NAMES, OR JSON (A LIST OF PLACES). COLUMNS: n (THE NAME, NEEDED), cat (service, circular, brand, artists, third OR network), role (ONE WORD), what (A LINE), addr, sub (SUBURB), url (https:// ONLY), lat AND lng (NEEDED, DECIMAL). EACH ONE IS SHOWN AT ONCE; UP TO 2000 AT A TIME.' }), file, ta,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'BRING THEM IN', onclick: async () => { const t = ta.value.trim(); if (!t) return; let list;
+        try { if (/^[\[{]/.test(t)) { const j = JSON.parse(t); list = Array.isArray(j) ? j : j.places || []; } else { const [hd, ...rs] = parseCSV(t); const h = hd.map(x => x.trim().toLowerCase()); list = rs.map(r => Object.fromEntries(h.map((k, i) => [k, (r[i] || '').trim()]))); } } catch (e) { out.textContent = 'COULD NOT READ IT: ' + e.message; return; }
+        const r = await (await api('places/import', { method: 'POST', body: JSON.stringify({ places: list }) })).json(); out.textContent = `${r.added} ADDED${r.bad ? `, ${r.bad} LEFT OUT (NO NAME, OR NO PLACE)` : ''}`; badges(); } }), out));
+    main.replaceChildren(...head('Data'), rebuild(), dl, imp);
+  }
+
+  /* ───────── the guide: how each part works, the stack, and where things are ───────── */
+  const G = [
+    ['Every day', ['Open OVERVIEW: the numbers in coral want a look. WAITING holds what was sent: SHOW puts it on the map and the board, and sends it to its printer; REFUSE keeps it here, never shown; ARCHIVE puts it away (ARCHIVE can bring it back for a year).', 'PLACES SUGGESTED by visitors wait the same way under PLACES.']],
+    ['Printers', ['PAIR AN ISLAND: an island (the island kit on a Raspberry Pi) prints a code; scan it and APPROVE, and it takes its token by itself. PAIR A PRINTER shows a token once: it goes on the Raspberry Pi in /etc/da-pull.env. PRINTS AFTER APPROVAL holds each slip here (or on its touch screen, if one is paired) until shown; PRINTS WITHOUT APPROVAL prints at once.', 'MESH ON sends a line to the T-Beam only for slips sent to the mesh. Paper always prints before any mesh line.', 'ONE-WAY: novel.global prints on this island, never the other way. TWO-WAY: the island’s own experiences may print on novel.global’s printer too.', 'ISLAND N: each printer’s island number (novel.global 1, the others 2 and up in the order they pair); press it to set one by hand.', 'TEST PRINT, TURN OFF and the state of each part (Pi, screen, mesh, the last slip) are on each printer.']],
+    ['Places', ['Add one under PLACES, or many under DATA → BRING IN PLACES from a sheet. A sheet has a first row of column names: n, cat, role, what, addr, sub, url, lat, lng. Right-click a spot in a map app to copy its latitude and longitude.', 'Places written into the site itself (places.js) are always there too.']],
+    ['Words, boards and cities', ['WORDS AND BOARDS rewrites the words on INTENTION and W.I.S.H., the first board every visitor gets, and BOARD 00 (open it to editing, change it in the studio, send it, then show it under WAITING).', 'Cities: a line # Name begins a city, "centre, lat, lng" places it, and each other line is "name, lat, lng".']],
+    ['Species and offline', ['SPECIES lists every kind of life the devices have met, the newest first, learned from their pulls of sightings: no device is asked for anything extra. MARK ONLY are the kinds not yet in the field list (src/field.js); download them as a sheet and add the ones that matter, with their months, needs and who to call. Offline, each device keeps what it has met: sightings, photographs and map tiles once seen, the field list and the app. Nothing is asked of the site while a page is hidden or left untouched for a quarter of an hour, and nothing runs on the site while no one is using it.']],
+    ['Signing in', ['The password is the ADMIN_KEY secret set in Cloudflare (Workers & Pages → front → Settings → Variables and Secrets). It is kept only in this browser tab until it is closed or LOCK is pressed.']],
+    ['Devices and motion', ['SETTINGS → DEVICES: seven devices, each earned on its own after the number of posters set beside it (0: open from the start). The simple ones are the music, INTENTION with W.I.S.H., and art and print; the complex ones are the radio, the research board, design and the four-track desk. One never opens another. OPEN makes all open; CLOSED leaves only those set to 0.', 'MOTION: calm, as built or chaos; PHREAK lays faint lines of base64 under the stars. A visitor who asks their device for less motion always gets stillness.']],
+    ['Portfolio', ['Name up to twelve curations under SETTINGS; each named one is a tab on novel.global/portfolio.html. Write posts under PORTFOLIO and give each its curation. Drafts are seen only here (PREVIEW).']],
+    ['Going back to base', ['SETTINGS → BACK TO THE BASE VERSION: tick what goes back, then type RESET. Stories and places go to the ARCHIVE (they can come back); the printers, their tokens and the password are never touched.', 'CLEAR THIS BROWSER empties what was made in this browser (posters on its wall, songs, boards), for testing as a new visitor.']],
+    ['Data and privacy', ['Counts are of things, never of people: no addresses, no visitors told apart. Everything sent is kept for a year (archived ones too), then goes. Photographs are seen only here unless shown.', 'DATA downloads everything as one file, or places, stories and counts as sheets.']],
+    ['The stack', ['novel.global is one Cloudflare Worker (src/worker/index.js) serving the site from dist/ with a D1 database (stories, jobs, printers, places, posts, settings, counts). It asks iNaturalist and OpenStreetMap for everyone, and the browser asks them itself when they turn the Worker away.', 'The receipts print on an Epson TM-T88V through a Raspberry Pi (receiver/pull.py asks for jobs every 3 seconds), with a Meshtastic T-Beam for the mesh and an optional touch screen.', 'The site: plain JavaScript, MapLibre for the studio map, Fabric for the boards and print shop, Web Audio for every sound (nothing recorded). The staging branch is the preview; main is live.']],
+    ['Links', [['Cloudflare dashboard', 'https://dash.cloudflare.com/'], ['The code on GitHub', 'https://github.com/novelglobal/islandarchipelagos'], ['iNaturalist API', 'https://api.inaturalist.org/v1/docs/'], ['OpenStreetMap Overpass', 'https://wiki.openstreetmap.org/wiki/Overpass_API'], ['Meshtastic', 'https://meshtastic.org/docs/'], ['Epson ESC/POS', 'https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/index.html']]],
+  ];
+  function guide() {
+    main.replaceChildren(...head('Guide'), ...G.map(([t, ps]) => el('section', { class: 'guide' }, el('h3', { text: t }),
+      ...ps.map(p => Array.isArray(p) ? el('p', {}, el('a', { href: p[1], target: '_blank', rel: 'noopener', text: p[0] + ' ↗' })) : el('p', { text: p })))));
+  }
+
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+  $('#out').addEventListener('click', () => lock('LOCKED'));
+  /* a second island's code scanned while this page is open */
+  addEventListener('hashchange', () => { if (KEY && /pair=/.test(location.hash)) show('printers'); });
+  $('#gate').addEventListener('submit', e => { e.preventDefault(); KEY = $('#key').value.trim(); if (!KEY) return; sessionStorage.setItem('da.admin', KEY); open(); });
+  if (KEY) open();
+})();

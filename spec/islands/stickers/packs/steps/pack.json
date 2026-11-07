@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../schemas/steps.schema.json",
+  "pack": "steps",
+  "id": "stickers/booth",
+  "version": "0.1.0",
+  "name": "Booth",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "One step: three photographs on a count of three, a frame, print. The photographs stay on the phone and the printer; nothing waits for approval.",
+  "journey": {
+    "name": "booth",
+    "again": "after-print",
+    "steps": [
+      {
+        "id": "booth", "name": "booth", "icon": "glyph:camera",
+        "words": { "tab": "booth", "ask": "ready?" },
+        "fields": [
+          { "id": "photo", "type": "photo", "from": ["camera"], "count": 3, "countdown": 3, "keep": "device", "required": true },
+          { "id": "frame", "type": "frame", "of": ["rule", "box", "hand"] },
+          { "id": "out", "type": "print", "templates": ["strip"], "ways": ["print"], "copies": 2 }
+        ]
+      }
+    ]
+  }
+}

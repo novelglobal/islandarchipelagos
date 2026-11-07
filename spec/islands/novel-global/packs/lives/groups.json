@@ -1,0 +1,90 @@
+[
+ {
+  "id": "T01",
+  "t": "Friends of Royal Park",
+  "what": "Planting, weeding and growing indigenous seedlings; bird counts at the Trin Warren Tam-boore wetlands since 2007. Working bees on the 2nd and 4th Thursday, 10 am to noon",
+  "url": "https://royalpark.org.au/activities",
+  "g": [
+   "bird",
+   "frog",
+   "moth",
+   "bee",
+   "plant"
+  ],
+  "at": [
+   -37.78765,
+   144.9507
+  ]
+ },
+ {
+  "id": "T02",
+  "t": "Friends of Moonee Ponds Creek",
+  "what": "Plantings, Frog Watch and bird counts along the creek since 1989, with Chain of Ponds.",
+  "url": "https://www.mooneepondscreek.org.au/",
+  "g": [
+   "frog",
+   "waterbird",
+   "dragonfly",
+   "turtle",
+   "plant"
+  ]
+ },
+ {
+  "id": "T03",
+  "t": "Friends of Merri Creek",
+  "what": "Planting and site care, bird surveys, water testing and litter blitzes along the Merri.",
+  "url": "https://www.friendsofmerricreek.org.au/",
+  "g": [
+   "frog",
+   "turtle",
+   "waterbird",
+   "bird",
+   "plant"
+  ]
+ },
+ {
+  "id": "T04",
+  "t": "CERES",
+  "what": "A 4.5-hectare former bluestone quarry, a community park, urban farm and nursery since 1982.",
+  "url": "https://ceres.org.au/",
+  "g": [
+   "bee",
+   "bird",
+   "frog",
+   "plant"
+  ],
+  "at": [
+   -37.76628,
+   144.9825
+  ]
+ },
+ {
+  "id": "T05",
+  "t": "West Brunswick Community Garden and Food Forest",
+  "what": "Over 100 trees and plants in a permaculture food forest, with bushfood, an orchard and 26 plots.",
+  "url": "https://localfoodconnect.org.au/community-gardening/west-brunswick-community-garden-and-food-forest/",
+  "g": [
+   "bee",
+   "bird",
+   "plant"
+  ],
+  "at": [
+   -37.76183,
+   144.94513
+  ]
+ },
+ {
+  "id": "T06",
+  "t": "Gardens for Wildlife Merri-bek",
+  "what": "Free one-hour garden visits by volunteer Garden Guides, with ten indigenous plants to start.",
+  "url": "https://www.merri-bek.vic.gov.au/living-in-merri-bek/environment/nature/gardens-for-wildlife/",
+  "g": [
+   "bird",
+   "lizard",
+   "bee",
+   "orb",
+   "spider",
+   "frog"
+  ]
+ }
+]

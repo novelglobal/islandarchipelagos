@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-wish",
+  "version": "1.0.0",
+  "title": "I W.I.S.H.",
+  "island": "novel-global",
+  "about": "Notice, W.I.S.H., print: the poster and its pledge.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "wish",
+  "gives": ["WORDS","CODE"],
+  "takes": ["PICTURE","SOUND","LIST","LENGTH"],
+  "needs": [],
+  "settings": [],
+  "mark": "wish.svg",
+  "slip": "wish.slip.json"
+}

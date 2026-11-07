@@ -1,0 +1,14 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "profile": "printer",
+  "id": "generic-80",
+  "name": "80 mm printer",
+  "about": "Any 80 mm ESC/POS printer at 203 dpi, the common kind behind a till.",
+  "protocol": "escpos",
+  "dpi": 203,
+  "papers": [{ "paper": 80, "dots": 576 }],
+  "cutter": "partial",
+  "speed": 150,
+  "darkness": { "min": 70, "max": 130, "default": 100 },
+  "port": 9100
+}

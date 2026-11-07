@@ -1,0 +1,64 @@
+{
+  "$schema": "../../schemas/island.schema.json",
+  "format": "island/0.1",
+  "id": "shop",
+  "name": "the shop",
+  "about": {
+    "line": "A till that prints a way to act under every sale, and a counter card the staff make each morning."
+  },
+  "place": {
+    "name": "a high street",
+    "centre": [
+      -37.768,
+      144.962
+    ],
+    "bbox": [
+      144.961,
+      -37.7688,
+      144.963,
+      -37.7672
+    ]
+  },
+  "clock": "moon",
+  "packs": {
+    "steps": [
+      "packs/counter",
+      "packs/pledge"
+    ],
+    "templates": "packs/templates",
+    "style": [
+      "packs/style"
+    ]
+  },
+  "printers": [
+    {
+      "id": "till",
+      "name": "till",
+      "profile": "tm-t88v",
+      "paper": 80,
+      "approval": "auto",
+      "home": true,
+      "till": true
+    }
+  ],
+  "access": {
+    "print": "code",
+    "show": "approved",
+    "keepWaiting": "P7D",
+    "keepPrinted": "P1D"
+  },
+  "people": [
+    { "id": "floor", "name": "floor staff", "can": ["make"] },
+    { "id": "manager", "name": "manager", "can": ["make", "approve"] }
+  ],
+  "network": {
+    "online": true,
+    "hub": "https://novel.global",
+    "directory": true,
+    "hosts": []
+  },
+  "client": {
+    "shell": "plain",
+    "start": "take"
+  }
+}

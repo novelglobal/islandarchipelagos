@@ -1,0 +1,19 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-space",
+  "version": "1.0.0",
+  "title": "THIS SPACE IS YOURS",
+  "island": "novel-global",
+  "about": "An island's own control panel, and its welcome slip.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "cards",
+  "gives": ["WORDS","CODE"],
+  "takes": ["PICTURE","LIST"],
+  "needs": [],
+  "settings": [
+    {"key":"name","kind":"field","label":"ISLAND NAME","default":"","max":22},
+    {"key":"list","kind":"switch","label":"PRINT THE LIST","default":true}
+  ],
+  "mark": "space.svg",
+  "slip": "space.slip.json"
+}

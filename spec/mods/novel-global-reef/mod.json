@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-reef",
+  "version": "1.0.0",
+  "title": "THE REEF",
+  "island": "novel-global",
+  "about": "The still white-line reef under the banner.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "art",
+  "gives": ["PICTURE"],
+  "takes": ["SOUND"],
+  "needs": [],
+  "settings": [],
+  "mark": "reef.svg",
+  "slip": "reef.slip.json"
+}

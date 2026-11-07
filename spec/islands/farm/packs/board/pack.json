@@ -1,0 +1,761 @@
+{
+  "$schema": "../../../../schemas/board.schema.json",
+  "pack": "board",
+  "id": "farm/paddock",
+  "version": "0.1.0",
+  "name": "The paddock",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "A real paddock near Melbourne in an El Niño summer, redrawn in flat paper washes and pixels. Twenty stages grow on it, each a real regenerative, permaculture or rewilding practice, until nature holds half. Every link is checked before it ships.",
+  "ground": {
+    "from": "satellite",
+    "pick": {
+      "landuse": "grazing",
+      "within": [
+        143.6,
+        -38.3,
+        145.6,
+        -37
+      ],
+      "size": 800,
+      "zoom": 16
+    },
+    "tones": [
+      {
+        "id": "straw",
+        "colour": "#D9C78F"
+      },
+      {
+        "id": "dust",
+        "colour": "#BBA57C"
+      },
+      {
+        "id": "dry",
+        "colour": "#9DA16E"
+      },
+      {
+        "id": "gum",
+        "colour": "#55623F"
+      },
+      {
+        "id": "water",
+        "colour": "#647F84"
+      },
+      {
+        "id": "ink",
+        "colour": "#2B2A26",
+        "opacity": 0.8
+      }
+    ],
+    "cells": 160,
+    "grain": 6,
+    "edge": 0.35
+  },
+  "farm": {
+    "keep": "place",
+    "reroll": "new-farm",
+    "farms": 3
+  },
+  "balance": {
+    "target": 0.5,
+    "start": 0.1
+  },
+  "stages": [
+    {
+      "id": "keyline",
+      "by": [
+        "step:i-catch"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "contour",
+          "tone": "ink",
+          "opacity": 0.4
+        }
+      ],
+      "then": [
+        "weirs"
+      ],
+      "nature": 0,
+      "src": {
+        "n": "Keyline design, P. A. Yeomans",
+        "url": "https://en.wikipedia.org/wiki/Keyline_design"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "spread",
+          "tone": "dry",
+          "reach": 120
+        }
+      ]
+    },
+    {
+      "id": "weirs",
+      "after": [
+        "keyline"
+      ],
+      "by": [
+        "step:w-draw",
+        "story:riparian-drain"
+      ],
+      "draw": [
+        {
+          "as": "strokes",
+          "on": "creek",
+          "tone": "ink"
+        }
+      ],
+      "then": [
+        "pools"
+      ],
+      "nature": 0.01,
+      "src": {
+        "n": "Leaky weirs, the Mulloon Institute",
+        "url": "https://www.themullooninstitute.org/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "hold",
+          "tone": "water",
+          "reach": 60,
+          "life": "water"
+        }
+      ]
+    },
+    {
+      "id": "pools",
+      "after": [
+        "weirs"
+      ],
+      "by": [
+        "step:i-dial"
+      ],
+      "draw": [
+        {
+          "as": "water",
+          "on": "creek",
+          "tone": "water",
+          "moves": "water"
+        }
+      ],
+      "then": [
+        "fencing"
+      ],
+      "nature": 0.02,
+      "src": {
+        "n": "Natural Sequence Farming, Peter Andrews",
+        "url": "https://en.wikipedia.org/wiki/Natural_Sequence_Farming"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "hold",
+          "tone": "water",
+          "reach": 40,
+          "life": "frogs"
+        }
+      ]
+    },
+    {
+      "id": "fencing",
+      "after": [
+        "pools"
+      ],
+      "by": [
+        "step:s-craft"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "banks",
+          "tone": "ink",
+          "opacity": 0.6
+        },
+        {
+          "as": "area",
+          "on": "banks",
+          "tone": "dry"
+        }
+      ],
+      "then": [
+        "grass",
+        "corridor"
+      ],
+      "nature": 0.03,
+      "src": {
+        "n": "Riparian fencing, Landcare",
+        "url": "https://landcareaustralia.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "thicken",
+          "tone": "dry",
+          "reach": 30,
+          "life": "grass"
+        }
+      ]
+    },
+    {
+      "id": "soil",
+      "after": [
+        "keyline"
+      ],
+      "by": [
+        "step:h-strings"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "soil",
+          "tone": "gum",
+          "opacity": 0.5
+        }
+      ],
+      "then": [
+        "cells"
+      ],
+      "nature": 0,
+      "src": {
+        "n": "Soils for Life",
+        "url": "https://soilsforlife.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 50,
+          "life": "insects"
+        }
+      ]
+    },
+    {
+      "id": "cells",
+      "after": [
+        "soil"
+      ],
+      "by": [
+        "poster"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "cells",
+          "tone": "ink",
+          "opacity": 0.3
+        }
+      ],
+      "then": [
+        "grass"
+      ],
+      "nature": 0.01,
+      "src": {
+        "n": "Planned grazing, Savory Institute",
+        "url": "https://savory.global/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 100,
+          "life": "grass"
+        }
+      ]
+    },
+    {
+      "id": "burning",
+      "after": [
+        "cells"
+      ],
+      "by": [
+        "song"
+      ],
+      "draw": [
+        {
+          "as": "area",
+          "on": "patches",
+          "tone": "dust",
+          "opacity": 0.6
+        }
+      ],
+      "then": [
+        "grass"
+      ],
+      "nature": 0.02,
+      "src": {
+        "n": "Cultural burning, Firesticks Alliance",
+        "url": "https://www.firesticks.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 60,
+          "life": "grass"
+        }
+      ]
+    },
+    {
+      "id": "grass",
+      "after": [
+        "fencing",
+        "cells"
+      ],
+      "by": [
+        "print"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "bare",
+          "tone": "dry",
+          "moves": "sway"
+        }
+      ],
+      "then": [
+        "shelterbelt"
+      ],
+      "nature": 0.03,
+      "src": {
+        "n": "Native grasslands, Greening Australia",
+        "url": "https://www.greeningaustralia.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "spread",
+          "tone": "dry",
+          "reach": 80,
+          "life": "insects"
+        }
+      ]
+    },
+    {
+      "id": "shelterbelt",
+      "after": [
+        "grass"
+      ],
+      "by": [
+        "download"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "windward",
+          "tone": "gum"
+        }
+      ],
+      "then": [
+        "trees"
+      ],
+      "nature": 0.02,
+      "src": {
+        "n": "Shelterbelts, the Potter Farmland Plan",
+        "url": "https://en.wikipedia.org/wiki/Potter_Farmland_Plan"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "shade",
+          "tone": "gum",
+          "reach": 60,
+          "life": "birds"
+        }
+      ]
+    },
+    {
+      "id": "covenant",
+      "after": [
+        "shelterbelt"
+      ],
+      "by": [
+        "box"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "boundary",
+          "tone": "gum"
+        },
+        {
+          "as": "area",
+          "on": "boundary",
+          "tone": "gum",
+          "opacity": 0.5
+        }
+      ],
+      "then": [
+        "corridor"
+      ],
+      "nature": 0.05,
+      "src": {
+        "n": "Conservation covenants, Trust for Nature",
+        "url": "https://trustfornature.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "thicken",
+          "tone": "gum",
+          "reach": 120
+        }
+      ]
+    },
+    {
+      "id": "corridor",
+      "after": [
+        "covenant",
+        "fencing"
+      ],
+      "by": [
+        "visit"
+      ],
+      "draw": [
+        {
+          "as": "area",
+          "on": "corridor",
+          "tone": "gum",
+          "opacity": 0.7
+        }
+      ],
+      "then": [
+        "refuge"
+      ],
+      "nature": 0.05,
+      "src": {
+        "n": "Habitat corridors, Gondwana Link",
+        "url": "https://gondwanalink.org/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "link",
+          "tone": "gum",
+          "reach": 300,
+          "life": "birds"
+        }
+      ]
+    },
+    {
+      "id": "trees",
+      "after": [
+        "shelterbelt"
+      ],
+      "by": [
+        "poster"
+      ],
+      "draw": [
+        {
+          "as": "ring",
+          "on": "trees",
+          "tone": "ink",
+          "opacity": 0.5
+        }
+      ],
+      "then": [
+        "refuge"
+      ],
+      "nature": 0.01,
+      "src": {
+        "n": "Paddock trees, Bush Heritage Australia",
+        "url": "https://www.bushheritage.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "attract",
+          "reach": 40,
+          "life": "birds"
+        }
+      ]
+    },
+    {
+      "id": "dam",
+      "after": [
+        "pools"
+      ],
+      "by": [
+        "song"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "dam",
+          "tone": "gum"
+        },
+        {
+          "as": "water",
+          "on": "dam",
+          "tone": "water",
+          "moves": "water"
+        }
+      ],
+      "then": [
+        "ponds"
+      ],
+      "nature": 0.02,
+      "src": {
+        "n": "Farm dams, ANU Sustainable Farms",
+        "url": "https://sustainablefarms.org.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "cool",
+          "tone": "water",
+          "reach": 50,
+          "life": "frogs"
+        }
+      ]
+    },
+    {
+      "id": "zones",
+      "after": [
+        "soil"
+      ],
+      "by": [
+        "print"
+      ],
+      "draw": [
+        {
+          "as": "ring",
+          "on": "house",
+          "tone": "ink",
+          "opacity": 0.3
+        }
+      ],
+      "then": [
+        "rows"
+      ],
+      "nature": 0.01,
+      "src": {
+        "n": "Permaculture, David Holmgren",
+        "url": "https://holmgren.com.au/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 40
+        }
+      ]
+    },
+    {
+      "id": "rows",
+      "after": [
+        "zones"
+      ],
+      "by": [
+        "download"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "rows",
+          "tone": "dry",
+          "opacity": 0.6
+        }
+      ],
+      "then": [
+        "cover"
+      ],
+      "nature": 0,
+      "src": {
+        "n": "Regenerative organic, Rodale Institute",
+        "url": "https://rodaleinstitute.org/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 60,
+          "life": "insects"
+        }
+      ]
+    },
+    {
+      "id": "refuge",
+      "after": [
+        "corridor",
+        "trees"
+      ],
+      "by": [
+        "box"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "refuge",
+          "tone": "ink"
+        },
+        {
+          "as": "dots",
+          "on": "refuge",
+          "tone": "ink",
+          "moves": "birds"
+        }
+      ],
+      "then": [
+        "scrub"
+      ],
+      "nature": 0.03,
+      "src": {
+        "n": "Species return, Australian Wildlife Conservancy",
+        "url": "https://www.australianwildlife.org/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "attract",
+          "reach": 100,
+          "life": "birds"
+        }
+      ]
+    },
+    {
+      "id": "scrub",
+      "after": [
+        "refuge"
+      ],
+      "by": [
+        "moon"
+      ],
+      "draw": [
+        {
+          "as": "area",
+          "on": "scrub",
+          "tone": "gum",
+          "opacity": 0.6
+        }
+      ],
+      "then": [
+        "half"
+      ],
+      "nature": 0.04,
+      "src": {
+        "n": "Rewilding, the Knepp estate",
+        "url": "https://knepp.co.uk/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "spread",
+          "tone": "gum",
+          "reach": 150,
+          "life": "birds"
+        }
+      ]
+    },
+    {
+      "id": "cover",
+      "after": [
+        "rows"
+      ],
+      "by": [
+        "poster"
+      ],
+      "draw": [
+        {
+          "as": "dots",
+          "on": "between",
+          "tone": "dry",
+          "opacity": 0.5
+        }
+      ],
+      "then": [
+        "half"
+      ],
+      "nature": 0,
+      "src": {
+        "n": "Cover crops, Brown's Ranch",
+        "url": "https://brownsranch.us/"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "grow",
+          "tone": "dry",
+          "reach": 80,
+          "life": "insects"
+        }
+      ]
+    },
+    {
+      "id": "ponds",
+      "after": [
+        "dam"
+      ],
+      "by": [
+        "story:riparian-drain",
+        "visit"
+      ],
+      "draw": [
+        {
+          "as": "water",
+          "on": "hollows",
+          "tone": "water"
+        }
+      ],
+      "then": [
+        "half"
+      ],
+      "nature": 0.01,
+      "src": {
+        "n": "Sponge cities, Kongjian Yu",
+        "url": "https://en.wikipedia.org/wiki/Sponge_city"
+      },
+      "place": "hand",
+      "acts": [
+        {
+          "does": "hold",
+          "tone": "water",
+          "reach": 30,
+          "life": "frogs"
+        }
+      ]
+    },
+    {
+      "id": "half",
+      "after": [
+        "scrub",
+        "cover",
+        "ponds"
+      ],
+      "by": [
+        "box",
+        "moon"
+      ],
+      "draw": [
+        {
+          "as": "line",
+          "on": "half",
+          "tone": "ink",
+          "opacity": 0.8
+        }
+      ],
+      "nature": 0.04,
+      "src": {
+        "n": "Half-Earth Project",
+        "url": "https://www.half-earthproject.org/"
+      },
+      "place": "self",
+      "acts": [
+        {
+          "does": "link",
+          "tone": "gum",
+          "reach": 800,
+          "life": "trees"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+================================================================================
+ NOVEL.GLOBAL                                                   FORM DA-PRN-01
+================================================================================
+
+        ____  __  __ ___ _     ____       _       ____   ___  _       _    ____
+       | __ )| | | |_ _| |   |  _ \     / \     / ___| / _ \| |     / \  |  _ \
+       |  _ \| | | || || |   | | | |   / _ \    \___ \| | | | |    / _ \ | |_) |
+       | |_) | |_| || || |___| |_| |  / ___ \    ___) | |_| | |___/ ___ \|  _ <
+       |____/ \___/|___|_____|____/  /_/   \_\  |____/ \___/|_____/_/   \_\_| \_\
+
+                       T H E R M A L   P R I N T E R
+
+================================================================================
+ CORE
+================================================================================
+
+  [ ]  Epson TM-T88V receipt printer, USB
+  [ ]  Epson PS-180 power supply, 24 V
+  [ ]  80 mm thermal paper rolls
+  [ ]  Raspberry Pi 3 Model A+
+  [ ]  32 GB microSD card
+  [ ]  Raspberry Pi OS Lite, 64-bit
+  [ ]  USB-A to USB-B cable
+  [ ]  100 W 12 V solar panel
+  [ ]  10 A MPPT charge controller
+  [ ]  12.8 V 50 Ah LiFePO4 battery
+  [ ]  12 V to 24 V DC boost converter, 5 A
+  [ ]  12 V to 5 V USB buck converter, 3 A
+  [ ]  Inline fuse holders, blade fuses
+  [ ]  2.5 mm2 cable, MC4 connectors
+  [ ]  Wi-Fi or a phone hotspot
+
+================================================================================
+ MODS
+================================================================================
+
+  [ ]  Momentary push button, GPIO 5
+  [ ]  Status LED, 330 ohm resistor, GPIO 6
+  [ ]  IP65 enclosure
+  [ ]  Cable glands
+  [ ]  Paper slot with a rain lip
+  [ ]  Mounting brackets
+
+================================================================================
+ HACKS
+================================================================================
+
+  [ ]  Any 80 mm ESC/POS printer, salvaged
+  [ ]  Old phone as the hotspot
+  [ ]  Car battery, 12 V USB adapter
+  [ ]  Lunchbox enclosure
+  [ ]  Bulldog clip paper catcher
+
+================================================================================
+ UPGRADES
+================================================================================
+
+  [ ]  Meshtastic LoRa node, Heltec V3 or RAK WisBlock
+  [ ]  915 MHz antenna
+  [ ]  Raspberry Pi 4 or 5
+  [ ]  100 Ah battery
+  [ ]  Paper-low sensor
+  [ ]  Epson TM-T88VI
+
+================================================================================

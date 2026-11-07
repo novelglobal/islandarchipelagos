@@ -1,0 +1,119 @@
+
+/* ───────── deep links: a page by name; #x=… a signal carried in the link; #mix=… the radio as someone left it; #DA-XXXX a signal here; #T01 a group;
+   #U… a record placed here; #E01 a gathering; any other code an iNaturalist sighting ───────── */
+let pendingHash = location.hash.replace(/^#/, '');
+const viewOfHash = h => { const p = PARTS[String(h).toLowerCase()]; return p ? p[0] : -1; };
+const isLocalHash = h => viewOfHash(h) >= 0 || /^(T\d{2}|E\d{2}|DA-[0-9A-Z]{4}|P-[a-z0-9-]+|x=.+|mix=.+)$/i.test(h);
+async function handleHash() {
+  const h = decodeURIComponent(pendingHash || ''); pendingHash = ''; if (!h) return;
+  /* a link someone was sent, on a first visit: the radio is there for it (43-journey.js) */
+  if (simple() && prefs.journey < 1 && jLinked(h)) { jGo(1, true); setView(0); }
+  const v = viewOfHash(h); if (v >= 0) { const part = h.toLowerCase(); setView(v, false, PARTS[part][1] ? part : null); return; }
+  if (/^x=/.test(h)) { await receive('#' + h); linkArm(); return; }
+  /* the radio tuned where the link was made, its layers as they were: a touch on play and it sounds */
+  if (/^mix=/i.test(h)) { const m = mixOfCode(h.slice(4)); if (m) { tuneMix(m, false); const b = $('#view .hero-play'); if (b) b.classList.add('cue'); linkArm(); } else tick(600); return; }
+  if (/^DA-[0-9A-Z]{4}$/i.test(h)) { const s = S.signals.find(x => x.code === h.toUpperCase()); if (s) openSignal(s.key); else receiveCode(h.toUpperCase()); linkArm(); return; }
+  if (/^P-[a-z0-9-]+$/i.test(h)) { selectPartner(h.slice(2).toLowerCase()); return; }
+  if (/^T\d{2}$/i.test(h)) { const id = 'tribe:' + h.toUpperCase(); if (S.byId.has(id)) selectTribe(id); return; }
+  if (/^E\d{2}$/i.test(h)) { const id = 'e:' + (+h.slice(1)); if (S.byId.has(id)) select(id); return; }
+  if (/^U[0-9a-z]{8,}$/i.test(h)) { const id = 'u:' + h.slice(1); if (S.byId.has(id)) select(id); else toast('NOT ON THIS DEVICE'); return; }
+  const m = h.match(/^([0-9A-Za-z]{3,9})$/); if (!m) return; const id = parseInt(m[1].toLowerCase(), 36);
+  if (S.byId.has(id)) { select(id); return; }
+  try {
+    const j = await (await fetch(`${CONFIG.INAT_API}/observations/${id}?locale=en&preferred_place_id=${CONFIG.PLACE_PREF}`)).json(); const o = j.results && j.results[0] && compact(j.results[0]); if (!o) throw new Error('none');
+    const day = parseDay(o.d); const today = new Date(); today.setHours(0, 0, 0, 0); Object.assign(o, { ext: true, age: day ? Math.round((today - day) / 864e5) : 99, rare: 0.6, isNew: false });
+    S.obs.push(o); S.byId.set(o.id, o); refresh(); select(o.id);
+  } catch (e) { toast(`${m[1]} ?`); }
+}
+addEventListener('hashchange', () => {
+  const h = location.hash.replace(/^#/, ''); const cur = S.mode === 'ping' ? S.byId.get(S.sel) : null;
+  if (!h || (cur && h === hashOf(cur))) return;
+  pendingHash = h; if (isLocalHash(h) || S.obs.length) handleHash();
+});
+
+/* ───────── live: while the page is open, and whenever it comes back ───────── */
+document.addEventListener('visibilitychange', () => { if (document.hidden) return; if (Date.now() - S.lastSignal > CONFIG.REFRESH_MIN * 60000) { fetchSightings(true); loadWeather(); } else liveTick(); });
+/* refreshed only while someone is there: a page left open and untouched for a quarter of an hour asks nothing, and catches up at the next touch */
+let usedAt = Date.now(); const IDLE = 15 * 60e3;
+const usedLast = () => { let t = usedAt; try { if (IN_AURA && parent.NG && parent.NG.usedAt) t = Math.max(t, parent.NG.usedAt()); } catch (e) { /* its own */ } return t; };
+['pointerdown', 'keydown', 'wheel'].forEach(k => addEventListener(k, () => { const was = usedLast(); usedAt = Date.now(); if (Date.now() - was > IDLE && !document.hidden) liveTick(); }, { passive: true }));
+setInterval(() => { if (!document.hidden && Date.now() - usedLast() < IDLE) liveTick(); }, Math.max(1, CONFIG.LIVE_MIN || 5) * 60000);
+
+/* ───────── a word on hover: every [data-tip] says what it is; on touch, a tap shows it for a moment ───────── */
+const tipEl = $('#tip'); let tipFor = null, tipT = 0;
+function showTip(el) {
+  const t = el && el.dataset.tip; if (!t) return; tipFor = el; tipEl.textContent = t; tipEl.hidden = false;
+  const r = el.getBoundingClientRect(); const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  /* beside, never over: for anything in the page or the rail, to the left of it, level with the thing; elsewhere above it, or
+     below when there is no room */
+  let x = null, y = 0; const inRail = el.closest('#rail'); const inPage = !inRail && el.closest('#panel');
+  if (inRail || inPage) { const L = (inRail ? r.left : $('#panel').getBoundingClientRect().left) - w - 10; if (L >= 6) { x = L; y = r.top + r.height / 2 - h / 2; } }
+  if (x == null) { x = r.left + r.width / 2 - w / 2; y = r.top - h - 8; if (y < 6) y = r.bottom + 8; }
+  x = clamp(x, 6, Math.max(6, innerWidth - w - 6)); y = clamp(y, 6, Math.max(6, innerHeight - h - 6));
+  tipEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+}
+function hideTip() { clearTimeout(tipT); tipFor = null; tipEl.hidden = true; }
+document.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const el = e.target.closest('[data-tip]'); if (el === tipFor) return; clearTimeout(tipT); if (!el) { hideTip(); return; } tipT = setTimeout(() => showTip(el), 1100); });
+document.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const el = e.target.closest('[data-tip]'); if (el && !el.contains(e.relatedTarget)) hideTip(); });
+document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el && !coarse()) showTip(el); });
+document.addEventListener('focusout', () => hideTip());
+document.addEventListener('input', () => hideTip(), true);
+document.addEventListener('scroll', () => hideTip(), true);
+document.addEventListener('click', e => { if (!coarse()) return; const el = e.target.closest('[data-tip]'); if (!el || e.target.closest('button, a, textarea, input, select, summary')) return; showTip(el); clearTimeout(tipT); tipT = setTimeout(hideTip, 2600); });
+/* every press answers with a small click, and the page's own buttons with a little more */
+document.addEventListener('click', e => { const b = e.target.closest('summary'); if (b) tick(1300); });
+
+/* on a phone the page folds down to its grip and back, at any stage; closed, it opens unfolded next time */
+$('#grip').addEventListener('click', () => { const m = !document.body.classList.contains('mini'); document.body.classList.toggle('mini', m); $('#grip').setAttribute('aria-pressed', String(m)); tick(m ? 1100 : 1500); });
+new MutationObserver(() => { if (document.body.classList.contains('shut') && document.body.classList.contains('mini')) { document.body.classList.remove('mini'); $('#grip').setAttribute('aria-pressed', 'false'); } }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+/* out of sight, the drone falls quiet; the sweep wakes it again */
+/* ───────── boot ───────── */
+document.title = CONFIG.NAME;
+document.body.dataset.view = VIEWS[0].k; document.body.classList.add('shut'); document.body.classList.toggle('nino', !!prefs.nino); if (prefs.nino) { const ext = [...Array(OUT_N).keys()].find(k => k > nowK() && outMonth(k).lv >= 4); if (ext != null) S.mo = ext; } document.documentElement.classList.toggle('still', reduced()); try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => document.documentElement.classList.toggle('still', reduced())); } catch (e) { /* an old browser */ }
+/* a preview says so, so it is never mistaken for the live site */
+if (BUILD.branch) { const t = document.createElement('div'); t.className = 'preview mono'; t.setAttribute('aria-hidden', 'true'); t.textContent = `PREVIEW · ${BUILD.branch.toUpperCase()} · ${BUILD.sha.toUpperCase()}`; document.body.appendChild(t); }
+S.mo = nowK();
+radioDice(); soundSync(); derive(); buildTribes(); buildHeroes(); headBar(); syncDock(); renderView(); flags(); loadEvents();
+/* the stories shown to everyone: as last fetched at once, then fresh; anything waiting to be sent goes */
+if (!IN_AURA) fetch('/api/beat?k=open-studio', { keepalive: true }).catch(() => {});
+/* opened from the aura's "make a song": the radar put down at random within 300 m of here, and the radio on */
+if (IN_AURA && new URLSearchParams(location.search).get('auto') === 'song') {
+  const songGo = () => { if (!S.mapReady) { setTimeout(songGo, 300); return; }
+    const c = S.scan && Number.isFinite(S.scan.lat) && prefs.placed ? { lat: S.scan.lat, lng: S.scan.lng } : map.getCenter();
+    const a = Math.random() * 2 * Math.PI, d = Math.sqrt(Math.random()) * 300, lat = c.lat + d * Math.cos(a) / 110574, lng = c.lng + d * Math.sin(a) / (111320 * Math.cos(c.lat * Math.PI / 180));
+    prefs.placed = true; S.started = true; savePrefs(); life.setScan(lat, lng, 300, true); map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15.5), duration: reduced() ? 0 : 1200 });
+    snd.wake(); setRadio(true); };
+  songGo();
+}
+applyShared(); loadShared(); loadSitePosters(); loadExample(); flushOutbox(); checkSent(); loadPartners().then(() => { if (S.open && !S.mode && (S.view === 0 || S.view === 2)) refreshPanel(); }); loadSettings(); loadPlaces();
+/* a first visit (43-journey.js): only what it has reached shows; a link someone was sent skips the bare map */
+jMarks(); if (simple() && prefs.journey < 1 && jLinked(pendingHash)) jGo(1, true);
+/* the landing page is NOW: a link to a page, or a part of one, lands there too; a link to a life, a story or a place opens it */
+/* sent here by one of the base's keys, the page asked for opens; otherwise the site lands on RADIO as it always has */
+if (!pendingHash) setView(0); else if (viewOfHash(pendingHash) >= 0) { const part = pendingHash.toLowerCase(); pendingHash = ''; if (window.__fromBase || IN_AURA) setView(PARTS[part][0], false, PARTS[part][1] ? part : null); else setView(0); }
+/* the bare map, on a first visit: no page over it until the radar is down; a link sent skips it to the radio */
+if (simple() && prefs.journey < 1) setOpen(false); else if (simple() && !S.open) setView(0);
+/* and before it, the veil: What have you noticed? */
+jVeil();
+/* sound waits for a first touch, anywhere: browsers keep a page quiet until then, and phones let sound wake only inside the
+   touch itself. Then the radar plays what it has found so far, and goes on as it sweeps */
+const WAKE = ['pointerdown', 'pointerup', 'touchend', 'mousedown', 'keydown'];
+/* the sound is woken by the first touch, and woken again by any touch after a phone has put it away (another tab, the lock
+   screen, a call); nothing plays until the radio is turned on */
+const firstTouch = () => { if (!snd.running()) snd.wake(); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.radio) snd.wake(); });
+/* WATER kept on from the last visit: its drinking fountains */
+if (T4.water) setTimeout(loadOverlays, 1500);
+WAKE.forEach(t => addEventListener(t, firstTouch, true));
+if (isLocalHash(pendingHash)) handleHash();
+/* the radar waits, and the first clue floats over the ground: find yourself. A touch on the map puts the radar down there */
+setTimeout(weatherFx, 900);
+loadWeather().then(() => fetchSightings(false)).then(() => { if (pendingHash) handleHash(); }).then(() => fetchHistory());
+placesAround(S.scan.lat, S.scan.lng, S.scan.r); setTimeout(waterView, 1200);
+/* the offline copy is fetched once the first view has what it needs (the map idle), not alongside it */
+const regSW = () => { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => { /* online-only is fine */ }); };
+map.once('idle', () => setTimeout(regSW, 2000)); setTimeout(regSW, 20000);
+window.__da = { simple, ptPrint, JR, jGo, jPick, jSelLife, jSelPlace, jMake, jStrip, jEdit, jMarks, jHint, jReplay, intelCanvas, jCodeCanvas, jSignal, jActs, jVeil, moodOfLayer, cardIntel, tplWords, S, CONFIG, M, FIELD, BRIEFS, EXAMPLES, map, ledger, life, strings, select, setView, setOpen, closeRecord, refresh, alarmsNow, fieldOf, glyphOf, isCold, live: liveTick, fetchHistory, derive, startPlace, selectTribe,
+  degOf, whenOf, threatOf, youngOf, needsOf, needLine, waterNear, outMonth, nowK, canopyAt, canopyOf, pickMonth, roleOfRow, onNotice, suburbAt, placeOf, lifeOf, inTribe, livesIn, bizNear, placesAround, harmsOfRow,
+  webBriefs, makeSignal, meshText, pagerText, slipText, isTty, isConn, connText, heroSrc, bookMD, placeMix, boardJSON, boardObjects: () => (cv ? cv.getObjects() : []), boardLink: (a, b) => joinCards(a, b), sendSignal, SPECIES, sendSpecies, quickCanvas, quickPrint, QP, pressOut, inkAll, stripSignal, fitZ, addToBoard, boardImage, figArt, setPane, radiusSpecies, boardOut, boardPicture, openPosterCard, cardArt, zineTool, placeOnPage, keyFace, MOODS, POSTERS2, PROOFS, savePoster, takeProof, PRESS, zineObjects: () => (zc ? zc.getObjects() : []), tie, DAY, T4, setTrack4, trackOn, stepMonth, setTime, turned, setRadio, startRadio, arcadeOff, markTweak, markConnect, stepsCheck, directAction, toPress, deck, openCard, cardURL, cardKin, mountArt, faceOf, setFace, flip, turnKnob, playExample, exampleMix, exampleBoardJSON, ensureExample, placeExampleZine, exampleZineImage, sendExample, EXK, EXR, EXZ, boardId: () => boardId, switchBoard, CFG, WDRAFT, setLoop, playLoop, LOOP, LOOPS, mixCode, mixOfCode, mixURL, mixArt, tuneMix, pullWild, WILD, makeConstellation, shareMix, playMix, mixNow, MIXES, LAYERS, placeRadar, placed, TRK, trackVoices, setTrack, stopTracks, escpos, slipPNG, packSignal, unpackSignal, linkOf, receive, openSignal, printSlip, printBlank, remixSignal, toWish, issue, snd, prefs, hideCell, setFive, fiveList, haversine, rangeOf, nameOf, statementOf, stDefault, imgChoice, imgList, photoChoices, IMGS, OWN, showConstellation, fitWeb, fillLedger, bwCanvas, slipCanvas, slipHTML, PLACES, ROLES, PRESSURES, isFresh, stampOf, checkSent, loadShared, loadPartners, loadSettings, directAction, shareRecord, sentWord, PARTNERS, PSTATE, selectPartner, setScan: (...a) => life.setScan(...a), face: () => face };
+})();

@@ -1,0 +1,125 @@
+<svg class="sprite" aria-hidden="true" focusable="false"></svg>
+
+<div id="world" role="application" aria-label="Brunswick to the city, from above"></div>
+<div class="cover" id="cover" aria-hidden="true"></div>
+<div class="gallery" id="gallery" hidden></div>
+<div class="board" id="board" hidden><div class="tools" id="board-tools" role="toolbar" aria-label="The board"></div><canvas id="board-c"></canvas><p class="hw-label mono" id="board-label"></p></div>
+<div class="zine" id="zine" hidden><div class="tools" id="zine-tools" role="toolbar" aria-label="The page"></div><div class="desk"><div class="roll" id="press-roll"></div><canvas id="zine-c"></canvas></div><p class="hw-label mono" id="zine-label"></p></div>
+<div class="tag" id="tag" hidden></div>
+<div class="peek" id="peek" hidden></div>
+<div class="trace" id="trace" aria-live="polite" hidden></div>
+<button type="button" class="radius" id="radius" aria-label="Radius" hidden></button>
+<button type="button" class="knob" id="knob" aria-label="Move the radar" data-tip="Move the radar" hidden></button>
+<button type="button" class="knob ring" id="ring" aria-label="The radar's reach" hidden></button>
+<div class="hold" id="hold" aria-hidden="true"></div>
+<nav class="rail" id="rail" aria-label="Pages"></nav>
+<nav class="dock" id="dock" aria-label="What to show"><button type="button" class="dk" data-pane="main" aria-pressed="false" aria-label="What the page works on"></button><button type="button" class="dk" data-pane="page" aria-pressed="true" aria-label="The page"></button></nav>
+
+<aside class="panel" id="panel"><button type="button" class="grip" id="grip" aria-label="Fold the page away" aria-pressed="false"><i></i></button>
+  <div class="leaf">
+    <button type="button" class="sheetbar" id="sheetbar" aria-expanded="true"><b class="sb-t"></b><i class="sb-c" aria-hidden="true"></i></button>
+    <header class="ph" id="ph"></header>
+    <div class="view" id="view"></div>
+
+    <section class="record" id="record" hidden>
+      <header class="r-bar">
+        <button type="button" class="ib" id="r-back" aria-label="Back"><svg class="i" aria-hidden="true"><use href="#g-back"/></svg></button>
+        <span class="r-no" id="r-no"></span>
+        <button type="button" class="ib" id="r-hide" aria-label="Hide" data-tip="Hide from the map" hidden><svg class="i" aria-hidden="true"><use href="#g-hide"/></svg></button>
+        <button type="button" class="ib" id="r-x" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#g-close"/></svg></button>
+      </header>
+      <div class="r-scroll" id="r-scroll">
+
+        <div class="face front" id="r-front">
+          <figure class="r-fig" id="r-fig"><img id="r-img" alt="" decoding="async" hidden><canvas id="r-glyph" width="832" height="640" hidden></canvas><figcaption class="r-credit mono" id="r-credit"></figcaption></figure>
+          <div class="r-id"><h2 class="r-name" id="r-name"></h2><p class="r-latin" id="r-latin"></p></div>
+          <div class="chips" id="r-chips"></div>
+          <div class="r-five" id="r-five" hidden></div>
+          <p class="r-threat" id="r-threat" hidden></p>
+          <p class="r-learn" id="r-learn" hidden></p>
+          <div class="r-season" id="r-season" hidden></div>
+          <div class="ledger" id="r-ledger" hidden></div>
+          <div class="r-do" id="r-do"></div>
+          <section class="r-strings" id="r-strings" hidden></section>
+          <textarea class="r-note" id="r-note" rows="2" maxlength="280" placeholder="Notes" aria-label="Notes" hidden></textarea>
+        </div>
+
+        <form class="face wish" id="r-wish" autocomplete="off" novalidate hidden>
+          <div class="slip" id="w-slip">
+            <div class="sl-perf" aria-hidden="true"></div>
+            <header class="sl-head mono"><b class="sl-code">DA-····</b><span class="sl-time"></span></header>
+            <figure class="sl-fig w" id="w-fig">
+              <canvas id="w-img" aria-label="The photograph, as it prints"></canvas>
+              <div class="img-acts" id="w-imgs">
+                <button type="button" data-img="prev" aria-label="Another photograph" data-tip="Another photograph"><svg class="i sm" aria-hidden="true"><use href="#g-back"/></svg></button>
+                <span class="mono" id="w-imgn"></span>
+                <button type="button" data-img="next" aria-label="Another photograph" data-tip="Another photograph"><svg class="i sm" aria-hidden="true"><use href="#g-next"/></svg></button>
+                <button type="button" data-img="own" aria-label="Your own photograph" data-tip="Your own"><svg class="i sm" aria-hidden="true"><use href="#g-camera"/></svg></button>
+                <button type="button" data-img="none" aria-label="No photograph" aria-pressed="false" data-tip="None"><svg class="i sm" aria-hidden="true"><use href="#g-hide"/></svg></button>
+              </div>
+              <figcaption class="sl-cap mono" id="w-cap"></figcaption>
+              <input type="file" id="w-file" accept="image/*" hidden>
+            </figure>
+            <div class="sl-life"></div>
+            <div class="sl-opt sl-st" id="w-threat"><label class="ck" data-tip="On the slip"><input type="checkbox" id="w-threat-on" checked aria-label="The statement on the slip"><i></i></label><span class="st-box"><textarea id="w-st" rows="3" maxlength="320" aria-label="The statement" spellcheck="true"></textarea><button type="button" class="st-reset" id="w-st-reset" aria-label="As it was" data-tip="As it was" hidden><svg class="i sm" aria-hidden="true"><use href="#g-undo"/></svg></button></span></div>
+            <button type="button" class="sl-wtog" id="w-wtog" aria-pressed="false" aria-label="The W.I.S.H. on the receipt" data-tip="The W.I.S.H. on the receipt"><b>W</b><b>I</b><b>S</b><b>H</b></button>
+            <ol class="sl-wish">
+              <li data-hint="What we know: the theory"><input id="w-w" type="text" aria-label="What we know" placeholder="What we know: the theory" spellcheck="true"></li>
+              <li data-hint="It would be great: the belief"><input id="w-i" type="text" aria-label="It would be great" placeholder="It would be great: the belief" spellcheck="true"></li>
+              <li data-hint="So let's create: the principle"><input id="w-s" type="text" aria-label="So let's create" placeholder="So let's create: the principle" spellcheck="true"></li>
+              <li data-hint="Here is how it works: the tactic"><input id="w-h" type="text" aria-label="Here is how it works" placeholder="Here is how it works: the tactic" spellcheck="true"></li>
+            </ol>
+            <ul class="sl-knots" id="w-knots" hidden></ul>
+            <div class="sl-opt sl-note" id="w-note"><label class="ck" data-tip="On the slip"><input type="checkbox" id="w-note-on" aria-label="Notes on the slip"><i></i></label><textarea id="w-note-t" rows="2" maxlength="280" placeholder="Notes" aria-label="Notes"></textarea></div>
+            <label class="sl-sign"><span>—</span><input id="w-sign" type="text" maxlength="40" aria-label="Your name, optional" placeholder="NAME"></label>
+            <div class="sl-qr" aria-hidden="true"><i></i></div>
+            <p class="sl-foot mono" id="w-foot"></p>
+          </div>
+        </form>
+
+        <div class="face signal" id="r-signal" hidden>
+          <article class="slip" id="s-slip"></article>
+          <p class="s-status mono" id="s-status" hidden></p>
+          <div class="s-send" id="s-send" hidden></div>
+          <div class="s-acts" id="s-acts"></div>
+          <div class="s-out" id="s-out"></div>
+          <pre class="s-text" id="s-text" hidden></pre>
+        </div>
+
+        <div class="face place" id="r-place" hidden>
+          <div class="pl-sky" id="pl-sky">
+            <b class="pl-time" id="pl-time"></b>
+            <span class="pl-sw" id="pl-sw"></span>
+            <span class="pl-where mono" id="pl-where"></span>
+            <button type="button" class="pl-here" id="pl-here" aria-label="Where I am" data-tip="Where I am"><svg class="i" aria-hidden="true"><use href="#g-where"/></svg></button>
+          </div>
+          <div class="pl-card">
+            <label class="shot" id="pl-shot" data-tip="Photo"><input id="pl-photo" type="file" accept="image/*" capture="environment" hidden><canvas id="pl-disc" width="240" height="240"></canvas><span class="shot-mark"><svg class="i" aria-hidden="true"><use href="#g-camera"/></svg></span></label>
+            <div class="pl-id">
+              <b class="pl-name" id="pl-name"></b>
+              <small class="pl-latin" id="pl-latin"></small>
+              <span class="pl-tags mono" id="pl-tags"></span>
+            </div>
+          </div>
+          <textarea id="pl-text" rows="2" maxlength="140" autocomplete="off" aria-label="What is it?" placeholder="What is it?"></textarea>
+          <div class="pl-kinds" id="pl-kinds" role="group" aria-label="What happened"></div>
+          <div class="pl-lives" id="pl-lives" role="group" aria-label="What kind of life"></div>
+          <input id="pl-when" type="datetime-local" aria-label="When" hidden>
+          <div class="pl-hint" id="pl-hint"></div>
+          <div class="pl-opt">
+            <label class="sig"><svg class="i" aria-hidden="true"><use href="#g-sign"/></svg><input id="pl-sign" type="text" maxlength="40" autocomplete="off" aria-label="Your name, optional" placeholder="Name"></label>
+            <label class="sig ctc"><svg class="i" aria-hidden="true"><use href="#g-phone"/></svg><input id="pl-contact" type="text" maxlength="60" autocomplete="off" inputmode="email" aria-label="Phone or email, optional" placeholder="Phone or email"></label>
+          </div>
+        </div>
+
+      </div>
+      <button type="button" class="alt" id="r-alt" hidden></button>
+      <button type="button" class="hero" id="r-act"></button>
+    </section>
+  </div>
+</aside>
+
+<div id="press" aria-hidden="true"><article class="slip print" id="p-slip"></article></div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>

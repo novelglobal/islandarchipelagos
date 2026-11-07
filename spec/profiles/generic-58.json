@@ -1,0 +1,13 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "profile": "printer",
+  "id": "generic-58",
+  "name": "58 mm printer",
+  "about": "Any small 58 mm ESC/POS printer at 203 dpi, torn on its teeth.",
+  "protocol": "escpos",
+  "dpi": 203,
+  "papers": [{ "paper": 58, "dots": 384 }],
+  "cutter": "none",
+  "speed": 70,
+  "darkness": { "min": 70, "max": 130, "default": 100 }
+}

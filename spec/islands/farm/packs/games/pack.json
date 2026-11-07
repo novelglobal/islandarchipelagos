@@ -1,0 +1,61 @@
+{
+  "$schema": "../../../../schemas/steps.schema.json",
+  "pack": "steps",
+  "id": "farm/games",
+  "version": "0.1.0",
+  "name": "I · W · I · S · H",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "W.I.S.H. as five small games, each under a minute, each its own receipt and an unlock on the farm. No step starts from a blank field. One hand for everyone on the island each moon quarter. Brief: front/docs/brief-1.0-b.md.",
+  "journey": {
+    "name": "I · W · I · S · H",
+    "run": "moon",
+    "again": "each-moon-quarter",
+    "phases": [
+      { "id": "noticed", "name": "NOTICED", "means": "the intention to respond" },
+      { "id": "response", "name": "RESPONSE", "means": "the W.I.S.H. itself: responsibility, theory joined to action, reflection" },
+      { "id": "direct-action", "name": "DIRECT ACTION", "means": "a pledge: printed as a receipt at a partner place, sent by mesh, kept on novel.global" }
+    ],
+    "steps": [
+      {
+        "id": "i-catch", "name": "I", "phase": "noticed", "icon": "glyph:catch",
+        "fields": [
+          { "id": "things", "type": "catch", "of": ["life", "data", "place"], "required": true },
+          { "id": "intention", "type": "text", "max": 120 },
+          { "id": "place", "type": "place", "from": ["phone", "tap"] },
+          { "id": "out", "type": "print", "templates": ["game-i"], "ways": ["print", "keep"] }
+        ]
+      },
+      {
+        "id": "w-draw", "name": "W", "phase": "response", "icon": "glyph:cards",
+        "fields": [
+          { "id": "fact", "type": "deal", "from": ["species", "cases", "readings"], "cards": 3, "keep": 1, "required": true },
+          { "id": "out", "type": "print", "templates": ["game-w"], "ways": ["print", "keep"] }
+        ]
+      },
+      {
+        "id": "i-dial", "name": "I", "phase": "response", "icon": "glyph:dial",
+        "fields": [
+          { "id": "future", "type": "dial", "between": ["now", "grown back"], "required": true },
+          { "id": "out", "type": "print", "templates": ["game-great"], "ways": ["print", "keep"] }
+        ]
+      },
+      {
+        "id": "s-craft", "name": "S", "phase": "response", "icon": "glyph:craft",
+        "fields": [
+          { "id": "thing", "type": "combine", "of": ["i-catch.things", "w-draw.fact"], "wild": true, "makes": ["hardware", "planting", "poster", "song", "meeting", "sign", "zine", "event"], "required": true },
+          { "id": "cover", "type": "art", "of": ["pixels", "photo"] },
+          { "id": "out", "type": "print", "templates": ["game-s"], "ways": ["print", "keep"] }
+        ]
+      },
+      {
+        "id": "h-strings", "name": "H", "phase": "direct-action", "icon": "glyph:strings",
+        "fields": [
+          { "id": "who", "type": "strings", "to": ["groups", "places", "printers", "people"], "max": 6, "required": true },
+          { "id": "out", "type": "print", "templates": ["game-h"], "ways": ["print", "keep", "link", "mesh"] }
+        ]
+      }
+    ]
+  }
+}

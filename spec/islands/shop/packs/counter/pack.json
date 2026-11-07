@@ -1,0 +1,91 @@
+{
+  "$schema": "../../../../schemas/steps.schema.json",
+  "pack": "steps",
+  "id": "shop/counter",
+  "version": "0.1.0",
+  "name": "Counter",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "For the staff, once a day: deal three cards from what is near (a group, a place, a thing that worked elsewhere), keep one, add a line and a mark, and print it for the counter. The same action prints at the foot of every sale until tomorrow's.",
+  "journey": {
+    "name": "counter",
+    "again": "after-print",
+    "steps": [
+      {
+        "id": "today",
+        "name": "today",
+        "icon": "glyph:card",
+        "words": {
+          "tab": "today",
+          "ask": "what is near?"
+        },
+        "fields": [
+          {
+            "id": "card",
+            "type": "deal",
+            "from": [
+              "cases",
+              "groups",
+              "places"
+            ],
+            "cards": 3,
+            "keep": 1,
+            "required": true
+          },
+          {
+            "id": "line",
+            "type": "text",
+            "max": 90,
+            "words": {
+              "ask": "one line, in your own words"
+            }
+          }
+        ]
+      },
+      {
+        "id": "make",
+        "name": "make",
+        "icon": "glyph:pixels",
+        "words": {
+          "tab": "make"
+        },
+        "fields": [
+          {
+            "id": "mark",
+            "type": "art",
+            "of": [
+              "pixels",
+              "sign",
+              "style"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "out",
+        "name": "out",
+        "icon": "glyph:print",
+        "words": {
+          "tab": "print"
+        },
+        "fields": [
+          {
+            "id": "print",
+            "type": "print",
+            "templates": [
+              "counter-card",
+              "docket-foot"
+            ],
+            "ways": [
+              "print",
+              "mesh",
+              "link"
+            ],
+            "copies": 1
+          }
+        ]
+      }
+    ]
+  }
+}

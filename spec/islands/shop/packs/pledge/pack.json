@@ -1,0 +1,59 @@
+{
+  "$schema": "../../../../schemas/steps.schema.json",
+  "pack": "steps",
+  "id": "shop/pledge",
+  "version": "0.1.0",
+  "name": "Pledge",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "For whoever scans the foot of a sale: take the day's action on as a pledge, and print it at the counter or keep it on the phone.",
+  "journey": {
+    "name": "pledge",
+    "again": "after-print",
+    "steps": [
+      {
+        "id": "take",
+        "name": "take",
+        "icon": "glyph:hand",
+        "words": {
+          "tab": "take",
+          "ask": "will you?"
+        },
+        "fields": [
+          {
+            "id": "what",
+            "type": "choose",
+            "of": [
+              "come along",
+              "bring something",
+              "tell someone",
+              "fix it"
+            ],
+            "required": true
+          },
+          {
+            "id": "name",
+            "type": "text",
+            "max": 30,
+            "words": {
+              "ask": "a name, or none"
+            }
+          },
+          {
+            "id": "out",
+            "type": "print",
+            "templates": [
+              "pledge"
+            ],
+            "ways": [
+              "print",
+              "keep"
+            ],
+            "copies": 1
+          }
+        ]
+      }
+    ]
+  }
+}

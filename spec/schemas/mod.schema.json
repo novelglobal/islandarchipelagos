@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:mod",
+  "title": "A mod: one feature an island makes, which any board can wire into another",
+  "description": "Data only. A mod says what it gives, what it takes and how its slip is laid out; the engine does the making. Nothing in it ever runs",
+  "type": "object",
+  "required": ["id", "version", "title", "island", "mark", "gives", "takes", "slip"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "description": "The island's id, a dash, then the mod's own name, so two islands never clash", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)+$", "maxLength": 63 },
+    "version": { "$ref": "urn:island:0.1:common#/$defs/semver" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 30 },
+    "island": { "$ref": "urn:island:0.1:common#/$defs/id" },
+    "about": { "type": "string", "maxLength": 140 },
+    "licence": { "$ref": "urn:island:0.1:common#/$defs/licence" },
+    "mark": { "description": "An SVG beside mod.json, drawn as an image, never inline", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.svg$" },
+    "connection": { "description": "The connection its island's printer must have on before another island can wire this mod in", "enum": ["wish", "radio", "art", "words", "cards", "codes"] },
+    "gives": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/element" } },
+    "takes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/element" } },
+    "needs": {
+      "description": "Mods it can't work without, as id@major. Plugged in first, and they use no cable",
+      "type": "array", "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)+@[0-9]+$" }
+    },
+    "settings": {
+      "description": "Shown in the control panel as switches, sliders and fields, never raw text",
+      "type": "array", "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["key", "kind", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "$ref": "urn:island:0.1:common#/$defs/id" },
+          "kind": { "enum": ["switch", "slider", "field"] },
+          "label": { "type": "string", "maxLength": 22 },
+          "default": { "type": ["boolean", "number", "string"] },
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "step": { "type": "number", "exclusiveMinimum": 0 }
+        },
+        "allOf": [
+          { "if": { "properties": { "kind": { "const": "switch" } } }, "then": { "properties": { "default": { "type": "boolean" } } } },
+          { "if": { "properties": { "kind": { "const": "slider" } } }, "then": { "required": ["min", "max"], "properties": { "default": { "type": "number" } } } },
+          { "if": { "properties": { "kind": { "const": "field" } } }, "then": { "properties": { "default": { "type": "string", "maxLength": 22 }, "max": { "maximum": 22 } } } }
+        ]
+      }
+    },
+    "slip": { "description": "The layout, a file beside mod.json", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.slip\\.json$" }
+  },
+  "$defs": {
+    "element": {
+      "description": "What travels down a cable. Each one is something printed",
+      "enum": ["WORDS", "PICTURE", "SOUND", "CODE", "LIST", "LENGTH"]
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:map",
+  "title": "A map pack: the ground, its tiles and its layers of cells",
+  "type": "object",
+  "allOf": [{ "$ref": "urn:island:0.1:common#/$defs/packHeader" }],
+  "required": ["area", "basemap", "layers"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": { "const": "map" },
+    "area": {
+      "type": "object", "required": ["bbox", "centre"], "additionalProperties": false,
+      "properties": {
+        "bbox": { "$ref": "urn:island:0.1:common#/$defs/bbox" },
+        "centre": { "$ref": "urn:island:0.1:common#/$defs/latlng" },
+        "minzoom": { "type": "integer", "minimum": 0, "maximum": 22 },
+        "maxzoom": { "type": "integer", "minimum": 0, "maximum": 22 },
+        "reach": {
+          "description": "The radius around a place that the island listens to, in metres",
+          "type": "object", "additionalProperties": false,
+          "properties": { "start": { "type": "integer" }, "min": { "type": "integer" }, "max": { "type": "integer" } }
+        }
+      }
+    },
+    "basemap": {
+      "type": "object", "required": ["attribution"], "additionalProperties": false,
+      "anyOf": [{ "required": ["pmtiles"] }, { "required": ["online"] }],
+      "properties": {
+        "pmtiles": { "description": "Offline tiles in the pack, served by the island", "$ref": "urn:island:0.1:common#/$defs/path" },
+        "online": { "description": "A tile address with {z} {x} {y}, used only while online", "type": "string", "pattern": "^https://.*\\{z\\}" },
+        "kind": { "enum": ["raster", "vector"], "default": "raster" },
+        "look": { "enum": ["greys", "as-is", "ink"], "default": "greys" },
+        "maxzoom": { "type": "integer", "minimum": 0, "maximum": 22 },
+        "attribution": { "type": "string", "maxLength": 200 },
+        "open": { "description": "false when the tiles may be viewed but not kept or copied offline", "type": "boolean" }
+      }
+    },
+    "terrain": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "pmtiles": { "$ref": "urn:island:0.1:common#/$defs/path" },
+        "online": { "type": "string", "pattern": "^https://.*\\{z\\}" },
+        "encoding": { "enum": ["terrarium", "mapbox"] },
+        "exaggerate": { "type": "number", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "kinds": {
+      "description": "Every kind of cell: its word, icon, colour and sound",
+      "type": "object", "propertyNames": { "$ref": "urn:island:0.1:common#/$defs/id" },
+      "additionalProperties": {
+        "type": "object", "required": ["w"], "additionalProperties": false,
+        "properties": {
+          "w": { "type": "string", "maxLength": 30 },
+          "icon": { "$ref": "urn:island:0.1:common#/$defs/icon" },
+          "colour": { "$ref": "urn:island:0.1:common#/$defs/colour" },
+          "sound": { "$ref": "urn:island:0.1:common#/$defs/id" }
+        }
+      }
+    },
+    "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } }
+  },
+  "$defs": {
+    "layer": {
+      "type": "object", "required": ["id", "name", "source"], "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "name": { "type": "string", "maxLength": 40 },
+        "track": { "description": "The key it sits under on the TRACKS row", "type": "string", "maxLength": 20 },
+        "source": { "$ref": "#/$defs/source" },
+        "kind": { "description": "The kind every cell takes when its row gives none", "$ref": "urn:island:0.1:common#/$defs/id" },
+        "on": { "type": "boolean", "default": true },
+        "locked": { "description": "Kept on for everyone by the keeper", "type": "boolean", "default": false },
+        "sound": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "max": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "fresh": { "description": "Outside the reach, only cells newer than this", "$ref": "urn:island:0.1:common#/$defs/duration" }
+      }
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["type", "file"], "additionalProperties": false,
+          "properties": {
+            "type": { "enum": ["csv", "geojson", "cells"] },
+            "file": { "$ref": "urn:island:0.1:common#/$defs/path" },
+            "columns": { "$ref": "#/$defs/columns" }
+          }
+        },
+        {
+          "type": "object", "required": ["type", "adapter", "offline"], "additionalProperties": false,
+          "properties": {
+            "type": { "const": "live" },
+            "adapter": { "enum": ["inaturalist", "overpass", "open-meteo", "csv-url", "socrata", "opendatasoft"] },
+            "query": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean", "array"] } },
+            "keep": { "description": "How long one answer is shared", "$ref": "urn:island:0.1:common#/$defs/duration" },
+            "offline": { "description": "The file used with no internet; may be empty", "$ref": "urn:island:0.1:common#/$defs/path" },
+            "columns": { "$ref": "#/$defs/columns" }
+          }
+        },
+        {
+          "type": "object", "required": ["type"], "additionalProperties": false,
+          "properties": { "type": { "const": "stories" }, "kinds": { "type": "array", "items": { "type": "string" } } }
+        }
+      ]
+    },
+    "columns": {
+      "description": "Which column (CSV) or property (GeoJSON) holds each part of a cell",
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "lat": { "type": "string" }, "lng": { "type": "string" }, "name": { "type": "string" }, "kind": { "type": "string" },
+        "note": { "type": "string" }, "url": { "type": "string" }, "t": { "type": "string" }, "id": { "type": "string" }
+      }
+    },
+    "cell": {
+      "description": "What every layer comes out as",
+      "type": "object", "required": ["id", "layer", "kind", "name", "lat", "lng"], "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "maxLength": 80 },
+        "layer": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "kind": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "name": { "type": "string", "maxLength": 60 },
+        "lat": { "$ref": "urn:island:0.1:common#/$defs/lat" },
+        "lng": { "$ref": "urn:island:0.1:common#/$defs/lng" },
+        "note": { "type": "string", "maxLength": 140 },
+        "url": { "$ref": "urn:island:0.1:common#/$defs/url" },
+        "t": { "description": "When, in milliseconds since 1970", "type": "integer" }
+      }
+    }
+  }
+}

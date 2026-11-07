@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:common",
+  "title": "Shared definitions for the island format",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "packId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "range": {
+      "type": "string",
+      "pattern": "^[\\^~]?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(\\.(0|[1-9]\\d*))?$"
+    },
+    "path": {
+      "description": "A file inside the pack: relative, forward slashes, never leaving the pack",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[A-Za-z0-9._/-]+$"
+    },
+    "licence": {
+      "description": "An SPDX licence id",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.+-]+( (AND|OR|WITH) [A-Za-z0-9.+-]+)*$"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "lng": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "latlng": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/lat"
+        },
+        {
+          "$ref": "#/$defs/lng"
+        }
+      ],
+      "items": false,
+      "minItems": 2
+    },
+    "bbox": {
+      "description": "west, south, east, north",
+      "type": "array",
+      "items": false,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/lng"
+        },
+        {
+          "$ref": "#/$defs/lat"
+        },
+        {
+          "$ref": "#/$defs/lng"
+        },
+        {
+          "$ref": "#/$defs/lat"
+        }
+      ]
+    },
+    "colour": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "icon": {
+      "description": "An SVG or PNG in the pack, or the name of one of the engine's glyphs",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/path"
+        },
+        {
+          "type": "string",
+          "pattern": "^glyph:[a-z0-9-]+$"
+        }
+      ]
+    },
+    "duration": {
+      "description": "ISO 8601, for machines only; people are shown the moon",
+      "type": "string",
+      "pattern": "^P(\\d+[YMWD])*(T(\\d+[HMS])+)?$"
+    },
+    "words": {
+      "description": "Words shown or printed, by key. Every one can be changed on the switchboard",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9.-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 600
+      }
+    },
+    "packRef": {
+      "description": "A pack: its folder beside the manifest, or where to fetch it and its hash",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/path"
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "version",
+            "url",
+            "sha256"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/packId"
+            },
+            "version": {
+              "$ref": "#/$defs/semver"
+            },
+            "url": {
+              "$ref": "#/$defs/url"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      ]
+    },
+    "packHeader": {
+      "type": "object",
+      "required": [
+        "pack",
+        "id",
+        "version",
+        "name",
+        "by",
+        "licence",
+        "engine"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "pack": {
+          "enum": [
+            "map",
+            "lives",
+            "sound",
+            "steps",
+            "style",
+            "templates",
+            "story",
+            "board"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/packId"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "by": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "licence": {
+          "$ref": "#/$defs/licence"
+        },
+        "engine": {
+          "$ref": "#/$defs/range"
+        },
+        "about": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "parent": {
+          "description": "The pack this one was forked from: the credit chain, printed as a small code at the foot of a receipt",
+          "type": "object",
+          "required": [
+            "id",
+            "version",
+            "by"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/packId"
+            },
+            "version": {
+              "$ref": "#/$defs/semver"
+            },
+            "by": {
+              "type": "string",
+              "maxLength": 80
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "description": "Where something came from, with its own licence",
+      "type": "object",
+      "required": [
+        "n"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "url": {
+          "$ref": "#/$defs/url"
+        },
+        "licence": {
+          "type": "string",
+          "maxLength": 80
+        }
+      }
+    },
+    "file": {
+      "description": "A data file in the pack, and the schema its rows follow",
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/path"
+        },
+        "format": {
+          "enum": [
+            "json",
+            "csv",
+            "geojson"
+          ]
+        }
+      }
+    }
+  }
+}

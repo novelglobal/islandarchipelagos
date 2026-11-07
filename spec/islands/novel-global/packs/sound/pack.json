@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schemas/sound.schema.json",
+  "pack": "sound",
+  "id": "novel-global/sound",
+  "version": "0.1.0",
+  "name": "Sound without music",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "One key from the low A. Nothing plays on its own: the radar's sweep sounds each cell as it passes, in its layer's voice; places in their own small real sounds.",
+  "tuning": { "root": "A1", "scale": "minor" },
+  "tempo": { "bpm": 120, "grid": 16 },
+  "voices": [
+    { "id": "breath", "synth": "breath" },
+    { "id": "bowed", "synth": "bowed" },
+    { "id": "drop", "synth": "drop" },
+    { "id": "glitch", "synth": "glitch" },
+    { "id": "thud", "synth": "thud" },
+    { "id": "choir", "synth": "choir" },
+    { "id": "sub", "synth": "sub", "gain": 0.8 },
+    { "id": "drone", "synth": "drone", "gain": 0.7 },
+    { "id": "bell", "synth": "bell" },
+    { "id": "swish", "synth": "swish" },
+    { "id": "taps", "synth": "taps" },
+    { "id": "cup", "synth": "cup" },
+    { "id": "pencil", "synth": "pencil" },
+    { "id": "hum", "synth": "hum" }
+  ],
+  "moods": [
+    { "id": "fog", "name": "FOG", "voices": ["breath", "bowed"], "room": "wide", "filter": "mist" },
+    { "id": "rain", "name": "RAIN", "voices": ["drop", "glitch"], "room": "small", "filter": "dub" },
+    { "id": "weight", "name": "WEIGHT", "voices": ["thud", "sub"], "room": "hall", "filter": "ladder" }
+  ],
+  "bind": {
+    "family:brand": "swish", "family:circular": "taps", "family:service": "cup", "family:artists": "pencil",
+    "family:third": "hum", "family:network": "hum", "family:people": "breath",
+    "layer:living": "drop", "drone": "drone", "done": "bell", "print": "bell", "begin": "bell"
+  },
+  "limits": { "voices": 8, "loop": 45 }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "profile": "printer",
+  "id": "tm-t88v",
+  "name": "Epson TM-T88V",
+  "about": "The printer at novel.global and the one the kit is made for, bought second-hand.",
+  "protocol": "escpos",
+  "dpi": 180,
+  "papers": [{ "paper": 80, "dots": 512 }],
+  "cutter": "partial",
+  "speed": 300,
+  "darkness": { "min": 70, "max": 130, "default": 100 },
+  "usb": { "vendor": "04b8", "product": "0202" },
+  "port": 9100
+}

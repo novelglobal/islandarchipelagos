@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/slip.schema.json",
+  "format": "slip/0.1",
+  "length": "slip",
+  "blocks": [
+    {"block":"words","fixed":true,"text":"UNEARTH YOUR ISLAND","size":"big"},
+    {"block":"list","max":10},
+    {"block":"code"}
+  ]
+}

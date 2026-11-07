@@ -1,0 +1,171 @@
+{
+  "$schema": "../../../../schemas/templates.schema.json",
+  "pack": "templates",
+  "id": "novel-global/receipts",
+  "version": "0.1.0",
+  "name": "novel.global's receipts",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "The W.I.S.H. receipt, the CONNECTION receipt and the blank quick print, as they print today.",
+  "templates": [
+    {
+      "id": "wish",
+      "name": "W.I.S.H.",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "art",
+          "from": "make.art",
+          "height": "half"
+        },
+        {
+          "type": "heading",
+          "from": "notice.say",
+          "size": "head"
+        },
+        {
+          "type": "lines",
+          "from": "wish.lines",
+          "size": "body",
+          "when": "wish.lines"
+        },
+        {
+          "type": "marks",
+          "from": "make.marks",
+          "when": "make.marks"
+        },
+        {
+          "type": "data",
+          "from": "notice.catch",
+          "size": "small"
+        },
+        {
+          "type": "rule",
+          "dots": 2
+        },
+        {
+          "type": "text",
+          "from": "island.country",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ],
+      "mesh": {
+        "fields": [
+          "notice.place",
+          "notice.catch",
+          "make.marks",
+          "notice.say",
+          "wish.lines.w",
+          "wish.lines.i",
+          "wish.lines.s",
+          "wish.lines.h",
+          "island.code"
+        ]
+      }
+    },
+    {
+      "id": "connection",
+      "name": "CONNECTION",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "heading",
+          "from": "'CONNECTION'",
+          "size": "head"
+        },
+        {
+          "type": "code"
+        },
+        {
+          "type": "text",
+          "from": "read.threat",
+          "label": "signal"
+        },
+        {
+          "type": "text",
+          "from": "read.place",
+          "label": "place"
+        },
+        {
+          "type": "text",
+          "from": "read.tied",
+          "label": "tied",
+          "when": "read.tied"
+        },
+        {
+          "type": "text",
+          "from": "read.join",
+          "label": "join",
+          "when": "read.join"
+        },
+        {
+          "type": "text",
+          "from": "wish.lines.h",
+          "label": "next"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "quick",
+      "name": "QUICK",
+      "paper": [
+        80
+      ],
+      "blocks": [
+        {
+          "type": "photo",
+          "from": "notice.photo",
+          "when": "notice.photo",
+          "height": "half"
+        },
+        {
+          "type": "text",
+          "from": "notice.say",
+          "size": "body"
+        },
+        {
+          "type": "space",
+          "dots": 40
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    }
+  ]
+}

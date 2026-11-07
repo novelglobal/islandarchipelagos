@@ -1,0 +1,598 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:steps",
+  "title": "A steps pack: the journey, any number of steps",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "urn:island:0.1:common#/$defs/packHeader"
+    }
+  ],
+  "required": [
+    "journey"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": {
+      "const": "steps"
+    },
+    "journey": {
+      "type": "object",
+      "required": [
+        "name",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "phases": {
+          "description": "Optional words that group the steps",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "urn:island:0.1:common#/$defs/id"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "means": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "again": {
+          "description": "When the journey starts again for a phone",
+          "enum": [
+            "after-print",
+            "each-moon-quarter",
+            "never"
+          ]
+        },
+        "run": {
+          "description": "How a run deals: each run its own hand, or one hand for everyone on the island each moon quarter",
+          "enum": [
+            "own",
+            "moon"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "fields"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "phase": {
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "icon": {
+          "$ref": "urn:island:0.1:common#/$defs/icon"
+        },
+        "words": {
+          "$ref": "urn:island:0.1:common#/$defs/words"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "unevaluatedProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "type": {
+          "enum": [
+            "photo",
+            "text",
+            "lines",
+            "choose",
+            "catch",
+            "place",
+            "art",
+            "frame",
+            "print",
+            "deal",
+            "dial",
+            "combine",
+            "strings"
+          ]
+        },
+        "words": {
+          "$ref": "urn:island:0.1:common#/$defs/words"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "photo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "from": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "camera",
+                    "file",
+                    "live",
+                    "none"
+                  ]
+                }
+              },
+              "count": {
+                "description": "More than one makes a strip, as a booth does",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 6
+              },
+              "countdown": {
+                "description": "Beats before each shot",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "exif": {
+                "description": "Where and when from the picture itself",
+                "type": "boolean"
+              },
+              "keep": {
+                "enum": [
+                  "device",
+                  "island",
+                  "approval"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "max": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "lines"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "lines"
+            ],
+            "properties": {
+              "lines": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 12,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "$ref": "urn:island:0.1:common#/$defs/id"
+                    },
+                    "letter": {
+                      "type": "string",
+                      "maxLength": 3
+                    },
+                    "words": {
+                      "$ref": "urn:island:0.1:common#/$defs/words"
+                    }
+                  }
+                }
+              },
+              "max": {
+                "description": "Characters a line",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "choose"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "of"
+            ],
+            "properties": {
+              "of": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  },
+                  {
+                    "enum": [
+                      "kinds",
+                      "groups",
+                      "species",
+                      "templates",
+                      "styles",
+                      "needs",
+                      "tags"
+                    ]
+                  }
+                ]
+              },
+              "many": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "catch"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "of": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "map",
+                    "life",
+                    "data",
+                    "season",
+                    "place",
+                    "cell"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "place"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "from": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "phone",
+                    "photo",
+                    "tap",
+                    "island"
+                  ]
+                }
+              },
+              "reveal": {
+                "description": "Nearby sightings tied to it, at most",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "art"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "of": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "photo",
+                    "pixels",
+                    "net",
+                    "sign",
+                    "style"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "frame"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "of": {
+                "description": "The style's own frame, or a choice of frames that overrides it",
+                "oneOf": [
+                  {
+                    "const": "style"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "enum": [
+                        "hand",
+                        "rule",
+                        "box",
+                        "none"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "print"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "templates": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "urn:island:0.1:common#/$defs/id"
+                }
+              },
+              "copies": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "ways": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "print",
+                    "keep",
+                    "link",
+                    "mesh",
+                    "file"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "deal"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "from": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": [
+                    "species",
+                    "cases",
+                    "groups",
+                    "heroes",
+                    "readings",
+                    "places",
+                    "catch",
+                    "board"
+                  ]
+                }
+              },
+              "cards": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 7
+              },
+              "keep": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "dial"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "between": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "items": false,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "combine"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "of": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+.[a-z0-9-]+$"
+                }
+              },
+              "wild": {
+                "description": "A third card from someone else on the island",
+                "type": "boolean"
+              },
+              "makes": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "hardware",
+                    "planting",
+                    "poster",
+                    "song",
+                    "meeting",
+                    "sign",
+                    "zine",
+                    "event"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "strings"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "to": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "groups",
+                    "places",
+                    "printers",
+                    "people",
+                    "cells"
+                  ]
+                }
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

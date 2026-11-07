@@ -1,0 +1,37 @@
+[
+ {
+  "id": "flyingfox",
+  "t": "Grey-headed Flying-fox",
+  "what": "Vulnerable. About 1,000 pups died of heat at Yarra Bend in one week in January 2026.",
+  "n": "Pteropus poliocephalus",
+  "brief": "B06"
+ },
+ {
+  "id": "ringtail",
+  "t": "Common Ringtail Possum",
+  "what": "More prone to heat stress than brushtails; found on the ground by day in heatwaves.",
+  "n": "Pseudocheirus peregrinus",
+  "brief": "B03"
+ },
+ {
+  "id": "bogong",
+  "t": "Bogong Moth",
+  "what": "Endangered. Numbers fell 99.5% from 2018 to 2021; city lights pull the survivors off course.",
+  "n": "Agrotis infusa",
+  "brief": "B26"
+ },
+ {
+  "id": "turtle",
+  "t": "Eastern Long-necked Turtle",
+  "what": "As wetlands dry, turtles walk the roads looking for water, and die on them.",
+  "n": "Chelodina longicollis",
+  "brief": "B15"
+ },
+ {
+  "id": "froglet",
+  "t": "Common Eastern Froglet",
+  "what": "Breathes through its skin. When ponds and drains dry, so does it.",
+  "n": "Crinia signifera",
+  "brief": "B14"
+ }
+]

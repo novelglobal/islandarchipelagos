@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guide · novel.global</title>
+<meta name="description" content="The radar, the icons, the strings, the four lines and the outputs, each with its word.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/*FONTS*/
+:root{
+  --teal:#0CCBBD;--teal-lift:#7FE0D7;--teal-deep:#007A72;--teal-wash:#E3F7F4;--white:#FFFFFF;--paper:#F1F2EF;--slip:#FCFBF7;--grey:#C8C8C8;--grey-text:#6B6B6B;--ink:#141412;
+  --cobalt:#0067B8;--navy:#0B2545;--neon:#E6F84A;--red:#E8453C;--ground:#1E2622;--clay:#7FD1C2;
+  --orange:#FF7A00;--deg0:#FFC27A;--deg1:#FF9A2E;--deg2:#FF6A00;--deg3:#D62E1F;--deg4:#141412;
+  --sans:'Poppins',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--white:#0F1613;--paper:#1A2420;--grey:#34413C;--grey-text:#9AA8A2;--navy:#E6ECEA;--cobalt:#5AA9F0}}
+:root[data-theme="dark"]{color-scheme:dark;--white:#0F1613;--paper:#1A2420;--grey:#34413C;--grey-text:#9AA8A2;--navy:#E6ECEA;--cobalt:#5AA9F0}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--white);color:var(--navy);font:400 14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+a{color:inherit}
+ul,ol{margin:0;padding:0;list-style:none}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+.mast{position:sticky;top:0;z-index:5;background:linear-gradient(100deg,#0A6E66,#1D4C9E 50%,#0A6E66) 0 0/300% 100%;animation:headshim 18s ease-in-out infinite;color:#fff;border-bottom:0}
+/* the jellyfish's colour, never quite green and never quite blue, drifting slowly across the head of the page */
+@keyframes headshim{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+@media (prefers-reduced-motion:reduce){.mast,#hd{animation:none!important}}
+
+.mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:52px;font:500 10px/1 var(--mono);letter-spacing:.2em}
+.mast b{font:600 11px/1 var(--sans);letter-spacing:.3em}
+.mast nav{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.mast nav a{color:rgba(255,255,255,.78);text-decoration:none}
+.mast nav a:hover{color:#fff;text-decoration:underline;text-underline-offset:4px}
+.plate{padding:36px 0 40px;border-bottom:1px solid var(--navy)}
+.plate h2{margin:0 0 18px;font:600 10.5px/1 var(--mono);letter-spacing:.2em}
+.lbl{font:500 9.5px/1.3 var(--mono);letter-spacing:.1em}
+.grid{display:grid;border-top:1px solid var(--navy)}
+.grid>li{display:flex;align-items:center;gap:12px;padding:10px 8px 10px 0;border-bottom:1px dotted var(--grey)}
+.key,.kinds,.kc{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.kc i{flex:none;width:24px;height:24px;border-radius:50%}
+canvas{flex:none;display:block}
+/* the radar, drawn */
+.radar{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:36px;align-items:center}
+.radar canvas{width:100%;height:auto;background:var(--ground)}
+.steps{display:grid;gap:0;border-top:1px solid var(--navy)}
+.steps li{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px dotted var(--grey)}
+.steps b{font:600 10px/1.3 var(--mono);letter-spacing:.12em}
+.steps span{font-size:13px}
+.steps .i{width:18px;height:18px;vertical-align:-4px;margin-right:6px}
+/* the strings */
+.strings{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:36px;align-items:start}
+.strings canvas{width:100%;height:auto;background:var(--ground);position:sticky;top:72px}
+.dm{display:inline-block;width:10px;height:10px;transform:rotate(45deg);border:1.4px solid var(--cobalt);background:#fff;margin:0 4px}
+.dm.on{background:var(--neon);border-color:var(--navy)}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:#19A7C4;margin:0 4px}
+.sq{display:inline-block;width:10px;height:10px;border:1.4px solid #0B2545;background:#fff;margin:0 4px}
+/* the human ecology, as marked on the ground */
+.fm{display:inline-block;width:10px;height:10px;flex:none;margin:0 5px 0 3px;transform:rotate(45deg);border:1.4px solid var(--cobalt);background:#fff;vertical-align:0}
+.fm.harm{background:var(--neon);border-color:#0B2545}.fm.circ{background:var(--teal);border-color:#0B2545}.fm.lab{background:var(--cobalt)}
+.fm.art{border-color:#0B2545;background:radial-gradient(circle,#0B2545 0 1.6px,#fff 2.2px)}
+.fm.third{transform:none;border-color:#0B2545;background:radial-gradient(circle,#0B2545 0 1.8px,#fff 2.4px)}
+.fm.net{transform:none;width:12px;height:11px;border:0;background:radial-gradient(circle at 50% 2.5px,#0B2545 0 1.8px,transparent 2.3px),radial-gradient(circle at 2.5px 8.5px,#0B2545 0 1.8px,transparent 2.3px),radial-gradient(circle at 9.5px 8.5px,#0B2545 0 1.8px,transparent 2.3px);background-color:#fff}
+.thr{display:inline-block;width:18px;height:0;border-top:1.6px solid var(--orange);vertical-align:3px;margin-right:4px}
+.snd{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.snd li{gap:10px}
+.snd svg{flex:none;width:44px;height:14px;color:var(--navy)}
+.snd b{font:600 10px/1 var(--mono);letter-spacing:.12em;min-width:92px}
+.snd small{font:400 10px/1.3 var(--mono);color:var(--grey-text)}
+/* the slip */
+.slip .fig{height:150px;margin:10px 0 3px;background:#E6E5DE url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23141412'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23141412'/%3E%3C/svg%3E")}
+.slip .cap{font-size:8px;letter-spacing:.1em;color:#55554F}
+.slip .st{padding:6px 0;border-top:1px solid var(--ink);font:600 11.5px/1.35 var(--sans);color:var(--ink)}
+.slip .rel{padding:6px 0;border-top:1px solid var(--ink);font-size:10px}
+.slip .rel p{margin:0;display:grid;grid-template-columns:18px 1fr auto;gap:6px}
+.slip .rel em{font-style:normal;font-size:8px;letter-spacing:.1em}
+.slip .rel em.on{background:linear-gradient(transparent 55%,var(--neon) 55%)}
+.slip{width:300px;max-width:100%;padding:12px 18px 16px;background:var(--slip);color:var(--ink);font:12px/1.45 var(--mono);box-shadow:0 10px 26px rgba(11,37,69,.13)}
+.slip ol li{padding:10px 0;border-bottom:1px dashed #D2D2CA;font-size:11px;color:#8C8C84}
+.slip ul{padding:8px 0;border-bottom:1px dashed #A9A9A2}
+.slip ul li{display:flex;align-items:center;gap:8px;padding:2px 0;font-size:10.5px}
+.slip ul li.off{color:#B4B4AC;text-decoration:line-through}
+.slip .ck{flex:none;width:11px;height:11px;border:1.4px solid var(--ink);box-shadow:inset 0 0 0 2px var(--slip)}
+.slip .ck.on{background:var(--ink)}
+.slip .nt{display:flex;gap:8px;padding:8px 0 0;font-size:10.5px}
+.slip .hd{display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px dashed #A9A9A2;font-size:10.5px;letter-spacing:.06em}
+.wishrow{display:grid;grid-template-columns:300px minmax(0,1fr);gap:36px;align-items:start}
+/* outputs */
+.outs{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.outs li{align-items:flex-start;flex-direction:column;gap:6px}
+.outs .i{width:26px;height:26px}
+.outs a{display:inline-flex;align-items:center;gap:4px;font:400 10px/1.3 var(--mono);color:var(--cobalt);text-decoration:none}
+.outs a:hover{text-decoration:underline}
+.outs b{font:600 10.5px/1 var(--mono);letter-spacing:.12em}
+.outs small{font:400 10px/1.3 var(--mono);color:var(--grey-text)}
+/* danger */
+.degs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.dg{display:inline-block;padding:3px 7px;font:600 10px/1.4 var(--mono);letter-spacing:.06em;background:var(--deg0);color:#0B2545}
+.dg.d1{background:var(--deg1)}
+.dg.d2{background:var(--deg2)}.dg.d3{background:var(--deg3);color:#fff}.dg.d4{background:var(--deg4);color:#fff}
+.wins{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:16px}
+.wins li{flex-direction:column;align-items:flex-start;gap:4px}
+.wins b{font:600 10px/1 var(--mono);letter-spacing:.12em;color:var(--orange)}
+.wins small{font:400 10px/1.3 var(--mono);color:var(--grey-text)}
+.heroes{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.heroes li{flex-direction:column;align-items:flex-start}
+.heroes b{font-size:14px;font-weight:600;line-height:1.15}
+/* roles */
+.roles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.role{display:inline-block;padding:2px 6px;font:500 9px/1.6 var(--mono);letter-spacing:.06em;color:var(--cobalt);border:1px solid var(--cobalt)}
+.role.on{background:var(--neon);color:#0B2545;border-color:#0B2545}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.groups{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.groups i{flex:none;width:16px;height:16px;border-radius:47% 53% 44% 56%/52% 45% 55% 48%}
+.groups a{text-decoration:none;font-weight:600;font-size:13.5px}
+.calls a{font:500 11px var(--mono);letter-spacing:.06em;text-decoration:none}
+.foot{padding:24px 0 56px;font:400 10px/1.6 var(--mono);letter-spacing:.06em;color:var(--grey-text)}
+@media (max-width:760px){
+  .wrap{padding:0 16px}
+  .mast nav{display:none}
+  .radar,.strings,.wishrow,.cols{grid-template-columns:1fr}
+  .strings canvas{position:static}
+  .degs{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false"></svg>
+<header class="mast"><div class="wrap"><b>novel.global · GUIDE</b><nav><a href="#radar">RADAR</a><a href="#icons">ICONS</a><a href="#strings">STRINGS</a><a href="#sounds">SOUNDS</a><a href="#wish">W.I.S.H.</a><a href="#outputs">OUTPUTS</a><a href="#danger">DANGER</a><a href="#roles">PLACES</a><a href="#groups">GROUPS</a></nav></div></header>
+
+<section class="plate" id="radar"><div class="wrap">
+  <h2>RADAR</h2>
+  <div class="radar"><canvas id="radar-cv" width="840" height="620" aria-label="The radar"></canvas>
+    <ol class="steps" id="radar-steps"></ol></div>
+</div></section>
+
+<section class="plate" id="icons"><div class="wrap">
+  <h2>ICONS</h2>
+  <ul class="grid kc" id="kind-colours"></ul>
+  <ul class="grid key" id="key" style="margin-top:20px"></ul>
+</div></section>
+
+<section class="plate" id="strings"><div class="wrap">
+  <h2>STRINGS</h2>
+  <div class="strings"><canvas id="strings-cv" width="840" height="620" aria-label="String figures"></canvas>
+    <ol class="steps" id="string-steps"></ol></div>
+</div></section>
+
+<section class="plate" id="sounds"><div class="wrap">
+  <h2>SOUNDS</h2>
+  <div class="cols"><div><p class="lbl">LIVES · AN INSTRUMENT, A FEW NOTES</p><ul class="grid snd" id="snd-lives"></ul></div><div><p class="lbl">PEOPLE · A SMALL REAL SOUND</p><ul class="grid snd" id="snd-people"></ul></div></div>
+</div></section>
+
+<section class="plate" id="wish"><div class="wrap">
+  <h2>W.I.S.H.</h2>
+  <div class="wishrow"><div class="slip" id="wish-slip"></div><ol class="steps" id="wish-steps"></ol></div>
+</div></section>
+
+<section class="plate" id="outputs"><div class="wrap">
+  <h2>OUTPUTS</h2>
+  <ul class="grid outs" id="outs"></ul>
+</div></section>
+
+<section class="plate" id="danger"><div class="wrap">
+  <h2>DANGER</h2>
+  <ul class="grid degs" id="degs"></ul>
+  <ul class="grid wins" id="wins"></ul>
+  <ul class="grid heroes" id="heroes" style="margin-top:20px"></ul>
+  <ol class="steps" id="five-steps" style="margin-top:20px"></ol>
+</div></section>
+
+<section class="plate" id="roles"><div class="wrap">
+  <h2>PLACES</h2>
+  <div class="cols"><div><p class="lbl">ON NOTICE</p><ul class="grid roles" id="roles-on"></ul></div><div><p class="lbl">TO BACK</p><ul class="grid roles" id="roles-back"></ul></div></div>
+</div></section>
+
+<section class="plate" id="groups"><div class="wrap">
+  <h2>GROUPS · CALLS</h2>
+  <ul class="grid groups" id="group-list"></ul>
+  <ul class="grid groups calls" id="calls" style="margin-top:20px"></ul>
+</div></section>
+
+<footer class="foot"><div class="wrap" id="foot"></div></footer>
+
+<script src="config.js"></script>
+<script src="briefs.js"></script>
+<script src="marks.js"></script>
+<script>
+(() => {
+  const M = window.DA_MARKS, C = M.C, CONFIG = window.DA_CONFIG, OUT = window.DA_OUTLOOK, ROLES = window.DA_ROLES;
+  document.querySelector('svg.sprite').innerHTML = M.sprite();
+  const $ = s => document.querySelector(s); const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const icon = n => `<svg class="i" aria-hidden="true"><use href="#g-${n}"/></svg>`;
+  const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const badge = (b, size = 34) => { const c = document.createElement('canvas'); c.width = c.height = size * 2; const x = c.getContext('2d'); x.scale(2, 2); M.badge(x, { ...b, d: Math.round(size * 0.66), a: 1 }, size / 2, size / 2); c.style.width = c.style.height = size + 'px'; return c; };
+  const li = (host, node, text, cls = 'lbl') => { const l = document.createElement('li'); if (node) l.appendChild(node); if (text) { const s = document.createElement('span'); s.className = cls; s.innerHTML = text; l.appendChild(s); } host.appendChild(l); return l; };
+  const steps = (host, rows) => { host.innerHTML = rows.map(([ic, b, s]) => `<li><b>${ic ? icon(ic) : ''}${b}</b><span>${s}</span></li>`).join(''); };
+
+  /* the radar, as it looks */
+  const ground = (x, w, h) => { x.fillStyle = '#26302B'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.05)'; for (let i = 0; i < w; i += 22) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); } for (let j = 0; j < h; j += 22) { x.beginPath(); x.moveTo(0, j); x.lineTo(w, j); x.stroke(); } };
+  (function radar() {
+    const cv = $('#radar-cv'), x = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W * 0.46, cy = H * 0.5, R = H * 0.38; ground(x, W, H);
+    x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.fillStyle = 'rgba(190,245,238,.06)'; x.fill();
+    for (let i = 0; i < 18; i++) { const a = -Math.PI / 2 + (-i * 3) * Math.PI / 180 + 0.9, a0 = a - 0.052; x.beginPath(); x.moveTo(cx, cy); x.arc(cx, cy, R, a0, a); x.closePath(); x.fillStyle = `rgba(190,245,238,${0.2 * Math.pow(1 - i / 18, 1.6)})`; x.fill(); }
+    const ha = -Math.PI / 2 + 0.9; x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(ha) * R, cy + Math.sin(ha) * R); x.stroke();
+    x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.lineWidth = 2; x.stroke();
+    for (let i = 0; i < 36; i++) { const a = i * Math.PI / 18, k = i % 3 ? 7 : 15; x.beginPath(); x.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); x.lineTo(cx + Math.cos(a) * (R - k), cy + Math.sin(a) * (R - k)); x.lineWidth = 1.6; x.stroke(); }
+    const put = (b, px, py) => M.badge(x, { ...b, a: 1 }, px, py);
+    [[{ tone: 'k-bird', g: 'bird', d: 34 }, -0.3, -0.5], [{ tone: 'k-insect', g: 'bee', d: 30 }, 0.15, -0.62], [{ tone: 'k-spider', g: 'orb', d: 30 }, 0.55, -0.2], [{ tone: 'k-reptile', g: 'lizard', d: 32 }, 0.35, 0.45], [{ tone: 'k-mammal', g: 'possum', d: 34, dz: 3 }, -0.55, 0.3]].forEach(([b, u, v]) => put(b, cx + u * R, cy + v * R));
+    put({ tone: 'lost', g: 'dog', d: 34 }, W * 0.9, H * 0.18); put({ tone: 'injured', g: 'possum', d: 36 }, W * 0.92, H * 0.78); put({ tone: 'k-mammal', g: 'flyingfox', d: 48, dz: 4 }, W * 0.08, H * 0.82);
+    x.beginPath(); x.arc(cx, cy, 5, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 2; x.strokeStyle = C.navy; x.stroke();
+    x.save(); x.translate(cx + R, cy); x.rotate(Math.PI / 4); x.fillStyle = '#fff'; x.fillRect(-8, -8, 16, 16); x.strokeStyle = C.navy; x.strokeRect(-8, -8, 16, 16); x.restore();
+    steps($('#radar-steps'), [['radar', 'SWEEP', 'what it passes stays'], ['', 'OUTSIDE', '24 hours · NEW · its age · examples'], ['where', 'MOVE', 'drag the centre · tap anywhere'], ['', 'REACH', `drag the rim · ${CONFIG.SCAN.min}–${CONFIG.SCAN.max} m`], ['plus', 'NEW', 'hold the left button'], ['next', 'OPEN', 'click or right-click a life · right-click open ground to back out'], ['', 'PLAY', 'tap the centre · a song'], ['hide', 'HIDE', 'any cell · undone in settings']]);
+  })();
+
+  /* icons */
+  for (const [k, w] of Object.entries(M.GROUP_WORDS)) { const l = document.createElement('li'); l.innerHTML = `<i style="background:${C.kind[k]}"></i><span class="lbl">${w}</span>`; $('#kind-colours').appendChild(l); }
+  { const l = document.createElement('li'); l.innerHTML = `<i style="background:${C.tealDeep};border-radius:5px"></i><span class="lbl">PLANTS</span>`; $('#kind-colours').appendChild(l); }
+  for (const [b, w] of M.KEY) li($('#key'), badge(b), w);
+  { const c = document.createElement('canvas'); c.width = c.height = 68; const x = c.getContext('2d'); x.scale(2, 2); M.printer(x, 17, 19, 26, 0, true); c.style.width = c.style.height = '34px'; li($('#key'), c, 'W.I.S.H. PRINTER'); }
+  { const c = document.createElement('canvas'); c.width = c.height = 68; const x = c.getContext('2d'); x.scale(2, 2); M.printer(x, 17, 19, 26, 0, false); c.style.width = c.style.height = '34px'; li($('#key'), c, 'NOT YET ONLINE'); }
+
+  /* strings: a frog, the places around it, threads to what harms it, and a figure tied */
+  (function figure() {
+    const cv = $('#strings-cv'), x = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W * 0.44, cy = H * 0.52, R = H * 0.42; ground(x, W, H);
+    x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.fillStyle = 'rgba(255,255,255,.07)'; x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 2; x.stroke();
+    const at = (u, v) => [cx + u * R, cy + v * R];
+    const P = { pin: [cx, cy], t1: at(0.55, -0.42), t2: at(0.68, 0.12), t3: at(-0.2, -0.72), b1: at(0.3, 0.62), c1: at(-0.6, -0.3), l1: at(-0.72, 0.28), a1: at(-0.3, 0.7), s1: at(0.12, -0.38), n1: at(0.8, -0.18), g1: at(-0.85, -0.05) };
+    /* threads of responsibility: thin orange lines from the life to each place that sells or leaves what harms it */
+    x.save(); x.strokeStyle = C.orange; x.lineWidth = 2; x.globalAlpha = 0.7; for (const k of ['t1', 't2', 't3', 'b1']) { x.beginPath(); x.moveTo(...P.pin); x.lineTo(...P[k]); x.stroke(); } x.restore();
+    const str = (p, q) => { const L = Math.hypot(q[0] - p[0], q[1] - p[1]); const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2 + L * 0.06; x.beginPath(); x.moveTo(...p); x.quadraticCurveTo(2 * mx - (p[0] + q[0]) / 2, 2 * my - (p[1] + q[1]) / 2, ...q); };
+    for (const [w, c] of [[6, 'rgba(0,0,0,.4)'], [2.6, '#fff']]) { x.lineWidth = w; x.strokeStyle = c; x.lineCap = 'round'; for (const [p, q] of [['pin', 't1'], ['t1', 'c1'], ['pin', 'a1']]) { str(P[p], P[q]); x.stroke(); } }
+    str(P.c1, P.s1); x.lineWidth = 6; x.strokeStyle = 'rgba(11,37,69,.5)'; x.stroke(); x.setLineDash([9, 7]); x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke(); x.setLineDash([]);
+    const dia = (p, r, fill, stroke) => { x.beginPath(); x.moveTo(p[0], p[1] - r); x.lineTo(p[0] + r, p[1]); x.lineTo(p[0], p[1] + r); x.lineTo(p[0] - r, p[1]); x.closePath(); x.fillStyle = fill; x.fill(); x.lineWidth = 2.6; x.strokeStyle = stroke; x.stroke(); };
+    for (const k of ['t1', 't2', 't3', 'b1']) dia(P[k], 12, C.neon, C.navy);
+    dia(P.c1, 12, C.teal, C.navy); dia(P.l1, 12, C.cobalt, '#fff');
+    dia(P.a1, 12, '#fff', C.navy); x.beginPath(); x.arc(...P.a1, 3.6, 0, Math.PI * 2); x.fillStyle = C.navy; x.fill();
+    x.fillStyle = '#fff'; x.fillRect(P.s1[0] - 11, P.s1[1] - 11, 22, 22); x.lineWidth = 2.6; x.strokeStyle = C.navy; x.strokeRect(P.s1[0] - 11, P.s1[1] - 11, 22, 22); x.beginPath(); x.arc(...P.s1, 4, 0, Math.PI * 2); x.fillStyle = C.navy; x.fill();
+    for (const [u, v] of [[0, -11], [10, 7], [-10, 7]]) { x.beginPath(); x.arc(P.n1[0] + u, P.n1[1] + v, 5, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 2; x.strokeStyle = C.navy; x.stroke(); }
+    x.beginPath(); x.arc(...P.g1, 11, 0, Math.PI * 2); x.fillStyle = C.tribe.creek; x.fill(); x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke();
+    for (const k of ['t1', 'c1', 'a1']) { x.beginPath(); x.arc(...P[k], 19, 0, Math.PI * 2); x.strokeStyle = '#fff'; x.lineWidth = 3; x.stroke(); }
+    x.beginPath(); x.arc(...P.s1, 21, 0, Math.PI * 2); x.strokeStyle = '#fff'; x.lineWidth = 3.4; x.stroke();
+    M.badge(x, { tone: 'k-water', g: 'frog', d: 46, dz: 3, a: 1 }, cx, cy);
+    steps($('#string-steps'), [['aware', 'LOOK', 'click a knot · its sound · its string'], ['string', 'JOIN', 'click again · right-click · hold'], ['', 'LET GO', 'right-click a joined knot'], ['', 'CARRY ON', 'a joined knot, twice'], ['', 'CUT', 'the last knot, twice'], ['plus', 'ADD', 'click open ground · Delete removes'], ['', 'OUTSIDE', 'right-click a life past the radius'], ['', '<i class="thr"></i>HARM IT', 'a row lights them · again joins all · strings to them run orange'], ['trace', 'TRACE', 'how it formed'], ['', 'CONSTELLATIONS', 'every figure · NOW'], ['undo', 'UNDO', ''], ['reset', 'CUT ALL', ''], ['restore', 'BRING BACK', ''],
+      ['', '<i class="fm harm"></i>ON NOTICE', ''], ['', '<i class="fm circ"></i>CIRCULAR', ''], ['', '<i class="fm lab"></i>LABEL', ''], ['', '<i class="fm art"></i>ARTISTS', ''], ['', '<i class="fm third"></i>THIRD SPACE', ''], ['', '<i class="fm net"></i>NETWORK', ''], ['', '<i class="dot"></i>GROUP', ''], ['water', 'WATER', ''], ['', '<i class="sq"></i>YOURS', '']]);
+  })();
+
+  /* sounds: each life an instrument and a few notes; each part of the human ecology a small real sound */
+  const score = (notes, people) => people ? `<svg viewBox="0 0 44 14" aria-hidden="true"><path d="M2 7c4-6 6 6 10 0s6 6 10 0 6 6 10 0 6 6 10 0" fill="none" stroke="currentColor" stroke-width="1"/></svg>` : `<svg viewBox="0 0 44 14" aria-hidden="true"><path d="M0 2.5h44M0 5h44M0 7.5h44M0 10h44M0 12.5h44" stroke="currentColor" stroke-width=".4" opacity=".5"/><g fill="currentColor">${notes.map((s2, i) => `<circle cx="${6 + i * 32 / Math.max(1, notes.length - 1 || 1)}" cy="${(11 - s2 * 0.36).toFixed(1)}" r="1.7"/>`).join('')}</g></svg>`;
+  [['WHISTLE', 'birds', [12, 16, 19]], ['HOLLOW WHISTLE', 'owls', [7, 3]], ['KALIMBA', 'frogs · beetles', [7, 12]], ['MUSIC BOX', 'bees · moths · butterflies', [12, 14, 16, 19]], ['GLASS', 'bats · flying-foxes · water', [19, 24, 21]], ['WOOD', 'lizards · turtles', [0, 3]], ['BOOP', 'possums · mammals', [5, 2, 7]], ['STRING', 'spiders · snails', [7, 9, 12, 7]]]
+    .forEach(([w, who, n]) => { const l = document.createElement('li'); l.innerHTML = `${score(n)}<b>${w}</b><small>${who}</small>`; $('#snd-lives').appendChild(l); });
+  const FW = { brand: 'brands', circular: 'circular', service: 'services', artists: 'artists', third: 'third spaces', network: 'networks', people: 'people' };
+  const SW = { swish: 'A SLEEVE', taps: 'TWO TAPS', cup: 'A CUP', pencil: 'A PENCIL', hum: 'A HUM', hums: 'TWO HUMS', breath: 'A BREATH' };
+  for (const [k, f] of Object.entries(window.DA_FAMILIES || {})) { const l = document.createElement('li'); l.innerHTML = `${score([], true)}<b>${SW[f.sound] || ''}</b><small>${FW[k] || ''}</small>`; $('#snd-people').appendChild(l); }
+
+  /* W.I.S.H. */
+  $('#wish-slip').innerHTML = `<div class="hd"><b>DA-····</b><span>DD.MM.YY HH:MM</span></div><div class="fig"></div><p class="cap">FIG. 1 · © OBSERVER · INATURALIST</p><p class="st">STATEMENT · what El Niño does to it here</p><ol>${['What we know: the theory', 'It would be great: the belief', "So let's create: the principle", 'Here is how it works: the tactic'].map(w => `<li>${w}</li>`).join('')}</ol><div class="rel"><p><span>01</span>Corner store<em class="on">TAKEAWAY</em></p><p><span>02</span>Op shop<em>REUSE</em></p><p><span>03</span>Side gate tap<em>PLACE</em></p></div><p class="cap">FIG. 2 · 3 RELATIONS · NORTH UP</p>`;
+  steps($('#wish-steps'), [['next', 'NOTICED', 'the card turns over'], ['', 'PHOTOGRAPH', '← → another · your own · none'], ['', 'STATEMENT', 'rewrite · ↺ as it was'], ['', 'W.I.S.H.', `four lines · ${(CONFIG.SIGNAL || {}).line || 48} characters · letters never print`], ['check', 'RELATIONS', 'tick · rename'], ['receipt', 'RESPONSE', 'issued · DA-XXXX'], ['print', 'DIRECT ACTION', 'pledge · printed · mesh · stored']]);
+
+  /* outputs */
+  const SG = CONFIG.SIGNAL || { mesh: 200, pager: 80 };
+  const OTIP = { print: '58 mm slip', escpos: 'raw bytes · receipt printer', bits: `384 px · pocket thermal printer`, gb: '160 px · four greys', mesh: `${SG.mesh} bytes · LoRa`, pager: `${SG.pager} characters`, link: 'the whole signal' };
+  for (const m of window.DA_OUTPUTS || []) { const l = document.createElement('li'); l.innerHTML = `${icon(m.ic)}<b>${m.w}</b><small>${OTIP[m.k] || ''}</small><a href="${esc(m.ref)}" target="_blank" rel="noopener">${esc(new URL(m.ref).hostname.replace(/^www\./, ''))} ↗</a>`; $('#outs').appendChild(l); }
+  { const l = document.createElement('li'); l.innerHTML = `${icon('receive')}<b>RECEIVE</b><small>the code on a slip · a link · a mesh message</small>`; $('#outs').appendChild(l); }
+
+  /* danger */
+  ['LOW', 'WATCH', 'HIGH', 'SEVERE', 'EXTREME'].forEach((w, i) => { const l = document.createElement('li'); l.innerHTML = `<span class="dg d${i}">${w}</span>`; $('#degs').appendChild(l); });
+  for (const w of OUT.windows) { const l = document.createElement('li'); l.innerHTML = `<b>${esc(w.w)}</b><small>${MON[w.a]}–${MON[w.b]}</small>`; l.title = w.why; $('#wins').appendChild(l); }
+  steps($('#five-steps'), [['remix', 'CHANGE', 'any of the five · for any life, or your own'], ['', 'RESET', 'as it was']]);
+  for (const h of window.DA_HEROES) { const l = li($('#heroes'), badge({ tone: M.toneOf(h.id === 'ringtail' ? 'possum' : h.id === 'bogong' ? 'moth' : h.id === 'froglet' ? 'frog' : h.id), g: h.id === 'ringtail' ? 'possum' : h.id === 'bogong' ? 'moth' : h.id === 'froglet' ? 'frog' : h.id, dz: 3 }, 48)); l.insertAdjacentHTML('beforeend', `<b>${esc(h.cn)}</b>`); l.title = h.why; }
+
+  /* places */
+  for (const [k, r] of Object.entries(ROLES)) { const l = document.createElement('li'); l.innerHTML = `<span class="role${r.on ? ' on' : ''}">${r.w}</span>`; l.title = r.duty; $(r.on ? '#roles-on' : '#roles-back').appendChild(l); }
+
+  /* groups and calls */
+  for (const t of window.DA_TRIBES) { const l = document.createElement('li'); l.innerHTML = `<i style="background:${C.tribe[t.kind] || C.tribe.park}"></i><a href="${esc(t.link)}" target="_blank" rel="noopener">${esc(t.n)}</a>`; l.title = t.what; $('#group-list').appendChild(l); }
+  for (const [n, w, tel] of window.DA_CONTACTS) { const l = document.createElement('li'); l.innerHTML = `<a href="${tel}">${n}</a><span class="lbl">${w}</span>`; $('#calls').appendChild(l); }
+  $('#foot').textContent = `${CONFIG.NAME} · ${CONFIG.BY} · ${CONFIG.COUNTRY}`;
+})();
+</script>
+</body>
+</html>

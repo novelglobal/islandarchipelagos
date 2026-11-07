@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schemas/slip.schema.json",
+  "format": "slip/0.1",
+  "length": "slip",
+  "blocks": [
+    {"block":"picture"},
+    {"block":"words","size":"big"},
+    {"block":"words"},
+    {"block":"code","take":"SOUND"},
+    {"block":"list","max":3},
+    {"block":"rule"},
+    {"block":"code"}
+  ]
+}

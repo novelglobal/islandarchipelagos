@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:lives",
+  "title": "A lives pack: the species and stories of a place",
+  "type": "object",
+  "allOf": [{ "$ref": "urn:island:0.1:common#/$defs/packHeader" }],
+  "unevaluatedProperties": false,
+  "properties": {
+    "pack": { "const": "lives" },
+    "species": { "$ref": "urn:island:0.1:common#/$defs/file" },
+    "groups": {
+      "description": "Each group of lives: its word, colour, icon and sound",
+      "type": "object", "propertyNames": { "$ref": "urn:island:0.1:common#/$defs/id" },
+      "additionalProperties": {
+        "type": "object", "required": ["w"], "additionalProperties": false,
+        "properties": {
+          "w": { "type": "string", "maxLength": 30 },
+          "colour": { "$ref": "urn:island:0.1:common#/$defs/colour" },
+          "icon": { "$ref": "urn:island:0.1:common#/$defs/icon" },
+          "sound": { "$ref": "urn:island:0.1:common#/$defs/id" }
+        }
+      }
+    },
+    "stories": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["kind", "file"], "additionalProperties": false,
+        "properties": { "kind": { "enum": ["case", "group", "hero", "place"] }, "file": { "$ref": "urn:island:0.1:common#/$defs/path" } }
+      }
+    },
+    "calls": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["id", "number", "w"], "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+          "number": { "type": "string", "maxLength": 20 },
+          "w": { "type": "string", "maxLength": 40 },
+          "tel": { "type": "string", "pattern": "^tel:\\+?[0-9]+$" }
+        }
+      }
+    },
+    "seasons": { "$ref": "urn:island:0.1:common#/$defs/file" },
+    "live": {
+      "description": "Where sightings come from while online",
+      "type": "object", "required": ["adapter"], "additionalProperties": false,
+      "properties": {
+        "adapter": { "const": "inaturalist" },
+        "place": { "description": "The place whose common names are used", "type": "integer" },
+        "days": { "type": "integer", "minimum": 1, "maximum": 365 },
+        "keep": { "$ref": "urn:island:0.1:common#/$defs/duration" }
+      }
+    }
+  },
+  "$defs": {
+    "months": { "description": "Twelve letters, January to December", "type": "string", "pattern": "^.{12}$" },
+    "life": {
+      "type": "object", "required": ["id", "n", "cn", "g", "src"],
+      "properties": {
+        "id": { "$ref": "urn:island:0.1:common#/$defs/id" },
+        "n": { "description": "The Latin name", "type": "string", "maxLength": 80 },
+        "cn": { "description": "The common name", "type": "string", "maxLength": 80 },
+        "g": { "description": "Its group", "$ref": "urn:island:0.1:common#/$defs/id" },
+        "st": { "description": "N native, I introduced, T threatened, E edge of range; may combine", "type": "string", "pattern": "^[NITE]{1,3}$" },
+        "where": { "type": "string", "maxLength": 200 },
+        "act": { "description": ". rarely seen, a present, A most active", "$ref": "#/$defs/months" },
+        "brd": { "description": "B eggs, nests or young", "$ref": "#/$defs/months" },
+        "time": { "enum": ["day", "night", "dusk", "any"] },
+        "heat": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "water": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "event": { "type": "string", "maxLength": 200 },
+        "aware": { "type": "string", "maxLength": 400 },
+        "harm": { "type": "string", "maxLength": 400 },
+        "help": { "type": "string", "maxLength": 400 },
+        "call": { "description": "One of the pack's calls", "type": "string", "maxLength": 30 },
+        "note": { "type": "string", "maxLength": 600 },
+        "threat": { "type": "string", "maxLength": 200 },
+        "statement": { "type": "string", "maxLength": 600 },
+        "src": { "description": "Every claim has a source", "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https?://" } }
+      }
+    },
+    "species": { "type": "array", "items": { "$ref": "#/$defs/life" } },
+    "story": {
+      "type": "object", "required": ["id", "t"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,40}$" },
+        "t": { "description": "Its title", "type": "string", "maxLength": 120 },
+        "what": { "type": "string", "maxLength": 600 },
+        "url": { "type": "string", "pattern": "^https?://" },
+        "at": { "$ref": "urn:island:0.1:common#/$defs/latlng" },
+        "g": { "description": "The groups of lives it is for", "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "stories": { "type": "array", "items": { "$ref": "#/$defs/story" } }
+  }
+}

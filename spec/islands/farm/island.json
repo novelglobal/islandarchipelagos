@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schemas/island.schema.json",
+  "format": "island/0.1",
+  "id": "farm",
+  "name": "the farm",
+  "about": {
+    "line": "A companion island beside novel.global: five short games, each a receipt, each a real practice placed on a bare paddock."
+  },
+  "place": {
+    "name": "a paddock near Melbourne",
+    "centre": [-37.65, 144.6],
+    "bbox": [143.6, -38.3, 145.6, -37],
+    "timezone": "Australia/Melbourne",
+    "country": {
+      "name": "Kulin Country",
+      "line": "Sovereignty has never been ceded"
+    }
+  },
+  "clock": "moon",
+  "packs": {
+    "steps": ["packs/games"],
+    "templates": "packs/templates",
+    "style": ["packs/style"],
+    "story": ["packs/story-riparian"],
+    "board": "packs/board"
+  },
+  "printers": [
+    { "id": "farm", "name": "the farm", "profile": "tm-t88v", "paper": 80, "approval": "required", "home": true }
+  ],
+  "access": { "print": "approved", "show": "approved", "keepWaiting": "P7D", "keepPrinted": "P1D" },
+  "network": {
+    "online": true,
+    "hub": "https://novel.global",
+    "directory": false,
+    "hosts": ["server.arcgisonline.com"]
+  },
+  "client": { "shell": "plain", "start": "i-catch" }
+}

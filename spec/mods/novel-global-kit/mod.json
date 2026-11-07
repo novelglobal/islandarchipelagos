@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-kit",
+  "version": "1.0.0",
+  "title": "UNEARTH YOUR ISLAND",
+  "island": "novel-global",
+  "about": "The build checklist for a printer and a Pi.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "cards",
+  "gives": ["LIST"],
+  "takes": ["CODE"],
+  "needs": [],
+  "settings": [],
+  "mark": "kit.svg",
+  "slip": "kit.slip.json"
+}

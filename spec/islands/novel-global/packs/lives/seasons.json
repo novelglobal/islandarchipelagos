@@ -1,0 +1,194 @@
+{
+ "start": [
+  2026,
+  9
+ ],
+ "lv": [
+  2,
+  3,
+  4,
+  4,
+  4,
+  3,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1
+ ],
+ "h": [
+  "f",
+  "f",
+  "f",
+  "f",
+  "m",
+  "m",
+  "p",
+  "p",
+  "p",
+  "p",
+  "p",
+  "p"
+ ],
+ "nino": [
+  "+2.8 OBS",
+  "≈+3.7",
+  "≈+3.7 PEAK",
+  "STRONG+",
+  "STRONG+",
+  "STRONG+",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "tmax": [
+  "",
+  ">80%",
+  ">80%",
+  ">80%",
+  "WARM",
+  "WARM",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "hot": [
+  "",
+  ">70%",
+  ">70%",
+  ">70%",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "rain": [
+  "",
+  "DRY COAST",
+  "≈50/50",
+  "≈50/50",
+  "NEUTRAL",
+  "NEUTRAL",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "say": {
+  "f": "Days very likely warmer than average to January; unusually hot days most likely in Victoria; November drier on the coast.",
+  "m": "A strong El Niño into autumn: warmer than average, rain near normal.",
+  "p": "No outlook issued yet. Drought and canopy loss carry on after the heat."
+ },
+ "windows": [
+  {
+   "a": 9,
+   "b": 10,
+   "w": "EARLY HEAT",
+   "why": "Hot days arrive as flying-fox pups are born and birds are nesting.",
+   "g": [
+    "flyingfox",
+    "bird",
+    "parrot",
+    "possum",
+    "owl"
+   ]
+  },
+  {
+   "a": 10,
+   "b": 0,
+   "w": "DRY FLOWERING",
+   "why": "Rain fails as flowering peaks: less nectar for bees, birds and bats.",
+   "g": [
+    "bee",
+    "butterfly",
+    "moth",
+    "fly",
+    "parrot",
+    "flyingfox"
+   ]
+  },
+  {
+   "a": 11,
+   "b": 1,
+   "w": "HOT NIGHTS",
+   "why": "Unusually warm nights leave no cool hours to recover in.",
+   "g": [
+    "human",
+    "possum",
+    "flyingfox",
+    "bat"
+   ]
+  },
+  {
+   "a": 0,
+   "b": 2,
+   "w": "DROUGHT",
+   "why": "Soil and ponds dry out; old trees shed limbs and the canopy thins.",
+   "g": [
+    "plant",
+    "frog",
+    "dragonfly",
+    "turtle",
+    "waterbird",
+    "fungi"
+   ]
+  }
+ ],
+ "hot35": [
+  3.4,
+  2.1,
+  0.9,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0.1,
+  0.5,
+  2.2
+ ],
+ "src": [
+  [
+   "BoM long-range forecast, Nov 2026–Jan 2027 (15 Oct): above-average highs over 80% likely; unusually hot days over 70% in parts of Victoria",
+   "https://www.bom.gov.au/climate/ahead/outlooks/archive/20261015-outlook.shtml"
+  ],
+  [
+   "BoM ENSO update: Niño 3.4 +2.81 °C in the week to 11 Oct 2026, near record, strengthening through spring; positive IOD likely",
+   "https://www.bom.gov.au/climate/enso/"
+  ],
+  [
+   "WMO: Niño 3.4 near +3.7 °C for Oct–Dec 2026, peaking around December (8 Oct)",
+   "https://public.wmo.int/resources/publication-series/global-seasonal-climate-updates/gscu-ond2026"
+  ],
+  [
+   "NOAA CPC: strong to very strong El Niño likely through Jan–Mar 2027 (13 Oct)",
+   "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/lanina/enso_evolution-status-fcsts-web.pdf"
+  ],
+  [
+   "ABC: November drier on the coast from Adelaide to Melbourne; no clear summer rain signal (17 Oct)",
+   "https://www.abc.net.au/news/2026-10-17/2026-may-become-australias-wettest-el-nino-weather-year/107273884"
+  ],
+  [
+   "Agriculture Victoria: warmer Jan–Mar 2027, rain near neutral",
+   "https://agriculture.vic.gov.au/support-and-resources/newsletters/the-break/the-fast-break-victoria"
+  ],
+  [
+   "Melbourne climate statistics",
+   "https://www.bom.gov.au/climate/averages/tables/cw_086338_All.shtml"
+  ]
+ ]
+}

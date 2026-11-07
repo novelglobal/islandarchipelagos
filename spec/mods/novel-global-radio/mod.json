@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/mod.schema.json",
+  "id": "novel-global-radio",
+  "version": "1.0.0",
+  "title": "DIRECT ACTION RADIO",
+  "island": "novel-global",
+  "about": "Making music into events.",
+  "licence": "CC-BY-SA-4.0",
+  "connection": "radio",
+  "gives": ["SOUND","CODE"],
+  "takes": ["WORDS","PICTURE"],
+  "needs": [],
+  "settings": [],
+  "mark": "radio.svg",
+  "slip": "radio.slip.json"
+}

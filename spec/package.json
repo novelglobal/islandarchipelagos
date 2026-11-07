@@ -1,0 +1,16 @@
+{
+  "name": "spec",
+  "version": "0.1.0",
+  "private": true,
+  "description": "card, mod and slip schemas",
+  "type": "module",
+  "scripts": {
+    "test": "node tools/check.mjs && node tools/golden.mjs",
+    "golden": "node tools/golden.mjs --write",
+    "export:front": "node tools/export-front.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  }
+}

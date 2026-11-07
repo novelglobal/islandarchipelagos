@@ -1,0 +1,1482 @@
+[
+ {
+  "id": "B01",
+  "t": "A cool room on every block",
+  "what": "Climate Shelters Network · Barcelona · 2020 · 500 shelters by summer 2026",
+  "url": "https://beteve.cat/medi-ambient/500-refugis-climatics-barcelona-estiu-2026/",
+  "g": [
+   "human"
+  ],
+  "th": "heat",
+  "roles": [
+   "space",
+   "owner",
+   "reuse",
+   "coop",
+   "studio",
+   "fashion",
+   "label"
+  ],
+  "m": [
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "A cool room within 10 min of every door",
+  "s": "An open door is infrastructure.",
+  "h": "{biz}: cool room 1–5 pm, days over 35°C"
+ },
+ {
+  "id": "B02",
+  "t": "Turn a schoolyard into an oasis",
+  "what": "OASIS schoolyards · Paris · 2018 · about 130 schoolyards by 2023",
+  "url": "https://www.paris.fr/pages/les-cours-oasis-7389",
+  "g": [
+   "human",
+   "bee",
+   "bird"
+  ],
+  "th": "heat",
+  "roles": [
+   "studio",
+   "grower"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "i": "The schoolyard is the street’s coolest room",
+  "s": "Unseal the ground.",
+  "h": "Map the hottest yard in {place} on A3"
+ },
+ {
+  "id": "B03",
+  "t": "Join the shade, block to block",
+  "what": "Green Corridors · Medellín · 2016 · about 2°C cooler; Ashden Award 2019",
+  "url": "https://www.unep.org/news-and-stories/story/medellin-shows-how-nature-based-solutions-can-keep-people-and-planet-cool",
+  "g": [
+   "bird",
+   "parrot",
+   "possum",
+   "flyingfox",
+   "bee",
+   "mammal"
+  ],
+  "th": "heat",
+  "roles": [
+   "grower",
+   "studio",
+   "owner"
+  ],
+  "m": [
+   3,
+   4,
+   5,
+   6
+  ],
+  "i": "Shade joins up from the creek to the park",
+  "s": "Connect canopy; don’t just plant trees.",
+  "h": "Plant the 3 widest shade gaps this autumn"
+ },
+ {
+  "id": "B04",
+  "t": "Give every old tree an address",
+  "what": "Trees with email addresses · Melbourne · 2013 · about 3,000 emails to trees by 2015",
+  "url": "https://proarbmagazine.com/the-melbourne-treemail-phenomenon/",
+  "g": [
+   "plant"
+  ],
+  "th": "heat",
+  "roles": [
+   "studio",
+   "space",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every old tree has someone who notices",
+  "s": "Give the tree an address.",
+  "h": "QR-tag 10 old trees; water each fortnight"
+ },
+ {
+  "id": "B05",
+  "t": "White roofs on the strip",
+  "what": "NYC CoolRoofs · New York · 2009 · over 12 million sq ft coated by 2025",
+  "url": "https://www.healthbeat.org/newyork/2025/06/25/cool-roofs-nyc-extreme-heat-climate/",
+  "g": [
+   "human",
+   "possum",
+   "bat"
+  ],
+  "th": "heat",
+  "roles": [
+   "studio",
+   "owner",
+   "space"
+  ],
+  "m": [
+   9,
+   10,
+   11
+  ],
+  "i": "Flat roofs throw the heat back by December",
+  "s": "Cool the roof before the room.",
+  "h": "Coat {biz}’s flat roof white; log the heat"
+ },
+ {
+  "id": "B06",
+  "t": "Pin the heat, not the bat",
+  "what": "Victorian Response Plan for Heat Stress in Flying-foxes · Victoria · 2024 · triggers above 38°C with humidity under 30%; 4,790 died at Yarra Bend in 2009",
+  "url": "https://www.wildlife.vic.gov.au/__data/assets/pdf_file/0027/695601/Victorian-Response-Plan-for-Heat-Stress-in-Flying-Foxes-2024.pdf",
+  "g": [
+   "flyingfox"
+  ],
+  "th": "heat",
+  "roles": [
+   "studio",
+   "space",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every fallen flying-fox is pinned, not held",
+  "s": "Report, don’t rescue.",
+  "h": "Pocket cards: pin it in the app, call 136 186"
+ },
+ {
+  "id": "B07",
+  "t": "Plant a tiny forest",
+  "what": "Tiny Forest · UK and Glen Waverley · 2020 · over 250 in the UK; Monash planted one in 2024",
+  "url": "https://earthwatch.org.uk/program/tiny-forest/",
+  "g": [
+   "bird",
+   "bee",
+   "beetle",
+   "plant",
+   "lizard",
+   "spider",
+   "fungi"
+  ],
+  "th": "heat",
+  "roles": [
+   "grower",
+   "studio",
+   "space"
+  ],
+  "m": [
+   4,
+   5,
+   6,
+   7
+  ],
+  "i": "A tennis-court forest where the car park was",
+  "s": "Dense, native, now.",
+  "h": "600 seedlings, 200 m², 30 people, one winter"
+ },
+ {
+  "id": "B08",
+  "t": "Lift the asphalt, one car space at a time",
+  "what": "Depave · Portland · 2008 · over 360,000 sq ft removed by 2024",
+  "url": "https://www.portland.gov/bps/cleanenergy/news/2024/6/7/returning-concrete-jungles-nature",
+  "g": [
+   "frog",
+   "plant",
+   "beetle",
+   "segmented"
+  ],
+  "th": "heat",
+  "roles": [
+   "owner",
+   "space",
+   "grower"
+  ],
+  "m": [
+   3,
+   4,
+   5,
+   6
+  ],
+  "i": "One car space per block drinks the rain",
+  "s": "Break the seal.",
+  "h": "Lift one car space at {biz}; plant grasses"
+ },
+ {
+  "id": "B09",
+  "t": "Give one street back for a summer",
+  "what": "Superblocks · Barcelona · 2016 · NO₂ down 25% at the Sant Antoni superblock",
+  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11831821/",
+  "g": [
+   "human",
+   "bird"
+  ],
+  "th": "heat",
+  "roles": [
+   "owner",
+   "space",
+   "market"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "One street in {place} is shade, not parking",
+  "s": "Streets are rooms.",
+  "h": "Close one block on a Sunday; log the heat"
+ },
+ {
+  "id": "B10",
+  "t": "A phone tree for the heat",
+  "what": "Telecross REDi · Australian Red Cross · calls people at risk during heatwaves",
+  "url": "https://preparecenter.org/story/telecross-redi-heatwave-service/",
+  "g": [
+   "human"
+  ],
+  "th": "heat",
+  "roles": [
+   "owner",
+   "space",
+   "coop"
+  ],
+  "m": [
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "No one spends a 40° day without a voice",
+  "s": "Check-ins go by stairwell, not app.",
+  "h": "A lobby roster: one call before 11 am"
+ },
+ {
+  "id": "B11",
+  "t": "Turn a concrete channel into ponds",
+  "what": "Chain of Ponds · Moonee Ponds Creek · 2018 · 15 organisations signed on in 2018",
+  "url": "https://www.melbournewater.com.au/services/projects/chain-ponds-collaboration",
+  "g": [
+   "frog",
+   "waterbird",
+   "turtle",
+   "dragonfly"
+  ],
+  "th": "water",
+  "roles": [
+   "studio",
+   "grower",
+   "space"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "The channel holds ponds through the dry",
+  "s": "Slow the water down.",
+  "h": "Walk the channel; draw where pond one goes"
+ },
+ {
+  "id": "B12",
+  "t": "A raingarden at every downpipe",
+  "what": "10,000 Raingardens · Melbourne Water · 2008 · 10,000 built by 2013",
+  "url": "https://stormwater.wef.org/2013/09/australian-stormwater-controls-must-combat-droughts-floods/",
+  "g": [
+   "frog",
+   "dragonfly",
+   "bee"
+  ],
+  "th": "water",
+  "roles": [
+   "owner",
+   "grower",
+   "studio"
+  ],
+  "m": [
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "i": "Every downpipe feeds a garden, not a drain",
+  "s": "Rain is a resource.",
+  "h": "A raingarden at {biz}’s downpipe by May"
+ },
+ {
+  "id": "B13",
+  "t": "Keep the wetland wet",
+  "what": "Trin Warren Tam-boore wetland · Royal Park · 2006 · up to 160 ML of stormwater a year",
+  "url": "https://urbanwater.melbourne.vic.gov.au/projects/wetlands/wetlands-sample-project/",
+  "g": [
+   "frog",
+   "waterbird",
+   "turtle",
+   "dragonfly"
+  ],
+  "th": "water",
+  "roles": [
+   "studio",
+   "space"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "The wetland stays wet through the dry",
+  "s": "Clean water is habitat.",
+  "h": "A frog-call night; post the calls at {biz}"
+ },
+ {
+  "id": "B14",
+  "t": "Count the frogs before the ponds dry",
+  "what": "Frog Census · Melbourne Water · 2001 · an app since 2016",
+  "url": "https://www.ces.vic.gov.au/soe2023/stories/citizen-scientists-growing-our-knowledge-growlers",
+  "g": [
+   "frog"
+  ],
+  "th": "water",
+  "roles": [
+   "space",
+   "owner",
+   "studio"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11
+  ],
+  "i": "Every pond is heard before it dries",
+  "s": "Listen before it goes quiet.",
+  "h": "One minute of calls on Frog Census, weekly"
+ },
+ {
+  "id": "B15",
+  "t": "Mark the turtle crossings",
+  "what": "TurtleSAT · Australia · 2014 · 35,451 turtle records by October 2026",
+  "url": "https://www.turtlesat.org.au/",
+  "g": [
+   "turtle"
+  ],
+  "th": "water",
+  "roles": [
+   "studio",
+   "space",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0
+  ],
+  "i": "No turtle dies on a creek road this summer",
+  "s": "Map the crossing, then make it.",
+  "h": "Log turtles on TurtleSAT; sign 2 crossings"
+ },
+ {
+  "id": "B16",
+  "t": "Catch the litter at the drain",
+  "what": "LittaTrap drain baskets · Enviropod · catches plastic over 5 mm; emptied by hand",
+  "url": "https://www.enviropod.com/en-au/products/littatrap",
+  "g": [
+   "turtle",
+   "waterbird",
+   "rodent"
+  ],
+  "th": "water",
+  "roles": [
+   "litter",
+   "coop",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3
+  ],
+  "i": "Nothing sold at {biz} reaches the creek",
+  "s": "Catch it at the drain, not the bay.",
+  "h": "A drain basket at {biz}; empty it Fridays"
+ },
+ {
+  "id": "B17",
+  "t": "Adopt the drain outside",
+  "what": "Adopt-a-Drain · Minnesota · 2014 · nearly 20,000 drains adopted by 2023",
+  "url": "https://www.hamline.edu/news/2023/04/hamlines-adopt-drain-program-expands-five-states",
+  "g": [
+   "frog",
+   "turtle",
+   "aquatic"
+  ],
+  "th": "water",
+  "roles": [
+   "litter",
+   "runoff",
+   "owner",
+   "studio"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "i": "Every drain has a name and a keeper",
+  "s": "The gutter is the creek’s first metre.",
+  "h": "Name the drain outside {biz}; clear it"
+ },
+ {
+  "id": "B18",
+  "t": "Bring a crew to the creek",
+  "what": "Merri Creek Management Committee · Merri Creek · 1989 · six councils and the community since 1989",
+  "url": "https://mcmc.org.au/origins-of-mcmc",
+  "g": [
+   "frog",
+   "waterbird",
+   "turtle",
+   "plant"
+  ],
+  "th": "water",
+  "roles": [
+   "space",
+   "owner",
+   "grower",
+   "litter"
+  ],
+  "m": [
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "i": "Each shop keeps its stretch of creek",
+  "s": "Your radius is your responsibility.",
+  "h": "Three from {biz} at a creek planting day"
+ },
+ {
+  "id": "B19",
+  "t": "Plant a line, not a garden",
+  "what": "The Pollinator Pathway · Seattle · 2008 · a mile of planting strips",
+  "url": "https://en.wikipedia.org/wiki/The_Pollinator_Pathway",
+  "g": [
+   "bee",
+   "butterfly",
+   "fly",
+   "wasp",
+   "bird"
+  ],
+  "th": "pollinate",
+  "roles": [
+   "grower",
+   "owner",
+   "studio"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "i": "Nature strips flower in turn all year",
+  "s": "Plant a line, not a garden.",
+  "h": "Ten strips in a row, indigenous flowers"
+ },
+ {
+  "id": "B20",
+  "t": "Flowering roofs on tram stops",
+  "what": "Green-roofed bus shelters · Utrecht · 2019 · 316 shelters, 2,000 m² of roof",
+  "url": "https://www.utrecht.nl/city-of-utrecht/green-roofed-bus-shelters-in-utrecht",
+  "g": [
+   "bee",
+   "butterfly",
+   "human"
+  ],
+  "th": "pollinate",
+  "roles": [
+   "studio",
+   "owner"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "i": "Every tram stop wears a flowering roof",
+  "s": "Shade that flowers.",
+  "h": "Mock up a sedum roof for one tram stop"
+ },
+ {
+  "id": "B21",
+  "t": "Map a bee line across the suburb",
+  "what": "B-Lines · UK · 2021 · the first 1,500 hectares delivered",
+  "url": "https://www.buglife.org.uk/news/new-plan-for-uk-wide-insect-superhighways-launched/",
+  "g": [
+   "bee",
+   "butterfly",
+   "beetle",
+   "fly",
+   "wasp",
+   "bug",
+   "grasshopper"
+  ],
+  "th": "pollinate",
+  "roles": [
+   "grower",
+   "studio"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "i": "A flowering line crosses {place}",
+  "s": "Join the dots.",
+  "h": "Map flowers in 500 m; plant the worst gap"
+ },
+ {
+  "id": "B22",
+  "t": "A brick for native bees",
+  "what": "Bee bricks in new buildings · Brighton & Hove · 2020 · required in new buildings over 5 m",
+  "url": "https://www.dezeen.com/2022/01/24/bee-bricks-planning-requirement-brighton/",
+  "g": [
+   "bee"
+  ],
+  "th": "pollinate",
+  "roles": [
+   "studio"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "Every new wall holds a native bee nest",
+  "s": "Build habitat in, not on.",
+  "h": "Design a bee brick; ten in the next wall"
+ },
+ {
+  "id": "B23",
+  "t": "Register the food plants",
+  "what": "Monarch Waystations · Monarch Watch · 2004 · 58,776 registered by September 2026",
+  "url": "https://www.monarchwatch.org/waystations/",
+  "g": [
+   "butterfly",
+   "bee"
+  ],
+  "th": "pollinate",
+  "roles": [
+   "grower",
+   "owner",
+   "studio"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   9,
+   10
+  ],
+  "i": "50 gardens each host a caterpillar plant",
+  "s": "Register the habitat.",
+  "h": "Plant native nettle or grass; map each one"
+ },
+ {
+  "id": "B24",
+  "t": "Every backyard a stepping stone",
+  "what": "Gardens for Wildlife Victoria · Victoria · 2016 · 22 council programs",
+  "url": "https://gardensforwildlifevictoria.com/affiliates/",
+  "g": [
+   "bird",
+   "lizard",
+   "bee",
+   "frog",
+   "orb",
+   "spider",
+   "mantis",
+   "snail"
+  ],
+  "th": "diversity",
+  "roles": [
+   "grower",
+   "owner"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5,
+   8,
+   9
+  ],
+  "i": "Every backyard is a stepping stone",
+  "s": "Messy is shelter.",
+  "h": "Book a Gardens for Wildlife visit; plant 3"
+ },
+ {
+  "id": "B25",
+  "t": "Count the hollows before the heat",
+  "what": "Hollows as Homes · Sydney · 2016 · 30 councils at launch",
+  "url": "https://australian.museum/blog-archive/science/hollows-as-homes-citizen-science-project/",
+  "g": [
+   "possum",
+   "parrot",
+   "owl",
+   "bat"
+  ],
+  "th": "diversity",
+  "roles": [
+   "studio",
+   "grower"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11
+  ],
+  "i": "Every hollow tree in {place} is kept",
+  "s": "Count the hollows before the heat.",
+  "h": "Survey the 5 oldest trees; photo each hollow"
+ },
+ {
+  "id": "B26",
+  "t": "Lights out for the migration",
+  "what": "Lights Out Chicago · Chicago · 1995 · 11 times fewer bird collisions in spring",
+  "url": "https://www.chicago.gov/city/en/progs/env/lights_out_chicago.html",
+  "g": [
+   "moth",
+   "bird",
+   "bat"
+  ],
+  "th": "night",
+  "roles": [
+   "light",
+   "owner",
+   "space"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11
+  ],
+  "i": "Dark enough for a Bogong to find the Alps",
+  "s": "Dark is a habitat.",
+  "h": "{biz}: window lights off at close to Dec"
+ },
+ {
+  "id": "B27",
+  "t": "Relight the creek path for feet, not sky",
+  "what": "National Light Pollution Guidelines for Wildlife · Australia · 2020 · bats added in 2023",
+  "url": "https://tethys.pnnl.gov/publications/national-light-pollution-guidelines-wildlife",
+  "g": [
+   "bat",
+   "moth",
+   "owl"
+  ],
+  "th": "night",
+  "roles": [
+   "light",
+   "studio",
+   "space"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Light the creek path for feet, not sky",
+  "s": "Light only what is needed, when.",
+  "h": "Redesign 5 creek lights warm, low, timed"
+ },
+ {
+  "id": "B28",
+  "t": "Four days to count everything",
+  "what": "City Nature Challenge · worldwide · 2016 · 3,001,825 observations in 2026",
+  "url": "https://www.citynaturechallenge.org/",
+  "g": [
+   "any"
+  ],
+  "th": "diversity",
+  "roles": [
+   "space",
+   "studio",
+   "owner"
+  ],
+  "m": [
+   3
+  ],
+  "i": "{place} records more life in 4 days than ever",
+  "s": "What is counted can be cared for.",
+  "h": "A bioblitz from {biz} in late April"
+ },
+ {
+  "id": "B29",
+  "t": "Track the Bogongs",
+  "what": "Moth Tracker · Zoos Victoria · 2019 · 500 verified Bogong records by 2024",
+  "url": "https://www.abc.net.au/news/2019-09-18/bogong-moth-tracker-rolled-out-endangered-pygmy-possums-at-risk/11520512",
+  "g": [
+   "moth"
+  ],
+  "th": "night",
+  "roles": [
+   "light",
+   "space",
+   "owner"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11
+  ],
+  "i": "Every Bogong here is logged and let go",
+  "s": "Count the travellers.",
+  "h": "Log Bogongs on Moth Tracker; free at dark"
+ },
+ {
+  "id": "B30",
+  "t": "Take back the old rat baits",
+  "what": "BirdLife Australia rat poison campaign · Australia · 2021 · over 90 native species exposed",
+  "url": "https://birdlife.org.au/protect-aussie-birds-from-lethal-sgar-rat-poisons",
+  "g": [
+   "owl",
+   "raptor"
+  ],
+  "th": "diversity",
+  "roles": [
+   "poison",
+   "owner",
+   "grower"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "No owl in {place} dies of a poisoned rat",
+  "s": "Trap, don’t poison.",
+  "h": "{biz} takes back baits, gives snap traps"
+ },
+ {
+  "id": "B31",
+  "t": "Grow food where people walk",
+  "what": "Incredible Edible · Todmorden · 2008 · food growing in public places",
+  "url": "https://www.incredible-edible-todmorden.co.uk/",
+  "g": [
+   "bee",
+   "bird",
+   "human"
+  ],
+  "th": "food",
+  "roles": [
+   "owner",
+   "grower",
+   "market"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   8,
+   9
+  ],
+  "i": "Herbs grow free for anyone outside {biz}",
+  "s": "Food is a commons.",
+  "h": "A help-yourself herb bed at {biz}"
+ },
+ {
+  "id": "B32",
+  "t": "A food forest in a pocket park",
+  "what": "Beacon Food Forest · Seattle · 2012 · seven acres of public food forest",
+  "url": "https://beaconfoodforest.org/",
+  "g": [
+   "bird",
+   "bee",
+   "flyingfox"
+  ],
+  "th": "food",
+  "roles": [
+   "grower",
+   "space"
+  ],
+  "m": [
+   4,
+   5,
+   6,
+   7
+  ],
+  "i": "A pocket park feeds people, birds and bats",
+  "s": "Plant in layers.",
+  "h": "Design one pocket park in four layers"
+ },
+ {
+  "id": "B33",
+  "t": "Bag the fruit, share the tree",
+  "what": "Harvest Without Harm · Victoria · 2021 · bags and sleeves on chosen branches; any net 5 mm or finer since 1 September 2021",
+  "url": "https://www.wildlife.vic.gov.au/__data/assets/pdf_file/0030/538176/HarvestWithoutHarm_trifold_Final.pdf",
+  "g": [
+   "flyingfox",
+   "bird",
+   "parrot",
+   "possum",
+   "snake",
+   "lizard"
+  ],
+  "th": "food",
+  "roles": [
+   "label",
+   "repair",
+   "studio",
+   "market"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every fruit tree keeps a branch to share",
+  "s": "Bag your share. Leave theirs.",
+  "h": "{biz} sews fruit bags from offcuts"
+ },
+ {
+  "id": "B34",
+  "t": "Start where the rubbish was",
+  "what": "CERES · Brunswick East · 1982 · a former tip turned community park",
+  "url": "https://beat.com.au/brunswicks-rubbish-tip-turned-green-oasis-ceres-is-battling-to-avoid-closure/",
+  "g": [
+   "bee",
+   "bird",
+   "frog",
+   "plant"
+  ],
+  "th": "food",
+  "roles": [
+   "grower",
+   "market",
+   "coop",
+   "space"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   8,
+   9
+  ],
+  "i": "Every vacant lot grows something by spring",
+  "s": "Start where the rubbish was.",
+  "h": "One vacant lot becomes a shade garden"
+ },
+ {
+  "id": "B35",
+  "t": "Compost the street",
+  "what": "ShareWaste · Australia · 2015 · neighbours sharing compost",
+  "url": "https://acehub.org.au/knowledge-hub/case-studies/sharewaste",
+  "g": [
+   "segmented",
+   "beetle",
+   "plant",
+   "fungi",
+   "snail"
+  ],
+  "th": "food",
+  "roles": [
+   "owner",
+   "grower",
+   "coop"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "No food scrap on the block goes to landfill",
+  "s": "Feed the ground.",
+  "h": "Lidded scrap bins at {biz}; mulch trees"
+ },
+ {
+  "id": "B36",
+  "t": "Filter the wash",
+  "what": "Parry Sound filter pilot · Ontario · 2021 · 41% fewer fibres in the town’s wastewater from 97 homes",
+  "url": "https://www.greatlakesnow.org/2021/12/14/study-washing-machine-microfibers/",
+  "g": [
+   "aquatic",
+   "waterbird",
+   "turtle",
+   "frog"
+  ],
+  "th": "water",
+  "roles": [
+   "fibres",
+   "label",
+   "reuse"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "No wash on the strip sheds fibres to creek",
+  "s": "Catch it in the machine.",
+  "h": "{biz} fits fibre filters; lends wash bags"
+ },
+ {
+  "id": "B37",
+  "t": "A monthly repair night",
+  "what": "Repair Café · Amsterdam · 2009 · now worldwide",
+  "url": "https://www.repaircafe.org/en/",
+  "g": [],
+  "th": "circular",
+  "roles": [
+   "repair",
+   "space",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "Nothing fixable in an hour is thrown out",
+  "s": "Mend before you buy.",
+  "h": "{biz} hosts a monthly repair night"
+ },
+ {
+  "id": "B38",
+  "t": "A heat kit to borrow",
+  "what": "Library of Things · London · 2014 · borrow instead of buy",
+  "url": "https://www.libraryofthings.co.uk/",
+  "g": [
+   "human"
+  ],
+  "th": "circular",
+  "roles": [
+   "reuse",
+   "repair",
+   "label",
+   "space",
+   "coop"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every fan and shade sail can be borrowed",
+  "s": "Heat gear is shared gear.",
+  "h": "A heat-kit shelf at {biz} to borrow from"
+ },
+ {
+  "id": "B39",
+  "t": "One swap-cup for the whole strip",
+  "what": "RECUP · Germany · 2016 · deposit cups shared across cafés",
+  "url": "https://recup.de/en/",
+  "g": [
+   "turtle",
+   "waterbird"
+  ],
+  "th": "circular",
+  "roles": [
+   "litter",
+   "owner",
+   "coop",
+   "studio"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "No takeaway cup from {place} hits the creek",
+  "s": "One cup, every café.",
+  "h": "Cafés within 500 m of the creek share a cup"
+ },
+ {
+  "id": "B40",
+  "t": "Bags sewn from offcuts",
+  "what": "Boomerang Bags · Burleigh Heads · 2013 · community-sewn bags from offcuts",
+  "url": "https://boomerangbags.org/",
+  "g": [
+   "turtle",
+   "waterbird"
+  ],
+  "th": "circular",
+  "roles": [
+   "label",
+   "repair",
+   "space",
+   "coop"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3
+  ],
+  "i": "Every counter lends a bag sewn from offcuts",
+  "s": "Offcuts are a material.",
+  "h": "Sew 100 bags from {biz}’s offcuts in a day"
+ },
+ {
+  "id": "B41",
+  "t": "Buy back, mend, resell",
+  "what": "Worn Wear · Patagonia · 2013 · repair and resale of worn gear",
+  "url": "https://wornwear.patagonia.com/",
+  "g": [],
+  "th": "circular",
+  "roles": [
+   "fashion",
+   "repair",
+   "reuse"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every clothes shop buys back and mends",
+  "s": "The best garment is already made.",
+  "h": "{biz} takes back worn pieces; tailor mends"
+ },
+ {
+  "id": "B42",
+  "t": "Free repairs, for life",
+  "what": "Nudie Jeans · Sweden · free denim repairs for life",
+  "url": "https://www.nudiejeans.com/repair",
+  "g": [],
+  "th": "circular",
+  "roles": [
+   "label",
+   "repair",
+   "fashion"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3
+  ],
+  "i": "Every label here repairs what it sold",
+  "s": "Make it to mend.",
+  "h": "A free-repair promise on {biz}’s labels"
+ },
+ {
+  "id": "B43",
+  "t": "Ask who made it",
+  "what": "Fashion Revolution · UK · 2013 · begun after the Rana Plaza collapse; #WhoMadeMyClothes",
+  "url": "https://www.fashionrevolution.org/",
+  "g": [],
+  "th": "circular",
+  "roles": [
+   "fashion",
+   "label"
+  ],
+  "m": [
+   3
+  ],
+  "i": "Every garment can say who made it",
+  "s": "Traceable or not at all.",
+  "h": "Ask {biz} who made it; print the answer"
+ },
+ {
+  "id": "B44",
+  "t": "Swap a season’s wardrobe",
+  "what": "The Clothing Exchange · Melbourne · swap events across Australia",
+  "url": "http://www.events.clothingexchange.com.au/about",
+  "g": [],
+  "th": "circular",
+  "roles": [
+   "reuse",
+   "fashion",
+   "label",
+   "space"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "i": "One Saturday a season, the strip swaps",
+  "s": "Swap, don’t shop.",
+  "h": "A seasonal swap at {biz}; tailor the rest"
+ },
+ {
+  "id": "B45",
+  "t": "Stop spraying the footpath",
+  "what": "Pesticide-Free Towns · UK · 2015 · over 30 councils committed to going pesticide-free by 2021",
+  "url": "https://www.pan-uk.org/a-lesson-in-resilience-pesticide-free-towns-campaign-continues-to-bloom/",
+  "g": [
+   "orb",
+   "spider",
+   "mantis",
+   "bug",
+   "grasshopper",
+   "wasp",
+   "fly",
+   "snail",
+   "bee",
+   "butterfly"
+  ],
+  "th": "diversity",
+  "roles": [
+   "poison",
+   "grower",
+   "owner"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "No footpath in {place} is sprayed",
+  "s": "A weed in flower is a meal.",
+  "h": "Hand-weed the strip at {biz} each month"
+ },
+ {
+  "id": "B46",
+  "t": "A container drop for a cause",
+  "what": "Container Deposit Scheme · Victoria · 2023 · 3 billion containers returned by April 2026",
+  "url": "https://www.visy.com/newsroom/2026/3-billion-containers-returned-through-victorias-container-deposit-scheme",
+  "g": [
+   "turtle",
+   "waterbird"
+  ],
+  "th": "circular",
+  "roles": [
+   "litter",
+   "owner",
+   "space"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every can is worth more to us than the creek",
+  "s": "Value the throwaway.",
+  "h": "A 10c container drop at {biz} for a cause"
+ },
+ {
+  "id": "B47",
+  "t": "Cat runs before the curfew",
+  "what": "Merri-bek cat curfew · Merri-bek · 2027 · cats in from 7 pm from April 2027",
+  "url": "https://conversations.merri-bek.vic.gov.au/domestic-animal-management-plan-2025-2029/about-cat-curfew",
+  "g": [
+   "bird",
+   "lizard",
+   "possum",
+   "mammal",
+   "cat"
+  ],
+  "th": "cats",
+  "roles": [
+   "vet",
+   "pets",
+   "studio",
+   "repair"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every cat is safe inside by night",
+  "s": "Curious cats, safe birds.",
+  "h": "Build a cat run from offcuts with {biz}"
+ },
+ {
+  "id": "B48",
+  "t": "Desex before four months",
+  "what": "Early-age desexing · Agriculture Victoria · a kitten can be pregnant at four months",
+  "url": "https://agriculture.vic.gov.au/livestock-and-animals/animal-welfare-victoria/cats/health/early-age-desexing",
+  "g": [
+   "cat",
+   "bird"
+  ],
+  "th": "cats",
+  "roles": [
+   "vet",
+   "pets"
+  ],
+  "m": [
+   8,
+   9,
+   10,
+   11,
+   0
+  ],
+  "i": "No kitten is born in a laneway this summer",
+  "s": "If you feed it, desex it.",
+  "h": "{biz} runs a desexing day by four months"
+ },
+ {
+  "id": "B49",
+  "t": "Green the laneway, wall to wall",
+  "what": "Greening Laneways · City of Melbourne · 2017 · laneways greened with their neighbours",
+  "url": "https://www.melbourne.vic.gov.au/greening-laneways",
+  "g": [
+   "bird",
+   "bee",
+   "human"
+  ],
+  "th": "heat",
+  "roles": [
+   "owner",
+   "studio",
+   "space"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "i": "The lane behind {biz} is green wall to wall",
+  "s": "Walls are ground too.",
+  "h": "Climbers on wires for the sunniest wall"
+ },
+ {
+  "id": "B50",
+  "t": "A shade pavilion of Country",
+  "what": "The Living Pavilion · University of Melbourne · 2019 · Indigenous-led, planted with indigenous species",
+  "url": "https://nespurban.edu.au/platforms/living-pavilion/",
+  "g": [
+   "plant",
+   "bee",
+   "human"
+  ],
+  "th": "heat",
+  "roles": [
+   "space",
+   "studio",
+   "grower"
+  ],
+  "m": [
+   2,
+   3,
+   4,
+   8,
+   9
+  ],
+  "i": "Indigenous plants shade the strip in summer",
+  "s": "Learn from Country first.",
+  "h": "Co-design it, led by Wurundjeri knowledge"
+ },
+ {
+  "id": "B51",
+  "t": "Every ad with an animal pays it back",
+  "what": "The Lion’s Share · Cannes · 2018 · 0.5% of media spend for each ad that features an animal, with UNDP",
+  "url": "https://www.undp.org/press-releases/gucci-joins-lions-share-fund-support-wildlife-conservation",
+  "g": [
+   "bird",
+   "parrot",
+   "possum",
+   "flyingfox",
+   "bee",
+   "frog"
+  ],
+  "th": "diversity",
+  "roles": [
+   "network",
+   "studio",
+   "label",
+   "fashion"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "Every animal in a feed pays it back",
+  "s": "Regenerate nature, not only harm it less.",
+  "h": "{biz}: 0.5% of each animal-led post to the creek"
+ },
+ {
+  "id": "B52",
+  "t": "A pledge signed at the counter",
+  "what": "Palau Pledge · Palau · 2017 · a pledge stamped in every visitor’s passport, written by Palau’s children; D&AD Black Pencil 2018",
+  "url": "https://www.dandad.org/insights/awards/palau-pledge-case-study-insights",
+  "g": [
+   "human",
+   "bird",
+   "bee",
+   "frog",
+   "turtle"
+  ],
+  "th": "diversity",
+  "roles": [
+   "third",
+   "space",
+   "market",
+   "owner"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1,
+   2
+  ],
+  "i": "A promise made in ink, in front of others",
+  "s": "A promise in ink outlasts a promise said.",
+  "h": "{biz}: sign the pledge at the till, printed"
+ },
+ {
+  "id": "B53",
+  "t": "A mesh radio on every partner counter",
+  "what": "Meshtastic · worldwide · 2020 · open-source LoRa radios that pass short messages node to node, with no phone network",
+  "url": "https://meshtastic.org/",
+  "g": [
+   "human",
+   "flyingfox",
+   "possum"
+  ],
+  "th": "heat",
+  "roles": [
+   "third",
+   "network",
+   "space",
+   "repair"
+  ],
+  "m": [
+   9,
+   10,
+   11,
+   0,
+   1
+  ],
+  "i": "The street can still talk when the network fails",
+  "s": "Design to sustain, heal and empower.",
+  "h": "{biz}: a solar mesh node by the window"
+ }
+]

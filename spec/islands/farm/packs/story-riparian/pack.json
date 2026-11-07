@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../../schemas/story.schema.json",
+  "pack": "story",
+  "id": "farm/riparian-drain",
+  "version": "0.1.0",
+  "name": "The drain that holds",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "The first story box: a roadside riparian trial, street drains that let leaves and water pool for the roots and still stop the flood, read by a sensor on the mesh. Every fact is checked against its source before it ships.",
+  "stories": [
+    {
+      "id": "riparian-drain",
+      "title": "THE DRAIN THAT HOLDS",
+      "cover": { "from": "drawn", "cells": 40, "subject": "a kerb grate over a planted pit, roots reaching below it, the street above, after rain" },
+      "headline": { "text": "What falls on the street runs to the creek.", "src": "https://www.melbournewater.com.au/", "checked": false },
+      "journey": "farm/games",
+      "lives": ["froglet"],
+      "brief": "B14",
+      "receipts": [
+        {
+          "template": "game-i",
+          "fill": {
+            "i-catch.things": ["a flooded gutter after the storm", "leaves held at the grate", "a dry creek a street away"],
+            "i-catch.intention": "Street drains that hold water for the roots, and still stop the flood."
+          }
+        },
+        {
+          "template": "game-w",
+          "fill": {
+            "w-draw.fact": ["Stormwater carries the street into the creek.", "Hard ground sends the rain away fast.", "Sponge cities and leaky weirs slow water down and let it soak in."]
+          },
+          "sources": ["https://www.mcmc.org.au/", "https://en.wikipedia.org/wiki/Sponge_city", "https://www.themullooninstitute.org/"]
+        },
+        {
+          "template": "game-great",
+          "fill": { "i-dial.future": "A kerb that drinks: leaves and water pool in a planted pit under the grate, and spill to the pipe only when it is full." }
+        },
+        {
+          "template": "game-s",
+          "fill": {
+            "s-craft.thing": "A trial on one street: three grates over planted pits, a water-level and soil sensor on a mesh node, a printed sign at each.",
+            "s-craft.cover": "pixels"
+          }
+        },
+        {
+          "template": "game-h",
+          "fill": {
+            "h-strings.who": ["the council's drains team: the three pits", "the creek's own committee: the plants", "a café's printer: each week's readings slip", "a neighbour for each grate: the leaves"]
+          }
+        }
+      ],
+      "unlocks": ["weirs", "ponds"]
+    }
+  ]
+}

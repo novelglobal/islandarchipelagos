@@ -1,0 +1,199 @@
+{
+  "$schema": "../../../../schemas/templates.schema.json",
+  "pack": "templates",
+  "id": "farm/receipts",
+  "version": "0.1.0",
+  "name": "The farm's receipts",
+  "by": "novel.global",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "One receipt for each of the five games. The letters never print.",
+  "templates": [
+    {
+      "id": "game-i",
+      "name": "catch",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "data",
+          "from": "i-catch.things",
+          "size": "small"
+        },
+        {
+          "type": "text",
+          "from": "i-catch.intention",
+          "size": "head"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "game-w",
+      "name": "draw",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "text",
+          "from": "w-draw.fact",
+          "size": "body"
+        },
+        {
+          "type": "rule",
+          "dots": 2
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "game-great",
+      "name": "dial",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "art",
+          "from": "i-dial.future",
+          "height": "half"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "game-s",
+      "name": "craft",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "art",
+          "from": "s-craft.cover",
+          "height": "square",
+          "when": "s-craft.cover"
+        },
+        {
+          "type": "text",
+          "from": "s-craft.thing",
+          "size": "body"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "game-h",
+      "name": "strings",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "text",
+          "from": "i-catch.intention",
+          "size": "body"
+        },
+        {
+          "type": "lines",
+          "from": "h-strings.who",
+          "size": "body"
+        },
+        {
+          "type": "moon",
+          "size": "small",
+          "align": "centre"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "code",
+          "align": "centre"
+        },
+        {
+          "type": "cut"
+        }
+      ],
+      "mesh": {
+        "fields": [
+          "i-catch.place",
+          "i-catch.things",
+          "i-catch.intention",
+          "w-draw.fact",
+          "s-craft.thing",
+          "h-strings.who",
+          "island.code"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../schemas/card.schema.json",
+  "format": "cards/0.2",
+  "board": "RW",
+  "cards": [
+    { "id": "banner", "island": "novel-global", "title": "novel.global", "opens": "reef", "lock": "open", "order": 0,
+      "jack": "E", "mod": "novel-global-eye@1",
+      "art": [{ "src": "art/banner.png", "depth": 0.5 }] },
+    { "id": "wish", "island": "novel-global", "title": "I W.I.S.H.", "copy": "helps you tell stories of change", "opens": "aura", "radar": true, "lock": "open", "order": 1,
+      "jack": "W", "mod": "novel-global-wish@1",
+      "art": [{ "src": "art/wish.png", "depth": 0.5 }], "motion": "shadow" },
+    { "id": "radio", "island": "novel-global", "title": "DIRECT ACTION RADIO", "copy": "Making music into events", "opens": "radio", "radar": true, "lock": "open", "order": 2,
+      "jack": "R", "mod": "novel-global-radio@1",
+      "art": [{ "src": "art/radio.png", "depth": 0.5 }], "motion": "speed" },
+    { "id": "zine", "island": "pickles", "title": "PICKLES LANDSCAPE ZINE MAKER", "opens": "pickles/tall", "radar": true, "lock": "open", "order": 3,
+      "jack": "Z", "mod": "pickles-zine@1",
+      "art": [{ "src": "art/zine.png", "depth": 0.5 }] },
+    { "id": "kit", "island": "novel-global", "title": "unearth your own island", "opens": "kit", "lock": "open", "order": 4,
+      "jack": "K", "mod": "novel-global-kit@1",
+      "art": [{ "src": "art/kit.png", "depth": 0.5 }] },
+    { "id": "panel", "island": "novel-global", "title": "THIS SPACE IS YOURS", "opens": "panel", "lock": "open", "order": 5,
+      "jack": "S", "mod": "novel-global-space@1",
+      "art": [{ "src": "art/panel.png", "depth": 0.5 }] }
+  ]
+}

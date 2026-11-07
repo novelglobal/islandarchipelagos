@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:slip",
+  "title": "A slip: the blocks one mod prints, top to bottom",
+  "description": "Each block is filled first from the mod's own values, then from its needs, then from each cable in the board's order. A block with nothing to show is left out",
+  "type": "object",
+  "required": ["format", "blocks"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "format": { "const": "slip/0.1" },
+    "length": { "description": "The paper's shape when no LENGTH arrives: a slip, a poster (150 mm at least), or a 300 mm strip", "$ref": "#/$defs/length" },
+    "blocks": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/block" } }
+  },
+  "$defs": {
+    "length": { "enum": ["slip", "poster", "strip"] },
+    "if": { "description": "Printed only while this switch setting is on", "$ref": "urn:island:0.1:common#/$defs/id" },
+    "block": {
+      "type": "object",
+      "required": ["block"],
+      "properties": { "block": { "enum": ["picture", "words", "list", "code", "rule", "space"] } },
+      "allOf": [
+        { "if": { "properties": { "block": { "const": "picture" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" },
+          "width": { "description": "Of the paper's dots, rounded down to a byte", "type": "number", "minimum": 0.25, "maximum": 1, "default": 1 },
+          "ink": { "description": "A switch setting that, when on, prints it heavier", "$ref": "urn:island:0.1:common#/$defs/id" } } } },
+        { "if": { "properties": { "block": { "const": "words" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" },
+          "fixed": { "description": "Never filled from WORDS: always its own text", "type": "boolean", "default": false },
+          "setting": { "description": "A field setting whose words are used when no WORDS arrive", "$ref": "urn:island:0.1:common#/$defs/id" },
+          "text": { "description": "Used last, when nothing else fills it", "type": "string", "maxLength": 22 },
+          "size": { "enum": ["normal", "big"], "default": "normal" },
+          "align": { "enum": ["left", "centre"], "default": "centre" } } } },
+        { "if": { "properties": { "block": { "const": "list" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" },
+          "max": { "type": "integer", "minimum": 1, "maximum": 10, "default": 5 } } } },
+        { "if": { "properties": { "block": { "const": "code" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" },
+          "take": { "description": "A CODE prints as a QR and its code; a SOUND adds its title above", "enum": ["CODE", "SOUND"], "default": "CODE" } } } },
+        { "if": { "properties": { "block": { "const": "rule" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" } } } },
+        { "if": { "properties": { "block": { "const": "space" } } }, "then": { "additionalProperties": false, "properties": {
+          "block": true, "if": { "$ref": "#/$defs/if" },
+          "lines": { "type": "integer", "minimum": 1, "maximum": 10, "default": 1 } } } }
+      ]
+    }
+  }
+}

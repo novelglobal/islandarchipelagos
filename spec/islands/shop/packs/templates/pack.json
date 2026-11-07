@@ -1,0 +1,120 @@
+{
+  "$schema": "../../../../schemas/templates.schema.json",
+  "pack": "templates",
+  "id": "shop/receipts",
+  "version": "0.1.0",
+  "name": "Shop receipts",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "templates": [
+    {
+      "id": "counter-card",
+      "name": "counter",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "art",
+          "from": "make.mark",
+          "height": "half",
+          "when": "make.mark"
+        },
+        {
+          "type": "text",
+          "from": "today.card",
+          "size": "head"
+        },
+        {
+          "type": "text",
+          "from": "today.line",
+          "size": "body",
+          "when": "today.line"
+        },
+        {
+          "type": "rule",
+          "dots": 2
+        },
+        {
+          "type": "moon",
+          "size": "small"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "docket-foot",
+      "name": "foot",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "rule",
+          "dots": 2
+        },
+        {
+          "type": "text",
+          "from": "today.card",
+          "size": "body"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "id": "pledge",
+      "name": "pledge",
+      "paper": [
+        80,
+        58
+      ],
+      "blocks": [
+        {
+          "type": "text",
+          "from": "take.what",
+          "size": "head"
+        },
+        {
+          "type": "text",
+          "from": "take.name",
+          "size": "small",
+          "when": "take.name"
+        },
+        {
+          "type": "text",
+          "from": "today.card",
+          "size": "small"
+        },
+        {
+          "type": "moon",
+          "size": "small"
+        },
+        {
+          "type": "code"
+        },
+        {
+          "type": "qr",
+          "qr": "link"
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:card",
+  "title": "A column of cards, and the board wired at the start",
+  "description": "Each card is a story, a game or an app made by an island, opened from the column. Its jack plugs its mod into the switchboard; a board is up to four cables between jacks",
+  "type": "object",
+  "required": [
+    "format",
+    "cards"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "const": "cards/0.2"
+    },
+    "cards": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    },
+    "board": {
+      "description": "The board wired at the start, and put back by a reset: up to four pairs of jacks, such as RW/ZW/KZ",
+      "type": "string",
+      "pattern": "^([A-Z0-9]{2}(/[A-Z0-9]{2}){0,3})?$"
+    }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "required": [
+        "id",
+        "island",
+        "title",
+        "opens",
+        "lock",
+        "order"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "island": {
+          "description": "The island that made it",
+          "$ref": "urn:island:0.1:common#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "copy": {
+          "description": "A line at most",
+          "type": "string",
+          "maxLength": 80,
+          "pattern": "^[^\\n]*$"
+        },
+        "art": {
+          "description": "Up to three layers, back to front, each moving at its own speed as the card scrolls, clipped to the card's art",
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": [
+              "src",
+              "depth"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "src": {
+                "description": "A picture: a path beside this file, or an address",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "depth": {
+                "description": "0 at the back, 1 at the front",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "motion": {
+          "description": "shadow: a soft drop between the layers; speed: stronger parallax",
+          "enum": [
+            "shadow",
+            "speed"
+          ],
+          "default": "shadow"
+        },
+        "opens": {
+          "description": "A stack (a steps pack, by its full id), or one of the site's own: the reef, the aura, the radio, the island kit, the control panel",
+          "anyOf": [
+            {
+              "enum": [
+                "reef",
+                "aura",
+                "radio",
+                "kit",
+                "panel"
+              ]
+            },
+            {
+              "$ref": "urn:island:0.1:common#/$defs/packId"
+            }
+          ]
+        },
+        "radar": {
+          "description": "Shows the radar key while the card's printer or island is online",
+          "type": "boolean",
+          "default": false
+        },
+        "lock": {
+          "description": "open, or a silhouette until its code is found",
+          "enum": [
+            "open",
+            "code"
+          ]
+        },
+        "order": {
+          "description": "Its place in the column, top first",
+          "type": "integer",
+          "minimum": 0
+        },
+        "jack": {
+          "description": "Its one character on the switchboard, unique in the column",
+          "type": "string",
+          "pattern": "^[A-Z0-9]$"
+        },
+        "mod": {
+          "description": "The mod its jack plugs in, as id@major",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)+@[0-9]+$"
+        }
+      },
+      "dependentRequired": {
+        "jack": [
+          "mod"
+        ],
+        "mod": [
+          "jack"
+        ]
+      }
+    }
+  }
+}

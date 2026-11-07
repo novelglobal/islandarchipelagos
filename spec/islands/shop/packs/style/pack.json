@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/style.schema.json",
+  "pack": "style",
+  "id": "shop/house",
+  "version": "0.1.0",
+  "name": "Shop",
+  "by": "island engine",
+  "licence": "CC-BY-SA-4.0",
+  "engine": "^0.1",
+  "about": "One style for a till: words large enough to read across a counter, a plain rule, the shop's name on a band.",
+  "styles": [
+    { "id": "till", "name": "TILL", "fonts": { "head": "sans:700", "body": "sans", "small": "mono" }, "size": 1.3, "margin": 0.6,
+      "photo": { "dither": "auto", "contrast": 0.4, "sharpen": 1 }, "frame": "rule", "rule": "solid", "top": "band", "night": "solid" }
+  ]
+}
