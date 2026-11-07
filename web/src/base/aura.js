@@ -1238,6 +1238,7 @@
     if (S.mode === 'iruk' || S.mode === 'morph') step(2); else if (S.mode === 'globe' || S.mode === 'bang') toIruk(2); else { setMode('globe'); toIruk(2); }
   });
   api.dev = function (i) { if (i == null) closeDev(); else openDev(i); };
+  api.can = function (i) { return !!DEVS[i] && keyed() && devOpen(i); };
   function drawMorph(t, k) {
     var from = globePts(S.spin, 1), to = irukTargets(t).rings;
     from.forEach(function (ring, ri) {

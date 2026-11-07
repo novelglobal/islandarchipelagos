@@ -1,7 +1,4 @@
-/* novel.global, an island's experience played from its stack: blocks as data (stacks/<id>.json), the same on any printer of the
-   network. The first is TALL: a photograph blown up into a strip of paper 300 mm long, moved by hand, with a line of words down its
-   length in white or black. Permissions: novel.global may always play an island's experience and print on its printer; the island's
-   own experiences print on novel.global's printer only once novel.global has made it TWO-WAY (the approval page) */
+/* an island's experience, played from its stack */
 (function () {
   'use strict';
   var T = window.THERMAL, $ = function (s) { return document.querySelector(s); };
@@ -11,16 +8,15 @@
   var word = function (p) { return String(p.name || p.id).trim().split(/\s+/)[0].toUpperCase(); };
 
   /* the blocks this player knows; a block of another kind is left out, never run */
-  var S = { stack: null, img: null, turn: 0, ox: 0.5, oy: 0.5, ink: 'white', words: '', to: null, prns: [], W: 512, H: 2126 };
-  /* the poster is landscape: made upright on dcv (300 mm across, the paper's width high), turned a quarter onto pcv to print down the
-     strip. A wide screen shows it as it is read, a phone as the paper comes out */
+  var S = { stack: null, long: true, img: null, turn: 0, ox: 0.5, oy: 0.5, ink: 'white', words: '', to: null, prns: [], W: 512, H: 2126 };
+  /* made landscape on dcv, turned onto pcv to print */
   var dcv, dcx, pcv, pcx, cv, stage, ditherT = 0, WIDE = window.matchMedia('(min-width: 640px)');
   var block = function (k) { return (S.stack.blocks || []).filter(function (b) { return b.k === k; })[0] || null; };
   var DW = function () { return S.H; }, DH = function () { return S.W; };
 
   function size() {
     var st = block('strip') || { mm: [72, 300] }, g = T.grid((S.stack.printer || {}).dots || 512), mm = st.mm || [72, 300];
-    S.W = g.dots; S.H = Math.round(mm[1] / 25.4 * g.dpi); dcv.width = DW(); dcv.height = DH(); pcv.width = S.W; pcv.height = S.H; view();
+    S.W = g.dots; S.H = Math.round((S.long ? mm[1] : st.short || 120) / 25.4 * g.dpi); dcv.width = DW(); dcv.height = DH(); pcv.width = S.W; pcv.height = S.H; view();
   }
   function view() {
     var c = WIDE.matches ? dcv : pcv; if (cv === c) return; if (cv) cv.remove(); cv = c; stage.insertBefore(cv, stage.firstChild);
@@ -103,7 +99,7 @@
     $('#nm').textContent = S.stack.name || S.stack.id;
     x.insertAdjacentHTML('beforeend', '<div class="desk"><div class="stage" id="stage"><label class="add" aria-label="Photo">+<input type="file" accept="image/*"></label></div>' +
       '<div class="side">' + (block('words') ? '<input id="w" maxlength="' + (wd.max || 22) + '" aria-label="Words" autocomplete="off" spellcheck="false">' : '') +
-      '<div class="row">' + (ph.from ? '<button type="button" id="ph" aria-label="Another photo">+</button>' : '') + '<button type="button" id="turn" aria-label="Turn">↻</button>' +
+      '<div class="row">' + (ph.from ? '<button type="button" id="ph" aria-label="Another photo">+</button>' : '') + '<button type="button" id="turn" aria-label="Turn">↻</button>' + (block('strip') ? '<button type="button" id="len" aria-pressed="true">LONG</button>' : '') +
       (wd.ink && wd.ink.length > 1 ? '<button type="button" id="ink" aria-label="White or black words"><i class="sw w"></i></button>' : '') + '</div>' +
       '<div class="row" id="to"></div><button type="button" id="go" disabled>PRINT</button><p id="st"></p></div></div>');
     stage = $('#stage'); dcv = document.createElement('canvas'); pcv = document.createElement('canvas'); dcx = dcv.getContext('2d', { willReadFrequently: true }); pcx = pcv.getContext('2d');
@@ -111,6 +107,7 @@
     var file = stage.querySelector('input'); file.addEventListener('change', function () { take(file.files[0]); file.value = ''; });
     if ($('#ph')) $('#ph').addEventListener('click', function () { file.click(); });
     $('#turn').addEventListener('click', function () { if (!S.img) return; S.turn = (S.turn + 1) % 4; S.ox = S.oy = 0.5; draw(true); });
+    if ($('#len')) $('#len').addEventListener('click', function () { S.long = !S.long; this.setAttribute('aria-pressed', String(S.long)); S.ox = S.oy = 0.5; size(); draw(true); });
     if ($('#ink')) $('#ink').addEventListener('click', function () { S.ink = S.ink === 'white' ? 'black' : 'white'; this.firstChild.className = 'sw ' + (S.ink === 'white' ? 'w' : 'k'); draw(true); });
     if ($('#w')) $('#w').addEventListener('input', function () { S.words = this.value.toUpperCase(); draw(!S.img); });
     $('#to').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { S.to = b.dataset.p; keys(); } });
