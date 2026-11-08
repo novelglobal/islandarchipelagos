@@ -6,10 +6,10 @@
   var NG = (function () { try { return window.parent !== window ? window.parent.NG : null; } catch (e) { return null; } })();
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var I = function (d) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>'; };
-  var K = 'da.bench.plus.v1', P = { m: 'slip', page: null, game: null, card: {} };
+  var K = 'da.bench.plus.v2', P = { m: 'slip', page: null, game: null, card: {} };
   try { var p0 = JSON.parse(localStorage.getItem(K) || 'null'); if (p0) P = Object.assign(P, p0); } catch (e) { /* fresh */ }
   var save = function () { try { localStorage.setItem(K, JSON.stringify(P)); } catch (e) { /* this visit only */ } };
-  var mq = /[?&]m=(slip|page|game|card)/.exec(location.search); if (mq) P.m = mq[1];
+  var mq = /[?&]m=(slip|page|game|card|set)/.exec(location.search); if (mq) P.m = mq[1];
 
   /* a little sound for each thing done */
   var AC = null; function beep(f, d, type) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + (d || 0.06)); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + (d || 0.06) + 0.02); } catch (e) { /* silent */ } }
@@ -29,15 +29,16 @@
   var MODES = [['slip', 'SLIP', 'Design a receipt, part by part, and print it', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6M9 11h6M9 14h3"/>')],
     ['page', 'PAGE', 'Design a phone page that links to your receipt', I('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4M9 7h6M9 10h6M9 13h4"/>')],
     ['game', 'GAME', 'Make a game that plays on paper, and test it here', I('<rect x="3" y="7" width="18" height="11" rx="3"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11.5" r="1" class="f"/><circle cx="17.8" cy="13.8" r="1" class="f"/>')],
-    ['card', 'CARD', 'Send what you made to the front page as a card', I('<path d="M5 3h14v18H5z"/><path d="M12 7l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 14l-2.8 1.6.6-3.1-2.3-2.2 3.1-.4z"/>')]];
+    ['card', 'CARD', 'Send what you made to the front page as a card', I('<path d="M5 3h14v18H5z"/><path d="M12 7l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 14l-2.8 1.6.6-3.1-2.3-2.2 3.1-.4z"/>')],
+    ['set', 'SET', 'Choose what joins what on the front page, and its frames', I('<circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 6h8M6 8v8M8 7.5l8.5 9"/>')]];
   var hd = $('header'), bar = D.createElement('nav'); bar.id = 'modes'; bar.setAttribute('aria-label', 'What to make');
   bar.innerHTML = MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '" title="' + m[2] + '">' + m[3] + '<span>' + m[1] + '</span></button>'; }).join('') + '<i class="mb-ink" aria-hidden="true"></i>';
   hd.insertBefore(bar, $('#starts'));
   var host = D.createElement('div'); host.id = 'plus'; $('main').after(host);
-  host.innerHTML = '<section id="pg" class="mode" aria-label="Page"></section><section id="gm" class="mode" aria-label="Game"></section><section id="cd" class="mode" aria-label="Card"></section>';
+  host.innerHTML = '<section id="pg" class="mode" aria-label="Page"></section><section id="gm" class="mode" aria-label="Game"></section><section id="cd" class="mode" aria-label="Card"></section><section id="st" class="mode" aria-label="Set-up"></section>';
   function mode(m, quiet) { P.m = m; save(); H.dataset.m = m; $$('#modes [data-m]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });
     var on = $('#modes [data-m="' + m + '"]'), ink = $('#modes .mb-ink'); if (on && ink) { ink.style.left = on.offsetLeft + 'px'; ink.style.width = on.offsetWidth + 'px'; }
-    if (m === 'page') page(); if (m === 'game') game(); if (m === 'card') card(); if (!quiet) beep(520 + MODES.map(function (x) { return x[0]; }).indexOf(m) * 120, 0.05); tipsAll(); }
+    if (m === 'page') page(); if (m === 'game') game(); if (m === 'card') card(); if (m === 'set') setup(); if (!quiet) beep(520 + MODES.map(function (x) { return x[0]; }).indexOf(m) * 120, 0.05); tipsAll(); }
   bar.addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) mode(b.dataset.m); });
   addEventListener('resize', function () { var on = $('#modes [aria-pressed="true"]'), ink = $('#modes .mb-ink'); if (on && ink) { ink.style.left = on.offsetLeft + 'px'; ink.style.width = on.offsetWidth + 'px'; } });
 
@@ -78,7 +79,7 @@
     ['sensor', 'SENSOR', 'A live number from a LilyGo or any board', I('<path d="M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4"/>')], ['scan', 'SCAN', 'A QR on the slip that opens this page', I('<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M7 12h10"/>')],
     ['moon', 'MOON CLOCK', 'Change with the moon’s phase', I('<path d="M15 3a9 9 0 1 0 6 13A7 7 0 0 1 15 3z"/>')], ['hook', 'WEBHOOK', 'Tell another service when it prints', I('<path d="M9 18a3 3 0 1 1-1-5.8L11 7M15 6a3 3 0 1 1 1.7 5.5L13 17h-4M18 18a3 3 0 1 1-3-3"/>')],
     ['git', 'GITHUB', 'Keep it in a GitHub repository', I('<path d="M9 19c-4 1.3-4-2-6-2.5M15 21v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>')]];
-  function pageState() { if (!P.page) P.page = { th: 'print', mods: { scan: 1 }, hook: '', git: '', b: [{ k: 'cover', t: 'MY ISLAND', src: '' }, { k: 'text', t: 'A printer on a bench by the water. Press the button and it prints you a slip.' }, { k: 'receipt', t: 'PRINT MY SLIP', u: 'https://novel.global/' }, { k: 'slip' }, { k: 'moon' }] }; return P.page; }
+  function pageState() { if (!P.page) P.page = { th: 'print', mods: { scan: 1 }, hook: '', git: '', b: [{ k: 'cover', t: '', src: '' }, { k: 'receipt', t: '', u: '' }, { k: 'slip' }, { k: 'moon' }] }; return P.page; }
   var slipURL = function () { var c = $('#cv'); try { return c && c.height > 10 ? c.toDataURL('image/png') : ''; } catch (e) { return ''; } };
   function pageHTML(pg, live) { var t = THEMES[pg.th] || THEMES.print;
     var body = pg.b.map(function (b, i) { var a = live ? ' data-pi="' + i + '"' : '';
@@ -158,7 +159,7 @@
   /* ───────── GAME: cartridges for a printer; one plays on the console here, a slip at a time ───────── */
   var CARTS = {
     fortune: { n: 'FORTUNE', th: 'coral', tip: 'A fortune on every press', ed: [['lines', 'One fortune to a line', 'A STRANGER BRINGS A SPARE PART\nTHE TIDE RETURNS WHAT IT TOOK\nFIX ONE THING TODAY\nSOMEONE NEEDS YOUR SPARE CHAIR']] },
-    paths: { n: 'PATHS', th: 'print', tip: 'A story that branches: choose A or B, and the next part prints', ed: [['lines', 'One part to a line: words | A choice > part | B choice > part', 'You find a radio on the beach. | Turn it on > 2 | Leave it > 3\nIt plays a song from the far island. | Answer it > 4 | Keep walking > 3\nThe tide takes it. The end.\nThe far island answers back. The end.']] },
+    paths: { n: 'PATHS', th: 'print', tip: 'A story that branches: choose A or B, and the next part prints', ed: [['lines', 'words | A > part | B > part', 'You find a radio on the beach. | Turn it on > 2 | Leave it > 3\nIt plays a song from the far island. | Answer it > 4 | Keep walking > 3\nThe tide takes it. The end.\nThe far island answers back. The end.']] },
     hunt: { n: 'HUNT', th: 'cyan', tip: 'Clues hidden around a place; each found code prints the next', ed: [['lines', 'One clue to a line', 'WHERE THE BENCH FACES THE WATER\nUNDER THE THIRD TREE\nBEHIND THE COUNTER, ASK FOR THE MOON']] },
     dice: { n: 'DICE', th: 'dots', tip: 'Two players roll; the paper keeps score', ed: [['lines', 'Six faces, one to a line', 'REPAIR\nREUSE\nSHARE\nGROW\nRETURN\nRESIST']] },
     oracle: { n: 'ORACLE', th: 'lilac', tip: 'Eight answers, one for each phase of the moon', ed: [['lines', 'Eight lines, new moon to waning crescent', 'BEGIN QUIETLY\nGATHER WHAT YOU NEED\nASK FOR HELP\nKEEP GOING\nSHOW IT TO SOMEONE\nGIVE SOME AWAY\nMEND WHAT BROKE\nREST']] },
@@ -167,7 +168,8 @@
   };
   var CART_ART = function (k) { var t = THEMES[CARTS[k].th]; return 'style="--a:' + t.bg + ';--b:' + t.ink + ';--p:' + t.pat + '"'; };
   function gameState() { if (!P.game) P.game = { cart: 'fortune', title: '', d: {}, be: 'pi', chk: {}, run: {} }; return P.game; }
-  var gd = function (k, f) { var gs = gameState(), d = gs.d[k] || {}, e = CARTS[k].ed.filter(function (x) { return x[0] === f; })[0]; return d[f] != null ? d[f] : e ? e[2] : ''; };
+  var gd = function (k, f) { var gs = gameState(), d = gs.d[k] || {}, e = CARTS[k].ed.filter(function (x) { return x[0] === f; })[0]; return d[f] ? d[f] : e ? e[2] : ''; };
+  var gv = function (k, f) { return (gameState().d[k] || {})[f] || ''; };
   var lines = function (k) { return String(gd(k, 'lines')).split('\n').map(function (s) { return s.trim(); }).filter(Boolean); };
   var hash = function (s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
   var codeOf = function (s) { var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', h = hash(s), o = ''; for (var i = 0; i < 4; i++) { o += A[h % A.length]; h = Math.floor(h / A.length) + 7 * i; } return o; };
@@ -186,7 +188,7 @@
       el.addEventListener('click', gameClick); el.addEventListener('input', gameInput); }
     $$('[data-cart]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cart === gs.cart)); });
     var c = CARTS[gs.cart]; $('.gm-cart', el).setAttribute('style', CART_ART(gs.cart).slice(7, -1)); $('.gm-cart', el).textContent = c.n; $('.gm-title', el).value = gs.title || '';
-    $('.gm-fields', el).innerHTML = c.ed.map(function (f) { return '<label><span>' + f[1] + '</span>' + (f[0] === 'lines' ? '<textarea data-gf="' + f[0] + '" rows="6">' + esc(gd(gs.cart, f[0])) + '</textarea>' : '<input data-gf="' + f[0] + '" value="' + esc(gd(gs.cart, f[0])) + '">') + '</label>'; }).join('');
+    $('.gm-fields', el).innerHTML = c.ed.map(function (f) { return '<label><span>' + f[1] + '</span>' + (f[0] === 'lines' ? '<textarea data-gf="' + f[0] + '" rows="6">' + esc(gv(gs.cart, f[0])) + '</textarea>' : '<input data-gf="' + f[0] + '" value="' + esc(gv(gs.cart, f[0])) + '">') + '</label>'; }).join('');
     el.dataset.kind = gs.cart; $('.gm-in', el).hidden = gs.cart !== 'hunt'; $$('[data-g="a"],[data-g="b"]', el).forEach(function (b) { b.disabled = gs.cart !== 'paths' && gs.cart !== 'dice'; });
     devPane(); }
   function devPane() { var gs = gameState(), el = $('#gm'), tab = ($('.gm-tabs [aria-pressed="true"]', el) || {}).dataset; tab = tab ? tab.tab : 'tree'; var p = $('.gm-pane', el), id = (gs.title || CARTS[gs.cart].n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my-game';
@@ -251,7 +253,7 @@
     if (!el.dataset.on) { el.dataset.on = 1;
       el.innerHTML = '<div class="cd-pick">' + [['slip', 'YOUR SLIP', 'The receipt from SLIP'], ['page', 'YOUR PAGE', 'The phone page from PAGE'], ['game', 'YOUR GAME', 'The game from GAME']].map(function (w) { return '<button type="button" data-what="' + w[0] + '" title="' + w[2] + '">' + MODES.filter(function (m) { return m[0] === w[0]; })[0][3] + '<span>' + w[1] + '</span></button>'; }).join('') + '</div>' +
         '<div class="cd-main"><article class="cd-card" aria-label="How the card will look"><div class="cd-art"></div><b class="cd-new">NEW</b><h2 class="cd-t"></h2><p class="cd-l"></p><i class="cd-shine" aria-hidden="true"></i></article>' +
-        '<div class="cd-form"><label><span>NAME</span><input data-cf="name" maxlength="28" placeholder="MY ISLAND’S GAME"></label><label><span>ONE LINE</span><input data-cf="line" maxlength="60" placeholder="what it does, in a few words"></label>' +
+        '<div class="cd-form"><label><span>NAME</span><input data-cf="name" maxlength="28"></label><label><span>ONE LINE</span><input data-cf="line" maxlength="60"></label>' +
         '<div class="cd-th">' + swatches(cd.th, 'data-cth') + '</div><button type="button" id="cd-send" title="Send it to novel.global to go on the front page">' + MODES[3][3] + '<span>SEND TO THE FRONT PAGE</span></button><p class="cd-say" aria-live="polite"></p></div></div>';
       el.addEventListener('click', cardClick); el.addEventListener('input', function (e) { var f = e.target.dataset.cf; if (!f) return; cd[f] = e.target.value; save(); cardPaint(); });
       $('.cd-card', el).addEventListener('pointermove', function (e) { var r = this.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; this.style.transform = 'perspective(700px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 14) + 'deg)'; this.style.setProperty('--sx', (x + 0.5) * 100 + '%'); this.style.setProperty('--sy', (y + 0.5) * 100 + '%'); });
@@ -278,6 +280,33 @@
     s.style.cssText = 'left:' + (r.left + r.width / 2) + 'px;top:' + (r.top + r.height / 2) + 'px;--x:' + Math.cos(a) * d + 'px;--y:' + (Math.sin(a) * d - 60) + 'px;--r:' + (Math.random() * 540 - 270) + 'deg;background:' + ['#F4F1E8', '#FF5436', '#F4C542', '#1EA0E0', '#C9C1F7', '#F2B6C6'][i % 6];
     D.body.appendChild(s); setTimeout(function (n) { n.remove(); }.bind(null, s), 1300); } }
   D.addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) { var cd = P.card; cd.what = P.m === 'page' ? 'page' : P.m === 'game' ? 'game' : cd.what; mode(g.dataset.go); } });
+
+
+  /* ───────── SET: the front page's set-up, switched in one press, and its card frames ───────── */
+  var HOME = function () { try { return window.parent !== window ? window.parent.HOME : null; } catch (e) { return null; } };
+  var SETS = [
+    ['full', 'EVERYTHING', 'Every card joined', [['radio', 'wish'], ['wish', 'research'], ['wish', 'zine'], ['zine', 'space'], ['kit', 'space'], ['portfolio', 'research']]],
+    ['radio', 'RADIO', 'Songs onto slips and into the portfolio', [['radio', 'wish'], ['radio', 'portfolio']]],
+    ['shop', 'PRINT SHOP', 'Words and pictures into the zine, framed here', [['wish', 'zine'], ['zine', 'space'], ['portfolio', 'research']]],
+    ['build', 'ISLAND BUILD', 'The kit list and the zine into the builder', [['kit', 'space'], ['zine', 'space'], ['radio', 'wish']]],
+    ['bare', 'BARE', 'Nothing joined', []]];
+  var FRAMES = [['none', 'NONE'], ['dots', 'DOTS'], ['steps', 'LILAC'], ['stripe', 'CYAN'], ['coral', 'CORAL'], ['lunch', 'PINK'], ['print', 'BLUEPRINT']];
+  var NAMES = { radio: 'RADIO', wish: 'STRATEGY', research: 'RESEARCH', zine: 'PRINT', kit: 'ISLAND', space: 'BUILDER', portfolio: 'STORIES', reef: 'REEF', eye: 'EYE' };
+  var same = function (a, b) { var k = function (l) { return l.map(function (w) { return w.slice().sort().join('-'); }).sort().join(); }; return k(a) === k(b); };
+  function setup() { var el = $('#st'), h = HOME(), w = h ? h.wires() : [], fr = FR_ON || 'none';
+    if (!el.dataset.on) { el.dataset.on = 1; el.addEventListener('click', setClick); }
+    el.innerHTML = '<div class="st-sets">' + SETS.map(function (q) { return '<button type="button" data-set="' + q[0] + '" title="' + q[2] + '" aria-pressed="' + same(w, q[3]) + '"><svg viewBox="0 0 60 36" aria-hidden="true">' + net(q[3]) + '</svg><span>' + q[1] + '</span></button>'; }).join('') + '</div>' +
+      '<ul class="st-w">' + (w.length ? w.map(function (x, i) { return '<li><b>' + esc(NAMES[x[0]] || x[0]) + '</b><i></i><b>' + esc(NAMES[x[1]] || x[1]) + '</b><button type="button" data-cut="' + i + '" title="Unplug">×</button></li>'; }).join('') : '<li class="none">·</li>') + '</ul>' +
+      '<h3 class="pg-h">FRAMES</h3><div class="st-fr">' + FRAMES.map(function (f) { return '<button type="button" data-fr="' + f[0] + '" class="fr-' + f[0] + '" title="' + f[1].toLowerCase() + '" aria-pressed="' + (f[0] === fr) + '"><i></i><span>' + f[1] + '</span></button>'; }).join('') + '</div>' +
+      (h ? '' : '<p class="st-say">OPEN THIS FROM NOVEL.GLOBAL</p>'); }
+  var FR_ON = null; addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'frames') { FR_ON = e.data.on; if (P.m === 'set') setup(); } });
+  if (HOME()) parent.postMessage({ hm: 'frame' }, location.origin);
+  var SPOT = { radio: [8, 8], wish: [30, 6], research: [52, 8], zine: [52, 28], kit: [8, 28], space: [30, 30], portfolio: [30, 18] };
+  function net(l) { var o = ''; l.forEach(function (w) { var a = SPOT[w[0]], b = SPOT[w[1]]; if (a && b) o += '<path d="M' + a + 'L' + b + '"/>'; }); Object.keys(SPOT).forEach(function (k) { var on = l.some(function (w) { return w[0] === k || w[1] === k; }); o += '<circle cx="' + SPOT[k][0] + '" cy="' + SPOT[k][1] + '" r="3"' + (on ? ' class="f"' : '') + '/>'; }); return o; }
+  function setClick(e) { var b, h = HOME(); if (!h) return;
+    if ((b = e.target.closest('[data-set]'))) { var q = SETS.filter(function (x) { return x[0] === b.dataset.set; })[0]; parent.postMessage({ hm: 'wires', w: q[3] }, location.origin); q[3].forEach(function (x, i) { setTimeout(function () { beep(440 + i * 110, 0.05); }, i * 70); }); setTimeout(setup, 120); return; }
+    if ((b = e.target.closest('[data-cut]'))) { var w = h.wires(); w.splice(+b.dataset.cut, 1); parent.postMessage({ hm: 'wires', w: w }, location.origin); beep(220, 0.06); setTimeout(setup, 120); return; }
+    if ((b = e.target.closest('[data-fr]'))) { parent.postMessage({ hm: 'frame', f: b.dataset.fr }, location.origin); beep(560, 0.04); } }
 
   H.dataset.m = P.m; requestAnimationFrame(function () { mode(P.m, true); });
 })();

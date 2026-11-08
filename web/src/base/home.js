@@ -24,12 +24,12 @@
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-1', size: 'small', title: 'ISLAND 02', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-2', size: 'small', title: 'ISLAND 03', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-3', size: 'small', title: 'ISLAND 04', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'slot-1', size: 'small', title: 'OPEN ISLAND', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
@@ -146,7 +146,7 @@
         path += '<path pathLength="1" class="' + (j ? 'ds' : n === 1 ? 'lm' : '') + '" style="--d:' + (n * 0.3 + j * 0.2).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; } });
     var th = THEMES[Math.floor(R() * THEMES.length)];
     return '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + path + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') +
-      '<b class="rb-word" style="left:' + (8 + R() * 40).toFixed(1) + '%;top:' + (108 + R() * 10).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
+      '<b class="rb-word" style="right:' + (5 + R() * 8).toFixed(1) + '%;top:' + (-11 + R() * 3).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
   /* ISLAND ARCHIPELAGOS: the coast from above in the sea's blue, its cells drifting, islands joined */
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
@@ -190,10 +190,9 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-frame" aria-label="Card frame" title="Card frame"><i></i></button>' +
     '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
-    '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
+    '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button><button id="hm-frame" aria-label="Card frame" title="Card frame" hidden><i></i></button></header><i class="hm-fr hm-xfr" aria-hidden="true"></i><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
   D.body.appendChild(root);
   var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col); $('.hm-dots').innerHTML = dotsHTML();
@@ -226,7 +225,7 @@
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM E-WASTE</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
-    else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><b class="sl-n" aria-hidden="true">' + ('0' + ((c.ph || 1) + 1)).slice(-2) + '</b><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
+    else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
@@ -321,7 +320,7 @@
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id; tkHide(); TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
+    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); frameKey(c.id); TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'portfolio') { vent(); return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
@@ -355,26 +354,26 @@
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
     var r = e.target.closest('[data-radar]'); if (r) { beacon(r.dataset.radar, r); return; }
-    var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); var id = tb.dataset.talk; open(id); if (id !== 'wish') setTimeout(function () { tkShow('c.' + id + '.open'); }, 900); return; }
+    var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); var id = tb.dataset.talk; open(id, { talk: 1 }); if (id === 'wish') setTimeout(function () { var a = AU(); if (a && a.talk) a.talk(); }, 1700); else setTimeout(function () { tkShow('c.' + id + '.open'); }, 900); return; }
   });
 
   /* the first visit to each experience: three notes in pen, an arrow from each to the thing it means. Each waits until its thing is on screen.
      A tap on the thing works as normal; a tap anywhere else only turns the note. Seen once in light and once again in dark */
   var INTRO = {
-    radio: [['.rd-play', 'plays the example song'], ['.rd-knob[data-knob="water"]', 'each key adds a layer to the song: life, people, water, smog, air'], ['.flip-b', 'flips over to the full studio', 1], ['^#hm-tk', 'talk about the radio with everyone']],
-    portfolio: [['#gallery .gl-screen', 'swipe through printed stories. tap one to print it, hear it or talk about it. pinch to look closer'], ['#rx-open', 'type the code from a printed receipt to open its story'], ['^#hm-tk', 'talk about the stories with everyone']],
-    zine: [['[data-zt="wild"]', 'throws three loud marks onto the design', 1], ['.zn-tabs [data-zslot="1"]', 'three designs, one to a tab. SAVE keeps one as a file'], ['[data-pick="strip"]', 'stickers and pixel animals'], ['^#hm-tk', 'show your design and talk about it']],
-    research: [['#tools [data-t="paste"]', 'copy a picture anywhere, then paste it here'], ['#tools [data-t="link"]', 'tap two things to tie a string between them'], ['#tools [data-t="out"]', 'prints the board, or keeps it as a picture'], ['^#hm-tk', 'talk about the research with everyone']],
-    kit: [['#hm-x .kt-bar a', 'the install guide, one step at a time'], ['#hm-x .hm-list li:not(.gap)', 'tick parts off as you find them. it remembers'], ['#hm-kprint', 'prints the parts list to take to the tip shop'], ['^#hm-tk', 'ask for help building yours']],
-    space: [['#modes', 'four benches: a receipt, a phone page, a game on paper, a card for the front page'], ['#modes [data-m="game"]', 'make a game that plays on paper and test it on the console', 1], ['^#hm-tk', 'share what you made, or ask for help']],
-    wish: [['#au-seed', 'tap the light to start with something you noticed'], ['.au-wish textarea', 'four short lines, one for each letter. a few words is plenty'], ['[data-add="p"]', 'the pixel jellyfish maker. put it on your poster', 1]]
+    radio: [['.rd-play', 'play'], ['.rd-knob[data-knob="water"]', 'each key adds a layer'], ['.flip-b', 'the full studio', 1], ['^#hm-tk', 'talk']],
+    portfolio: [['#gallery .gl-screen', 'swipe. tap to print, hear or talk'], ['#rx-open', 'a code from a receipt'], ['^#hm-tk', 'talk']],
+    zine: [['[data-zt="wild"]', 'three loud marks', 1], ['.zn-tabs [data-zslot="1"]', 'three designs, one per tab'], ['[data-pick="strip"]', 'stickers and pixel animals'], ['^#hm-tk', 'show and talk']],
+    research: [['#tools [data-t="paste"]', 'paste a picture'], ['#tools [data-t="link"]', 'tie two things together'], ['#tools [data-t="out"]', 'print or keep'], ['^#hm-tk', 'talk']],
+    kit: [['#hm-x .kt-bar a', 'the install guide'], ['#hm-x .hm-list li:not(.gap)', 'tick parts as you find them'], ['#hm-kprint', 'print the parts list'], ['^#hm-tk', 'ask for help']],
+    space: [['#modes', 'slip, page, game, card, set'], ['#modes [data-m="game"]', 'test a paper game', 1], ['^#hm-tk', 'share or ask']],
+    wish: [['#au-seed', 'tap the light to begin'], ['.au-wish textarea', 'four short lines'], ['[data-add="p"]', 'the pixel jellyfish', 1]]
   };
   var IN = { id: null, k: 0, t: 0, el: null, eat: 0, hit: null, cur: null };
   function introStore() { var th = NIGHT ? 'd' : 'l', s = store.get('da.hm.intro', null) || {}; if (s.th !== th) s = { th: th, seen: {}, all: s.all, force: s.force }; return s; }
   function introDoc() { if (IN.id === 'wish' || IN.id === 'kit') return D; var f = xv.querySelector('iframe'); try { return f && f.contentDocument && f.contentDocument.readyState !== 'loading' ? f.contentDocument : null; } catch (e) { return null; } }
   function intro(on) {
     clearTimeout(IN.t); if (IN.el) { IN.el.remove(); IN.el = null; } IN.hit = null;
-    if (on === false || !IN.id || !INTRO[IN.id]) return;
+    if (on === false || !IN.id || !INTRO[IN.id] || IN.quiet) return;
     var s = introStore(); if (s.all || (navigator.webdriver && !s.force)) return;
     IN.k = +(s.seen[IN.id] || 0); if (IN.k >= INTRO[IN.id].length) return;
     var id = IN.id, look = function () { if (IN.id !== id) return; var st = INTRO[id][IN.k], top = st[0].charAt(0) === '^', d = top ? D : introDoc(), el = d && pick(d, top ? st[0].slice(1) : st[0]);
@@ -438,7 +437,7 @@
   function unlockIn(body) { body.classList.add('ul');
     var GH = 'https://github.com/novelglobal/islandarchipelagos';
     body.innerHTML = '<div class="ul-art" aria-hidden="true"><i></i><i></i><i></i></div><h2 class="ul-h">A CARD FOR YOUR PRINTER</h2><ol class="ul-st">' +
-      [['BUILD', 'A solar thermal printer from e-waste', 'kit', 'THE PARTS'], ['SWITCH ON', 'It joins novel.global by itself and prints its own key', '', ''], ['MAKE', 'Test a slip, a page or a game, then send it here as a card', 'space', 'THE BENCH']].map(function (s, k) {
+      [['BUILD', 'From e-waste', 'kit', 'THE PARTS'], ['SWITCH ON', 'It joins by itself', '', ''], ['MAKE', 'Test it, send it', 'space', 'THE BENCH']].map(function (s, k) {
         return '<li><b>0' + (k + 1) + '</b><span><em>' + s[0] + '</em>' + esc(s[1]) + '</span>' + (s[2] ? '<button type="button" data-go="' + s[2] + '" title="Open ' + s[3].toLowerCase() + '">' + s[3] + ' →</button>' : '<i class="ul-led"></i>') + '</li>'; }).join('') +
       '</ol><a class="ul-gh" href="' + GH + '" target="_blank" rel="noopener" title="The code, open to build on">DEVELOP IT ↗</a>';
     $$('[data-go]', body).forEach(function (b) { b.addEventListener('click', function () { var id = b.dataset.go; shut(true); setTimeout(function () { open(id, id === 'space' ? { mode: 'card' } : null); }, 480); }); }); }
@@ -684,6 +683,8 @@
   var FRAMES = ['none', 'dots', 'steps', 'stripe', 'coral', 'lunch', 'print'], FRAME = store.get('da.hm.frame', 'none');
   function setFrame(f) { FRAME = FRAMES.indexOf(f) >= 0 ? f : 'none'; FRAMES.forEach(function (n) { root.classList.toggle('fr-' + n, n === FRAME); }); store.set('da.hm.frame', FRAME); }
   setFrame(FRAME);
+  function frameKey(id) { var k = $('#hm-frame'); var on = id === 'space' || (id === 'zine' && wired('zine', 'space')); if (k) k.hidden = !on; xv.classList.toggle('frk', on); }
+  addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'frame') { if (d.f) setFrame(d.f); var fr = xv.querySelector('iframe'); if (fr && fr.contentWindow) fr.contentWindow.postMessage({ hm: 'frames', on: FRAME, all: FRAMES }, location.origin); } if (e.origin === location.origin && d && d.hm === 'wires' && Array.isArray(d.w)) { WIRES = d.w.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW); saveWires(); if (jk) board(); else lamps(); } });
   $('#hm-frame').addEventListener('click', function (e) { e.stopPropagation(); setFrame(FRAMES[(FRAMES.indexOf(FRAME) + 1) % FRAMES.length]); beep(470 + FRAMES.indexOf(FRAME) * 40, 0.04); });
   /* the strategy's loop: a slow turn of its own, faster for a touch or a scroll; each chair takes on the stop it last passed */
   var ORB = { a: 0, v: 0.16, t: 0, top: 0 }, TAU = Math.PI * 2;
@@ -839,7 +840,7 @@
   function mix(a, b, t) { var A = toLab(a), B = toLab(b), k = t == null ? 0.5 : t; return fromLab([0, 1, 2].map(function (i) { return A[i] + (B[i] - A[i]) * k; })); }
 
   /* wires: four */
-  var START = [['radio', 'wish']], MAXW = 4;
+  var START = [['radio', 'wish'], ['wish', 'research'], ['wish', 'zine'], ['zine', 'space'], ['kit', 'space'], ['portfolio', 'research']], MAXW = 6;
   var WIRES = store.get('da.sb.v2', null);
   if (!WIRES) { var old = store.get('da.sb.v1', null); WIRES = old ? old.map(function (w) { return w.map(function (x) { x = String(x).split('.')[0]; return x === 'iruk' ? 'eye' : x; }); }).filter(function (w) { return w[0] !== w[1]; }) : START.slice(); }
   WIRES = WIRES.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW);
@@ -886,7 +887,7 @@
     return g; }
   function board() {
     $$('.sl', jk).forEach(function (sl) { var id = sl.dataset.s, ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; }); sl.classList.toggle('on', ws.length > 0); sl.style.setProperty('--mx', ws.length ? wireCol(ws[ws.length - 1]) : SC[id]); });
-    var cb = sb.querySelector('.cb'); if (cb) cb.innerHTML = [0, 1, 2, 3].map(function (i) { return '<i' + (i < WIRES.length ? ' class="in"' : '') + '></i>'; }).join('');
+    var cb = sb.querySelector('.cb'); if (cb) cb.innerHTML = START.map(function (q, i) { return '<i' + (i < WIRES.length ? ' class="in"' : '') + '></i>'; }).join('');
     var outs = outcomes();
     oc.innerHTML = stacks().map(function (s) { var lines = outs.filter(function (o) { return s.wires.some(function (w) { return (w[0] === o.from && w[1] === o.to) || (w[1] === o.from && w[0] === o.to); }); });
       return '<li style="--mx:' + wireCol(s.wires[0]) + '"><b>' + s.ids.map(nameOf).map(esc).join(' · ') + '</b>' + lines.map(function (o) { return '<span style="--mx:' + o.col + '">' + esc(o.line) + '</span>'; }).join('') + '</li>'; }).join('');
@@ -898,7 +899,7 @@
     cards.forEach(function (el) { var id = el.dataset.id, l = el.querySelector('.hm-lamps'), ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; });
       el.classList.toggle('wired', ws.length > 0); if (ws.length) el.style.setProperty('--mx', wireCol(ws[0])); else el.style.removeProperty('--mx');
       if (!l) return; var got = outs.filter(function (o) { return o.to === id; });
-      l.innerHTML = ws.map(function (w) { return '<i style="color:' + wireCol(w) + '"></i>'; }).join('') + got.map(function (o) { return '<b style="--mx:' + o.col + '">+ ' + GETS[o.el] + '</b>'; }).join(''); });
+      l.innerHTML = ws.map(function (w) { return '<i style="color:' + wireCol(w) + '"></i>'; }).join('') + got.filter(function (o, i) { return got.findIndex(function (q) { return q.el === o.el; }) === i; }).slice(0, 3).map(function (o) { return '<b style="--mx:' + o.col + '">+ ' + GETS[o.el] + '</b>'; }).join(''); });
   }
   /* fits lit, the rest dull */
   function fitsShow(from) { $$('.sl', jk).forEach(function (q) { var id = q.dataset.s; q.classList.toggle('ok', !!from && id !== from && fits(from, id)); q.classList.toggle('dl', !!from && id !== from && !fits(from, id)); }); }

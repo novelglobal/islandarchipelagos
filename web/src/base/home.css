@@ -139,7 +139,7 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .sk-research .hm-t { display: flex; flex-direction: column; align-items: flex-start; gap: 1cqw; margin: 0; }
 .sk-research .hm-t span { background: #0B0B0B; color: #ECEBE7; font: 600 17cqw/.86 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.01em; padding: .5cqw 1.6cqw 1.4cqw; }
 .sk-research .hm-t span + span { background: #D9F24A; color: #0B0B0B; }
-.sk-research .hm-lamps { position: absolute; right: 6cqw; bottom: 6cqw; }
+.sk-research .hm-lamps { position: absolute; left: 6cqw; top: 6cqw; }
 .sk-zine .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 .zn-draw { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: #0A0A0A; stroke-width: .7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .zn-draw path { opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; animation: zn-draw 9s ease-in-out infinite; animation-delay: var(--d); }
@@ -163,7 +163,7 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .rb-refs svg path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rb-web 1.4s ease-out both; animation-delay: var(--d, 0s); stroke-width: .5; }
 .rb-refs svg path.ds { stroke-dasharray: .02 .02; animation: none; stroke-dashoffset: 0; opacity: .7; } .rb-refs svg path.lm { stroke: #8FA81C; stroke-width: .7; } .rb-refs svg path.x { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; stroke-width: .6; }
 @keyframes rb-web { to { stroke-dashoffset: 0; } }
-.rb-word { position: absolute; z-index: 2; transform: rotate(var(--r)); font: 400 7cqw/1 'Architects Daughter', 'Comic Sans MS', cursive; color: #0B0B0B; white-space: nowrap; padding: 0 1.4cqw; background: linear-gradient(transparent 58%, #D9F24A 58% 88%, transparent 88%); animation: rb-word .6s 1.4s both; }
+.rb-word { position: absolute; z-index: 7; transform: rotate(var(--r)); font: 400 7cqw/1 'Architects Daughter', 'Comic Sans MS', cursive; color: #0B0B0B; white-space: nowrap; padding: 0 1.4cqw; background: linear-gradient(transparent 58%, #D9F24A 58% 88%, transparent 88%); animation: rb-word .6s 1.4s both; }
 @keyframes rb-word { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
 
 /* ISLAND */
@@ -454,6 +454,10 @@ html.hm-on .au-sidek { display: none !important; } /* the island kit and the net
 #hm.fr-lunch .hm-fr { border: 8px solid #F2B6C6; outline: 1.5px solid #1F7A3E; outline-offset: -13px; }
 #hm.fr-print .hm-fr { border: 1px solid rgba(244, 241, 232, .9); outline: 1px solid rgba(244, 241, 232, .5); outline-offset: -7px; background: linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 2px 14px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 2px 14px no-repeat; box-shadow: inset 0 0 0 4px #17457F; }
 @media (prefers-reduced-motion: reduce) { #hm.fr-stripe .hm-fr { animation: none; } }
+#hm #hm-frame { position: absolute; left: 12px; top: calc(env(safe-area-inset-top) + 7px); width: 28px; height: 28px; border-radius: 14px; display: grid; place-items: center; background: #0B0B0B; color: #F4F1E8; }
+#hm #hm-frame[hidden] { display: none; }
+#hm #hm-x > .hm-xfr { z-index: 4; border-radius: 0; }
+#hm #hm-x:not(.frk) > .hm-xfr { display: none; }
 #hm-frame i { width: 13px; height: 13px; border-radius: 2px; border: 1.5px solid currentColor; display: block; }
 #hm.fr-dots #hm-frame i { border: 0; background: radial-gradient(circle, currentColor 1.1px, transparent 1.4px) 0 0 / 3.5px 3.5px; }
 #hm.fr-steps #hm-frame i { border-color: #C9C1F7; box-shadow: inset 0 0 0 1.5px #0B0B0B, inset 0 0 0 3px #C9C1F7; }

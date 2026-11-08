@@ -433,7 +433,7 @@ function derive() {
   /* the board: this device's slips and the stories shown to everyone, newest first; then the examples */
   const codes = new Set(sigs.map(s => s.code)); const shown = new Set((S.shared || []).map(s => s.code));
   for (const s of sigs) if (shown.has(s.code)) s.shown = true;
-  S.signals = [...sigs, ...(S.shared || []).filter(s => !codes.has(s.code))].sort((a, b) => b.at - a.at).concat(EXAMPLES.map(x => ({ key: 'ex:' + x.code, ex: true, ...x, at: Date.parse(x.at) })));
+  S.signals = [...sigs, ...(S.shared || []).filter(s => !codes.has(s.code))].sort((a, b) => b.at - a.at).concat((exShown() ? EXAMPLES : []).map(x => ({ key: 'ex:' + x.code, ex: true, ...x, at: Date.parse(x.at) })));
 }
 function userPing(e) {
   const d = e.data || {}; const hum = ['need', 'offer', 'event', 'injured', 'lost', 'dead'].includes(e.type);

@@ -2756,6 +2756,7 @@
   /* back to the very start, the notice with it: where the booth leaves someone once their print is made */
   api.home = function () { try { closeDev(); } catch (e) { /* none open */ } if (S.deep) { S.deep = false; deep.hidden = true; } FIRSTV = true; noticeSet(store.get('da.aura.notice', null)); S.stage = 0; setMode('seed'); };
   /* the piece in hand, for a card wired to W.I.S.H. on the home's switchboard */
+  api.talk = function () { talkOpen(null); };
   api.piece = function () { return P ? { photo: P.photo || P.spPhoto || '', say: P.say || '', lines: (P.lines || []).slice() } : null; };
   api.pixSubs = ['jelly', 'coral', 'trash', 'st0', 'st1', 'st3'];
   api.pixKinds = PIX_SUBS.slice();
