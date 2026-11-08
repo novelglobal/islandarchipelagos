@@ -3429,3 +3429,18 @@ html.only-print #zine.shake .desk .canvas-container{animation:zn-shake .45s cubi
 @keyframes zn-shake{20%{transform:rotate(-2deg) scale(1.02)}45%{transform:rotate(1.6deg)}70%{transform:rotate(-.8deg)}}
 html.only-print #zine-label{display:none}
 @media (prefers-reduced-motion:reduce){html.only-print #zine .desk,html.only-print #zine.shake .desk .canvas-container{animation:none}}
+/* the portfolio on its own: one column, the stories at its top, each in full; a tap brings up what to do with it */
+html.only-portfolio .panel{left:0;right:0;width:auto;max-width:760px;margin:0 auto;box-shadow:none}
+html.only-portfolio #view{overflow-x:hidden}
+html.only-portfolio body::before{content:'';position:fixed;inset:0;z-index:5;background:var(--white)}
+.gallery.gl-in{position:relative!important;inset:auto!important;z-index:auto!important;display:grid!important;visibility:visible!important;height:min(72vh,620px);margin:0 0 16px;padding:0!important;background:none!important;grid-template-columns:none!important;overflow:visible!important}
+.gallery.gl-in[hidden]{display:none!important}
+.gallery.gl-in .gl-cards,.gallery.gl-in [data-gl="full"]{display:none}
+.gallery.gl-in .gl-screen{position:relative}
+.gl-acts{position:absolute;left:50%;bottom:12px;z-index:3;display:flex;gap:2px;padding:5px;border-radius:16px;background:rgba(8,10,12,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transform:translate(-50%,14px) scale(.96);pointer-events:none;transition:opacity .2s,transform .28s cubic-bezier(.3,1.5,.5,1)}
+.gallery.acts .gl-acts{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.gl-acts button{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:50px;padding:8px 4px 6px;border:0;border-radius:12px;background:none;color:#F4F1E8;font:600 8.5px/1 "IBM Plex Mono",monospace;letter-spacing:.1em;cursor:pointer}
+.gl-acts button:hover,.gl-acts button.on{background:rgba(127,255,224,.16);color:#7FFFE0}
+.gl-acts button[disabled]{opacity:.28;pointer-events:none}
+.gl-acts .i{width:19px;height:19px}
+@media (max-width:420px){.gl-acts button{min-width:44px}.gl-acts button span{font-size:7.5px}}

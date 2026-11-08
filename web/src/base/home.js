@@ -20,15 +20,24 @@
      card's own medium), and one small colour it owns: the strategy's dark green, the radio's lavender, the zine's tomato, the island's
      amber, the archipelagos' coral */
   var CARDS = [
-    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'full', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'zine', size: 'full', title: 'DESIGN AND PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'slot-1', size: 'small', title: 'ISLAND 02', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'slot-2', size: 'small', title: 'ISLAND 03', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'slot-3', size: 'small', title: 'ISLAND 04', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
-  var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space'];
+  var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot'];
+  /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
+  function colHTML() { var out = '', run = [];
+    var flush = function () { for (var k = 0; k < run.length; k += 3) out += '<section class="hm-trio n' + Math.min(3, run.length - k) + '">' + run.slice(k, k + 3).join('') + '</section>'; run = []; };
+    CARDS.forEach(function (c, i) { if (c.size === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out; }
+  function pages() { return $$('#hm-col > .hm-slot > .hm-card, #hm-col > .hm-trio'); }
+  function dotsHTML() { return pages().map(function () { return '<i></i>'; }).join(''); }
   var MOTION = store.get('da.hm.motion', null);   // null: each card's own; or 'shadow' / 'speed' for all
   var OWN = { portfolio: '#143D71', wish: '#3D7BE0', radio: '#FF6B1A', zine: '#FF5436', research: '#D9F24A', kit: '#FFB000', space: '#F59878' };
   var OWNPICS = { novelglobal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '/cards/chair-' + n + '.jpg'; }), radio: ['/cards/radio.jpg'], zine: ['/cards/zine.jpg'] };
@@ -109,30 +118,23 @@
   }
   /* novel.global's mark: the square and the sun */
   var MARK = '<svg class="ng-mark" viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="currentColor" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg>';
-  /* CIRCULAR STRATEGY: a chart over the photographs, its course walked slowly */
-  var CHART = '<svg class="st-chart" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g class="ct">' +
-    '<path d="M-5 112c14-6 22 4 34-2s18-14 30-10 22 12 46 4"/><path d="M-5 124c16-6 24 6 38-1s20-12 32-8 20 10 40 3"/><path d="M-5 138c18-4 26 5 40 0s22-10 34-6 18 8 36 2"/></g>' +
-    '<g class="gr"><path d="M20 4v3M20 153v3M50 4v3M50 153v3M80 4v3M80 153v3M3 40h3M94 40h3M3 80h3M94 80h3M3 120h3M94 120h3"/></g>' +
-    '<path id="st-way" class="way" d="M14 146C22 128 34 132 40 118S46 96 62 94 84 80 86 62 72 36 80 22"/>' +
-    '<g class="wp"><circle cx="14" cy="146" r="1.6"/><circle cx="40" cy="118" r="1.2"/><circle cx="62" cy="94" r="1.2"/><circle cx="86" cy="62" r="1.2"/><circle cx="80" cy="22" r="1.8" class="to"/></g>' +
-    '<circle class="me" r="1.4"><animateMotion dur="26s" repeatCount="indefinite" rotate="auto"><mpath href="#st-way"/></animateMotion></circle>' +
-    '<g class="rose" transform="translate(88 12)"><circle r="5"/><path d="M0-7v14M-7 0h14"/><path class="n" d="M0-5l1.4 4h-2.8z"/></g></svg>';
   var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
-  /* CIRCULAR STRATEGY: the photographs as evidence in an open case, pinned and strung; a knight's move between them */
-  var EVID = '<div class="st-ev" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="str" d="M31 8.4L79 18.2L53 38.6L31 8.4"/></svg>' +
-    '<figure class="ev ev-b"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"><b>B</b></figure><figure class="ev ev-c"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"><b>C</b></figure>' +
-    '<i class="pin" style="left:31%;top:8.4%"></i><i class="pin w" style="left:79%;top:18.2%"></i><i class="pin" style="left:53%;top:38.6%"></i><b class="tag">A</b><b class="case">CASE 07 · OPEN</b><b class="q">?</b></div>';
+  /* CIRCULAR STRATEGY: a loop, never a line. Chairs ride round it through four stops (picked up, mended, used again, home), each stop changing them; a touch or a scroll spins it */
+  var ORBIT = '<div class="st-orb" aria-hidden="true"><svg viewBox="-50 -50 100 100"><circle class="lp" r="40"/><circle class="lp2" r="40"/><path class="cv" transform="rotate(45) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(135) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(225) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(315) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><g class="st-nd n0" transform="translate(0 -40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M12 18V7M7.5 11.5L12 7l4.5 4.5M7 20h10"/></g></g><g class="st-nd n1" transform="translate(40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M14.6 5.2a3.8 3.8 0 0 0-4.9 4.9L5 14.8 7.2 17l4.7-4.7a3.8 3.8 0 0 0 4.9-4.9l-2.2 2.2-2.1-.4-.4-2.1z"/></g></g><g class="st-nd n2" transform="translate(0 40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M17.5 9A6 6 0 1 0 18 14M18 5v4h-4"/></g></g><g class="st-nd n3" transform="translate(-40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M5.5 11.5L12 6l6.5 5.5M7.5 10.5V18h9v-7.5"/></g></g></svg>' +
+    '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6.jpg"></i></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
   /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
-  var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><filter id="zn-mk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale=".9"/></filter><mask id="zn-bm" maskUnits="userSpaceOnUse" x="58" y="50" width="32" height="32"><circle cx="74" cy="60.8" r="6.6" fill="#fff" stroke="none"/><circle cx="78.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="69.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="74" cy="58.9" r="4.7" fill="#000" stroke="none"/><circle cx="80.15" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="67.85" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="74" cy="66" r="5.3" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="74" cy="66" r="2.3" fill="#000" stroke="none"/><path d="M74 64L74 61.4" stroke="#000" stroke-width=".9"/><path d="M75.73 67L77.98 68.3" stroke="#000" stroke-width=".9"/><path d="M72.27 67L70.02 68.3" stroke="#000" stroke-width=".9"/></mask></defs>' +
+  var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><filter id="zn-sp" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale=".7" result="d"/><feGaussianBlur in="d" stdDeviation=".7" result="h"/><feComponentTransfer in="h" result="hz"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feGaussianBlur in="d" stdDeviation=".1" result="e"/><feMerge><feMergeNode in="hz"/><feMergeNode in="e"/></feMerge></filter><filter id="zn-mk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale=".9"/></filter><mask id="zn-bm" maskUnits="userSpaceOnUse" x="58" y="50" width="32" height="32"><circle cx="74" cy="60.8" r="6.6" fill="#fff" stroke="none"/><circle cx="78.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="69.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="74" cy="58.9" r="4.7" fill="#000" stroke="none"/><circle cx="80.15" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="67.85" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="74" cy="66" r="5.3" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="74" cy="66" r="2.3" fill="#000" stroke="none"/><path d="M74 64L74 61.4" stroke="#000" stroke-width=".9"/><path d="M75.73 67L77.98 68.3" stroke="#000" stroke-width=".9"/><path d="M72.27 67L70.02 68.3" stroke="#000" stroke-width=".9"/></mask></defs>' +
     '<path pathLength="1" class="fr" style="--d:0s" d="M3 4C30 2.4 70 3.4 97 3.2 96.4 50 97.6 110 96.8 156.6 66 157.4 34 156.2 3.4 157 4 110 2.6 50 3 4z"/>' +
     '<path pathLength="1" class="o" style="--d:.4s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
-    '<path pathLength="1" class="mk" style="--d:1.4s" filter="url(#zn-mk)" d="M35.27 62.72 L37.36 63.19 L39.28 64.17 L40.82 65.65 L41.87 67.47 L42.47 69.43 L42.81 71.38 L43.06 73.29 L43.27 75.24 L43.31 77.28 L42.97 79.36 L42.08 81.32 L40.63 82.94 L38.78 84.11 L36.76 84.87 L34.73 85.37 L32.72 85.78 L30.67 86.13 L28.51 86.33 L26.28 86.15 L24.14 85.43 L22.31 84.14 L20.92 82.43 L19.95 80.51 L19.25 78.57 L18.65 76.63 L18.1 74.65 L17.73 72.55 L17.75 70.35 L18.36 68.2 L19.58 66.31 L21.28 64.82 L23.22 63.71 L25.22 62.86 L27.22 62.11 L29.28 61.41 L31.48 60.89 L33.8 60.75 L36.12 61.18 L38.21 62.22 L39.93 63.76 M21.5 88.5L30.6 59.2L40.8 89 M15.5 78.2Q31 75.5 47.5 76.4"/>' +
-    '<g transform="translate(74 66) scale(1.45) translate(-74 -66)"><g class="bz" style="--d:2.6s"><rect x="58" y="50" width="32" height="32" fill="#0A0A0A" stroke="none" mask="url(#zn-bm)" transform="translate(1.1 1.1)"/><rect x="58" y="50" width="32" height="32" fill="#FF2BD6" stroke="none" mask="url(#zn-bm)"/></g></g>' +
-    '<path pathLength="1" class="b dm" style="--d:3.8s" d="M12 101L17 101L21 106L17 111L12 111z M14 97.5V114.5 M28.5 101L33 106L28.5 111L24 106z M28.5 101v-3.5M28.5 111v3.5M24 106h-2.5M33 106h2.5 M40.5 101L45 106L40.5 111L36 106z M40.5 101v-3.5M40.5 111v3.5M36 106h-2.5M45 106h2.5 M48 111V101L52.5 107L57 101V111 M48 101l-1.6 -3.4M57 101l1.6 -3.4M48 111l-1.2 3.4M57 111l1.2 3.4 M8 118L62 117.4 M18 117.9v3.4M31 117.8v5M43 117.6v2.2M55 117.5v4.2"/>' +
-    '<path pathLength="1" class="pg" style="--d:5.2s" d="M31 150 L24.53 130.1 L41.46 142.4 L20.54 142.4 L37.47 130.1 L31 150 M42 139A11 11 0 1 1 20 139A11 11 0 1 1 42 139 M43.9 139A12.9 12.9 0 1 1 18.1 139A12.9 12.9 0 1 1 43.9 139 M27.88 151.52L26.09 154.12L26.17 150.96M21.12 147.29L19.19 147.58L20.06 145.84M18.13 139.9L15.1 139L18.13 138.1M20.06 132.16L19.19 130.42L21.12 130.71M26.17 127.04L26.09 123.88L27.88 126.48M34.12 126.48L35.51 125.11L35.83 127.04M40.88 130.71L43.86 129.65L41.94 132.16M43.87 138.1L45.6 139L43.87 139.9M41.94 145.84L43.86 148.35L40.88 147.29M35.83 150.96L35.51 152.89L34.12 151.52 M27 151.4v3M33.5 151.7v5"/>' +
+    '<g class="gf" filter="url(#zn-sp)">' +
+    '<g transform="translate(24 74) scale(.58) translate(-31.5 -74)"><path pathLength="1" class="mk" style="--d:1.4s" filter="url(#zn-mk)" d="M35.27 62.72 L37.36 63.19 L39.28 64.17 L40.82 65.65 L41.87 67.47 L42.47 69.43 L42.81 71.38 L43.06 73.29 L43.27 75.24 L43.31 77.28 L42.97 79.36 L42.08 81.32 L40.63 82.94 L38.78 84.11 L36.76 84.87 L34.73 85.37 L32.72 85.78 L30.67 86.13 L28.51 86.33 L26.28 86.15 L24.14 85.43 L22.31 84.14 L20.92 82.43 L19.95 80.51 L19.25 78.57 L18.65 76.63 L18.1 74.65 L17.73 72.55 L17.75 70.35 L18.36 68.2 L19.58 66.31 L21.28 64.82 L23.22 63.71 L25.22 62.86 L27.22 62.11 L29.28 61.41 L31.48 60.89 L33.8 60.75 L36.12 61.18 L38.21 62.22 L39.93 63.76 M21.5 88.5L30.6 59.2L40.8 89 M15.5 78.2Q31 75.5 47.5 76.4"/></g>' +
+    '<g transform="translate(63 66) scale(.6) translate(-74 -66)"><g class="bz" style="--d:2.6s"><rect x="58" y="50" width="32" height="32" fill="#0A0A0A" stroke="none" mask="url(#zn-bm)" transform="translate(1.1 1.1)"/><rect x="58" y="50" width="32" height="32" fill="#FF2BD6" stroke="none" mask="url(#zn-bm)"/></g></g>' +
+    '<g transform="translate(32 103) scale(.5) translate(-35 -110)"><path pathLength="1" class="b dm" style="--d:3.8s" d="M12 101L17 101L21 106L17 111L12 111z M14 97.5V114.5 M28.5 101L33 106L28.5 111L24 106z M28.5 101v-3.5M28.5 111v3.5M24 106h-2.5M33 106h2.5 M40.5 101L45 106L40.5 111L36 106z M40.5 101v-3.5M40.5 111v3.5M36 106h-2.5M45 106h2.5 M48 111V101L52.5 107L57 101V111 M48 101l-1.6 -3.4M57 101l1.6 -3.4M48 111l-1.2 3.4M57 111l1.2 3.4 M8 118L62 117.4 M18 117.9v3.4M31 117.8v5M43 117.6v2.2M55 117.5v4.2"/></g>' +
+    '<g transform="translate(60 97) scale(.55) translate(-31 -140)"><path pathLength="1" class="pg" style="--d:5.2s" d="M31 150 L24.53 130.1 L41.46 142.4 L20.54 142.4 L37.47 130.1 L31 150 M42 139A11 11 0 1 1 20 139A11 11 0 1 1 42 139 M43.9 139A12.9 12.9 0 1 1 18.1 139A12.9 12.9 0 1 1 43.9 139 M27.88 151.52L26.09 154.12L26.17 150.96M21.12 147.29L19.19 147.58L20.06 145.84M18.13 139.9L15.1 139L18.13 138.1M20.06 132.16L19.19 130.42L21.12 130.71M26.17 127.04L26.09 123.88L27.88 126.48M34.12 126.48L35.51 125.11L35.83 127.04M40.88 130.71L43.86 129.65L41.94 132.16M43.87 138.1L45.6 139L43.87 139.9M41.94 145.84L43.86 148.35L40.88 147.29M35.83 150.96L35.51 152.89L34.12 151.52 M27 151.4v3M33.5 151.7v5"/></g>' +
+    '<path pathLength="1" class="dr" style="--d:2.2s" d="M18.6 82.6v3.4M28.4 83.2v2.2M32.6 81.6v4.6M22 115.2v3M30.4 114.8v4.4M41.2 115.2v2.4"/><path pathLength="1" class="dr p" style="--d:3.2s" d="M58.6 74.8v3.8M66.2 75.4v2.2"/></g>' +
     '</svg>';
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
@@ -160,7 +162,7 @@
     blocks: function (L, w, h, i) { var g = L.b; grain(g, w, h, Math.round(w * h / 80), 'rgba(0,0,0,.12)', 31); },
     /* DESIGN AND PRINT: the wall photograph, the title in dots */
     dots: function (L, w, h, i) { var m = L.m, cx = w * 0.8, cy = h * 0.2, R = Math.min(w, h) * 0.32, st = R / 7; m.fillStyle = '#FF5436'; for (var yy = cy - R; yy <= cy + R; yy += st) for (var xx = cx - R; xx <= cx + R; xx += st) { var dd = Math.hypot(xx - cx, yy - cy) / R; if (dd > 1) continue; m.beginPath(); m.arc(xx, yy, st * 0.48 * (1 - dd * dd * 0.85), 0, 7); m.fill(); } var t = L.t, s = Math.min(w * 0.16, h * 0.1), ox = w * 0.08, oy = h * 0.16;
-      dotText(t, 'DESIGN', ox, oy, s, '#0A0A0A', 44); dotText(t, 'AND', ox, oy + s * 0.98, s, '#0A0A0A', 45); dotText(t, 'PRINT', ox, oy + s * 1.96, s, '#0A0A0A', 46); },
+      dotText(t, 'DESIGN', ox, oy, s, '#0A0A0A', 44); dotText(t, 'PRINT', ox, oy + s * 0.98, s, '#0A0A0A', 46); },
     /* ISLAND: the printer on pale paper, the band as torn tape behind it */
     printer: function (L, w, h, i) { var g = L.b; g.fillStyle = '#EEEDEA'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 50), 'rgba(0,0,0,.1)', 51); },
     /* ISLAND ARCHIPELAGOS: rounded forms on soft grey, all in greys but the coral, which is its own; the band a glossy tube */
@@ -172,38 +174,49 @@
     plain: function (L, w, h, i) { var g = L.b; g.fillStyle = '#ECEBE7'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 60), 'rgba(0,0,0,.08)', 71); }
   };
   ART.isles = ART.plain;
+  /* an open slot, in one of the posters' palettes: dotted bitmap, lilac steps, cyan zig-zag, pink and green, coral and primaries, blueprint */
+  ART.slot = function (L, w, h, i, c) { var g = L.b, m = L.m, n = ((c && c.ph || 1) - 1) % 6, r = rnd(200 + n), k, x, y;
+    var BG = ['#0B0B0B', '#C9C1F7', '#1EA0E0', '#F2B6C6', '#E9E4DC', '#17457F'][n]; g.fillStyle = BG; g.fillRect(0, 0, w, h);
+    if (n === 0) { var st = Math.max(7, w / 36); g.fillStyle = '#F4F1E8'; for (y = st / 2; y < h; y += st) for (x = st / 2; x < w; x += st) { var v = 0.5 + 0.5 * Math.sin(x / w * 5 + y / h * 3.2) * Math.cos(y / h * 2.4 - x / w); if (v < 0.18) continue; g.beginPath(); g.arc(x, y, st * 0.46 * v, 0, 7); g.fill(); } }
+    else if (n === 1) { var sw = w / 9; m.fillStyle = '#0B0B0B'; for (k = 0; k < 9; k++) m.fillRect(k * sw, h - (k + 1) * h / 13, sw + 1, (k + 1) * h / 13); }
+    else if (n === 2) { m.strokeStyle = '#0B0B0B'; m.lineWidth = Math.max(10, h / 9); m.lineJoin = 'miter'; for (var b = 0; b < 2; b++) { m.beginPath(); var yy = h * (0.55 + b * 0.28), a = h / 9; for (x = -a, k = 0; x <= w + a; x += a * 1.4, k++) m.lineTo(x, yy + (k % 2 ? -a : a) * 0.6); m.stroke(); } }
+    else if (n === 3) { m.fillStyle = '#1F7A3E'; for (k = 0; k < 7; k++) { m.beginPath(); m.ellipse(w * r(), h * (0.35 + r() * 0.65), w * (0.08 + r() * 0.16), h * (0.05 + r() * 0.1), r() * 3, 0, 7); m.fill(); } }
+    else if (n === 4) { [['#F4C542', 0.72, 0.38, 0.22], ['#4A6FE0', 0.28, 0.7, 0.18], ['#E5262B', 0.78, 0.82, 0.1], ['#F0B39A', 0.38, 0.32, 0.12]].forEach(function (o) { m.fillStyle = o[0]; m.beginPath(); m.arc(w * o[1], h * o[2], Math.min(w, h) * o[3] * 1.4, 0, 7); m.fill(); }); }
+    else { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 0.7; var gs = w / 12; for (x = 0; x < w; x += gs) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } for (y = 0; y < h; y += gs) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } m.strokeStyle = '#F2B6C6'; m.lineWidth = 2; m.beginPath(); m.arc(w * 0.68, h * 0.5, Math.min(w, h) * 0.3, 0, 7); m.stroke(); }
+    grain(g, w, h, Math.round(w * h / 70), n === 0 || n === 5 ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.09)', 210 + n); };
 
   /* ───────── the page ───────── */
   var SNORKEL = '<svg viewBox="0 0 24 24"><path d="M3 10.5c0-1.4 1.1-2.5 2.5-2.5h7c1.4 0 2.5 1.1 2.5 2.5v1c0 1.4-1.1 2.5-2.5 2.5H11l-1.5-1.6L8 14H5.5C4.1 14 3 12.9 3 11.5z"/><path d="M18.5 3v11.5a4.5 4.5 0 0 1-4.5 4.5h-3"/></svg>';
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-theme" aria-label="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
-    '<main id="hm-col">' + CARDS.map(cardHTML).join('') + '</main><nav class="hm-dots" aria-hidden="true">' + CARDS.map(function () { return '<i></i>'; }).join('') + '</nav>' +
+    '<button id="hm-frame" aria-label="Card frame" title="Card frame"><i></i></button>' +
+    '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
   D.body.appendChild(root);
-  var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col);
+  var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col); $('.hm-dots').innerHTML = dotsHTML();
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
-  var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size'];
+  var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size'];
   function applyCards(text) {
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
         if (!c) { c = { id: id, size: 'full', title: id.toUpperCase(), opens: 'panel', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] }; CARDS.push(c); } order.push(id);
         ls.slice(1).forEach(function (l) { var kv = /^\s*([a-z]+)\s*(?::\s*(.*))?$/i.exec(l); if (!kv) return; var k = kv[1].toLowerCase(), v = (kv[2] || '').trim().slice(0, 120);
           if (k === 'hide') hide[id] = 1; else if (k === 'where') { var ll = v.split(',').map(Number); if (ll.length === 2 && ll.every(isFinite)) c.where = ll; }
-          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (/^(full|half)$/.test(v)) c.size = v; }
+          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (/^(full|half|small)$/.test(v)) c.size = v; }
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = CARDS.map(cardHTML).join(''); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = CARDS.map(function () { return '<i></i>'; }).join(''); paintAll(); pics(); radars(); lamps(); parallax();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax();
   }
   var CARDS_TXT = null;
   fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); }).catch(function () { /* the cards as they started */ });
 
   function cardHTML(c, i) {
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
-    var keys = '<button class="hm-rk" data-radar="' + c.id + '" hidden aria-label="Find its printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>' +
+    var keys = (c.ph ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + '<button class="hm-rk" data-radar="' + c.id + '" hidden aria-label="Find its printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>' +
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-kept" alt="" hidden><b class="rc-code">DA-YZ07</b><div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-lbl" aria-hidden="true">' + 'stories'.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b><canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
@@ -211,23 +224,24 @@
       inner = '<h2 class="hm-t kas"><span>' + t + '</span></h2><div class="kas" aria-hidden="true">' + ks.slice(1).map(function (k, j) { return '<span style="--fk:' + k + '"' + (j === 2 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
-    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM <span class="nw">E-WASTE</span></p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER ISLAND COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM E-WASTE</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><b class="sl-n" aria-hidden="true">' + ('0' + ((c.ph || 1) + 1)).slice(-2) + '</b><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? CHART + DRIFT + '<div class="hm-pics"></div>' + EVID : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
+    var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
-    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
+    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph ? ' pl-' + ((c.ph - 1) % 6 + 1) : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
-      '<div class="hm-keys">' + keys + '</div><div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div></article></section>';
+      '<div class="hm-keys">' + keys + '</div><div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
   }
   /* each card painted to its own size; again when the size changes */
   function paint(el) {
     var c = byId(el.dataset.id); if (!c) return; var i = +el.dataset.i, L = {}, w = 0, h = 0, k = Math.min(1.5, devicePixelRatio || 1);
     ['b', 'm', 't'].forEach(function (n) { var cv = el.querySelector('.hm-l.' + n + ' > canvas'), lw = cv.parentNode.clientWidth, lh = cv.parentNode.clientHeight; w = lw; h = lh;
       cv.width = Math.round(lw * k); cv.height = Math.round(lh * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); L[n] = g; });
-    if (!w || !h) return; el.dataset.pw = w + 'x' + h; (ART[c.art] || ART.plain)(L, w, h, i);
+    if (!w || !h) return; el.dataset.pw = w + 'x' + h; (ART[c.art] || ART.plain)(L, w, h, i, c);
   }
   function paintAll(force) { cards.forEach(function (el) { var l = el.querySelector('.hm-l.b'); if (force || el.dataset.pw !== l.clientWidth + 'x' + l.clientHeight) paint(el); }); }
   var FONTS = D.fonts && D.fonts.ready ? D.fonts.ready : Promise.resolve(); FONTS.then(function () { paintAll(true); });
@@ -238,7 +252,7 @@
   function pics() {
     TURN.forEach(clearInterval); TURN = [];
     cards.forEach(function (el) { var id = el.dataset.id, cp = CPICS[id] || {}, own = OWNPICS[id === 'wish' ? 'novelglobal' : id];
-      if (own && !(cp.pics && cp.pics.length)) cp = { pics: id === 'wish' ? own.filter(function (u) { return !/chair-[48]\./.test(u); }) : own, speed: cp.speed, shade: cp.shade };
+      if (own && !(cp.pics && cp.pics.length)) cp = { pics: id === 'wish' ? own.filter(function (u) { return !/chair-[4862]\./.test(u); }) : own, speed: cp.speed, shade: cp.shade };
       var box = el.querySelector('.hm-pics'), bg = el.querySelector('.hm-bgimg');
       if (box) { var ls = (cp.pics || []).slice(0, 10); box.innerHTML = ls.map(function (u, j) { return '<img alt="" decoding="async" fetchpriority="' + (j ? 'low' : 'high') + '" src="' + esc(u) + '"' + (j === 0 ? ' class="on"' : '') + '>'; }).join(''); box.classList.toggle('none', !ls.length);
         /* every photograph is fetched and decoded before it is shown, and one not yet ready is passed over, so each change is instant */
@@ -250,8 +264,10 @@
   /* an island whose keeper has given it pictures, with CARDS switched on, stands in the column too */
   function isleCards() { var add = false;
     PRN.forEach(function (p) { if (!p.links || p.links.indexOf('cards') < 0 || p.id === 'novelglobal' || byId(p.id) || !(CPICS[p.id] && CPICS[p.id].pics.length)) return;
-      CARDS.push({ id: p.id, size: 'full', title: String(p.name || p.id).toUpperCase().slice(0, 40), opens: 'panel', island: p.id, art: 'photos', isle: 1, motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
-    if (add) applyCards(''); }
+      var at = CARDS.findIndex(function (c) { return c.ph; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: p.id, size: 'small', title: String(p.name || p.id).toUpperCase().slice(0, 40), opens: 'panel', island: p.id, art: 'photos', isle: 1, motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
+    if (!add) return; var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
+    for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
+    applyCards(''); }
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
@@ -280,17 +296,17 @@
       var still = !!el.querySelector('.hm-prn'), inn = el.querySelector('.hm-in');
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
-    var at = Math.round(col.scrollTop / Math.max(1, cards[0].offsetHeight)), n = 0, best = 1e9; cards.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - col.getBoundingClientRect().top); if (dd < best) { best = dd; n = i; } });
-    CUR = cards[n] ? cards[n].dataset.id : ''; $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === (at >= 0 ? n : 0)); });
+    var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; CUR = cur ? cur.dataset.id : ''; $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
   /* a key turns the page, as a swipe does */
   addEventListener('keydown', function (e) { if (H.classList.contains('hm-away') || xv.classList.contains('on') || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
     var d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key]; if (!d) { if (e.key === 'Escape' && root.classList.contains('reef')) reef(false); return; } e.preventDefault();
-    var c0 = col.getBoundingClientRect().top, pad = parseFloat(getComputedStyle(col).scrollPaddingTop || 0), box = function (el) { return getComputedStyle(el.parentNode).display === 'contents' ? el : el.parentNode; };
-    var tops = cards.map(function (el) { return box(el).getBoundingClientRect().top - c0 + col.scrollTop; }), y = col.scrollTop + pad + 12, i = 0; while (i < tops.length - 1 && tops[i + 1] <= y) i++;
-    col.scrollTo({ top: tops[Math.max(0, Math.min(cards.length - 1, i + d))] - pad, behavior: RM.matches ? 'auto' : 'smooth' }); });
+    var c0 = col.getBoundingClientRect().top, pad = parseFloat(getComputedStyle(col).scrollPaddingTop || 0), box = function (el) { return el.classList.contains('hm-trio') || getComputedStyle(el.parentNode).display === 'contents' ? el : el.parentNode; }, pg = pages();
+    var tops = pg.map(function (el) { return box(el).getBoundingClientRect().top - c0 + col.scrollTop; }), y = col.scrollTop + pad + 12, i = 0; while (i < tops.length - 1 && tops[i + 1] <= y) i++;
+    col.scrollTo({ top: tops[Math.max(0, Math.min(pg.length - 1, i + d))] - pad, behavior: RM.matches ? 'auto' : 'smooth' }); });
 
   /* ───────── away and back: every experience leaves from its card and returns to it ───────── */
   var away = false;
@@ -305,7 +321,7 @@
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id;
+    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id; tkHide(); TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'portfolio') { vent(); return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
@@ -315,7 +331,8 @@
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
-    if (c.opens === 'bench') return sheet(c.title, inFrame('bench?in=1#b'));
+    if (c.opens === 'bench') return sheet(c.title, inFrame('bench?in=1' + (opt && opt.mode ? '&m=' + opt.mode : '') + '#b'));
+    if (c.opens === 'unlock') return sheet('YOUR PRINTER', unlockIn);
   }
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
   function inFrame(src) { return function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'); xv.appendChild(fr); }; }
@@ -330,7 +347,7 @@
     if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
     history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
-  function shut(fromPop) { clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up');
+  function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up');
     var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME'; }); SH.gone = SH.gone.concat(old);
     setTimeout(function () { old.forEach(function (n) { n.remove(); }); SH.gone = SH.gone.filter(function (n) { return old.indexOf(n) < 0; }); }, 460); if (!fromPop) history.back(); }
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'panel' && xv.classList.contains('on')) { shut(true); setTimeout(function () { sheet('ISLAND ARCHIPELAGOS', panelIn); }, 480); } });
@@ -338,18 +355,19 @@
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
     var r = e.target.closest('[data-radar]'); if (r) { beacon(r.dataset.radar, r); return; }
+    var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); var id = tb.dataset.talk; open(id); if (id !== 'wish') setTimeout(function () { tkShow('c.' + id + '.open'); }, 900); return; }
   });
 
   /* the first visit to each experience: three notes in pen, an arrow from each to the thing it means. Each waits until its thing is on screen.
      A tap on the thing works as normal; a tap anywhere else only turns the note. Seen once in light and once again in dark */
   var INTRO = {
-    radio: [['.rd-play', 'press play to hear the example song'], ['.rd-knob[data-knob="water"]', 'each key adds a layer: life, people, water, smog, air'], ['.flip-b', 'this is the quick side. flip it over for the full studio', 1]],
-    portfolio: [['.sig-row', 'stories people have printed. tap one to open it'], ['#sec-talk input', 'write a line here and send it to the island'], ['#rx-open', 'got a code on a printed receipt? put it in here']],
-    zine: [['[data-zt="wild"]', 'wild throws three loud marks on. keep tapping', 1], ['.zn-tabs [data-zslot="1"]', 'three designs at once, one per tab. SAVE keeps one as a file'], ['[data-pick="strip"]', 'stickers live here, pixel animals too']],
-    research: [['#tools [data-t="paste"]', 'copy a picture anywhere, then paste it here'], ['#tools [data-t="link"]', 'tap two things to tie a string between them'], ['#tools [data-t="out"]', 'print the board, or keep it as a picture']],
-    kit: [['#hm-x .kt-bar a', 'start here: the install, one step at a time'], ['#hm-x .hm-list li:not(.gap)', 'tick parts off as you find them. it remembers'], ['#hm-kprint', 'print the list and take it to the tip shop']],
-    space: [['[data-s="recipe"]', 'pick what you are making: a story, a recipe, a walk'], ['.sk.end', 'add a part: words, a photo, the moon, a map'], ['#pr', 'print it as one long receipt']],
-    wish: [['#au-seed', 'tap the light. start with something you noticed'], ['.au-wish textarea', 'four short lines, one for each letter. a few words is plenty'], ['[data-add="p"]', 'the pixel jellyfish maker. put it on your poster', 1]]
+    radio: [['.rd-play', 'plays the example song'], ['.rd-knob[data-knob="water"]', 'each key adds a layer to the song: life, people, water, smog, air'], ['.flip-b', 'flips over to the full studio', 1], ['^#hm-tk', 'talk about the radio with everyone']],
+    portfolio: [['#gallery .gl-screen', 'swipe through printed stories. tap one to print it, hear it or talk about it. pinch to look closer'], ['#rx-open', 'type the code from a printed receipt to open its story'], ['^#hm-tk', 'talk about the stories with everyone']],
+    zine: [['[data-zt="wild"]', 'throws three loud marks onto the design', 1], ['.zn-tabs [data-zslot="1"]', 'three designs, one to a tab. SAVE keeps one as a file'], ['[data-pick="strip"]', 'stickers and pixel animals'], ['^#hm-tk', 'show your design and talk about it']],
+    research: [['#tools [data-t="paste"]', 'copy a picture anywhere, then paste it here'], ['#tools [data-t="link"]', 'tap two things to tie a string between them'], ['#tools [data-t="out"]', 'prints the board, or keeps it as a picture'], ['^#hm-tk', 'talk about the research with everyone']],
+    kit: [['#hm-x .kt-bar a', 'the install guide, one step at a time'], ['#hm-x .hm-list li:not(.gap)', 'tick parts off as you find them. it remembers'], ['#hm-kprint', 'prints the parts list to take to the tip shop'], ['^#hm-tk', 'ask for help building yours']],
+    space: [['#modes', 'four benches: a receipt, a phone page, a game on paper, a card for the front page'], ['#modes [data-m="game"]', 'make a game that plays on paper and test it on the console', 1], ['^#hm-tk', 'share what you made, or ask for help']],
+    wish: [['#au-seed', 'tap the light to start with something you noticed'], ['.au-wish textarea', 'four short lines, one for each letter. a few words is plenty'], ['[data-add="p"]', 'the pixel jellyfish maker. put it on your poster', 1]]
   };
   var IN = { id: null, k: 0, t: 0, el: null, eat: 0, hit: null, cur: null };
   function introStore() { var th = NIGHT ? 'd' : 'l', s = store.get('da.hm.intro', null) || {}; if (s.th !== th) s = { th: th, seen: {}, all: s.all, force: s.force }; return s; }
@@ -359,7 +377,7 @@
     if (on === false || !IN.id || !INTRO[IN.id]) return;
     var s = introStore(); if (s.all || (navigator.webdriver && !s.force)) return;
     IN.k = +(s.seen[IN.id] || 0); if (IN.k >= INTRO[IN.id].length) return;
-    var id = IN.id, look = function () { if (IN.id !== id) return; var d = introDoc(), st = INTRO[id][IN.k], el = d && d.querySelector(st[0]);
+    var id = IN.id, look = function () { if (IN.id !== id) return; var st = INTRO[id][IN.k], top = st[0].charAt(0) === '^', d = top ? D : introDoc(), el = d && pick(d, top ? st[0].slice(1) : st[0]);
       var r = el && el.getBoundingClientRect(), vh = d && d.defaultView.innerHeight;
       if (r && r.width && !look.moved && (r.top < 0 || r.bottom > vh || r.left < 0 || r.right > d.defaultView.innerWidth)) { look.moved = 1; reveal(el); IN.t = setTimeout(look, 550); return; }
       look.moved = 0;
@@ -368,11 +386,14 @@
       IN.cur = [d, el, st]; note(d, r, st); };
     IN.t = setTimeout(look, 300);
   }
+  /* of everything that matches, the first one on show, and of those the first on screen */
+  function pick(d, sel) { var w = d.defaultView, all = [].slice.call(d.querySelectorAll(sel)).filter(function (e) { var r = e.getBoundingClientRect(); return r.width && r.height && w.getComputedStyle(e).visibility !== 'hidden' && !e.closest('[hidden],[aria-hidden="true"]'); });
+    return all.filter(function (e) { var r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < w.innerHeight && r.right > 0 && r.left < w.innerWidth; })[0] || all[0] || null; }
   /* bring a thing into view by scrolling only the boxes it sits in; the home itself never moves */
   function reveal(el) { var d = el.ownerDocument, w = d.defaultView, p = el.parentElement, r, b, cs;
     while (p && p !== d.body && p !== d.documentElement) { cs = w.getComputedStyle(p); r = el.getBoundingClientRect(); b = p.getBoundingClientRect();
       if (/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight) p.scrollTop += (r.top + r.height / 2) - (b.top + b.height / 2);
-      if (/(auto|scroll)/.test(cs.overflowX) && p.scrollWidth > p.clientWidth) p.scrollLeft += (r.left + r.width / 2) - (b.left + b.width / 2);
+      if (/(auto|scroll)/.test(cs.overflowX) && p.scrollWidth > p.clientWidth && (r.left < b.left || r.right > b.right)) p.scrollLeft += (r.left + r.width / 2) - (b.left + b.width / 2);
       p = p.parentElement; }
     if (d !== D) { r = el.getBoundingClientRect(); if (r.top < 0 || r.bottom > w.innerHeight) w.scrollBy(0, r.top + r.height / 2 - w.innerHeight / 2); } }
   function note(d, r, st, still) {
@@ -413,6 +434,54 @@
     if (opt && opt.fill || (wired('wish', 'zine') && carry('wish', 'zine').length)) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; if (p && (p.photo || p.say)) fr.contentWindow.postMessage({ hm: 'fill', img: p.photo || '', words: (p.say || '').toUpperCase().slice(0, 22) }, location.origin); });
   }
   /* the island kit: the checklist, kept with the aura's, and printed as a slip */
+  /* an open slot: how a printer gets a card of its own here, in three moves */
+  function unlockIn(body) { body.classList.add('ul');
+    var GH = 'https://github.com/novelglobal/islandarchipelagos';
+    body.innerHTML = '<div class="ul-art" aria-hidden="true"><i></i><i></i><i></i></div><h2 class="ul-h">A CARD FOR YOUR PRINTER</h2><ol class="ul-st">' +
+      [['BUILD', 'A solar thermal printer from e-waste', 'kit', 'THE PARTS'], ['SWITCH ON', 'It joins novel.global by itself and prints its own key', '', ''], ['MAKE', 'Test a slip, a page or a game, then send it here as a card', 'space', 'THE BENCH']].map(function (s, k) {
+        return '<li><b>0' + (k + 1) + '</b><span><em>' + s[0] + '</em>' + esc(s[1]) + '</span>' + (s[2] ? '<button type="button" data-go="' + s[2] + '" title="Open ' + s[3].toLowerCase() + '">' + s[3] + ' →</button>' : '<i class="ul-led"></i>') + '</li>'; }).join('') +
+      '</ol><a class="ul-gh" href="' + GH + '" target="_blank" rel="noopener" title="The code, open to build on">DEVELOP IT ↗</a>';
+    $$('[data-go]', body).forEach(function (b) { b.addEventListener('click', function () { var id = b.dataset.go; shut(true); setTimeout(function () { open(id, id === 'space' ? { mode: 'card' } : null); }, 480); }); }); }
+  /* ───────── every card's talk: four rooms of its own, open to everyone (open talk, help, show and tell, make together); a piece's own talk too ───────── */
+  var ROOMS = [['open', 'OPEN', 'Open talk, anything about this', '<path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/>'], ['help', 'HELP', 'Ask for help, or give it', '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.8" r=".6" class="f"/>'],
+    ['show', 'SHOW', 'Show what you made with it', '<path d="M3.5 7.5h4l1.5-2h6l1.5 2h4v11h-17z"/><circle cx="12" cy="13" r="3.4"/>'], ['make', 'MAKE', 'Find people to make it with', '<circle cx="8.5" cy="9" r="2.6"/><circle cx="15.5" cy="9" r="2.6"/><path d="M3.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6M10.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6"/>']];
+  var TKH = { card: null, sec: null, re: null, n: {} }, TKWHY = { 400: 'NOT SENT', 429: 'SLOW DOWN A LITTLE', 503: 'RESTING, TRY LATER' };
+  var tkp = D.createElement('section'); tkp.id = 'hm-talk'; tkp.setAttribute('aria-label', 'Talk'); tkp.hidden = true;
+  tkp.innerHTML = '<header><b class="tk-t"></b><button class="x" aria-label="Close the talk" title="Close">' + '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>' +
+    '<nav class="tk-rooms">' + ROOMS.map(function (r) { return '<button type="button" data-room="' + r[0] + '" title="' + r[2] + '"><svg viewBox="0 0 24 24">' + r[3] + '</svg><span>' + r[1] + '</span><i></i></button>'; }).join('') + '<button type="button" data-room="piece" title="This piece" hidden><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/></svg><span>THIS</span><i></i></button></nav>' +
+    '<ol class="tk-l" aria-live="polite"></ol><form class="tk-f"><input maxlength="280" autocomplete="off" placeholder="say something" aria-label="Say something"><button aria-label="Send" title="Send"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button></form><p class="tk-say" aria-live="polite"></p>';
+  root.appendChild(tkp);
+  var tkk = D.createElement('button'); tkk.id = 'hm-tk'; tkk.setAttribute('aria-label', 'Talk about this'); tkk.title = 'Talk about this'; tkk.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><b>TALK</b><i></i>'; root.appendChild(tkk);
+  function tkWho() { try { return window.NG && NG.me ? NG.me() : ''; } catch (e) { return ''; } }
+  function tkGet(sec) { var who = tkWho(); if (!who) return Promise.resolve([]); return fetch('/api/talk?s=' + encodeURIComponent(sec) + '&who=' + encodeURIComponent(who)).then(function (r) { return r.ok ? r.json() : { talk: [] }; }).then(function (j) { return j.talk || []; }).catch(function () { return store.get('da.talk.' + sec, []) || []; }); }
+  /* how many have spoken in each of the card's rooms, on the key and on each room */
+  function tkCount() { var id = TKH.card; if (!id) return; tkk.querySelector('i').textContent = '';
+    Promise.all(ROOMS.map(function (r) { return tkGet('c.' + id + '.' + r[0]); })).then(function (ls) { if (TKH.card !== id) return; var all = 0;
+      ROOMS.forEach(function (r, k) { TKH.n[r[0]] = ls[k].length; all += ls[k].length; var b = tkp.querySelector('[data-room="' + r[0] + '"] i'); if (b) b.textContent = ls[k].length || ''; });
+      tkk.querySelector('i').textContent = all || ''; tkk.classList.toggle('live', all > 0); }); }
+  function tkFill(l) { var ol = tkp.querySelector('.tk-l'), top = l.filter(function (t) { return !t.re; }), kids = function (id) { return l.filter(function (t) { return t.re === id; }).reverse(); };
+    var li = function (t, sub) { var kk = t.k === 'ng' ? { n: 'novel.global', m: 0 } : (window.NG && NG.kin ? NG.kin(t.kin) : null) || { n: '', m: 0 };
+      return '<li data-id="' + esc(t.id) + '"' + (sub ? ' class="sub"' : '') + ' style="--m:' + (kk.m || 0) + '"><i></i><b>' + esc(kk.n || 'someone') + '</b><small>' + (window.NG && NG.moonTag ? NG.moonTag(t.at, -37.8) : '') + '</small><span>' + esc(t.text) + '</span></li>'; };
+    ol.innerHTML = top.length ? top.map(function (t) { return li(t) + kids(t.id).map(function (c) { return li(c, 1); }).join(''); }).join('') : '<li class="none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/></svg><span>be the first</span></li>';
+    $$('li[data-id]:not(.sub)', ol).forEach(function (e) { e.addEventListener('click', function () { TKH.re = TKH.re === e.dataset.id ? null : e.dataset.id; $$('li', ol).forEach(function (q) { q.classList.toggle('re', q.dataset.id === TKH.re); }); var i = tkp.querySelector('input'); i.placeholder = TKH.re ? 'reply' : 'say something'; i.focus(); }); }); }
+  function tkShow(sec) { if (!sec) return; var piece = /^p\./.test(sec); TKH.sec = sec; TKH.re = null; var c = TKH.card && byId(TKH.card);
+    tkp.querySelector('.tk-t').textContent = c ? c.title : 'TALK'; var pb = tkp.querySelector('[data-room="piece"]'); if (piece) { pb.hidden = false; pb.dataset.sec = sec; } else if (!pb.dataset.sec) pb.hidden = true;
+    $$('[data-room]', tkp).forEach(function (b) { b.setAttribute('aria-pressed', String(piece ? b.dataset.room === 'piece' : sec === 'c.' + TKH.card + '.' + b.dataset.room)); });
+    tkp.hidden = false; requestAnimationFrame(function () { tkp.classList.add('on'); }); tkk.classList.add('open'); tkp.querySelector('.tk-say').textContent = '';
+    tkp.querySelector('.tk-l').innerHTML = '<li class="none"><span>· · ·</span></li>'; tkGet(sec).then(function (l) { if (TKH.sec === sec) tkFill(l); }); }
+  function tkHide() { tkp.classList.remove('on'); tkk.classList.remove('open'); var pb = tkp.querySelector('[data-room="piece"]'); pb.hidden = true; pb.dataset.sec = ''; setTimeout(function () { if (!tkp.classList.contains('on')) tkp.hidden = true; }, 300); }
+  tkk.addEventListener('click', function (e) { e.stopPropagation(); if (tkp.classList.contains('on')) tkHide(); else if (TKH.card) tkShow('c.' + TKH.card + '.open'); beep(620, 0.04); });
+  tkp.querySelector('.x').addEventListener('click', function () { tkHide(); });
+  $$('[data-room]', tkp).forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.room === 'piece') tkShow(b.dataset.sec); else if (TKH.card) tkShow('c.' + TKH.card + '.' + b.dataset.room); beep(540 + ROOMS.length * 20, 0.03); }); });
+  tkp.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); var i = tkp.querySelector('input'), t = i.value.trim(), sec = TKH.sec, re = TKH.re, say = tkp.querySelector('.tk-say'); if (!t || i.disabled || !sec) return; var who = tkWho(); if (!who) return;
+    i.disabled = true; say.textContent = '· · ·';
+    (window.NG && NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: sec, who: who, text: t, re: re, cf: cf }) }); })
+      .then(function (r) { i.disabled = false; if (r.status !== 201) { say.textContent = TKWHY[r.status] || 'NOT SENT'; return; }
+        return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); i.value = ''; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
+      .catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); });
+  /* a piece's own talk, asked for from inside an experience */
+  addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'talk' || !xv.classList.contains('on')) return;
+    if (/^(c\.[a-z0-9-]{1,24}\.(open|help|show|make)|p\.(DA-[0-9A-Z]{4}|S-[0-9a-z]{6}))$/.test(d.sec || '')) tkShow(d.sec); });
   function kitIn(body) {
     var a = AU(), list = (a && a.isle ? a.isle() : []) || [], got = store.get('da.isle.v1', []) || [];
     var GH = 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit';
@@ -611,6 +680,22 @@
     if (bellHit(e.clientX, e.clientY)) { J.blink = 0.25; horn(); J.vx += Math.cos(J.a) * 6; J.vy += Math.sin(J.a) * 6; return; }
     if (away) { history.back(); return; } if (!root.classList.contains('reef')) reef(true); });
   $('#hm-theme').addEventListener('click', function (e) { e.stopPropagation(); setNight(!NIGHT); });
+  /* the cards' frames, from the posters: none, dotted bitmap, lilac steps, cyan stripes, coral double rule, pink and green, blueprint */
+  var FRAMES = ['none', 'dots', 'steps', 'stripe', 'coral', 'lunch', 'print'], FRAME = store.get('da.hm.frame', 'none');
+  function setFrame(f) { FRAME = FRAMES.indexOf(f) >= 0 ? f : 'none'; FRAMES.forEach(function (n) { root.classList.toggle('fr-' + n, n === FRAME); }); store.set('da.hm.frame', FRAME); }
+  setFrame(FRAME);
+  $('#hm-frame').addEventListener('click', function (e) { e.stopPropagation(); setFrame(FRAMES[(FRAMES.indexOf(FRAME) + 1) % FRAMES.length]); beep(470 + FRAMES.indexOf(FRAME) * 40, 0.04); });
+  /* the strategy's loop: a slow turn of its own, faster for a touch or a scroll; each chair takes on the stop it last passed */
+  var ORB = { a: 0, v: 0.16, t: 0, top: 0 }, TAU = Math.PI * 2;
+  function orbit(now) { requestAnimationFrame(orbit); var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
+    if (!el || D.hidden || away || xv.classList.contains('on')) return; var r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+    var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
+    var hit = [0, 0, 0, 0];
+    $$('.st-th', el).forEach(function (t, k) { var a = ORB.a + k * TAU / 4 + TAU / 8, A = ((a % TAU) + TAU) % TAU, s = (A + Math.PI / 2) / (Math.PI / 2), q = Math.floor(s) % 4, near = Math.abs(s - Math.round(s));
+      t.style.left = (50 + 40 * Math.cos(a)) + '%'; t.style.top = (50 + 40 * Math.sin(a)) + '%'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; t.classList.toggle('pop', near < 0.09); });
+    $$('.st-nd', el).forEach(function (n, k) { n.classList.toggle('hit', !!hit[k]); }); }
+  requestAnimationFrame(orbit);
+  col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
 
   /* ───────── the reef: the forms rounded and lit, in their own colours; the life on it in white line, alive to a touch ───────── */
@@ -695,7 +780,7 @@
     ['portfolio', 'PORTFOLIO', 1, G('<path d="M6 2.5h12v19l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M8.5 7h7M8.5 10h7M8.5 13h4"/>')],
     ['wish', 'I W.I.S.H.', 1, G('<path d="M2 12h20"/><circle cx="5.5" cy="12" r="1.9" class="f"/><circle cx="10" cy="12" r="1.9" class="f"/><circle cx="14.5" cy="12" r="1.9" class="f"/><circle cx="19" cy="12" r="1.9" class="f"/>')],
     ['radio', 'DIRECT ACTION RADIO', 1, G('<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l6.4-6.4"/><circle cx="12" cy="12" r="1.6" class="f"/><circle cx="7" cy="15" r=".9" class="f"/>')],
-    ['zine', 'DESIGN AND PRINT', 1, G('<path d="M9 2h6v20H9z"/><path d="M9 15l2-4 1.3 2 1.2-3.5L15 13"/>')],
+    ['zine', 'DESIGN PRINT', 1, G('<path d="M9 2h6v20H9z"/><path d="M9 15l2-4 1.3 2 1.2-3.5L15 13"/>')],
     ['research', 'RESEARCH BOARD', 1, G('<path d="M3 4h7v5H3zM14 4h7v8h-7zM3 14h8v6H3z"/><path d="M10 6.5h4M7 9v5M17.5 12v5h-6.5"/><circle cx="17.5" cy="17" r="1.3" class="f"/>')],
     ['kit', 'ISLAND KIT', 1, G('<path d="M3 7h18v11H3z"/><path d="M6 10h4v4H6z"/><path d="M13 10h5M13 13h5" stroke-dasharray="1 1.6"/><circle cx="5" cy="16.3" r=".7" class="f"/><circle cx="19" cy="16.3" r=".7" class="f"/>')],
     ['space', 'ARCHIPELAGOS ENGINE', 1, G('<path d="M4.5 9.5c0-2 1.6-3 3.2-2.6 1.4.4 1.8 2.2.8 3.3-1.2 1.2-4 .9-4-.7zM14 6.5c.6-1.6 3.2-1.8 4-.3.7 1.3-.5 2.6-2 2.5-1.3 0-2.4-1-2-2.2zM12.5 17c.2-2.4 3.6-3 5-1.4 1.3 1.6-.4 3.8-2.6 3.6-1.5-.1-2.5-1-2.4-2.2z"/><path d="M8.8 10.5l4.6 5M11 8.6l3-1.2" stroke-dasharray=".2 2"/>')],

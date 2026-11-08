@@ -127,6 +127,7 @@ function goPart(part) { const id = (PARTS[part] || [])[1]; const el = id && docu
 function renderView() {
   if (S.mode) return;
   const k = VIEWS[S.view].k; const front = faceOf(S.view) === 'front'; document.body.dataset.face = front ? 'front' : 'back';
+  { const gl = document.getElementById('gallery'); if (gl && viewEl.contains(gl)) document.body.appendChild(gl); }
   viewEl.innerHTML = k === 'radio' ? (front ? radioFront() : viewRadio()) : k === 'signals' ? (front ? wishFront() : viewSignals()) : k === 'signs' ? (front ? printFront() : viewSigns()) : viewPortfolio();
   viewEl.scrollTop = 0; document.body.classList.toggle('off-map', S.open && offMap(S.view)); showBoard(k === 'signals' && S.open && !front); showZine(k === 'signs' && S.open); showGallery(k === 'portfolio' && S.open);
   const cov = $('#cover'); if (cov) cov.replaceChildren();
@@ -540,7 +541,10 @@ const wallOf = () => [...(EXK && exShown() ? [{ id: 'ex', ex: true, img: EXZ.url
 const wallNo = x => (x.ex ? '000' : x.site ? x.code.slice(3) : String(POSTERS2.length - POSTERS2.indexOf(x)).padStart(3, '0'));
 const wallCap = x => `№ ${wallNo(x)}${x.ex ? ' · EX' : ` · ${fmtStamp(x.at)}`}${x.site && x.said ? ` · ${x.said}` : ''}`;
 function showGallery(on) {
-  const g = $('#gallery'); if (!g) return; g.hidden = !on; if (!on) { gzReset(); g.classList.remove('full'); document.body.classList.remove('gl-full'); return; } const ps = wallOf();
+  const g = $('#gallery'); if (!g) return;
+  /* the portfolio on its own: the stories stand at the top of its column, above everything else in it */
+  g.classList.toggle('gl-in', AURA_ONLY === 3); if (AURA_ONLY === 3 && on && g.parentNode !== viewEl) { viewEl.prepend(g); delete g.dataset.sig; }
+  g.hidden = !on; if (!on) { gzReset(); g.classList.remove('full'); document.body.classList.remove('gl-full'); return; } const ps = wallOf();
   /* what was just printed comes first */
   if (galleryFocus) { const at = ps.findIndex(x => x.id === galleryFocus); if (at >= 0) galleryAt = at; galleryFocus = null; }
   galleryAt = clamp(galleryAt, 0, Math.max(0, ps.length - 1));
@@ -560,7 +564,10 @@ function showGallery(on) {
   const pair = x => { const c = !x.ex && deck().find(v => v.id === 'p:' + x.id); return c ? `<div class="gl-pair">${cardBtn(c)}</div>` : ''; };
   const k = (gl, ic, w) => `<button type="button" class="gk" data-gl="${gl}" aria-label="${w}" data-tip="${w}">${icon(ic)}</button>`;
   g.innerHTML = `<div class="gl-deck"><div class="gl-screen"><ol class="gl-track" tabindex="0" aria-label="The wall">${ps.map((x, i) => `<li class="gl-slide" data-i="${i}"><figure class="gl-hero${x.ex ? ' ex' : ''}">${art(x)}${pair(x)}<figcaption class="vh">${wallCap(x)}</figcaption></figure></li>`).join('')}</ol></div>`
-    + `<div class="gl-bar"><p class="gl-vfd mono" aria-live="polite"></p><div class="gl-keys">${k('prev', 'back', 'Back')}${k('zoom', 'search', 'Closer')}${k('full', 'out', 'Full screen')}${k('card', 'stories', 'As a card')}${k('png', 'download', 'Download')}${IN_AURA ? k('talk', 'board', 'Its talk') : ''}${k('next', 'next', 'On')}</div></div></div>`;
+    + `<div class="gl-bar"><p class="gl-vfd mono" aria-live="polite"></p><div class="gl-keys">${k('prev', 'back', 'Back')}${k('zoom', 'search', 'Closer')}${k('full', 'out', 'Full screen')}${k('card', 'stories', 'As a card')}${k('png', 'download', 'Download')}${IN_AURA ? k('talk', 'community', 'Its talk') : ''}${k('next', 'next', 'On')}</div></div></div>`;
+  /* in the portfolio's own column: a tap on a piece brings up what can be done with it */
+  if (g.classList.contains('gl-in')) { const a = (gl, ic, w) => `<button type="button" data-gl="${gl}" title="${w}">${icon(ic)}<span>${w.split(' ')[0].toUpperCase()}</span></button>`;
+    g.querySelector('.gl-screen').insertAdjacentHTML('beforeend', `<div class="gl-acts" role="toolbar" aria-label="This story">${a('print', 'print', 'Print it again')}${a('listen', 'sound', 'Listen to it')}${a('talk', 'community', 'Talk about it')}${a('zoom', 'search', 'Closer')}${a('card', 'stories', 'Card of it')}${a('png', 'download', 'Save the picture')}</div>`); }
   g.classList.toggle('with-cards', deck().some(c => c.kind !== 'poster')); galleryCards(); cardImgs();
   const tr = g.querySelector('.gl-track'); tr.scrollLeft = galleryAt * tr.clientWidth; galleryRead();
   /* slid to another: its number changes in place, its card slides with it; the screen itself is never drawn again while it moves */
@@ -596,7 +603,8 @@ function galleryRead() {
   const v = g.querySelector('.gl-vfd'); if (v) v.innerHTML = `<b>${sw ? `<i class="gl-st${done ? ' done' : ''}" aria-hidden="true"></i>` : ''}${sw && !done ? `№ ${wallNo(p)}` : wallCap(p)}</b>${sw && !done ? `<span class="gl-sw">${esc(sw.split(' · ')[0])}</span>` : ''}<span>${String(galleryAt + 1).padStart(2, '0')} / ${String(ps.length).padStart(2, '0')}</span>`;
   g.classList.toggle('waiting', !!sw && !done);
   const dis = (k, off) => { const b = g.querySelector(`[data-gl="${k}"]`); if (b) b.disabled = !!off; };
-  dis('prev', galleryAt === 0); dis('next', galleryAt >= ps.length - 1); dis('card', p.ex || p.site); dis('talk', !p.site || p.quiet); dis('png', !p.img); dis('zoom', !p.img);
+  const own = g.classList.contains('gl-in'); $$('[data-gl="talk"]', g).forEach(b => { b.disabled = own ? !!p.quiet : !p.site || p.quiet; }); $$('[data-gl="print"],[data-gl="listen"]', g).forEach(b => { b.disabled = b.dataset.gl === 'print' ? !p.img : false; });
+  $$('[data-gl="card"]', g).forEach(b => { b.disabled = !!(p.ex || p.site); }); $$('[data-gl="png"],[data-gl="zoom"]', g).forEach(b => { b.disabled = !p.img; }); dis('prev', galleryAt === 0); dis('next', galleryAt >= ps.length - 1);
 }
 function galleryGo(i) { const tr = $('#gallery .gl-track'); if (!tr) return; tr.scrollTo({ left: clamp(i, 0, wallOf().length - 1) * tr.clientWidth, behavior: reduced() ? 'auto' : 'smooth' }); }
 /* a poster or a zine, close up, at five sizes: half, three quarters, as wide as the screen allows, twice, three times, scrolled about; a press on it
@@ -633,7 +641,15 @@ document.addEventListener('click', e => {
   /* the close-up key: the piece closer where it is, twice, three times, and back; the full key: the pair full screen */
   if (a.dataset.gl === 'zoom') { const im = gzIm(); if (im && p.img) { const s1 = GZ.im === im && GZ.s > 2.5 ? 1 : GZ.im === im && GZ.s > 1.5 ? 3 : 2; if (s1 === 1) gzReset(true); else gzTo(im, s1, null, null, true); a.setAttribute('aria-pressed', String(s1 > 1)); tick(1200 + s1 * 200); } return; }
   if (a.dataset.gl === 'full') { galleryFull(); tick(1600); return; }
-  if (a.dataset.gl === 'talk' && p.site) { try { parent.postMessage({ ng: 'talk', sec: 'p.' + p.code }, location.origin); } catch (e2) { /* alone */ } tick(1500); return; }
+  if (a.dataset.gl === 'talk' && (p.site || g.classList.contains('gl-in'))) { try { parent.postMessage({ ng: 'talk', sec: p.site ? 'p.' + p.code : 'c.portfolio.show' }, location.origin); } catch (e2) { /* alone */ } tick(1500); return; }
+  /* printed again, on the printer nearest: its state on the small display */
+  if (a.dataset.gl === 'print' && p.img) { const NGp = (() => { try { return window.parent !== window ? window.parent.NG : window.NG; } catch (e2) { return null; } })(); const v = g.querySelector('.gl-vfd b');
+    if (!NGp || !NGp.printAgain) { if (v) v.textContent = 'NO PRINTER HERE'; return; } a.disabled = true; if (v) v.textContent = 'SENDING';
+    NGp.printAgain(p.img, p.code || '').then(s => { if (v) v.textContent = String(s || 'SENT').toUpperCase(); }).catch(er => { if (v) v.textContent = er && er.status === 400 ? 'NO PRINTER ONLINE' : 'NOT SENT'; }).finally(() => { a.disabled = false; }); tick(1700); return; }
+  /* read out: what was said with it, its four lines, or its number */
+  if (a.dataset.gl === 'listen') { const ss = window.speechSynthesis; if (!ss) return; if (ss.speaking) { ss.cancel(); a.classList.remove('on'); return; }
+    const sg = p.story ? S.signals.find(x => x.key === p.story) : null; const say = [p.said, ...(sg ? linesOf(sg) : [])].filter(Boolean).join('. ') || ('story number ' + wallNo(p));
+    const u = new SpeechSynthesisUtterance(say); u.rate = 0.92; u.onend = u.onerror = () => a.classList.remove('on'); a.classList.add('on'); ss.speak(u); return; }
   if (a.dataset.gl === 'card' && !p.ex && !p.site) openPosterCard(p.id);
   if (a.dataset.gl === 'png' && p.img) { const l = document.createElement('a'); l.href = p.img; l.download = p.ex ? 'novel-global-example-zine.png' : p.site ? `novel-global-${p.code}.jpg` : `poster-${isoDay(new Date(p.at))}.jpg`; l.click(); tick(1800); }
 });
@@ -663,7 +679,12 @@ addEventListener('pointermove', e => {
 const gzUp = e => {
   const p = GZ.pts.get(e.pointerId); if (!p) return; GZ.pts.delete(e.pointerId); if (GZ.pts.size < 2) GZ.pinch = null; if (GZ.drag && GZ.drag.id === e.pointerId) GZ.drag = null;
   /* a press that did not move: twice its size where pressed, or back */
-  if (e.type === 'pointerup' && GZ.im && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6 && performance.now() - p.t < 400 && !GZ.pts.size) { if (GZ.s > 1.001) gzReset(true); else gzTo(GZ.im, 2, e.clientX, e.clientY, true); }
+  if (e.type === 'pointerup' && GZ.im && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6 && performance.now() - p.t < 400 && !GZ.pts.size) {
+    const gl = GZ.im.closest('.gallery'), im = GZ.im, x = e.clientX, y = e.clientY;
+    if (gl && gl.classList.contains('gl-in')) { const now = performance.now(); clearTimeout(GZ.tapT);
+      if (GZ.tap && now - GZ.tap < 320) { GZ.tap = 0; gl.classList.remove('acts'); if (GZ.s > 1.001) gzReset(true); else gzTo(im, 2, x, y, true); return; }
+      GZ.tap = now; GZ.tapT = setTimeout(() => { GZ.tap = 0; if (GZ.s > 1.001) { gzReset(true); return; } gl.classList.toggle('acts'); tick(gl.classList.contains('acts') ? 1500 : 1100); }, 300); return; }
+    if (GZ.s > 1.001) gzReset(true); else gzTo(GZ.im, 2, e.clientX, e.clientY, true); }
 };
 addEventListener('pointerup', gzUp); addEventListener('pointercancel', gzUp);
 document.addEventListener('keydown', e => { if (!e.target.closest || !e.target.closest('.gl-track')) return; const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; e.preventDefault(); galleryGo(galleryAt + d); });

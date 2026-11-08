@@ -1225,7 +1225,7 @@
     if (e.origin === location.origin && e.data && e.data.ng === 'go') { for (var gi = 0; gi < DEVS.length; gi++) if (DEVS[gi][2] === e.data.d) { openDev(gi); break; } return; }
     if (e.origin === location.origin && e.data && e.data.ng === 'wall') { closeDev(); if (S.mode === 'iruk') step(3); return; }
     if (e.origin === location.origin && e.data && e.data.ng === 'made') { made(e.data.kind, false); return; }
-    if (e.origin === location.origin && e.data && e.data.ng === 'talk' && /^p\.DA-[0-9A-Z]{4}$/.test(e.data.sec || '')) { talkOpen(e.data.sec); return; }
+    if (e.origin === location.origin && e.data && e.data.ng === 'talk' && /^p\.DA-[0-9A-Z]{4}$/.test(e.data.sec || '') && !document.documentElement.classList.contains('hm-sheet')) { talkOpen(e.data.sec); return; }
     if (e.origin === location.origin && e.data && e.data.ng === 'sound') { DESK.kept = store.get('da.aura.songs', []) || []; if (DESK.el && !DESK.el.hidden) { deskKept(); deskSync(); } bell(5, 0.12); return; }
     if (e.origin === location.origin && e.data && e.data.ng === 'radio') { studioOn = !!e.data.on; studioHeld = false;
       if (studioOn) { if (DESK.play) { var was = { list: DESK.list }; songPlay(false); deskHeld = was; } humSet(false); }
