@@ -19,13 +19,15 @@ const ZINE_PROPS = ['daKind', 'daStory', 'selectable', 'evented', 'daSrc', 'daPh
 const ZHIST = []; let zLast = '';
 /* what stays on the strip whatever is taken off it: the story at its head; on a first visit, its words and its code too */
 const ZFIXED = ['base', 'words', 'code', 'ink'];
-const zKey = () => 'da.press.' + PRESS.fmt;
+PRESS.slot = AURA_ONLY === 2 ? Math.max(0, Math.min(2, +store.get('da.press.slot', 0) || 0)) : 0;
+const zKey = () => 'da.press.' + PRESS.fmt + (PRESS.slot ? '.' + PRESS.slot : '');
 const saveZine = debounce(() => { if (!zc) return; const json = zc.toJSON(ZINE_PROPS); const str = JSON.stringify(json); if (zLast && str !== zLast) { ZHIST.push(zLast); if (ZHIST.length > 12) ZHIST.shift(); } zLast = str; if (!store.set(zKey(), { json, h: zc.getHeight() })) saveFull(); }, 300);
 /* the tools: words, a headline, cut-out letters, a photocopy, a pen, shapes, a stamp, tape, ink, undo, remove. Icons only;
    their names come on a long hover */
 const ZTOOLS = [['add', 'plus', 'Add'], ['zoom', 'search', 'Closer: again for closer, then back'], ['text', 'quote', 'Words: again for another face'], ['head', 'sign', 'Headline: again for another face'], ['cut', 'remix', 'Cut-out letters'], ['image', 'camera', 'Photocopy'], ['draw', 'pencil', 'Pen'], ['shape', 'base', 'Shapes: again for another'], ['stamp', 'check', 'Stamp'], ['tape', 'minus', 'Tape: again for bandana, wire'], ['rag', 'base', 'Bandana: again to turn it'], ['undo', 'undo', 'Undo'], ['delete', 'close', 'Remove'], ['len', 'receipt', 'Longer paper: again for more'], ['short', 'receipt', 'Shorter paper: again for shorter']];
 const SWATCH = ['#0C0E0E', '#FFFFFF', '#A9F0EC', '#FF5A1F', '#E6F84A', '#7FB8D6', '#B9A58C', '#8A1C1C'];
 let ZCOL = store.get('da.zcol', '#0C0E0E');
+const WILDINK = ['#0C0E0E', '#FFFFFF', '#FF2BD6', '#E6F84A', '#00E0FF', '#FF5A1F'];
 /* the faces, turned round on the words keys: typewriter, a flourished serif, blackletter, a spray can, bubbles, the terminal */
 const FACES = [{ f: '"IBM Plex Mono", monospace', k: 1 }, { f: '"Playfair Display", serif', st: 'italic', k: 1.5 }, { f: 'UnifrakturMaguntia, serif', k: 1.6 }, { f: '"Sedgwick Ave Display", cursive', k: 1.7 }, { f: '"Rubik Bubbles", sans-serif', k: 1.4 }, { f: 'VT323, monospace', k: 1.5 }];
 let ZFACE = 0;
@@ -35,8 +37,11 @@ const faceReady = fc => (document.fonts ? document.fonts.load(faceCSS(fc)).catch
 const TAPES = ['tape', 'rag', 'barb']; let ZTAPE = 0; let RAGINV = false;
 function zineTools() {
   const t = $('#zine-tools'); if (t.childElementCount) return;
-  t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + ZTOOLS.map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
-    + `<span class="swatches" role="group" aria-label="Ink">${SWATCH.map(c => `<button type="button" class="sw${c === ZCOL ? ' on' : ''}" data-ink="${c}" style="--c:${c}" aria-label="Ink ${c}"></button>`).join('')}<label class="sw pick" aria-label="Any ink" data-tip="Any ink"><input type="color" id="zine-col" value="${ZCOL}"></label></span>`
+  if (AURA_ONLY === 2) { const nav = document.createElement('nav'); nav.className = 'zn-tabs'; nav.setAttribute('aria-label', 'Designs');
+    nav.innerHTML = [0, 1, 2].map(i => `<button type="button" data-zslot="${i}" aria-pressed="${PRESS.slot === i}">${i + 1}</button>`).join('') + '<span></span><button type="button" data-znew>NEW</button><button type="button" data-zsave>SAVE</button><button type="button" data-zopen>OPEN</button><input type="file" id="zine-json" accept=".json,application/json" hidden>';
+    t.parentNode.insertBefore(nav, t); $('#zine').dataset.slot = PRESS.slot; }
+  t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + (AURA_ONLY === 2 ? [['wild', 'remix', 'Wild: three marks at random'], ...ZTOOLS.filter(z => !['add', 'zoom', 'undo', 'delete'].includes(z[0]))] : ZTOOLS).map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
+    + `<span class="swatches" role="group" aria-label="Ink">${(AURA_ONLY === 2 ? WILDINK : SWATCH).map(c => `<button type="button" class="sw${c === ZCOL ? ' on' : ''}" data-ink="${c}" style="--c:${c}" aria-label="Ink ${c}"></button>`).join('')}<label class="sw pick" aria-label="Any ink" data-tip="Any ink"><input type="color" id="zine-col" value="${ZCOL}"></label></span>`
     + `<button type="button" class="bt zt zlong" data-zlong aria-pressed="${PRESS.fmt === 'long'}" data-tip="Long strip">LONG</button>` + '<input type="file" id="zine-file" accept="image/*" hidden>';
   $('#zine-label').textContent = 'PRINT SHOP · MODEL DA-04 · THERMAL 80 MM / 58 MM · A5 · RUNS ON WHAT IS LEFT OVER · HEAT-SENSITIVE PAPER: KEEP FROM SUN · PRINT WHAT YOU WILL DO';
   edgeFade(t);
@@ -153,8 +158,8 @@ async function showZine(on) {
        A tap still chooses (the browser's own click follows it); a piece chosen, or any sticker, moves under the finger */
     zc.wrapperEl.addEventListener('touchstart', e => { if (zc.isDrawingMode || e.touches.length !== 1) return; const t = zc.findTarget(e, false); if (!t || (t.daKind === 'base' && zc.getActiveObject() !== t)) e.stopPropagation(); }, { capture: true, passive: true });
   }
-  if (zFmt !== PRESS.fmt) {
-    zFmt = PRESS.fmt; zc.clear(); zc.setBackgroundColor(PRESS.fmt === 'zine' ? '#F4F1EA' : '#FFFFFF', () => {}); ZHIST.length = 0;
+  if (zFmt !== zKey()) {
+    zFmt = zKey(); zc.clear(); zc.setBackgroundColor(PRESS.fmt === 'zine' ? '#F4F1EA' : '#FFFFFF', () => {}); ZHIST.length = 0;
     const kept = store.get(zKey(), null); zc.setWidth(F.w); zc.setHeight((kept && kept.h) || F.h || 520);
     if (kept && kept.json) { zLast = JSON.stringify(kept.json); await new Promise(r => zc.loadFromJSON(kept.json, r)); zc.setBackgroundColor(PRESS.fmt === 'zine' ? '#F4F1EA' : '#FFFFFF', () => {}); } else zLast = '';
   }
@@ -305,6 +310,11 @@ async function zineTool(k) {
     else { const t = new f.Textbox((words() || '★').toUpperCase(), { left: 12, top: y, width: W - 24, ...look, fontSize: Math.round(W / 7.5 * (fc.k > 1.2 ? 0.9 : 1)), lineHeight: 0.9, fill: ZCOL, daKind: 'head' }); c.add(t); c.setActiveObject(t); }
   }
   if (k === 'stk') { const ks = ['jelly', 'life', 'zone', 'goth', 'witch', 'ink', 'turtle']; const pk = PACKS_ALL[ks[Math.floor(Math.random() * ks.length)]]; const st = pk[Math.floor(Math.random() * pk.length)]; placeOnPage(sticker({ ...st, col: ZCOL }), 'sticker', st.j ? 90 : 70, false, stickerColour(st)); if (st.j) snd.jelly(0.3); return; }
+  /* wild: three marks thrown on at once, each in a loud ink, at an angle, anywhere on the strip */
+  if (k === 'wild') { const ks = ['head', 'cut', 'shape', 'stamp', 'tape', 'rag', 'stk'], keep = ZCOL;
+    for (let i = 0; i < 3; i++) { ZCOL = WILDINK[2 + Math.floor(Math.random() * 4)]; c.discardActiveObject(); await zineTool(ks[Math.floor(Math.random() * ks.length)]); const o = c.getActiveObject();
+      if (o && !ZFIXED.includes(o.daKind)) { o.set({ angle: rnd(-40, 40), left: rnd(-10, W * 0.65), top: rnd(20, Math.max(60, c.getHeight() - 90)) }); if (o.getScaledWidth() < W * 0.5) o.scale((o.scaleX || 1) * rnd(1.2, 2.2)); o.setCoords(); } }
+    ZCOL = keep; c.discardActiveObject(); c.renderAll(); saveZine(); const z = $('#zine'); z.classList.remove('shake'); void z.offsetWidth; z.classList.add('shake'); snd.tick(900); return; }
   if (k === 'cut') { const g = cutOut(f, words() || 'WISH', x, y); c.add(g); c.setActiveObject(g); }
   if (k === 'image') { $('#zine-file').click(); return; }
   if (k === 'zoom') { PRESS.zl = (PRESS.zl + 1) % 3; fitZ(); refaceKey('zoom'); snd.tick(1200 + PRESS.zl * 300); return; }
@@ -769,3 +779,18 @@ $('#view').addEventListener('submit', e => {
   const img = m ? mixArt(m, u) : qrImage(u); if (!img) { tick(600); return; } placeOnPage(img, m ? 'art' : 'qr', m ? 240 : 120); $('#pl-url').value = ''; if (phone()) setPane('main');
 });
 $('#view').addEventListener('change', async e => { if (e.target.id === 'proof-in') { const fl = e.target.files && e.target.files[0]; if (fl) await takeProof(fl); e.target.value = ''; return; } if (e.target.id !== 'pack-in') return; await addPack(e.target.files); e.target.value = ''; refreshPanel(); snd.tick(1900); });
+/* Design and print's tabs: three designs kept apart; NEW wipes the one open (asked once), SAVE keeps it as a file, OPEN brings a file back */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.zn-tabs button'); if (!b) return; const nav = b.parentNode;
+  if (b.dataset.zslot != null) { const i = +b.dataset.zslot; if (i === PRESS.slot) return; if (zc) { saveZine.flush ? saveZine.flush() : null; store.set(zKey(), { json: zc.toJSON(ZINE_PROPS), h: zc.getHeight() }); }
+    PRESS.slot = i; store.set('da.press.slot', i); $('#zine').dataset.slot = i; nav.querySelectorAll('[data-zslot]').forEach(q => q.setAttribute('aria-pressed', String(q === b))); await showZine(true); snd.tick(1300); return; }
+  if (b.hasAttribute('data-znew')) { if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'SURE?'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'NEW'; }, 2600); return; }
+    b.classList.remove('sure'); b.textContent = 'NEW'; store.set(zKey(), null); zFmt = null; await showZine(true); await zineTool('reset'); snd.tear(); return; }
+  if (b.hasAttribute('data-zsave')) { if (!zc) return; const blob = new Blob([JSON.stringify({ format: 'design/1', fmt: PRESS.fmt, h: zc.getHeight(), json: zc.toJSON(ZINE_PROPS) })], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'design-' + (PRESS.slot + 1) + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('SAVED'); return; }
+  if (b.hasAttribute('data-zopen')) $('#zine-json').click();
+});
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'zine-json') return; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  try { const d = JSON.parse(await file.text()); if (!d || d.format !== 'design/1' || !d.json) throw 0; store.set(zKey(), { json: d.json, h: d.h }); zFmt = null; await showZine(true); toast('OPENED'); } catch (er) { toast('NOT A DESIGN FILE'); }
+});

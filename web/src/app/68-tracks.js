@@ -497,10 +497,10 @@ function fourHTML() {
     + (FILED && FILED.four ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '') + '</li></ol>' + deskHTML();
 }
 /* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
-const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 8); } catch (e) { return []; } };
-const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs">${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
+const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 4); } catch (e) { return []; } };
+const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs"><li class="f4dl mono">W.I.S.H.</li>${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
 document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; try { const r = parent.AURA && parent.AURA.play ? parent.AURA.play([b.dataset.dsong]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
-function refreshFour() { const f = $('#view .four'); if (f) f.outerHTML = fourHTML(); $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }
+function refreshFour() { const f = $('#view .four'); if (f) { $$('#view .f4d').forEach(d => d.remove()); f.outerHTML = fourHTML(); } $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }
 /* the loops kept, in the portfolio: each its picture, its place and its day; pressed, it plays again */
 const LART = new Map();
 const loopArt = l => { if (!LART.has(l.id)) { LART.set(l.id, mixArt(l, mixURL(l))); if (LART.size > 16) LART.delete(LART.keys().next().value); } return LART.get(l.id); };

@@ -123,7 +123,7 @@
     '<figure class="ev ev-b"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"><b>B</b></figure><figure class="ev ev-c"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"><b>C</b></figure>' +
     '<i class="pin" style="left:31%;top:8.4%"></i><i class="pin w" style="left:79%;top:18.2%"></i><i class="pin" style="left:53%;top:38.6%"></i><b class="tag">A</b><b class="case">CASE 07 · OPEN</b><b class="q">?</b></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
-  var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF6B1A" stop-opacity="0"/><stop offset="1" stop-color="#FF6B1A" stop-opacity=".7"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#0B0B0B" fill-opacity=".07" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
+  var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
   /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
   var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
@@ -137,17 +137,14 @@
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
   var REFC = REFAT.map(function (p) { return [p[0] + p[2] / 2, p[1] + p[2] * p[3] / 2]; });
-  var THEMES = ['RANGIWAHIA', 'SYNERGY', 'PRAXIS', 'SPECULATIVE FICTION', 'SPECULATIVE PRAXIS', 'RANGIWAHIA FUTURES', 'SYNERGY AS PRAXIS', 'FICTIONS OF PLACE', 'PRAXIS OF PLAY'];
-  function refs() { var R = Math.random, N = REFC.slice(), k, e = [];
-    for (k = 0; k < 15; k++) N.push([3 + R() * 94, -6 + R() * (k < 9 ? 104 : 134)]);
-    N.forEach(function (p, i) { var d = N.map(function (q, j) { return [Math.hypot(q[0] - p[0], q[1] - p[1]), j]; }).sort(function (x, y) { return x[0] - y[0]; }); [1, 2, 3].forEach(function (m) { var j = d[m][1]; if (!e.some(function (x) { return (x[0] === i && x[1] === j) || (x[0] === j && x[1] === i); })) e.push([i, j]); }); });
-    for (k = 0; k < 4; k++) e.push([Math.floor(R() * 3), 3 + Math.floor(R() * 13)]);
-    var path = e.map(function (q, n) { var a = N[q[0]], b = N[q[1]], mx = (a[0] + b[0]) / 2 + (R() - 0.5) * 14, my = (a[1] + b[1]) / 2 + (R() - 0.5) * 14;
-      return '<path pathLength="1" class="' + (n % 4 === 1 ? 'ds' : n % 5 === 2 ? 'lm' : '') + '" style="--d:' + (n * 0.06).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; }).join('');
-    var dots = N.slice(3).map(function (p, n) { return n % 3 ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (n % 2 ? 1 : 1.6) + '"/>' : '<path class="x" d="M' + (p[0] - 1.6).toFixed(1) + ' ' + (p[1] - 1.6).toFixed(1) + 'l3.2 3.2m0 -3.2l-3.2 3.2"/>'; }).join('');
-    var th = THEMES[Math.floor(R() * THEMES.length)], low = N.slice(3).filter(function (p) { return p[1] > 84 && p[1] < 124; }), wp = low.length ? low[Math.floor(R() * low.length)] : N[3];
-    return '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + path + dots + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') +
-      '<b class="rb-word" style="left:' + Math.min(52, Math.max(4, wp[0] - 18)).toFixed(1) + '%;top:' + Math.min(122, Math.max(30, wp[1])).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
+  var THEMES = ['RANGIWAHIA', 'SYNERGY', 'PRAXIS', 'SPECULATIVE', 'FUTURES', 'KINSHIP', 'COMMONS'];
+  function refs() { var R = Math.random, P = REFC, path = '';
+    [[0, 1], [0, 2], [1, 2]].forEach(function (q, n) { var a = P[q[0]], b = P[q[1]], k = 1 + Math.floor(R() * 2);
+      for (var j = 0; j < k; j++) { var bow = (R() - 0.5) * 26, mx = (a[0] + b[0]) / 2 + bow, my = (a[1] + b[1]) / 2 + bow * 0.6;
+        path += '<path pathLength="1" class="' + (j ? 'ds' : n === 1 ? 'lm' : '') + '" style="--d:' + (n * 0.3 + j * 0.2).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; } });
+    var th = THEMES[Math.floor(R() * THEMES.length)];
+    return '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + path + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') +
+      '<b class="rb-word" style="left:' + (8 + R() * 40).toFixed(1) + '%;top:' + (108 + R() * 10).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
   /* ISLAND ARCHIPELAGOS: the coast from above in the sea's blue, its cells drifting, islands joined */
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
@@ -214,9 +211,9 @@
       inner = '<h2 class="hm-t kas"><span>' + t + '</span></h2><div class="kas" aria-hidden="true">' + ks.slice(1).map(function (k, j) { return '<span style="--fk:' + k + '"' + (j === 2 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
-    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><span class="hm-sp"></span><span class="hm-lamps"></span>';
+    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM <span class="nw">E-WASTE</span></p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER ISLAND COMMUNITIES</p><span class="hm-lamps"></span>';
-    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2></div><span class="hm-lamps"></span>';
+    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? CHART + DRIFT + '<div class="hm-pics"></div>' + EVID : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
@@ -302,14 +299,14 @@
     if (a && a.wake) { a.wake(); } if (then) setTimeout(then, 60);
   }
   function home() {
-    if (xv.classList.contains('on')) shut(true); if (!away) return; away = false; H.classList.remove('hm-away'); var a = AU(); if (a && a.sleep) a.sleep(); lamps(); parallax();
+    if (xv.classList.contains('on')) shut(true); if (IN.id === 'wish') { intro(false); IN.id = null; } if (!away) return; away = false; H.classList.remove('hm-away'); var a = AU(); if (a && a.sleep) a.sleep(); lamps(); parallax();
   }
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; beep(660, 0.06);
-    if (c.opens === 'aura') return goAway(function () { var a = AU(); if (a && a.home) a.home(); });
+    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id;
+    if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'portfolio') { vent(); return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print&fmt=long#print'));
@@ -322,12 +319,20 @@
   }
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
   function inFrame(src) { return function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'); xv.appendChild(fr); }; }
+  /* the sheet slides up once its experience has drawn (or after a beat), and the banner goes only once the sheet covers it */
+  var SH = { up: 0, top: 0, gone: [] };
   function sheet(title, fill) {
-    xv.setAttribute('aria-label', title); H.classList.add('hm-sheet'); var body = xv.querySelector('.hm-body');
+    clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
+    xv.setAttribute('aria-label', title); var body = xv.querySelector('.hm-body');
     [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME') n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
-    fill(body); xv.classList.add('on'); history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
+    fill(body); var fr = xv.querySelector('iframe'), done = false;
+    var go = function () { if (done) return; done = true; clearTimeout(SH.up); H.classList.add('hm-sheet'); xv.classList.add('on'); SH.top = setTimeout(function () { H.classList.add('hm-in'); intro(); }, 470); };
+    if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
+    history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
-  function shut(fromPop) { xv.classList.remove('on'); H.classList.remove('hm-sheet'); setTimeout(function () { [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME') n.remove(); }); }, 460); if (!fromPop) history.back(); }
+  function shut(fromPop) { clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-in');
+    var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME'; }); SH.gone = SH.gone.concat(old);
+    setTimeout(function () { old.forEach(function (n) { n.remove(); }); SH.gone = SH.gone.filter(function (n) { return old.indexOf(n) < 0; }); }, 460); if (!fromPop) history.back(); }
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'panel' && xv.classList.contains('on')) { shut(true); setTimeout(function () { sheet('ISLAND ARCHIPELAGOS', panelIn); }, 480); } });
   xv.querySelector('.hm-back').addEventListener('click', function () { shut(false); beep(330, 0.05); });
   root.addEventListener('click', function (e) {
@@ -335,6 +340,73 @@
     var r = e.target.closest('[data-radar]'); if (r) { beacon(r.dataset.radar, r); return; }
   });
 
+  /* the first visit to each experience: three notes in pen, an arrow from each to the thing it means. Each waits until its thing is on screen.
+     A tap on the thing works as normal; a tap anywhere else only turns the note. Seen once in light and once again in dark */
+  var INTRO = {
+    radio: [['.rd-play', 'press play to hear the example song'], ['.rd-knob[data-knob="water"]', 'each key adds a layer: life, people, water, smog, air'], ['.flip-b', 'this is the quick side. flip it over for the full studio', 1]],
+    portfolio: [['.sig-row', 'stories people have printed. tap one to open it'], ['#sec-talk input', 'write a line here and send it to the island'], ['#rx-open', 'got a code on a printed receipt? put it in here']],
+    zine: [['[data-zt="wild"]', 'wild throws three loud marks on. keep tapping', 1], ['.zn-tabs [data-zslot="1"]', 'three designs at once, one per tab. SAVE keeps one as a file'], ['[data-pick="strip"]', 'stickers live here, pixel animals too']],
+    research: [['#tools [data-t="paste"]', 'copy a picture anywhere, then paste it here'], ['#tools [data-t="link"]', 'tap two things to tie a string between them'], ['#tools [data-t="out"]', 'print the board, or keep it as a picture']],
+    kit: [['#hm-x .kt-bar a', 'start here: the install, one step at a time'], ['#hm-x .hm-list li:not(.gap)', 'tick parts off as you find them. it remembers'], ['#hm-kprint', 'print the list and take it to the tip shop']],
+    space: [['[data-s="recipe"]', 'pick what you are making: a story, a recipe, a walk'], ['.sk.end', 'add a part: words, a photo, the moon, a map'], ['#pr', 'print it as one long receipt']],
+    wish: [['#au-seed', 'tap the light. start with something you noticed'], ['.au-wish textarea', 'four short lines, one for each letter. a few words is plenty'], ['[data-add="p"]', 'the pixel jellyfish maker. put it on your poster', 1]]
+  };
+  var IN = { id: null, k: 0, t: 0, el: null, eat: 0, hit: null, cur: null };
+  function introStore() { var th = NIGHT ? 'd' : 'l', s = store.get('da.hm.intro', null) || {}; if (s.th !== th) s = { th: th, seen: {}, all: s.all, force: s.force }; return s; }
+  function introDoc() { if (IN.id === 'wish' || IN.id === 'kit') return D; var f = xv.querySelector('iframe'); try { return f && f.contentDocument && f.contentDocument.readyState !== 'loading' ? f.contentDocument : null; } catch (e) { return null; } }
+  function intro(on) {
+    clearTimeout(IN.t); if (IN.el) { IN.el.remove(); IN.el = null; } IN.hit = null;
+    if (on === false || !IN.id || !INTRO[IN.id]) return;
+    var s = introStore(); if (s.all || (navigator.webdriver && !s.force)) return;
+    IN.k = +(s.seen[IN.id] || 0); if (IN.k >= INTRO[IN.id].length) return;
+    var id = IN.id, look = function () { if (IN.id !== id) return; var d = introDoc(), st = INTRO[id][IN.k], el = d && d.querySelector(st[0]);
+      var r = el && el.getBoundingClientRect(), vh = d && d.defaultView.innerHeight;
+      if (r && r.width && !look.moved && (r.top < 0 || r.bottom > vh || r.left < 0 || r.right > d.defaultView.innerWidth)) { look.moved = 1; reveal(el); IN.t = setTimeout(look, 550); return; }
+      look.moved = 0;
+      var shown = r && r.width && r.height && r.bottom > 0 && r.top < vh && getComputedStyle(el).visibility !== 'hidden';
+      if (!shown) { IN.t = setTimeout(look, 450); return; }
+      IN.cur = [d, el, st]; note(d, r, st); };
+    IN.t = setTimeout(look, 300);
+  }
+  /* bring a thing into view by scrolling only the boxes it sits in; the home itself never moves */
+  function reveal(el) { var d = el.ownerDocument, w = d.defaultView, p = el.parentElement, r, b, cs;
+    while (p && p !== d.body && p !== d.documentElement) { cs = w.getComputedStyle(p); r = el.getBoundingClientRect(); b = p.getBoundingClientRect();
+      if (/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight) p.scrollTop += (r.top + r.height / 2) - (b.top + b.height / 2);
+      if (/(auto|scroll)/.test(cs.overflowX) && p.scrollWidth > p.clientWidth) p.scrollLeft += (r.left + r.width / 2) - (b.left + b.width / 2);
+      p = p.parentElement; }
+    if (d !== D) { r = el.getBoundingClientRect(); if (r.top < 0 || r.bottom > w.innerHeight) w.scrollBy(0, r.top + r.height / 2 - w.innerHeight / 2); } }
+  function note(d, r, st, still) {
+    var off = { x: 0, y: 0 }; if (d !== D) { var fr = xv.querySelector('iframe').getBoundingClientRect(); off.x = fr.left; off.y = fr.top; }
+    hook(d.defaultView); hook(window);
+    var W = innerWidth, Hh = innerHeight, tx = r.left + r.width / 2 + off.x, ty = r.top + r.height / 2 + off.y, rx = Math.min(150, r.width / 2 + 11), ry = Math.min(64, r.height / 2 + 11), tr = ry;
+    IN.hit = { x: r.left + off.x - 8, y: r.top + off.y - 8, w: r.width + 16, h: r.height + 16 };
+    var g = D.createElement('div'); g.id = 'hm-guide'; g.className = (NIGHT ? 'dk' : '') + (st[2] ? ' key' : '') + (still ? ' on still' : ''); g.setAttribute('aria-live', 'polite');
+    g.style.cssText = '--gx:' + tx + 'px;--gy:' + ty + 'px;--rx:' + (rx + 6) + 'px;--ry:' + (ry + 6) + 'px';
+    var nw = Math.min(260, W - 48), nx = Math.max(24, Math.min(W - 24 - nw, tx - nw / 2 + (tx < W / 2 ? 40 : -40)));
+    g.innerHTML = '<p style="left:' + nx + 'px;width:' + nw + 'px">' + st[1] + '</p><b>' + (IN.k + 1) + ' / ' + INTRO[IN.id].length + '</b>';
+    D.body.appendChild(g); IN.el = g;
+    var p = g.querySelector('p'), ph = p.offsetHeight, below = ty < Hh * 0.52, ny = below ? Math.min(Hh - ph - 40, ty + tr + 64) : Math.max(56, ty - tr - 64 - ph);
+    p.style.top = ny + 'px';
+    var sx = nx + nw / 2 + (tx < nx + nw / 2 ? -nw / 5 : nw / 5), sy = below ? ny - 8 : ny + ph + 8, a = Math.atan2(sy - ty, sx - tx), ex = tx + Math.cos(a) * (rx + 6), ey = ty + Math.sin(a) * (ry + 6);
+    var bend = (IN.k % 2 ? 1 : -1) * Math.min(60, Math.hypot(sx - ex, sy - ey) * 0.35), mx = (sx + ex) / 2 - Math.sin(a) * bend, my = (sy + ey) / 2 + Math.cos(a) * bend;
+    var ha = Math.atan2(ey - my, ex - mx), h1 = [ex - Math.cos(ha - 0.5) * 13, ey - Math.sin(ha - 0.5) * 13], h2 = [ex - Math.cos(ha + 0.5) * 13, ey - Math.sin(ha + 0.5) * 13];
+    var ring = '', R = rnd(7 + IN.k); for (var i = 0; i <= 44; i++) { var t = i / 40 * Math.PI * 2 + 0.4, w = 1 + Math.sin(t * 3 + R() * 2) * 0.035; ring += (i ? 'L' : 'M') + (tx + Math.cos(t) * (rx + 2) * w).toFixed(1) + ' ' + (ty + Math.sin(t) * (ry + 2) * w).toFixed(1); }
+    g.insertAdjacentHTML('afterbegin', '<svg aria-hidden="true"><path class="ring" d="' + ring + '"/><path d="M' + sx.toFixed(1) + ' ' + sy.toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + ex.toFixed(1) + ' ' + ey.toFixed(1) + '"/><path class="hd" d="M' + h1[0].toFixed(1) + ' ' + h1[1].toFixed(1) + 'L' + ex.toFixed(1) + ' ' + ey.toFixed(1) + 'L' + h2[0].toFixed(1) + ' ' + h2[1].toFixed(1) + '"/></svg>');
+    if (!still) requestAnimationFrame(function () { g.classList.add('on'); });
+  }
+  function renote() { if (!IN.el || !IN.cur || !IN.cur[1].isConnected) return; var old = IN.el, r = IN.cur[1].getBoundingClientRect(); note(IN.cur[0], r, IN.cur[2], true); old.remove(); }
+  function introNext() { var s = introStore(); IN.k++; s.seen[IN.id] = IN.k; store.set('da.hm.intro', s); var g = IN.el; IN.el = null; IN.hit = null;
+    if (g) { g.classList.remove('on'); setTimeout(function () { g.remove(); }, 260); } if (IN.k < INTRO[IN.id].length) intro(); }
+  function hook(w) { if (!w || w.__hmIntro) return; w.__hmIntro = 1; var raf = 0, again = function () { if (IN.el && !raf) raf = requestAnimationFrame(function () { raf = 0; renote(); }); };
+    w.addEventListener('scroll', again, true); w.addEventListener('resize', again);
+    var stop = function (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); };
+    w.addEventListener('pointerdown', function (e) { if (!IN.el || !IN.hit) return; var x = e.clientX, y = e.clientY;
+      if (w !== window) { var fr = xv.querySelector('iframe'); if (fr) { var b = fr.getBoundingClientRect(); x += b.left; y += b.top; } }
+      var h = IN.hit, onIt = x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h;
+      if (onIt || (w === window && e.target.closest && e.target.closest('.hm-back'))) { introNext(); return; }
+      IN.eat = Date.now(); stop(e); introNext(); }, true);
+    ['mousedown', 'touchstart', 'click'].forEach(function (k) { w.addEventListener(k, function (e) { if (Date.now() - IN.eat < 650) stop(e); }, { capture: true, passive: false }); });
+  }
   /* an island's experience (a stack) played in the sheet; wired to W.I.S.H., it starts from W.I.S.H.'s photograph and intention */
   function stackIn(body, id, opt) {
     body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.src = 'x.html?in=1#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
@@ -478,7 +550,7 @@
   function swim(dt, t, open) {
     J.ph += dt / 5.4; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
     var S = J.s, lo = TOPH * 0.5, O = J.orbit, far = O || J.back;
-    if (O) { J.th += dt * 0.13; J.tx = O.x + Math.cos(J.th) * O.rx; J.ty = O.y + Math.sin(J.th) * O.ry; }
+    if (O) { J.th += dt * 0.09; J.tx = O.x + Math.cos(J.th) * O.rx; J.ty = O.y + Math.sin(J.th) * O.ry; }
     else if (J.back) { J.tx = VW * 0.5; J.ty = lo; if (J.y < lo + 10) J.back = false; }
     else if (open) { if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
     else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; }
@@ -528,8 +600,12 @@
   /* the eye: the fog horn. Held: a quick photograph, printed */
   var hold = null, held = false;
   top.addEventListener('pointerdown', function (e) { if (e.target.closest('nav')) return; held = false; if (bellHit(e.clientX, e.clientY)) hold = setTimeout(function () { held = true; hold = null; J.blink = 0.4; quickPrint(); }, 650);
-    else if (root.classList.contains('reef')) { var p = pt(e); PT.x = p[0]; PT.y = p[1]; RIP.push({ x: p[0], y: p[1], r: 2, a: 0.8 }); beep(180 + Math.random() * 120, 0.08); } });
-  top.addEventListener('pointerup', function () { if (hold) { clearTimeout(hold); hold = null; } });
+    else if (root.classList.contains('reef')) { var p = pt(e), pc = pieceAt(p[0], p[1]);
+      if (pc) { HELD = { p: pc, x: p[0], y: p[1], dx: pc.x - p[0], dy: (pc.fall ? pc.cy : pc.y) - p[1] }; pc.held = true; pc.fall = 0; try { top.setPointerCapture(e.pointerId); } catch (x) { /* none */ } beep(330, 0.06); return; }
+      PT.x = p[0]; PT.y = p[1]; RIP.push({ x: p[0], y: p[1], r: 2, a: 0.8 }); beep(180 + Math.random() * 120, 0.08); } });
+  top.addEventListener('pointerup', function () { if (hold) { clearTimeout(hold); hold = null; }
+    if (HELD) { var pc = HELD.p, nx = Math.max(12, Math.min(REEF.w - 12, HELD.x + HELD.dx)), ny = HELD.y + HELD.dy, lo = REEF.sea - REEF.s * 0.17, hi = REEF.sea + REEF.s * 0.06; pc.held = false; pc.x = nx; pc.cy = ny;
+      if (pc === STAR) { pc.fy = Math.max(REEF.sea + 6, Math.min(hi + 10, ny)); pc.fall = 1; pc.vy = 0; } else { pc.y = Math.max(lo, Math.min(hi, ny)); pc.fall = 1; pc.vy = 0; } HELD = null; keepReef(); } });
   top.addEventListener('pointerleave', function () { if (hold) { clearTimeout(hold); hold = null; } PT.x = PT.y = -999; });
   top.addEventListener('click', function (e) { if (e.target.closest('nav')) return; if (held) { held = false; return; }
     if (bellHit(e.clientX, e.clientY)) { J.blink = 0.25; horn(); J.vx += Math.cos(J.a) * 6; J.vy += Math.sin(J.a) * 6; return; }
@@ -547,39 +623,70 @@
     /* light from above: a few soft shafts */
     g.save(); g.globalCompositeOperation = 'lighter'; for (var k = 0; k < 5; k++) { var x0 = w * (0.1 + r() * 0.8); g.fillStyle = 'rgba(160,200,255,' + (NIGHT ? 0.025 : 0.05) + ')'; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + 40, 0); g.lineTo(x0 + 160 + r() * 80, h); g.lineTo(x0 + 60, h); g.closePath(); g.fill(); } g.restore();
     /* the floor: sand in a few soft bands */
-    g.fillStyle = NIGHT ? 'rgba(20,34,56,.9)' : 'rgba(214,200,170,.92)'; g.beginPath(); g.moveTo(0, sea); for (var x = 0; x <= w; x += 12) g.lineTo(x, sea + Math.sin(x * 0.02) * 4 + (r() - 0.5) * 3); g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
-    grain(g, w, h, Math.round(w * rh / 30), NIGHT ? 'rgba(255,255,255,.06)' : 'rgba(80,60,30,.18)', 78);
-    /* the forms, back to front */
-    disc(g, w * 0.5, sea + 4, s * 0.16, '#3A63C8');
-    fan(g, w * 0.18, sea + 6, s * 0.62, '#F7B58C', 79); fan(g, w * 0.86, sea + 8, s * 0.46, '#F4A07C', 80); disc(g, w * 0.78, sea + 2, s * 0.08, '#E9C46A');
-    chrome(g, w * 0.36, sea - s * 0.02, s * 0.12, 0.2);
-    honey(g, w * 0.66, sea - s * 0.04, s * 0.11, 81);
-    glass(g, w * 0.58, sea - s * 0.16, s * 0.1, '#F2C230', 82);
+    g.fillStyle = NIGHT ? 'rgba(66,84,116,.96)' : 'rgba(214,200,170,.92)'; g.beginPath(); g.moveTo(0, sea); for (var x = 0; x <= w; x += 12) g.lineTo(x, sea + Math.sin(x * 0.02) * 4 + (r() - 0.5) * 3); g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
+    grain(g, w, h, Math.round(w * rh / 30), NIGHT ? 'rgba(200,225,255,.16)' : 'rgba(80,60,30,.18)', 78);
+    /* the forms: each its own piece, where it was last planted */
+    REEF = { sea: sea, s: s, w: w }; var kept = store.get('da.reef.v1', {}) || {}, kf = kept.forms || {};
+    FORMS = FDEF.map(function (d) { var p = kf[d[0]], f = { d: d, x: (p ? p[0] : d[2]) * w, y: sea + (p ? p[1] : d[3]) * s, k: 1, vy: 0, fall: 0 }; f.cy = f.y; f.sp = sprite(d, s, NIGHT); return f; });
     /* the white-line life sits on the forms */
-    WORMS = []; for (var wi = 0; wi < 5; wi++) WORMS.push({ x: w * 0.58 + (wi - 2) * s * 0.035, y: sea - s * 0.24 - Math.abs(wi - 2) * -s * 0.01, out: 1 });
-    STAR = { x: w * 0.3, y: sea + 18 };
+    WORMS = []; for (var wi = 0; wi < 5; wi++) WORMS.push({ dx: (wi - 2) * s * 0.035, dy: -s * 0.08 + Math.abs(wi - 2) * s * 0.01, x: 0, y: 0, out: 1 });
+    STAR = kept.star ? { x: kept.star[0] * w, y: sea + kept.star[1] * s } : { x: w * 0.3, y: sea + 18 }; STAR.cy = STAR.y; STAR.vy = 0; STAR.fall = 0;
     FISH = []; for (var fi = 0; fi < 9; fi++) FISH.push({ x: r() * w, y: y0 + rh * (0.15 + r() * 0.45), a: r() < 0.5 ? 0 : Math.PI, v: 14 + r() * 10, s: 0.7 + r() * 0.6, w: r() * 6 });
     SNOW = []; for (var si2 = 0; si2 < 90; si2++) SNOW.push({ x: r() * w, y: y0 + r() * rh, vx: 0, vy: 4 + r() * 6, r: 0.4 + r() * 1 });
     SNAKE.y = y0 + rh * 0.45; SLUG.sea = sea; SLUG.w = w;
   }
+  /* the reef's pieces: where each starts, its size, its colour by day and by night */
+  var FDEF = [['disc0', 'disc', 0.5, 0.011, 0.16, '#3A63C8', '#5C8BFF'], ['fan0', 'fan', 0.18, 0.016, 0.62, '#F7B58C', '#FF4FD8', 79], ['fan1', 'fan', 0.86, 0.021, 0.46, '#F4A07C', '#B45CFF', 80],
+    ['disc1', 'disc', 0.78, 0.005, 0.08, '#E9C46A', '#FFE24F'], ['chrome', 'chrome', 0.36, -0.02, 0.12, '', '#7CF2FF'], ['honey', 'honey', 0.66, -0.04, 0.11, '', '#FFB13D', 81], ['glass', 'glass', 0.58, -0.16, 0.1, '#F2C230', '#3DFFC5', 82]];
+  var FORMS = [], HELD = null, PUFF = [], QK = { x: 0, y: 0, t: 0 }, REEF = { sea: 0, s: 1, w: 1 };
+  /* each piece drawn once to its own canvas; by night tinted in its own light and glowing */
+  function sprite(d, s, night) {
+    var R = d[4] * s, isFan = d[1] === 'fan', bw = isFan ? R * 1.7 : R * 2.6, bh = isFan ? R * 1.05 : R * 2.6, ax = bw / 2, ay = isFan ? bh - R * 0.06 : bh / 2, pad = 22;
+    var c = D.createElement('canvas'); c.width = Math.ceil((bw + pad * 2) * dpr); c.height = Math.ceil((bh + pad * 2) * dpr); var g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(pad, pad);
+    var col = night && d[5] ? d[6] : d[5];
+    if (d[1] === 'fan') fan(g, ax, ay, R, col, d[7]); else if (d[1] === 'disc') disc(g, ax, ay, R, col); else if (d[1] === 'chrome') chrome(g, ax, ay, R, 0.2); else if (d[1] === 'honey') honey(g, ax, ay, R, d[7]); else glass(g, ax, ay, R, col, d[7]);
+    if (night) { g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = 0.42; g.fillStyle = d[6]; g.fillRect(0, 0, c.width, c.height);
+      var o = D.createElement('canvas'); o.width = c.width; o.height = c.height; var og = o.getContext('2d'); og.shadowColor = d[6]; og.shadowBlur = 16 * dpr; og.drawImage(c, 0, 0); og.shadowBlur = 0; og.drawImage(c, 0, 0); c = o; }
+    return { c: c, ax: ax + pad, ay: ay + pad };
+  }
+  /* a piece set down: sand thrown up, the water rings, the fish dart off, the worms pull in */
+  function land(x, y, k) { var n = Math.round(14 * (k || 1)); for (var i = 0; i < n; i++) { var a = -Math.PI * (0.1 + Math.random() * 0.8); PUFF.push({ x: x + (Math.random() - 0.5) * 20, y: y, vx: Math.cos(a) * (30 + Math.random() * 60), vy: Math.sin(a) * (40 + Math.random() * 70), a: 0.9, r: 0.8 + Math.random() * 1.8 }); }
+    RIP.push({ x: x, y: y, r: 4, a: 0.7 }); QK.x = x; QK.y = y; QK.t = 2.2; FISH.forEach(function (f) { var d = Math.hypot(f.x - x, f.y - y); if (d < 180) { f.a = Math.atan2(f.y - y, f.x - x); f.v = 90; } }); beep(90 + Math.random() * 40, 0.12); }
+  function drawForms(g, dt, t) {
+    FORMS.slice().sort(function (a, b) { return a.y - b.y; }).forEach(function (f) { var X = f.x, Y = f.y, sp = f.sp, k;
+      if (f.held) { X = HELD.x + HELD.dx; Y = HELD.y + HELD.dy; }
+      else if (f.fall) { f.vy += 2200 * dt; f.cy += f.vy * dt; if (f.cy >= f.y) { f.cy = f.y; if (f.vy > 260) { f.vy *= -0.28; land(f.x, f.y, 0.4); } else { f.fall = 0; f.vy = 0; f.k = 0.86; land(f.x, f.y, 1); } } Y = f.cy; }
+      f.k += ((f.held ? 1.1 : 1) - f.k) * Math.min(1, dt * 7); k = f.k;
+      g.save(); g.translate(X, Y); if (f.held) g.rotate(Math.sin(t * 5) * 0.07); g.scale(k, k); if (f.held) { g.globalAlpha = 0.92; }
+      g.drawImage(sp.c, -sp.ax, -sp.ay, sp.c.width / dpr, sp.c.height / dpr); g.restore(); });
+    PUFF = PUFF.filter(function (p) { p.vy += 120 * dt; p.vx *= 0.96; p.x += p.vx * dt; p.y += p.vy * dt; p.a -= dt * 0.8; if (p.a <= 0) return false; g.globalAlpha = p.a; g.fillStyle = NIGHT ? '#AFC3E8' : '#D9C79E'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); g.globalAlpha = 1; return true; });
+  }
+  /* what is under a finger: a piece of the reef (by its own shape, not its box), or the starfish */
+  function pieceAt(x, y) { if (STAR && Math.hypot(x - STAR.x, y - STAR.y) < 18) return STAR;
+    var l = FORMS.slice().sort(function (a, b) { return b.y - a.y; }); for (var i = 0; i < l.length; i++) { var f = l[i], sp = f.sp, px = Math.round((x - f.x + sp.ax) * dpr), py = Math.round((y - f.y + sp.ay) * dpr);
+      if (px < 0 || py < 0 || px >= sp.c.width || py >= sp.c.height) continue; try { if (sp.c.getContext('2d').getImageData(px, py, 1, 1).data[3] > 30) return f; } catch (e) { return f; } } return null; }
+  function keepReef() { var o = { forms: {} }; FORMS.forEach(function (f) { o.forms[f.d[0]] = [+(f.x / REEF.w).toFixed(4), +((f.y - REEF.sea) / REEF.s).toFixed(4)]; }); if (STAR) o.star = [+(STAR.x / REEF.w).toFixed(4), +(((STAR.fy || STAR.y) - REEF.sea) / REEF.s).toFixed(4)]; store.set('da.reef.v1', o); }
   function drawReef(dt, t) {
     var g = tx, w = VW, h = CH, y0 = TOPH; g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(RB, 0, 0); g.restore();
-    g.lineCap = 'round'; g.lineJoin = 'round'; PT.vx *= 0.9; PT.vy *= 0.9; var near = function (x, y, d) { return Math.hypot(x - PT.x, y - PT.y) < d; };
-    g.fillStyle = 'rgba(244,241,232,.55)'; SNOW.forEach(function (s) { var dx = s.x - PT.x, dy = s.y - PT.y, d = Math.hypot(dx, dy); if (d < 90) { s.vx += PT.vx * 0.02 + dx / d * 0.6; s.vy += PT.vy * 0.02 + dy / d * 0.6; } s.vx *= 0.96; s.vy += (5 - s.vy) * 0.02; s.x += s.vx * dt; s.y += s.vy * dt; if (s.y > h) { s.y = y0 - 10; s.x = Math.random() * w; } if (s.x < 0) s.x += w; if (s.x > w) s.x -= w; g.beginPath(); g.arc(s.x, s.y, s.r, 0, 7); g.fill(); });
-    g.strokeStyle = 'rgba(244,241,232,.92)'; g.lineWidth = 1.1;
+    g.lineCap = 'round'; g.lineJoin = 'round'; PT.vx *= 0.9; PT.vy *= 0.9; var near = function (x, y, d) { return Math.hypot(x - PT.x, y - PT.y) < d || (QK.t > 0 && Math.hypot(x - QK.x, y - QK.y) < d * 1.6); }; QK.t -= dt;
+    var gl = FORMS.filter(function (f) { return f.d[0] === 'glass'; })[0]; if (gl) WORMS.forEach(function (o) { var gx = gl.held ? HELD.x + HELD.dx : gl.x, gy = gl.held ? HELD.y + HELD.dy : gl.fall ? gl.cy : gl.y; o.x = gx + o.dx; o.y = gy + o.dy; });
+    drawForms(g, dt, t);
+    g.fillStyle = NIGHT ? 'rgba(150,255,205,.8)' : 'rgba(244,241,232,.55)'; SNOW.forEach(function (s) { if (NIGHT) g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s.r * 9 + s.x * 0.05)); var dx = s.x - PT.x, dy = s.y - PT.y, d = Math.hypot(dx, dy); if (d < 90) { s.vx += PT.vx * 0.02 + dx / d * 0.6; s.vy += PT.vy * 0.02 + dy / d * 0.6; } s.vx *= 0.96; s.vy += (5 - s.vy) * 0.02; s.x += s.vx * dt; s.y += s.vy * dt; if (s.y > h) { s.y = y0 - 10; s.x = Math.random() * w; } if (s.x < 0) s.x += w; if (s.x > w) s.x -= w; g.beginPath(); g.arc(s.x, s.y, s.r * (NIGHT ? 1.3 : 1), 0, 7); g.fill(); }); g.globalAlpha = 1;
+    g.strokeStyle = NIGHT ? '#FF8BEA' : 'rgba(244,241,232,.92)'; g.lineWidth = 1.1;
     WORMS.forEach(function (o) { var want = near(o.x, o.y, 70) ? 0 : 1; o.out += (want - o.out) * (want ? 0.02 : 0.25); if (o.out < 0.05) return; g.beginPath(); for (var i = 0; i < 6; i++) { var yy = o.y - i * 3.2 * o.out, ww = (6 - i) * 1.3 * o.out; g.moveTo(o.x - ww, yy); g.lineTo(o.x + ww, yy - 2 * o.out); } g.stroke(); });
-    if (STAR) { g.beginPath(); for (var s2 = 0; s2 <= 10; s2++) { var an = s2 / 10 * Math.PI * 2 - Math.PI / 2 + Math.sin(t * 0.2) * 0.05, rr = s2 % 2 ? 4 : 11; g[s2 ? 'lineTo' : 'moveTo'](STAR.x + Math.cos(an) * rr, STAR.y + Math.sin(an) * rr); } g.closePath(); g.stroke(); }
+    if (STAR) { if (STAR.held) { STAR.x = HELD.x + HELD.dx; STAR.y = HELD.y + HELD.dy; } else if (STAR.fall) { STAR.vy += 2200 * dt; STAR.cy += STAR.vy * dt; if (STAR.cy >= STAR.fy) { STAR.cy = STAR.fy; STAR.fall = 0; land(STAR.x, STAR.cy, 0.5); } STAR.y = STAR.cy; }
+      g.strokeStyle = NIGHT ? '#FFE15A' : 'rgba(244,241,232,.92)'; if (NIGHT) { g.fillStyle = 'rgba(255,225,90,' + (0.25 + 0.2 * Math.sin(t * 2)).toFixed(2) + ')'; } g.beginPath(); for (var s2 = 0; s2 <= 10; s2++) { var an = s2 / 10 * Math.PI * 2 - Math.PI / 2 + Math.sin(t * 0.2) * 0.05, rr = s2 % 2 ? 4 : 11; g[s2 ? 'lineTo' : 'moveTo'](STAR.x + Math.cos(an) * rr, STAR.y + Math.sin(an) * rr); } g.closePath(); if (NIGHT) g.fill(); g.stroke(); g.strokeStyle = NIGHT ? '#7DFFE6' : 'rgba(244,241,232,.92)'; }
     FISH.forEach(function (f) { if (near(f.x, f.y, 100)) { var aw = Math.atan2(f.y - PT.y, f.x - PT.x); f.a += Math.atan2(Math.sin(aw - f.a), Math.cos(aw - f.a)) * 0.2; f.v = Math.min(80, f.v + 6); } else { f.v += (16 - f.v) * 0.02; f.a += Math.sin(t * 0.7 + f.w) * 0.004; }
       if (f.y < y0 + 20) f.a += 0.05; if (f.y > y0 + (h - y0) * 0.62) f.a -= 0.05; f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * 0.5; if (f.x < -20) f.x = w + 20; if (f.x > w + 20) f.x = -20;
-      g.save(); g.translate(f.x, f.y); g.rotate(f.a); g.scale(f.s, f.s); var wag = Math.sin(t * 9 + f.w) * 2.5; g.beginPath(); g.moveTo(9, 0); g.quadraticCurveTo(0, -5, -8, 0); g.quadraticCurveTo(0, 5, 9, 0); g.moveTo(-8, 0); g.lineTo(-14, -4 + wag); g.lineTo(-13, 4 + wag); g.lineTo(-8, 0); g.stroke(); g.beginPath(); g.arc(5, -1, 0.9, 0, 7); g.fillStyle = INK; g.fill(); g.restore(); });
+      g.save(); g.translate(f.x, f.y); g.rotate(f.a); g.scale(f.s, f.s); var wag = Math.sin(t * 9 + f.w) * 2.5; g.beginPath(); g.moveTo(9, 0); g.quadraticCurveTo(0, -5, -8, 0); g.quadraticCurveTo(0, 5, 9, 0); g.moveTo(-8, 0); g.lineTo(-14, -4 + wag); g.lineTo(-13, 4 + wag); g.lineTo(-8, 0); g.stroke(); g.beginPath(); g.arc(5, -1, NIGHT ? 1.4 : 0.9, 0, 7); g.fillStyle = NIGHT ? '#FFE15A' : INK; g.fill(); g.restore(); });
     SNAKE.t += dt; SNAKE.x += dt * 16; if (SNAKE.x > w + 200) SNAKE.x = -200; var sy0 = SNAKE.y + Math.sin(SNAKE.t * 0.3) * 20;
-    g.lineWidth = 2.2; for (var b = 0; b < 22; b++) { var x0 = SNAKE.x - b * 6, yA = sy0 + Math.sin(SNAKE.t * 3 - b * 0.45) * 6, x1 = x0 - 6, y1 = sy0 + Math.sin(SNAKE.t * 3 - (b + 1) * 0.45) * 6; g.globalAlpha = b % 2 ? 0.95 : 0.35; g.beginPath(); g.moveTo(x0, yA); g.lineTo(x1, y1); g.stroke(); } g.globalAlpha = 1; g.lineWidth = 1.1;
+    g.strokeStyle = NIGHT ? '#8FD3FF' : 'rgba(244,241,232,.92)'; g.lineWidth = 2.2; for (var b = 0; b < 22; b++) { var x0 = SNAKE.x - b * 6, yA = sy0 + Math.sin(SNAKE.t * 3 - b * 0.45) * 6, x1 = x0 - 6, y1 = sy0 + Math.sin(SNAKE.t * 3 - (b + 1) * 0.45) * 6; g.globalAlpha = b % 2 ? 0.95 : 0.35; g.beginPath(); g.moveTo(x0, yA); g.lineTo(x1, y1); g.stroke(); } g.globalAlpha = 1; g.lineWidth = 1.1;
     if (SLUG.sea) { SLUG.u += dt * 0.004; if (SLUG.u > 0.95) SLUG.u = 0.05; var ux = SLUG.u * SLUG.w, uy = SLUG.sea + 8; SLUG.gill += ((near(ux, uy, 60) ? 0 : 1) - SLUG.gill) * 0.1;
       g.beginPath(); g.ellipse(ux, uy, 10, 3.2, 0, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(ux + 8, uy - 2); g.lineTo(ux + 11, uy - 7); g.moveTo(ux + 6, uy - 2); g.lineTo(ux + 7, uy - 7); for (var gi = 0; gi < 4; gi++) { g.moveTo(ux - 6, uy - 2); g.lineTo(ux - 6 + Math.cos(-2 - gi * 0.35) * 6 * SLUG.gill, uy - 2 + Math.sin(-2 - gi * 0.35) * 6 * SLUG.gill); } g.stroke(); }
     RIP = RIP.filter(function (q) { q.r += dt * 120; q.a -= dt * 1.4; if (q.a <= 0) return false; g.globalAlpha = q.a; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.stroke(); g.globalAlpha = 1; return true; });
   }
   var pt = function (e) { var r = tcv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  top.addEventListener('pointermove', function (e) { if (!root.classList.contains('reef')) return; var p = pt(e); PT.vx = (p[0] - PT.x) * 2; PT.vy = (p[1] - PT.y) * 2; PT.x = p[0]; PT.y = p[1]; });
+  top.addEventListener('pointermove', function (e) { if (!root.classList.contains('reef')) return; var p = pt(e); PT.vx = (p[0] - PT.x) * 2; PT.vy = (p[1] - PT.y) * 2; PT.x = p[0]; PT.y = p[1]; if (HELD) { HELD.x = p[0]; HELD.y = p[1]; } });
 
   /* ───────── the switchboard: one jack to each thing, each by its own mark; the starting ones lit, the rest dark holes until found ───────── */
   var G = function (s) { return s; };
@@ -758,10 +865,10 @@
     if (Math.round((top.clientWidth || innerWidth) * dpr) !== tcv.width || Math.abs(TOPH + reefH() - CH) > 1) seaSize();
     var open = root.classList.contains('reef') && !away, t = now / 1000;
     var jr = tcv.getBoundingClientRect(), rr = root.getBoundingClientRect();
-    if (CUR === 'portfolio' && !open && !away && !xv.classList.contains('on')) { var lb = col.querySelector('[data-id="portfolio"] .rc-lbl'), lr = lb && lb.getBoundingClientRect();
-      if (lr && lr.width) { var ox = lr.left + lr.width / 2 - jr.left, oy = lr.top + lr.height / 2 - jr.top; if (!J.orbit) { J.th = Math.atan2(J.y - oy, J.x - ox) + 0.5; J.back = false; } J.orbit = { x: ox, y: oy, rx: Math.max(78, lr.width * 0.9), ry: Math.max(52, lr.height * 2.6) }; } }
+    if (CUR === 'portfolio' && !open && !away && !xv.classList.contains('on')) { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect();
+      if (lr && lr.width) { var ox = lr.left + lr.width / 2 - jr.left, oy = lr.top + lr.height / 2 - jr.top; if (!J.orbit) { J.th = Math.atan2(J.y - oy, J.x - ox) + 0.5; J.back = false; } J.orbit = { x: ox, y: oy, rx: lr.width * 0.34, ry: lr.height * 0.26 }; } }
     else if (J.orbit) { J.orbit = null; J.back = true; }
-    if (!RM.matches) swim(dt * (J.orbit ? 5 : J.back ? 4 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
+    if (!RM.matches) swim(dt * (J.orbit ? 3.5 : J.back ? 5.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));

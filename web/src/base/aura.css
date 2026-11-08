@@ -66,7 +66,7 @@ html.aura-on body { background: var(--blue, #17457F); }
 .au-side .au-xf { flex: 1; width: 100%; border: 0; background: transparent; }
 .au-side .au-wback { font: 400 18px/1 inherit; color: #E9F2E4; }
 .au-xp { color: inherit; text-decoration: none; border: 1px solid currentColor; padding: 5px 8px; opacity: .8; } .au-xp:hover, .au-xp:focus-visible { opacity: 1; }
-#aura.m-seed #au-seed { display: block; position: absolute; left: 50%; top: 50%; width: 140px; height: 140px; margin: -70px; border-radius: 50%; }
+#aura.m-seed #au-seed { display: block; position: absolute; left: 50%; top: var(--scy, 50%); width: 140px; height: 140px; margin: -70px; border-radius: 50%; }
 #aura.m-bang .au-orb, #aura.m-globe .au-orb { display: grid; }
 #aura.m-globe #au-base, #aura.m-globe #au-theme, #aura.m-seed #au-theme { display: flex; }
 /* the sound key on the start too: the desk, and on it the hum's own switch */

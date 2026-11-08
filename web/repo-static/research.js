@@ -185,8 +185,8 @@
   if (!LIST.some(function (b) { return b.id === at; })) at = LIST[0].id;
   if (D.fonts && D.fonts.load) D.fonts.load('600 24px "Archivo Narrow"').then(function () { cv.getObjects().forEach(function (o) { if (o.initDimensions) o.initDimensions(); }); cv.requestRenderAll(); });
   openBoard(at);
-  /* the first time: five taps, written and drawn by hand, each pointing at what it means */
-  var TIPS = [['paste', 'copy a picture anywhere, then paste it here'], ['note', 'write a note'], ['link', 'tap two things to join them'], [null, 'two fingers: zoom and move'], ['out', 'print it, or keep it as a picture']];
+  /* the first time: three taps, written and drawn by hand, each pointing at what it means (inside novel.global the home draws them) */
+  var TIPS = [['paste', 'copy a picture anywhere, then paste it here'], ['link', 'tap two things to tie a string between them'], ['out', 'print the board, or keep it as a picture']];
   function guide(i) { var g = $('#guide'); if (i >= TIPS.length) { if (g) g.remove(); try { localStorage.setItem('da.rb.guide', '1'); } catch (e) { /* this visit */ } return; }
     if (!g) { g = D.createElement('div'); g.id = 'guide'; D.body.appendChild(g); g.addEventListener('click', function () { guide(+g.dataset.i + 1); }); }
     g.dataset.i = i; var b = TIPS[i][0] && $('#tools [data-t="' + TIPS[i][0] + '"]'), r = b ? b.getBoundingClientRect() : null, W = innerWidth, Hh = innerHeight;
@@ -194,5 +194,5 @@
     var tx = r ? r.left + r.width / 2 : W / 2, ty = r ? r.top - 6 : Hh * 0.5, sx = Math.min(W - 40, Math.max(40, W * 0.5)), sy = Hh * 0.42;
     g.innerHTML = '<svg width="' + W + '" height="' + Hh + '">' + (r ? '<path d="M' + sx + ' ' + (sy + 34) + ' Q' + ((sx + tx) / 2 + 40) + ' ' + ((sy + ty) / 2) + ' ' + tx + ' ' + ty + '"/><path d="M' + (tx - 9) + ' ' + (ty - 14) + ' L' + tx + ' ' + ty + ' L' + (tx + 11) + ' ' + (ty - 12) + '"/>' : '<path d="M' + (W / 2 - 70) + ' ' + (sy + 70) + ' l40 -30 M' + (W / 2 + 70) + ' ' + (sy + 70) + ' l-40 -30"/><circle cx="' + (W / 2 - 74) + '" cy="' + (sy + 74) + '" r="12"/><circle cx="' + (W / 2 + 74) + '" cy="' + (sy + 74) + '" r="12"/>') + '</svg>' +
       '<p style="top:' + (sy - 30) + 'px">' + TIPS[i][1] + '</p><b>' + (i + 1) + ' / ' + TIPS.length + '</b>'; }
-  try { if (!localStorage.getItem('da.rb.guide')) setTimeout(function () { guide(0); }, 500); } catch (e) { /* no storage */ }
+  try { if (!/[?&]in=1/.test(location.search) && !localStorage.getItem('da.rb.guide')) setTimeout(function () { guide(0); }, 500); } catch (e) { /* no storage */ }
 })();
