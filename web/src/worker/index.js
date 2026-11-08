@@ -981,13 +981,13 @@ async function playSend(db, env, req) {
   if (!n || !src.trim() || src.length > 40e3) return fail(400, 'play');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
   const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (w >= 200) return fail(503, 'full');
-  const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print';
-  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, who) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', 'waiting', JSON.stringify({ n, th, src }), now(), who).run();
+  const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
+  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, who) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', 'waiting', JSON.stringify({ n, th, fr, src }), now(), who).run();
   return json({ code }, 201);
 }
 async function playList(db) {
   const { results } = await db.prepare("SELECT code, body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL ORDER BY decided DESC LIMIT 24").all();
-  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th }; } catch (e) { return null; } }).filter(Boolean) });
+  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '' }; } catch (e) { return null; } }).filter(Boolean) });
 }
 async function playOne(db, c) {
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code');

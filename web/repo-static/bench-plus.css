@@ -154,16 +154,6 @@ html[data-m="page"] #pg, html[data-m="game"] #gm, html[data-m="card"] #cd { disp
 .st-w li i { width: 14px; height: 2px; background: #FF5436; border-radius: 1px; }
 .st-w li button { width: 22px; height: 22px; border-radius: 50%; font-size: 13px; line-height: 1; }
 .st-w li.none { padding: 0 12px; opacity: .5; }
-.st-fr { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
-.st-fr button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px; border-radius: 8px; font: 600 8px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; }
-.st-fr button[aria-pressed="true"] { outline: 2px solid #FF5436; outline-offset: 1px; }
-.st-fr i { width: 40px; height: 54px; border-radius: 4px; background: #F4F1E8; box-shadow: inset 0 0 0 1px rgba(11, 11, 11, .3); }
-.st-fr .fr-dots i { background: radial-gradient(circle, #0B0B0B 1.2px, transparent 1.5px) 0 0 / 4px 4px, #F4F1E8; }
-.st-fr .fr-steps i { box-shadow: inset 0 0 0 3px #C9C1F7, inset 0 0 0 4px #0B0B0B, inset 0 0 0 6px #C9C1F7; }
-.st-fr .fr-stripe i { background: repeating-linear-gradient(45deg, #1EA0E0 0 4px, #0B0B0B 4px 8px); box-shadow: inset 0 0 0 4px #F4F1E8, inset 0 0 0 40px transparent; }
-.st-fr .fr-coral i { box-shadow: inset 0 0 0 3px #F0B39A, inset 0 0 0 4px #E5262B; }
-.st-fr .fr-lunch i { box-shadow: inset 0 0 0 4px #F2B6C6, inset 0 0 0 5px #1F7A3E; }
-.st-fr .fr-print i { background: #17457F; box-shadow: inset 0 0 0 3px #17457F, inset 0 0 0 4px #F2B6C6; }
 .st-say { font: 500 10px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; opacity: .6; }
 
 /* LIVE: code on one side, it running with its paper on the other */
@@ -193,3 +183,28 @@ html[data-m="page"] #pg, html[data-m="game"] #gm, html[data-m="card"] #cd { disp
 .lv-dev #lv-kit { height: 100%; }
 .lv-dev .pk-scr { border-radius: 20px; }
 .lv-dev .pk-pap::before { background: #2A2A2A; }
+
+/* frames: worn by what is being made (the card, the play's screen), and kept with a play */
+.bf-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.bf-row button { width: 26px; height: 34px; padding: 0; border-radius: 4px; display: grid; place-items: center; }
+.bf-row button[aria-pressed="true"] { outline: 2px solid #FF5436; outline-offset: 1px; }
+.bf-row i { width: 20px; height: 28px; border-radius: 3px; background: #F4F1E8; box-shadow: inset 0 0 0 1px rgba(11, 11, 11, .3); }
+.bf-row .fr-dots i { background: radial-gradient(circle, #0B0B0B 1px, transparent 1.3px) 0 0 / 4px 4px, #F4F1E8; }
+.bf-row .fr-steps i { box-shadow: inset 0 0 0 2px #C9C1F7, inset 0 0 0 3px #0B0B0B, inset 0 0 0 5px #C9C1F7; }
+.bf-row .fr-stripe i { background: repeating-linear-gradient(45deg, #1EA0E0 0 3px, #0B0B0B 3px 6px); }
+.bf-row .fr-coral i { box-shadow: inset 0 0 0 3px #F0B39A, inset 0 0 0 4px #E5262B; }
+.bf-row .fr-lunch i { box-shadow: inset 0 0 0 3px #F2B6C6, inset 0 0 0 4px #1F7A3E; }
+.bf-row .fr-print i { background: #17457F; box-shadow: inset 0 0 0 2px #17457F, inset 0 0 0 3px #F2B6C6; }
+html.bf-dots .cd-card, html.bf-dots #lv .pk-scr { box-shadow: 0 0 0 7px #F4F1E8, 0 0 0 7px #F4F1E8; outline: 7px dotted #0B0B0B; outline-offset: -4px; }
+html.bf-steps .cd-card, html.bf-steps #lv .pk-scr { box-shadow: inset 0 0 0 7px #C9C1F7, inset 0 0 0 9px #0B0B0B, inset 0 0 0 12px #C9C1F7; }
+html.bf-stripe .cd-card, html.bf-stripe #lv .pk-scr { border: 8px solid transparent; border-image: repeating-linear-gradient(45deg, #1EA0E0 0 6px, #0B0B0B 6px 12px) 8; }
+html.bf-coral .cd-card, html.bf-coral #lv .pk-scr { box-shadow: inset 0 0 0 5px #F0B39A, inset 0 0 0 7px #E5262B; }
+html.bf-lunch .cd-card, html.bf-lunch #lv .pk-scr { box-shadow: inset 0 0 0 8px #F2B6C6, inset 0 0 0 10px #1F7A3E; }
+html.bf-print .cd-card, html.bf-print #lv .pk-scr { box-shadow: inset 0 0 0 6px #17457F, inset 0 0 0 7px #F2B6C6; }
+#lv .pk-scr iframe { z-index: 0; } html[class*="bf-"] #lv .pk-scr::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inherit; }
+
+/* a bench's one tip */
+.coach { position: fixed; z-index: 90; max-width: 230px; padding: 9px 13px; border-radius: 12px; background: #0B0B0B; color: #F4F1E8; font: 400 15px/1.2 'Architects Daughter', 'Comic Sans MS', cursive; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .6); opacity: 0; transform: translateY(6px) scale(.96); transition: opacity .25s, transform .3s cubic-bezier(.3, 1.5, .5, 1); pointer-events: none; }
+.coach.up { transform: translateY(-6px) scale(.96); }
+.coach.on { opacity: 1; transform: none; }
+.coached { outline: 2px solid #FF5436 !important; outline-offset: 4px; border-radius: 12px; transition: outline-offset .3s; }

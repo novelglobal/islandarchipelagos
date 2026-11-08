@@ -67,10 +67,12 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .hm-sp { flex: 1; }
 .hm-open { position: absolute; inset: 0; z-index: 0; }
 .hm-keys { position: absolute; right: 12px; top: 12px; z-index: 2; display: flex; gap: 6px; }
-.hm-rk { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--c-ink) !important; color: var(--c-ink) !important; display: grid; place-items: center; background: color-mix(in srgb, var(--c-bg) 70%, transparent) !important; }
+.hm-rk { width: 30px; height: 30px; display: grid; place-items: center; border: 0 !important; background: none !important; color: var(--c-ink) !important; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--c-bg) 80%, transparent)); transition: transform .2s; }
+.hm-rk:hover { transform: scale(1.12); }
+.hm-rk svg { width: 19px !important; height: 19px !important; stroke-width: 1.7 !important; }
 .hm-rk svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .hm-rk[hidden] { display: none; }
-.hm-rk.on { background: var(--c-ink) !important; color: var(--c-bg) !important; }
+.hm-rk.on { color: #FF5436 !important; }
 .hm-lamps { display: flex; gap: 6px; min-height: 8px; }
 .hm-lamps i { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 6px currentColor; background: currentColor; }
 .hm-dots { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); z-index: 2; display: flex; flex-direction: column; gap: 7px; }
@@ -442,29 +444,18 @@ html.hm-on .au-sidek { display: none !important; } /* the island kit and the net
 .sk-slot.pl-1 .sl-n { color: #F4F1E8; -webkit-text-stroke: 0; background: #0B0B0B; padding: .06em .08em .02em; border-radius: 2px; }
 /* the cards' frames, chosen from the banner: each from a poster's palette */
 .hm-fr { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; display: none; }
-#hm.fr-dots .hm-fr, #hm.fr-steps .hm-fr, #hm.fr-stripe .hm-fr, #hm.fr-coral .hm-fr, #hm.fr-lunch .hm-fr, #hm.fr-print .hm-fr { display: block; }
-#hm.fr-dots .hm-fr { padding: 9px; background: radial-gradient(circle, #0B0B0B 1.7px, transparent 2.1px) 0 0 / 6px 6px, #F4F1E8; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
-#hm.night.fr-dots .hm-fr { background: radial-gradient(circle, #F4F1E8 1.7px, transparent 2.1px) 0 0 / 6px 6px, #0B0B0B; }
-#hm.fr-steps .hm-fr { box-shadow: inset 0 0 0 7px #C9C1F7, inset 0 0 0 9px #0B0B0B, inset 0 0 0 12px #C9C1F7; }
-#hm.fr-stripe .hm-fr { padding: 7px; background: repeating-linear-gradient(45deg, #1EA0E0 0 6px, #0B0B0B 6px 12px); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: fr-run 3s linear infinite; background-size: 200% 200%; }
+#hm .hm-card.fr-dots .hm-fr, #hm .hm-card.fr-steps .hm-fr, #hm .hm-card.fr-stripe .hm-fr, #hm .hm-card.fr-coral .hm-fr, #hm .hm-card.fr-lunch .hm-fr, #hm .hm-card.fr-print .hm-fr { display: block; }
+#hm .hm-card.fr-dots .hm-fr { padding: 9px; background: radial-gradient(circle, #0B0B0B 1.7px, transparent 2.1px) 0 0 / 6px 6px, #F4F1E8; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+#hm.night .hm-card.fr-dots .hm-fr { background: radial-gradient(circle, #F4F1E8 1.7px, transparent 2.1px) 0 0 / 6px 6px, #0B0B0B; }
+#hm .hm-card.fr-steps .hm-fr { box-shadow: inset 0 0 0 7px #C9C1F7, inset 0 0 0 9px #0B0B0B, inset 0 0 0 12px #C9C1F7; }
+#hm .hm-card.fr-stripe .hm-fr { padding: 7px; background: repeating-linear-gradient(45deg, #1EA0E0 0 6px, #0B0B0B 6px 12px); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: fr-run 3s linear infinite; background-size: 200% 200%; }
 @keyframes fr-run { to { background-position: 34px 0; } }
-#hm.fr-coral .hm-fr { border: 5px solid #F0B39A; outline: 2px solid #E5262B; outline-offset: -11px; box-shadow: inset 0 0 0 7px rgba(244, 197, 66, .0); }
-#hm.fr-coral .hm-fr::before, #hm.fr-coral .hm-fr::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; }
-#hm.fr-coral .hm-fr::before { left: 14px; top: 14px; background: #F4C542; } #hm.fr-coral .hm-fr::after { right: 14px; bottom: 14px; background: #4A6FE0; }
-#hm.fr-lunch .hm-fr { border: 8px solid #F2B6C6; outline: 1.5px solid #1F7A3E; outline-offset: -13px; }
-#hm.fr-print .hm-fr { border: 1px solid rgba(244, 241, 232, .9); outline: 1px solid rgba(244, 241, 232, .5); outline-offset: -7px; background: linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 2px 14px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 2px 14px no-repeat; box-shadow: inset 0 0 0 4px #17457F; }
-@media (prefers-reduced-motion: reduce) { #hm.fr-stripe .hm-fr { animation: none; } }
-#hm #hm-frame { position: absolute; left: 12px; top: calc(env(safe-area-inset-top) + 7px); width: 28px; height: 28px; border-radius: 14px; display: grid; place-items: center; background: #0B0B0B; color: #F4F1E8; }
-#hm #hm-frame[hidden] { display: none; }
-#hm #hm-x > .hm-xfr { z-index: 4; border-radius: 0; }
-#hm #hm-x:not(.frk) > .hm-xfr { display: none; }
-#hm-frame i { width: 13px; height: 13px; border-radius: 2px; border: 1.5px solid currentColor; display: block; }
-#hm.fr-dots #hm-frame i { border: 0; background: radial-gradient(circle, currentColor 1.1px, transparent 1.4px) 0 0 / 3.5px 3.5px; }
-#hm.fr-steps #hm-frame i { border-color: #C9C1F7; box-shadow: inset 0 0 0 1.5px #0B0B0B, inset 0 0 0 3px #C9C1F7; }
-#hm.fr-stripe #hm-frame i { border: 0; background: repeating-linear-gradient(45deg, #1EA0E0 0 2px, #0B0B0B 2px 4px); }
-#hm.fr-coral #hm-frame i { border-color: #F0B39A; box-shadow: inset 0 0 0 1px #E5262B; }
-#hm.fr-lunch #hm-frame i { border-color: #F2B6C6; box-shadow: inset 0 0 0 1px #1F7A3E; }
-#hm.fr-print #hm-frame i { border-color: #F2B6C6; background: #17457F; }
+#hm .hm-card.fr-coral .hm-fr { border: 5px solid #F0B39A; outline: 2px solid #E5262B; outline-offset: -11px; box-shadow: inset 0 0 0 7px rgba(244, 197, 66, .0); }
+#hm .hm-card.fr-coral .hm-fr::before, #hm .hm-card.fr-coral .hm-fr::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; }
+#hm .hm-card.fr-coral .hm-fr::before { left: 14px; top: 14px; background: #F4C542; } #hm .hm-card.fr-coral .hm-fr::after { right: 14px; bottom: 14px; background: #4A6FE0; }
+#hm .hm-card.fr-lunch .hm-fr { border: 8px solid #F2B6C6; outline: 1.5px solid #1F7A3E; outline-offset: -13px; }
+#hm .hm-card.fr-print .hm-fr { border: 1px solid rgba(244, 241, 232, .9); outline: 1px solid rgba(244, 241, 232, .5); outline-offset: -7px; background: linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) 6px 6px / 2px 14px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 14px 2px no-repeat, linear-gradient(#F2B6C6, #F2B6C6) right 6px bottom 6px / 2px 14px no-repeat; box-shadow: inset 0 0 0 4px #17457F; }
+@media (prefers-reduced-motion: reduce) { #hm .hm-card.fr-stripe .hm-fr { animation: none; } }
 /* wired card */
 .hm-lamps { align-items: center; flex-wrap: wrap; }
 .hm-lamps b { font: 500 9px/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .06em; padding: 4px 6px; border-radius: 3px; background: var(--mx); color: #0A0A0A; }
@@ -537,3 +528,8 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 .sk-play .pl-go { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); }
 .sk-play .pl-go svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
 .sk-play:hover .pl-go { transform: scale(1.08); }
+
+/* ISLAND: its own print, amber letters with a black offset, readable on any ground */
+.sk-kit .hm-t { color: #FFB000; -webkit-text-stroke: .018em #0A0A0A; text-shadow: .035em .035em 0 #0A0A0A; }
+/* the compass: any printer, picked in turn */
+.hm-bcn [data-pick] { font: inherit; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }

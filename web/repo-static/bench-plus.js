@@ -40,7 +40,7 @@
   host.innerHTML = '<section id="pg" class="mode" aria-label="Page"></section><section id="gm" class="mode" aria-label="Game"></section><section id="cd" class="mode" aria-label="Card"></section><section id="st" class="mode" aria-label="Set-up"></section><section id="lv" class="mode" aria-label="Live"></section>';
   function mode(m, quiet) { P.m = m; save(); H.dataset.m = m; $$('#modes [data-m]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });
     var on = $('#modes [data-m="' + m + '"]'), ink = $('#modes .mb-ink'); if (on && ink) { ink.style.left = on.offsetLeft + 'px'; ink.style.width = on.offsetWidth + 'px'; }
-    if (m === 'page') page(); if (m === 'game') game(); if (m === 'card') card(); if (m === 'set') setup(); if (m === 'live') live(); if (!quiet) beep(520 + MODES.map(function (x) { return x[0]; }).indexOf(m) * 120, 0.05); tipsAll(); }
+    if (m === 'page') page(); if (m === 'game') game(); if (m === 'card') card(); if (m === 'set') setup(); if (m === 'live') live(); if (!quiet) coach(m); if (!quiet) beep(520 + MODES.map(function (x) { return x[0]; }).indexOf(m) * 120, 0.05); tipsAll(); }
   bar.addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) mode(b.dataset.m); });
   addEventListener('resize', function () { var on = $('#modes [aria-pressed="true"]'), ink = $('#modes .mb-ink'); if (on && ink) { ink.style.left = on.offsetLeft + 'px'; ink.style.width = on.offsetWidth + 'px'; } });
 
@@ -256,7 +256,7 @@
       el.innerHTML = '<div class="cd-pick">' + [['slip', 'YOUR SLIP', 'The receipt from SLIP'], ['page', 'YOUR PAGE', 'The phone page from PAGE'], ['game', 'YOUR GAME', 'The game from GAME']].map(function (w) { return '<button type="button" data-what="' + w[0] + '" title="' + w[2] + '">' + MODES.filter(function (m) { return m[0] === w[0]; })[0][3] + '<span>' + w[1] + '</span></button>'; }).join('') + '</div>' +
         '<div class="cd-main"><article class="cd-card" aria-label="How the card will look"><div class="cd-art"></div><b class="cd-new">NEW</b><h2 class="cd-t"></h2><p class="cd-l"></p><i class="cd-shine" aria-hidden="true"></i></article>' +
         '<div class="cd-form"><label><span>NAME</span><input data-cf="name" maxlength="28"></label><label><span>ONE LINE</span><input data-cf="line" maxlength="60"></label>' +
-        '<div class="cd-th">' + swatches(cd.th, 'data-cth') + '</div><button type="button" id="cd-send" title="Send it to novel.global to go on the front page">' + MI('card') + '<span>SEND TO THE FRONT PAGE</span></button><p class="cd-say" aria-live="polite"></p></div></div>';
+        '<div class="cd-th">' + swatches(cd.th, 'data-cth') + '</div>' + frameRow() + '<button type="button" id="cd-send" title="Send it to novel.global to go on the front page">' + MI('card') + '<span>SEND TO THE FRONT PAGE</span></button><p class="cd-say" aria-live="polite"></p></div></div>';
       el.addEventListener('click', cardClick); el.addEventListener('input', function (e) { var f = e.target.dataset.cf; if (!f) return; cd[f] = e.target.value; save(); cardPaint(); });
       $('.cd-card', el).addEventListener('pointermove', function (e) { var r = this.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; this.style.transform = 'perspective(700px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 14) + 'deg)'; this.style.setProperty('--sx', (x + 0.5) * 100 + '%'); this.style.setProperty('--sy', (y + 0.5) * 100 + '%'); });
       $('.cd-card', el).addEventListener('pointerleave', function () { this.style.transform = ''; }); }
@@ -299,7 +299,7 @@
         B('lv-pr', 'Print its paper', '<path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/>') +
         B('lv-up', 'Make it a small card', '<path d="M5 3h14v18H5z"/><path d="M12 16V8M8.5 11.5L12 8l3.5 3.5"/>', 'up') + '</div>' +
         '<textarea id="lv-src" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code"></textarea><p class="lv-err" aria-live="polite"></p>' +
-        '<div class="lv-pub" hidden><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div><button type="button" id="lv-send" title="Send for approval">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
+        '<div class="lv-pub" hidden><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div>' + frameRow() + '<button type="button" id="lv-send" title="Send for approval">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
         '<div class="lv-dev"><div id="lv-kit"></div></div>';
       LV = PK.mount($('#lv-kit'), { keep: function (k, v) { try { ls.keep[k] = JSON.parse(v); save(); } catch (e) { /* skipped */ } }, err: function (s) { $('#lv .lv-err').textContent = s; }, ink: function () { beep(1400 + Math.random() * 300, 0.012); } });
       var ta = $('#lv-src'), t0 = 0; ta.value = ls.src;
@@ -320,7 +320,7 @@
     if ((b = e.target.closest('[data-lth]'))) { ls.th = b.dataset.lth; save(); $$('[data-lth]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); liveRun(); beep(660, 0.04); return; }
     if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = ''; try { who = NG && NG.me ? NG.me() : ''; } catch (er) { who = ''; }
       if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'NOVEL.GLOBAL ONLY'; return; }
-      say.textContent = '···'; fetch('/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, src: ls.src }) })
+      say.textContent = '···'; fetch('/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src }) })
         .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : 'NOT SENT'; flash('lv-send', 0); return; } say.textContent = 'SENT · WAITING FOR APPROVAL'; flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
         .catch(function () { say.textContent = 'OFFLINE'; flash('lv-send', 0); }); } }
 
@@ -333,22 +333,32 @@
     ['build', 'ISLAND BUILD', 'The kit list and the zine into the builder', [['kit', 'space'], ['zine', 'space'], ['radio', 'wish']]],
     ['bare', 'BARE', 'Nothing joined', []]];
   var FRAMES = [['none', 'NONE'], ['dots', 'DOTS'], ['steps', 'LILAC'], ['stripe', 'CYAN'], ['coral', 'CORAL'], ['lunch', 'PINK'], ['print', 'BLUEPRINT']];
+  var frameRow = function () { return '<div class="bf-row" role="group" aria-label="Frame">' + FRAMES.map(function (f) { return '<button type="button" data-bfr="' + f[0] + '" class="fr-' + f[0] + '" title="' + f[1].toLowerCase() + ' frame" aria-pressed="' + (f[0] === (P.fr || 'none')) + '"><i></i></button>'; }).join('') + '</div>'; };
+  var frameSet = function (f) { P.fr = f; save(); FRAMES.forEach(function (x) { H.classList.toggle('bf-' + x[0], x[0] === f); }); $$('[data-bfr]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.bfr === f)); }); };
+  D.addEventListener('click', function (e) { var b = e.target.closest('[data-bfr]'); if (b) { frameSet(b.dataset.bfr); beep(560, 0.04); } });
+  frameSet(P.fr || 'none');
   var NAMES = { radio: 'RADIO', wish: 'STRATEGY', research: 'RESEARCH', zine: 'PRINT', kit: 'ISLAND', space: 'BUILDER', portfolio: 'STORIES', reef: 'REEF', eye: 'EYE' };
   var same = function (a, b) { var k = function (l) { return l.map(function (w) { return w.slice().sort().join('-'); }).sort().join(); }; return k(a) === k(b); };
-  function setup() { var el = $('#st'), h = HOME(), w = h ? h.wires() : [], fr = FR_ON || 'none';
+  function setup() { var el = $('#st'), h = HOME(), w = h ? h.wires() : [];
     if (!el.dataset.on) { el.dataset.on = 1; el.addEventListener('click', setClick); }
     el.innerHTML = '<div class="st-sets">' + SETS.map(function (q) { return '<button type="button" data-set="' + q[0] + '" title="' + q[2] + '" aria-pressed="' + same(w, q[3]) + '"><svg viewBox="0 0 60 36" aria-hidden="true">' + net(q[3]) + '</svg><span>' + q[1] + '</span></button>'; }).join('') + '</div>' +
       '<ul class="st-w">' + (w.length ? w.map(function (x, i) { return '<li><b>' + esc(NAMES[x[0]] || x[0]) + '</b><i></i><b>' + esc(NAMES[x[1]] || x[1]) + '</b><button type="button" data-cut="' + i + '" title="Unplug">×</button></li>'; }).join('') : '<li class="none">·</li>') + '</ul>' +
-      '<h3 class="pg-h">FRAMES</h3><div class="st-fr">' + FRAMES.map(function (f) { return '<button type="button" data-fr="' + f[0] + '" class="fr-' + f[0] + '" title="' + f[1].toLowerCase() + '" aria-pressed="' + (f[0] === fr) + '"><i></i><span>' + f[1] + '</span></button>'; }).join('') + '</div>' +
       (h ? '' : '<p class="st-say">OPEN THIS FROM NOVEL.GLOBAL</p>'); }
-  var FR_ON = null; addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'frames') { FR_ON = e.data.on; if (P.m === 'set') setup(); } });
-  if (HOME()) parent.postMessage({ hm: 'frame' }, location.origin);
   var SPOT = { radio: [8, 8], wish: [30, 6], research: [52, 8], zine: [52, 28], kit: [8, 28], space: [30, 30], portfolio: [30, 18] };
   function net(l) { var o = ''; l.forEach(function (w) { var a = SPOT[w[0]], b = SPOT[w[1]]; if (a && b) o += '<path d="M' + a + 'L' + b + '"/>'; }); Object.keys(SPOT).forEach(function (k) { var on = l.some(function (w) { return w[0] === k || w[1] === k; }); o += '<circle cx="' + SPOT[k][0] + '" cy="' + SPOT[k][1] + '" r="3"' + (on ? ' class="f"' : '') + '/>'; }); return o; }
   function setClick(e) { var b, h = HOME(); if (!h) return;
     if ((b = e.target.closest('[data-set]'))) { var q = SETS.filter(function (x) { return x[0] === b.dataset.set; })[0]; parent.postMessage({ hm: 'wires', w: q[3] }, location.origin); q[3].forEach(function (x, i) { setTimeout(function () { beep(440 + i * 110, 0.05); }, i * 70); }); setTimeout(setup, 120); return; }
     if ((b = e.target.closest('[data-cut]'))) { var w = h.wires(); w.splice(+b.dataset.cut, 1); parent.postMessage({ hm: 'wires', w: w }, location.origin); beep(220, 0.06); setTimeout(setup, 120); return; }
-    if ((b = e.target.closest('[data-fr]'))) { parent.postMessage({ hm: 'frame', f: b.dataset.fr }, location.origin); beep(560, 0.04); } }
+  }
+
+  /* one tip for each bench's main thing, the first time it is opened here, and never again */
+  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-ai', 'ask any AI, paste its code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
+  function coach(m) { var seen = {}; try { seen = JSON.parse(localStorage.getItem('da.bench.tips') || '{}') || {}; } catch (e) { seen = {}; } if (seen[m] || !COACH[m] || navigator.webdriver) return;
+    setTimeout(function () { if (P.m !== m) return; var t = $(COACH[m][0]); if (!t || !t.getBoundingClientRect().width) return; seen[m] = 1; try { localStorage.setItem('da.bench.tips', JSON.stringify(seen)); } catch (e) { /* this visit */ }
+      var r = t.getBoundingClientRect(), c = D.createElement('div'); c.className = 'coach'; c.setAttribute('role', 'status'); c.textContent = COACH[m][1]; D.body.appendChild(c);
+      var top = r.bottom + 10 + c.offsetHeight > innerHeight ? r.top - c.offsetHeight - 10 : r.bottom + 10; c.style.top = Math.max(8, top) + 'px'; c.style.left = Math.max(8, Math.min(innerWidth - c.offsetWidth - 8, r.left + r.width / 2 - c.offsetWidth / 2)) + 'px'; c.classList.toggle('up', top < r.top);
+      t.classList.add('coached'); var go = function () { c.classList.remove('on'); t.classList.remove('coached'); setTimeout(function () { c.remove(); }, 300); D.removeEventListener('pointerdown', go, true); };
+      requestAnimationFrame(function () { c.classList.add('on'); }); setTimeout(go, 5200); D.addEventListener('pointerdown', go, true); }, 700); }
 
   var go0 = function () { if (go0.d) return; go0.d = 1; mode(P.m, true); }; H.dataset.m = P.m; requestAnimationFrame(go0); setTimeout(go0, 150);
 })();
