@@ -58,7 +58,13 @@
   }
 
   /* ───────── talk: the board, every post with its maker's code and kin; hidden ones stay here ───────── */
-  const KIN = ['Irukandji', 'Blue-ringed octopus', 'Weedy seadragon', 'Port Jackson shark', 'Little penguin', 'Australian fur seal', 'Southern right whale', 'Burrunan dolphin', 'Bluebottle', 'Biscuit star', 'Giant cuttlefish', 'Blue groper', 'Old wife', 'Sea hare', 'Spider crab', 'Pied oystercatcher', 'Crested tern', 'Hooded plover', 'Short-tailed shearwater', 'Australasian gannet', 'Silver gull', 'Black swan', 'Australian pelican', 'Superb fairy-wren', 'Rainbow lorikeet', 'Laughing kookaburra', 'Tawny frogmouth', 'Powerful owl', 'Australian magpie', 'Galah', 'Sulphur-crested cockatoo', 'Grey-headed flying-fox', 'Brushtail possum', 'Ringtail possum', 'Platypus', 'Echidna', 'Eastern grey kangaroo', 'Swamp wallaby', 'Common wombat', 'Koala', 'Sugar glider', 'Growling grass frog', 'Brown tree frog', 'Blue-tongue lizard', 'Eastern water dragon', 'Tiger snake', 'Golden sun moth', 'Bogong moth', 'Blue-banded bee', 'Common brown butterfly', 'Garden orb-weaver', 'Huntsman', 'Yabby', 'Murray cod', 'River blackfish', 'Short-finned eel', 'River red gum', 'Golden wattle', 'Coast banksia', 'Common heath', 'Bull kelp', 'Eelgrass', 'Coast saltbush', 'Mangrove'];
+  const KIN = ['Irukandji', 'Blue-ringed octopus', 'Weedy seadragon', 'Port Jackson shark', 'Little penguin', 'Australian fur seal', 'Southern right whale', 'Burrunan dolphin',
+ 'Bluebottle', 'Biscuit star', 'Giant cuttlefish', 'Blue groper', 'Old wife', 'Sea hare', 'Spider crab', 'Pied oystercatcher', 'Crested tern', 'Hooded plover',
+ 'Short-tailed shearwater', 'Australasian gannet', 'Silver gull', 'Black swan', 'Australian pelican', 'Superb fairy-wren', 'Rainbow lorikeet', 'Laughing kookaburra',
+ 'Tawny frogmouth', 'Powerful owl', 'Australian magpie', 'Galah', 'Sulphur-crested cockatoo', 'Grey-headed flying-fox', 'Brushtail possum', 'Ringtail possum', 'Platypus',
+ 'Echidna', 'Eastern grey kangaroo', 'Swamp wallaby', 'Common wombat', 'Koala', 'Sugar glider', 'Growling grass frog', 'Brown tree frog', 'Blue-tongue lizard',
+ 'Eastern water dragon', 'Tiger snake', 'Golden sun moth', 'Bogong moth', 'Blue-banded bee', 'Common brown butterfly', 'Garden orb-weaver', 'Huntsman', 'Yabby',
+ 'Murray cod', 'River blackfish', 'Short-finned eel', 'River red gum', 'Golden wattle', 'Coast banksia', 'Common heath', 'Bull kelp', 'Eelgrass', 'Coast saltbush', 'Mangrove'];
   const kinName = k => (k == null ? '' : KIN[k % KIN.length]);
   /* each step's talk and each poster's; one at a time when chosen (a poster's ITS TALK opens it here) */
   let talkSec = '';
@@ -140,6 +146,9 @@
       const words = objs.filter(o => typeof o.text === 'string' && o.text.trim()).map(o => o.text.trim().split('\n')[0]).slice(0, 12);
       body = [el('h3', { text: `EXAMPLE · BOARD 00 · ${objs.length} PIECES` }), el('div', { class: 'meta', text: meta }), el('p', { class: 'note', text: 'SHOW MAKES THIS THE EXAMPLE EVERY VISITOR SEES.' }),
         words.length ? el('ol', {}, words.map(w => el('li', { text: w }))) : null];
+    } else if (x.kind === 'play') {
+      let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ }
+      body = [el('h3', { text: `PLAY · ${j.n || ''}` }), el('div', { class: 'meta', text: meta }), el('pre', { class: 'note', style: 'max-height:260px;overflow:auto;white-space:pre-wrap', text: String(j.src || '').slice(0, 40000) })];
     } else if (x.kind === 'cells') {
       /* a pack of cells: its title, who sent it, and every cell, to check before it goes on the map */
       let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ } const cells = Array.isArray(j.cells) ? j.cells : [];

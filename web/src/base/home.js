@@ -31,7 +31,7 @@
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
-  var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot'];
+  var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
   function colHTML() { var out = '', run = [];
     var flush = function () { for (var k = 0; k < run.length; k += 3) out += '<section class="hm-trio n' + Math.min(3, run.length - k) + '">' + run.slice(k, k + 3).join('') + '</section>'; run = []; };
@@ -175,7 +175,7 @@
   };
   ART.isles = ART.plain;
   /* an open slot, in one of the posters' palettes: dotted bitmap, lilac steps, cyan zig-zag, pink and green, coral and primaries, blueprint */
-  ART.slot = function (L, w, h, i, c) { var g = L.b, m = L.m, n = ((c && c.ph || 1) - 1) % 6, r = rnd(200 + n), k, x, y;
+  ART.slot = function (L, w, h, i, c) { var g = L.b, m = L.m, n = ((c && (c.pal || c.ph) || 1) - 1) % 6, r = rnd(200 + n), k, x, y;
     var BG = ['#0B0B0B', '#C9C1F7', '#1EA0E0', '#F2B6C6', '#E9E4DC', '#17457F'][n]; g.fillStyle = BG; g.fillRect(0, 0, w, h);
     if (n === 0) { var st = Math.max(7, w / 36); g.fillStyle = '#F4F1E8'; for (y = st / 2; y < h; y += st) for (x = st / 2; x < w; x += st) { var v = 0.5 + 0.5 * Math.sin(x / w * 5 + y / h * 3.2) * Math.cos(y / h * 2.4 - x / w); if (v < 0.18) continue; g.beginPath(); g.arc(x, y, st * 0.46 * v, 0, 7); g.fill(); } }
     else if (n === 1) { var sw = w / 9; m.fillStyle = '#0B0B0B'; for (k = 0; k < 9; k++) m.fillRect(k * sw, h - (k + 1) * h / 13, sw + 1, (k + 1) * h / 13); }
@@ -225,12 +225,13 @@
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM E-WASTE</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
-    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph ? ' pl-' + ((c.ph - 1) % 6 + 1) : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
+    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
       '<div class="hm-keys">' + keys + '</div><div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
@@ -267,6 +268,14 @@
     if (!add) return; var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
     for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
     applyCards(''); }
+  var PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
+  function playCards(l) { var add = false;
+    (l || []).slice(0, 12).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
+      var at = CARDS.findIndex(function (c) { return c.ph; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: id, size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
+    if (!add) return; var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
+    for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
+    applyCards(''); }
+  fetch('/api/plays').then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { playCards(j.plays); }).catch(function () { /* none yet */ });
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
@@ -332,6 +341,7 @@
     if (c.opens === 'panel') return sheet(c.title, panelIn);
     if (c.opens === 'bench') return sheet(c.title, inFrame('bench?in=1' + (opt && opt.mode ? '&m=' + opt.mode : '') + '#b'));
     if (c.opens === 'unlock') return sheet('YOUR PRINTER', unlockIn);
+    if (c.opens === 'play') return sheet(c.title, inFrame('play.html?c=' + encodeURIComponent(c.play) + '#p'));
   }
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
   function inFrame(src) { return function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'); xv.appendChild(fr); }; }
@@ -365,7 +375,7 @@
     zine: [['[data-zt="wild"]', 'three loud marks', 1], ['.zn-tabs [data-zslot="1"]', 'three designs, one per tab'], ['[data-pick="strip"]', 'stickers and pixel animals'], ['^#hm-tk', 'show and talk']],
     research: [['#tools [data-t="paste"]', 'paste a picture'], ['#tools [data-t="link"]', 'tie two things together'], ['#tools [data-t="out"]', 'print or keep'], ['^#hm-tk', 'talk']],
     kit: [['#hm-x .kt-bar a', 'the install guide'], ['#hm-x .hm-list li:not(.gap)', 'tick parts as you find them'], ['#hm-kprint', 'print the parts list'], ['^#hm-tk', 'ask for help']],
-    space: [['#modes', 'slip, page, game, card, set'], ['#modes [data-m="game"]', 'test a paper game', 1], ['^#hm-tk', 'share or ask']],
+    space: [['#modes', 'slip, page, game, live, card, set'], ['#modes [data-m="game"]', 'test a paper game', 1], ['^#hm-tk', 'share or ask']],
     wish: [['#au-seed', 'tap the light to begin'], ['.au-wish textarea', 'four short lines'], ['[data-add="p"]', 'the pixel jellyfish', 1]]
   };
   var IN = { id: null, k: 0, t: 0, el: null, eat: 0, hit: null, cur: null };

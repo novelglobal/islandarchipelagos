@@ -218,7 +218,7 @@ const PUBLIC_COLS = "id, code, kind, body, dest, created, decided, (photo IS NOT
 async function listStories(db, url) {
   if (!(await madeOn(db))) return json({ stories: [], at: now() });
   const since = Math.max(0, +(url.searchParams.get('since') || 0));
-  const { results } = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('example', 'message') AND decided > ? ORDER BY decided DESC LIMIT 200`).bind(since).all();
+  const { results } = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('example', 'message', 'play') AND decided > ? ORDER BY decided DESC LIMIT 200`).bind(since).all();
   return json({ stories: results.map(storyOut), at: now() });
 }
 /* the example board everyone sees: the latest one approved, or none (then the example built into the site stands) */
@@ -229,7 +229,7 @@ async function exampleBoard(db) {
 }
 async function oneStory(db, code) {
   if (!(await madeOn(db))) return fail(404, 'not found');
-  const r = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind != 'message' AND code = ? ORDER BY decided DESC LIMIT 1`).bind(code).first();
+  const r = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('message', 'play') AND code = ? ORDER BY decided DESC LIMIT 1`).bind(code).first();
   return r ? json({ story: storyOut(r) }) : fail(404, 'not found');
 }
 async function photo(db, env, id, any) {
@@ -346,7 +346,7 @@ async function mine(db, env, req, who, id) {
   if (await tooMany(db, env, req, 'mine', 60, 10 * 60e3)) return fail(429, 'too many');
   await db.prepare('UPDATE makers SET last = ? WHERE who = ?').bind(now(), who).run();
   if (id) { const r = await db.prepare('UPDATE stories SET gone = ? WHERE id = ? AND who = ? AND gone IS NULL').bind(now(), id, who).run(); return r.meta && r.meta.changes ? json({ ok: true }) : fail(404, 'not found'); }
-  const { results } = await db.prepare(`SELECT id, code, kind, status, body, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories WHERE who = ? AND gone IS NULL AND kind NOT IN ('example', 'message') ORDER BY created DESC LIMIT 100`).bind(who).all();
+  const { results } = await db.prepare(`SELECT id, code, kind, status, body, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories WHERE who = ? AND gone IS NULL AND kind NOT IN ('example', 'play', 'message') ORDER BY created DESC LIMIT 100`).bind(who).all();
   const mk = await kinOf(db, who);
   return json({ lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
@@ -972,6 +972,28 @@ async function savePost(db, env, req) {
 }
 
 /* ───────── the router ───────── */
+/* plays: small things made in the builder's LIVE bench; they wait for approval, then stand as small cards. Their code runs only in a
+   sandbox with no network, on the phone that opens it */
+const PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
+async function playSend(db, env, req) {
+  if (await tooMany(db, env, req, 'play', 6, 10 * 60e3)) return fail(429, 'slow down');
+  const b = await body(req, 80e3); const n = typeof b.n === 'string' ? b.n.trim().toUpperCase().slice(0, 24) : '', src = typeof b.src === 'string' ? b.src : '';
+  if (!n || !src.trim() || src.length > 40e3) return fail(400, 'play');
+  const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
+  const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (w >= 200) return fail(503, 'full');
+  const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print';
+  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, who) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', 'waiting', JSON.stringify({ n, th, src }), now(), who).run();
+  return json({ code }, 201);
+}
+async function playList(db) {
+  const { results } = await db.prepare("SELECT code, body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL ORDER BY decided DESC LIMIT 24").all();
+  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th }; } catch (e) { return null; } }).filter(Boolean) });
+}
+async function playOne(db, c) {
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code');
+  const r = await db.prepare("SELECT body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
+  return json(JSON.parse(r.body));
+}
 async function api(req, env, url, ctx) {
   tally(url, req.method); settle(env, ctx);
   if (url.pathname === '/api/beat') return new Response(null, { status: 204, headers: TEXT_H });
@@ -984,6 +1006,9 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'stories' && !p[1] && m === 'POST') return send(db, env, req);
   if (p[0] === 'stories' && p[1] && m === 'GET') return CODE.test(p[1]) ? oneStory(db, p[1]) : fail(400, 'code');
   if (p[0] === 'receipts' && p[1] && m === 'GET') return receipt(db, p[1]);
+  if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db);
+  if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
+  if (p[0] === 'plays' && p[1] && m === 'GET') return playOne(db, p[1]);
   if (p[0] === 'talk' && !p[1] && m === 'GET') return talkList(db, env, req, url);
   if (p[0] === 'talk' && !p[1] && m === 'POST') return talkSay(db, env, req);
   if (p[0] === 'live' && !p[1] && m === 'POST') return live(db, env, req);

@@ -1,0 +1,12 @@
+/* a play's screen and its paper */
+.pk { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; height: 100%; min-height: 0; }
+.pk-scr { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; background: #17457F; box-shadow: inset 0 0 0 1px rgba(11, 11, 11, .25), 0 18px 40px -24px rgba(0, 0, 0, .6); transition: background .3s; }
+.pk-scr iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+.pk-pap { position: relative; display: flex; justify-content: center; padding-top: 10px; }
+.pk-pap::before { content: ''; position: absolute; left: 50%; top: 0; width: min(78%, 300px); height: 12px; transform: translateX(-50%); border-radius: 6px; background: #0B0B0B; box-shadow: inset 0 -3px 0 rgba(244, 241, 232, .14); }
+.pk-roll { width: min(70%, 270px); max-height: 0; overflow-y: auto; scrollbar-width: none; transition: max-height .5s cubic-bezier(.2, .9, .2, 1); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .22)); }
+.pk-roll::-webkit-scrollbar { display: none; }
+.pk.inked .pk-roll { max-height: min(34vh, 300px); }
+.pk-roll canvas { display: block; width: 100%; height: auto; margin-top: -6px; animation: pk-feed .45s cubic-bezier(.2, .9, .2, 1); }
+@keyframes pk-feed { from { transform: translateY(-14px); } }
+@media (prefers-reduced-motion: reduce) { .pk-roll, .pk-roll canvas { transition: none; animation: none; } }

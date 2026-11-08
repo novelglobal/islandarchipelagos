@@ -3444,3 +3444,15 @@ html.only-portfolio body::before{content:'';position:fixed;inset:0;z-index:5;bac
 .gl-acts button[disabled]{opacity:.28;pointer-events:none}
 .gl-acts .i{width:19px;height:19px}
 @media (max-width:420px){.gl-acts button{min-width:44px}.gl-acts button span{font-size:7.5px}}
+/* the radio's studio in its own window: tighter, so it fits a phone screen */
+@media (max-width:760px){
+html.only-radio .band.dev.radio.mod{padding-top:36px!important;padding-bottom:40px!important}
+html.only-radio .band.dev.radio.mod .b-emerg .cd{height:30px!important;min-height:0!important;line-height:30px!important}
+html.only-radio .band.dev.radio.mod .mstrip{margin:4px 0 4px!important;padding-top:8px!important;padding-bottom:6px!important}
+html.only-radio .band.dev.radio.mod .hero-play{width:60px!important;height:60px!important;margin:8px 0!important}
+html.only-radio .band.dev.radio.mod .hp-row{margin:2px 0!important}
+html.only-radio .band.dev.radio .four{margin:6px auto 8px!important;padding:6px 6px 4px!important}
+html.only-radio .band.dev.radio .four .f4{height:52px!important}
+html.only-radio .band.dev.radio .lyrs{margin:4px 0 2px!important;padding:6px 8px!important}
+html.only-radio .band.dev.radio .lyrs > *{height:28px!important}
+}

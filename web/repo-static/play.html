@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>novel.global</title>
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="play-kit.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #EDEAE2; }
+  html.night, html.night body { background: #0B0B0B; }
+  #p { position: fixed; inset: 0; padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+  #pr { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 3; width: 46px; height: 46px; border-radius: 50%; border: 0; display: grid; place-items: center; background: #0B0B0B; color: #F4F1E8; box-shadow: 0 8px 22px -8px rgba(0, 0, 0, .6); cursor: pointer; transition: transform .2s; }
+  #pr[hidden] { display: none; }
+  #pr:active { transform: scale(.94); }
+  #pr svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  #pr.ok { background: #1F7A3E; } #pr.no { background: #E5262B; }
+  #again { position: fixed; right: 70px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(11, 11, 11, .08); color: inherit; display: grid; place-items: center; cursor: pointer; }
+  #again svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  html.night #again { background: rgba(244, 241, 232, .12); color: #F4F1E8; }
+</style>
+</head>
+<body>
+<main id="p"></main>
+<button id="again" type="button" aria-label="Start again" title="Start again"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg></button>
+<button id="pr" type="button" aria-label="Print" title="Print" hidden><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg></button>
+<script src="vendor/qrcode.js"></script>
+<script src="play-kit.js"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search), c = q.get('c') || '', K = 'da.play.' + c, store = {};
+  if (q.get('night') === '1') document.documentElement.classList.add('night');
+  try { store = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch (e) { store = {}; }
+  var pr = document.getElementById('pr'), NG = null; try { NG = window.parent !== window ? window.parent.NG : null; } catch (e) { NG = null; }
+  var box = PK.mount(document.getElementById('p'), { keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return;
+  fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); });
+  document.getElementById('again').addEventListener('click', function () { pr.hidden = true; box.again(store); });
+  pr.addEventListener('click', function () { var u = box.paper(); if (!u || !NG) return; pr.disabled = true;
+    NG.printAgain(u, 'play').then(function () { pr.className = 'ok'; }).catch(function () { pr.className = 'no'; }).then(function () { setTimeout(function () { pr.className = ''; pr.disabled = false; }, 1600); }); });
+})();
+</script>
+</body>
+</html>

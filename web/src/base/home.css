@@ -528,3 +528,12 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 #hm-talk .tk-f button { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #FF5436; color: #0B0B0B; }
 .tk-say { margin: 0; padding: 0 18px 8px; min-height: 14px; font: 500 10px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: #FF5436; }
 @media (prefers-reduced-motion: reduce) { #hm-talk, #hm #hm-tk { transition: none; } .tk-l li.none svg { animation: none; } }
+
+/* plays made in the builder: small cards in a poster palette */
+.hm-card.sk-play { --c-bg: #0B0B0B; --c-ink: #F4F1E8; cursor: pointer; }
+.sk-play.pl-2, .sk-play.pl-3, .sk-play.pl-4, .sk-play.pl-5 { --c-ink: #0B0B0B; }
+.sk-play .hm-in { flex-direction: row; align-items: flex-end; gap: 8px; padding: 5cqw; }
+.sk-play .pl-t { flex: 1; margin: 0; font: 700 clamp(14px, 9cqw, 30px)/.95 'Poppins', Arial, sans-serif; letter-spacing: -.03em; color: var(--c-ink); text-wrap: balance; }
+.sk-play .pl-go { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); }
+.sk-play .pl-go svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
+.sk-play:hover .pl-go { transform: scale(1.08); }

@@ -150,6 +150,12 @@ fs.appendFileSync(path.join(out, '_headers'), `
 # every page: the security policy, written by build.mjs
 /*
   Content-Security-Policy: ${CSP}
+
+# a play's sandbox: its own page, run with no origin and no network, so what someone made can run and reach nothing
+/play-box.html
+  ! Content-Security-Policy
+/play-box
+  ! Content-Security-Policy
 `);
 const listing = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => (d.isDirectory() ? listing(path.join(dir, d.name), base) : [path.relative(base, path.join(dir, d.name))])).sort();
 const all = listing(out);

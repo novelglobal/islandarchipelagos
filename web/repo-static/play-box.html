@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>play</title>
+<style>html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; } iframe { display: block; width: 100%; height: 100%; border: 0; }</style>
+</head>
+<body>
+<script>
+(function () {
+  var box = null;
+  addEventListener('message', function (e) { var d = e.data; if (!d) return;
+    if (e.source === parent && e.origin === location.origin && typeof d.pkrun === 'string') { if (box) box.remove(); box = document.createElement('iframe'); box.setAttribute('sandbox', 'allow-scripts'); box.setAttribute('referrerpolicy', 'no-referrer'); box.srcdoc = d.pkrun; document.body.appendChild(box); return; }
+    if (box && e.source === box.contentWindow && d.pk === 1) parent.postMessage({ pk: 1, o: d.o }, location.origin); });
+  parent.postMessage({ pkready: 1 }, location.origin);
+})();
+</script>
+</body>
+</html>
