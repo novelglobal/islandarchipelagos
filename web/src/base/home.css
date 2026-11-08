@@ -559,10 +559,10 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 #hm .sk-radio .hm-in { padding-top: max(5cqw, 50px); }
 #hm .sk-kit .sp-sub { display: inline-block; width: fit-content; background: #0A0A0A; color: #FFB000; padding: .45em .7em; text-shadow: none; }
 /* DIRECT ACTION RADIO: the name across the card under its keys; its echoes step down to the radio and stop above it, a signal running through them */
-#hm .sk-radio .hm-in { padding: max(5cqw, 50px) 3cqw 0; }
+#hm .sk-radio .hm-in { padding: calc(var(--rs) + 9cqw) 3cqw 0; }
 #hm .sk-radio .hm-t.kas { width: 100%; }
 #hm .sk-radio .hm-t.kas span { display: block; width: 100%; box-sizing: border-box; font-size: 10.2cqw; line-height: .9; padding: .04em .06em .07em; text-align: justify; text-align-last: justify; letter-spacing: -.01em; }
-#hm .sk-radio div.kas { position: relative; flex: none; height: calc(60cqh - max(5cqw, 50px) - 11.5cqw); justify-content: space-between; margin-top: 1.4cqw; padding-left: 2.4cqw; }
+#hm .sk-radio div.kas { position: relative; flex: none; height: calc(65cqh - var(--rs) - 10.4cqw); justify-content: space-between; margin-top: 1.4cqw; padding-left: 2.4cqw; }
 #hm .sk-radio div.kas span { font-size: calc(7.6cqw * var(--fk)); margin-left: calc((1 - var(--fk)) * 30cqw); animation: kas-wave 5.2s cubic-bezier(.4, 0, .2, 1) infinite; animation-delay: calc(var(--j) * .16s); transform-origin: left center; }
 #hm .sk-radio div.kas::before { content: ''; position: absolute; left: 0; top: 0; bottom: -2cqw; border-left: 1.5px dotted #FF6B1A; opacity: .85; }
 #hm .sk-radio div.kas::after { content: ''; position: absolute; left: -2.5px; bottom: -2cqw; width: 6px; height: 6px; border-radius: 50%; background: #FF6B1A; box-shadow: 0 0 0 0 rgba(255, 107, 26, .6); animation: kas-ping 5.2s ease-out infinite; animation-delay: 2.1s; }
@@ -581,3 +581,7 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 #hm-care b { position: absolute; right: -3px; top: -3px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: #F4F1E8; color: #0B0B0B; font: 600 9px/14px 'IBM Plex Mono', monospace; text-align: center; }
 @keyframes care-got { 30% { transform: scale(1.35); box-shadow: 0 0 0 6px rgba(255, 84, 54, .35); } }
 @media (prefers-reduced-motion: reduce) { #hm-care button.got { animation: none; } }
+
+/* DIRECT ACTION RADIO: the reef's water painted on down into its top, the beacon riding it */
+.hm-card.sk-radio { --rs: min(30cqh, 54cqw); }
+.rd-sea { position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--rs) * 1.4); display: block; pointer-events: none; }

@@ -151,6 +151,104 @@
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
     [[22, 30], [48, 52], [78, 40], [36, 84], [66, 96], [84, 74], [18, 112], [50, 128]].map(function (p, k) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (k ? 1.2 : 1.9) + '"' + (k ? '' : ' class="me"') + ' style="--k:' + k + '"/>'; }).join('') + '</svg></div>';
+  /* DIRECT ACTION RADIO: the reef's water painted on down into the card, and a solar beacon riding it: a panel, its wires, the two radios strapped to its mast, a lamp that calls */
+  var RS = { cv: null, io: null, on: true, w: 0, h: 0, k: 1, E: 1, base: null, nt: null, snow: [], rip: [], rt: 0, drawn: false };
+  function rrect(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+  function rsBase(w, h, E) {
+    var c = D.createElement('canvas'), k = RS.k; c.width = Math.round(w * k); c.height = Math.round(h * k); var g = c.getContext('2d'), r = rnd(301), sea = NIGHT ? '#06152A' : '#17457F', lit = NIGHT ? '#0E2B52' : '#1E58A8', bw = E * 0.34;
+    g.scale(k, k); g.fillStyle = sea; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, 0); for (var fx = w; fx >= 0; fx -= 8) g.lineTo(fx, E - bw * 0.2 + Math.sin(fx * 0.0042 + 1.3) * bw * 0.22); g.closePath(); g.fill(); g.lineCap = 'round';
+    /* one wide stroke of paint along its foot: full bristles above, dry and broken below */
+    for (var b = 0; b < 72; b++) { var q = b / 71, y = E - bw * 0.5 + q * bw * 0.95, dry = q > 0.6, x0 = -8 + r() * 6, xe = w + 8 - (dry ? r() * w * 0.45 : r() * 10), pen = false;
+      g.strokeStyle = r() < 0.2 ? lit : sea; g.lineWidth = 1.2 + r() * 2.4; g.globalAlpha = dry ? 0.4 + r() * 0.55 : 1; g.beginPath();
+      for (var x = x0; x <= xe; x += 9) { var yy = y + Math.sin(x * 0.011 + b * 0.07) * 2.4 + Math.sin(x * 0.0042 + 1.3) * bw * 0.22;
+        if (dry && r() < 0.07) { pen = false; continue; } if (pen) g.lineTo(x, yy); else { g.moveTo(x, yy); pen = true; } }
+      g.stroke(); }
+    g.globalAlpha = 1; g.fillStyle = sea;
+    for (var d = 0; d < 2; d++) { var dx = w * (0.6 + r() * 0.32), dy = E + Math.sin(dx * 0.0042 + 1.3) * bw * 0.22 + bw * 0.3, L = 6 + r() * 14; g.beginPath(); g.moveTo(dx - 2, dy - 4); g.quadraticCurveTo(dx - 1.6, dy + L * 0.6, dx, dy + L); g.quadraticCurveTo(dx + 1.6, dy + L * 0.6, dx + 2, dy - 4); g.fill(); g.beginPath(); g.arc(dx, dy + L, 1.6, 0, 7); g.fill(); }
+    g.globalCompositeOperation = 'source-atop';
+    for (var s = 0; s < 4; s++) { var sx = w * (0.05 + r() * 0.9); g.fillStyle = 'rgba(160,200,255,' + (NIGHT ? 0.03 : 0.06) + ')'; g.beginPath(); g.moveTo(sx, 0); g.lineTo(sx + 26, 0); g.lineTo(sx + 90 + r() * 50, E * 1.3); g.lineTo(sx + 40, E * 1.3); g.closePath(); g.fill(); }
+    grain(g, w, h, Math.round(w * E / 40), 'rgba(255,255,255,.16)', 302, 1.4); grain(g, w, h, Math.round(w * E / 90), 'rgba(4,14,30,.3)', 303, 1.6);
+    g.globalCompositeOperation = 'source-over'; flaws(g, w, h, 304, 0.22);
+    return c;
+  }
+  function rdSea(t, dt) {
+    var cv = RS.cv;
+    if (!cv || !cv.isConnected) { cv = RS.cv = col.querySelector('.sk-radio .rd-sea'); RS.w = 0; if (RS.io) RS.io.disconnect(); if (!cv) return;
+      if ('IntersectionObserver' in window) { RS.io = new IntersectionObserver(function (es) { RS.on = es[es.length - 1].isIntersecting; }); RS.io.observe(cv); } }
+    if (!RS.on || xv.classList.contains('on')) return;
+    var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+    if (w !== RS.w || h !== RS.h || RS.nt !== NIGHT) { RS.w = w; RS.h = h; RS.nt = NIGHT; RS.k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * RS.k); cv.height = Math.round(h * RS.k); RS.E = h / 1.4; RS.base = rsBase(w, h, RS.E);
+      var r = rnd(305); RS.snow = []; for (var i = 0; i < 26; i++) RS.snow.push({ x: r() * w, y: r() * RS.E, r: 0.5 + r() * 1.1, v: 2 + r() * 4, p: r() * 7 }); RS.drawn = false; }
+    if (RM.matches) { if (RS.drawn) return; t = 2; dt = 0; } RS.drawn = true;
+    var g = cv.getContext('2d'), E = RS.E, k = RS.k, O = '#FF6B1A', ink = NIGHT ? 'rgba(200,225,255,.92)' : '#F1F0EC', Fy = E * 0.83;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(RS.base, 0, 0); g.setTransform(k, 0, 0, k, 0, 0);
+    /* in the water only: the snow drifting, the surface shining, the air above it a shade lighter */
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = NIGHT ? 'rgba(150,255,205,.85)' : 'rgba(244,241,232,.6)';
+    RS.snow.forEach(function (s) { s.y += s.v * dt; s.x += Math.sin(t * 0.4 + s.p) * 3 * dt; if (s.y > E * 1.12) { s.y = -4; s.x = Math.random() * w; } g.globalAlpha = NIGHT ? 0.35 + 0.65 * Math.abs(Math.sin(t * 1.2 + s.p)) : 0.9; g.beginPath(); g.arc(s.x, s.y, s.r, 0, 7); g.fill(); }); g.globalAlpha = 1;
+    g.fillStyle = 'rgba(255,255,255,' + (NIGHT ? 0.025 : 0.05) + ')'; g.fillRect(0, 0, w, Fy);
+    g.strokeStyle = NIGHT ? 'rgba(160,220,255,.4)' : 'rgba(244,241,232,.45)'; g.lineWidth = 1; g.setLineDash([14, 9, 3, 9]); g.lineDashOffset = -t * 6; g.beginPath();
+    for (var x = 0; x <= w; x += 6) { var yy = Fy + Math.sin(x * 0.035 + t * 0.8) * 1.6 + Math.sin(x * 0.011 - t * 0.5) * 1.2; if (x) g.lineTo(x, yy); else g.moveTo(x, yy); } g.stroke(); g.setLineDash([]);
+    g.globalCompositeOperation = 'source-over';
+    /* the beacon: it bobs and leans on a slow swell */
+    var u = E / 118, bx = w * 0.36, by = Fy + (Math.sin(t * 0.85) * 2.2 + Math.sin(t * 0.37) * 1.2) * u, roll = Math.sin(t * 0.6 + 0.8) * 0.055 + Math.sin(t * 0.23) * 0.03, sw = Math.sin(t * 1.1);
+    if ((RS.rt -= dt) < 0) { RS.rt = 2.6 + Math.random() * 1.4; RS.rip.push({ r: 0, a: 0.5 }); }
+    g.strokeStyle = ink; g.lineWidth = 1; RS.rip = RS.rip.filter(function (p) { p.r += dt * 9 * u; p.a -= dt * 0.16; if (p.a <= 0) return false; var R = 24 * u + p.r; g.globalAlpha = p.a; g.beginPath(); g.ellipse(bx, Fy + 1, R, R * 0.14, 0, 0, 7); g.stroke(); return true; }); g.globalAlpha = 1;
+    /* its mooring, dropping out of the paint */
+    var kx = bx - Math.sin(roll) * 24 * u, ky = by + Math.cos(roll) * 24 * u, mg = g.createLinearGradient(0, ky, 0, h); mg.addColorStop(0, 'rgba(244,241,232,.55)'); mg.addColorStop(1, 'rgba(244,241,232,0)');
+    g.strokeStyle = mg; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(kx, ky); g.quadraticCurveTo(kx + (10 + Math.sin(t * 0.5) * 3) * u, ky + (h - ky) * 0.5, kx + 4 * u, h); g.stroke(); g.setLineDash([]);
+    g.save(); g.translate(bx, by); g.rotate(roll); g.lineCap = 'round'; g.lineJoin = 'round';
+    /* keel and its weight */
+    g.strokeStyle = '#1A1B1E'; g.lineWidth = 2.2 * u; g.beginPath(); g.moveTo(0, 9 * u); g.lineTo(0, 23 * u); g.stroke(); g.fillStyle = '#1A1B1E'; g.beginPath(); g.ellipse(0, 24 * u, 6 * u, 2 * u, 0, 0, 7); g.fill();
+    /* the solar panel, out on an arm, tilted to the light */
+    g.strokeStyle = ink; g.lineWidth = Math.max(1, 0.9 * u); g.beginPath(); g.moveTo(0, -64 * u); g.lineTo(-9 * u, -73 * u); g.stroke();
+    g.save(); g.translate(-11 * u, -76 * u); g.rotate(-0.46 + sw * 0.01); var pw = 38 * u, ph = 14 * u;
+    g.fillStyle = ink; rrect(g, -pw / 2 - 1.2 * u, -ph / 2 - 1.2 * u, pw + 2.4 * u, ph + 2.4 * u, 1 * u); g.fill();
+    var pg = g.createLinearGradient(0, -ph / 2, 0, ph / 2); pg.addColorStop(0, '#1B2F5E'); pg.addColorStop(1, '#0A142C'); g.fillStyle = pg; g.fillRect(-pw / 2, -ph / 2, pw, ph);
+    g.strokeStyle = 'rgba(140,180,255,.55)'; g.lineWidth = Math.max(0.5, 0.35 * u); g.beginPath(); for (var c = 1; c < 6; c++) { g.moveTo(-pw / 2 + pw * c / 6, -ph / 2); g.lineTo(-pw / 2 + pw * c / 6, ph / 2); } g.moveTo(-pw / 2, 0); g.lineTo(pw / 2, 0); g.stroke();
+    g.save(); g.beginPath(); g.rect(-pw / 2, -ph / 2, pw, ph); g.clip(); var gl = ((t * 0.09) % 1.8 - 0.4) * pw * 1.4 - pw / 2; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.moveTo(gl, -ph / 2); g.lineTo(gl + 5 * u, -ph / 2); g.lineTo(gl - 2 * u, ph / 2); g.lineTo(gl - 7 * u, ph / 2); g.closePath(); g.fill(); g.restore();
+    g.restore();
+    /* the wires, hanging slack between them */
+    var wire = function (col, a, b, c2, lw) { g.strokeStyle = col; g.lineWidth = lw * u; g.beginPath(); g.moveTo(a[0] * u, a[1] * u); g.quadraticCurveTo(c2[0] * u, (c2[1] + sw * 1.4) * u, b[0] * u, b[1] * u); g.stroke(); };
+    wire('#E5262B', [-4, -71], [12, -50], [6, -58], 0.8);
+    wire('#0B0B0B', [7, -39], [-9, -29], [4, -30], 0.8);
+    wire('#FF9A3C', [-17, -22], [-12, -6], [-28, -12], 0.9);
+    wire('#E5262B', [14, -39], [9, -6], [20, -18], 0.7);
+    /* the mast: a light lattice */
+    g.strokeStyle = ink; g.lineWidth = Math.max(1, 0.9 * u); var rail = function (s, f) { return [s * (6 - 4 * f) * u, (-6 - 60 * f) * u]; };
+    g.beginPath(); [-1, 1].forEach(function (s) { var a = rail(s, 0), b = rail(s, 1); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); });
+    for (var q = 0; q < 8; q++) { var a1 = rail(q % 2 ? 1 : -1, q / 8), b1 = rail(q % 2 ? -1 : 1, (q + 1) / 8); g.moveTo(a1[0], a1[1]); g.lineTo(b1[0], b1[1]); } g.stroke();
+    /* the float: radio orange, a band of reflective tape, its deck */
+    var fg = g.createLinearGradient(-22 * u, 0, 22 * u, 0); fg.addColorStop(0, shade(O, -0.42)); fg.addColorStop(0.3, O); fg.addColorStop(0.44, shade(O, 0.35)); fg.addColorStop(0.62, O); fg.addColorStop(1, shade(O, -0.48));
+    var hull = function () { g.beginPath(); g.moveTo(-22 * u, -5 * u); g.lineTo(22 * u, -5 * u); g.quadraticCurveTo(24 * u, 6 * u, 15 * u, 11 * u); g.lineTo(-15 * u, 11 * u); g.quadraticCurveTo(-24 * u, 6 * u, -22 * u, -5 * u); g.closePath(); };
+    g.fillStyle = fg; hull(); g.fill(); g.save(); hull(); g.clip(); g.fillStyle = 'rgba(244,241,232,.92)'; g.fillRect(-25 * u, 0.5 * u, 50 * u, 2.6 * u); g.fillStyle = 'rgba(11,11,11,.5)'; for (var tk = -20; tk < 22; tk += 7) g.fillRect(tk * u, 0.5 * u, 1.2 * u, 2.6 * u); g.restore();
+    g.fillStyle = shade(O, 0.22); g.beginPath(); g.ellipse(0, -5 * u, 22 * u, 4.4 * u, 0, 0, 7); g.fill(); g.fillStyle = shade(O, -0.18); g.beginPath(); g.ellipse(0, -5.3 * u, 13 * u, 2.4 * u, 0, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.1 * u; g.beginPath(); g.moveTo(-16 * u, -1.5 * u); g.quadraticCurveTo(-18 * u, 4 * u, -13 * u, 8 * u); g.stroke();
+    /* the simple radio: a smoked matte box, one dial, one lamp */
+    var gx = -20 * u, gy = -33 * u, gw = 12 * u, gh = 10 * u, sg = g.createLinearGradient(0, gy, 0, gy + gh); sg.addColorStop(0, '#3C3E43'); sg.addColorStop(1, '#141518');
+    g.fillStyle = sg; rrect(g, gx, gy, gw, gh, 1.3 * u); g.fill(); g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(gx + 1.2 * u, gy + 0.8 * u, gw - 2.4 * u, 0.6 * u);
+    g.strokeStyle = '#F1F0EC'; g.lineWidth = 0.55 * u; g.beginPath(); g.arc(gx + 8.4 * u, gy + 5.6 * u, 2.3 * u, 0, 7); g.stroke(); g.beginPath(); g.moveTo(gx + 8.4 * u, gy + 5.6 * u); g.lineTo(gx + 8.4 * u + Math.cos(t * 0.3) * 1.8 * u, gy + 5.6 * u + Math.sin(t * 0.3) * 1.8 * u); g.stroke();
+    g.fillStyle = 'rgba(241,240,236,.35)'; for (var gi = 0; gi < 3; gi++) for (var gj = 0; gj < 3; gj++) { g.beginPath(); g.arc(gx + (2.2 + gi * 1.5) * u, gy + (4.6 + gj * 1.5) * u, 0.42 * u, 0, 7); g.fill(); }
+    g.strokeStyle = ink; g.lineWidth = 0.6 * u; g.beginPath(); g.moveTo(gx + gw, gy + 2.5 * u); g.lineTo(rail(-1, 0.43)[0], gy + 2.5 * u); g.moveTo(gx + gw, gy + gh - 2.5 * u); g.lineTo(rail(-1, 0.4)[0], gy + gh - 2.5 * u); g.stroke();
+    /* the full radio: its back taken off and hung open, the board inside, kept plain */
+    var cx = 5 * u, cy = -50 * u, cw = 13 * u, ch = 11 * u;
+    g.fillStyle = '#1A1B1E'; rrect(g, cx, cy, cw, ch, 1 * u); g.fill(); g.fillStyle = '#1F5C3B'; g.fillRect(cx + 1.2 * u, cy + 1.2 * u, cw - 2.4 * u, ch - 2.4 * u);
+    g.fillStyle = '#0B0B0B'; g.fillRect(cx + 2.4 * u, cy + 2.6 * u, 3.6 * u, 2.4 * u); g.fillRect(cx + 7.4 * u, cy + 6.4 * u, 2.6 * u, 2 * u);
+    g.strokeStyle = '#C98A4A'; g.lineWidth = 0.6 * u; g.beginPath(); g.arc(cx + 9.4 * u, cy + 3.6 * u, 1.4 * u, 0, 7); g.stroke();
+    g.strokeStyle = 'rgba(241,240,236,.5)'; g.lineWidth = 0.35 * u; g.beginPath(); g.moveTo(cx + 4.2 * u, cy + 5 * u); g.lineTo(cx + 4.2 * u, cy + 7.4 * u); g.lineTo(cx + 7.4 * u, cy + 7.4 * u); g.moveTo(cx + 6 * u, cy + 3.8 * u); g.lineTo(cx + 8 * u, cy + 3.8 * u); g.stroke();
+    g.fillStyle = '#2A2C30'; g.beginPath(); g.moveTo(cx + cw, cy + 0.6 * u); g.lineTo(cx + cw + 4.4 * u, cy - 1.6 * u + sw * 0.4 * u); g.lineTo(cx + cw + 4.4 * u, cy + ch - 3 * u + sw * 0.4 * u); g.lineTo(cx + cw, cy + ch - 0.6 * u); g.closePath(); g.fill();
+    g.strokeStyle = ink; g.lineWidth = 0.6 * u; g.beginPath(); g.moveTo(cx, cy + 2.5 * u); g.lineTo(rail(1, 0.7)[0], cy + 2.5 * u); g.moveTo(cx, cy + ch - 2.5 * u); g.lineTo(rail(1, 0.66)[0], cy + ch - 2.5 * u); g.stroke();
+    /* the lamp on its post, calling out on a slow beat, quicker while the radio plays; an aerial whipping above */
+    var per = AIR.on ? 1.4 : 3.2, pp = (t % per) / per, fl = Math.max(0, 1 - pp * 3.2), lx = 2 * u, ly = -84 * u;
+    g.strokeStyle = ink; g.lineWidth = Math.max(1, 0.9 * u); g.beginPath(); g.moveTo(0, -66 * u); g.lineTo(lx, ly + 3 * u); g.moveTo(lx, ly - 3 * u); g.quadraticCurveTo(lx + 2 * u, -90 * u, lx + (6 + sw * 1.6) * u, -97 * u); g.stroke();
+    g.fillStyle = ink; g.beginPath(); g.arc(lx + (6 + sw * 1.6) * u, -97 * u, 1 * u, 0, 7); g.fill();
+    var gw2 = (NIGHT ? 24 : 16) * u, lg = g.createRadialGradient(lx, ly, 0, lx, ly, gw2); lg.addColorStop(0, 'rgba(255,170,90,' + (0.15 + fl * 0.6 + (NIGHT ? 0.15 : 0)).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lx, ly, gw2, 0, 7); g.fill();
+    g.fillStyle = fl > 0.15 ? '#FFE2B0' : shade(O, NIGHT ? 0.1 : -0.1); g.beginPath(); g.arc(lx, ly, 3 * u, Math.PI, 0); g.lineTo(lx + 3 * u, ly + 2 * u); g.lineTo(lx - 3 * u, ly + 2 * u); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(lx - 1.2 * u, ly - 1.2 * u, 0.9 * u, 0.4 * u, -0.7, 0, 7); g.fill();
+    g.strokeStyle = ink; [pp, (pp + 0.5) % 1].forEach(function (p2) { var R = (6 + p2 * 44) * u; g.globalAlpha = (1 - p2) * 0.5; g.lineWidth = 1; g.beginPath(); g.arc(lx, ly, R, -0.75, 0.75); g.stroke(); g.beginPath(); g.arc(lx, ly, R, Math.PI - 0.75, Math.PI + 0.75); g.stroke(); }); g.globalAlpha = 1;
+    g.restore();
+    /* below the surface the water holds it a little dimmer */
+    g.save(); g.beginPath(); g.rect(0, Fy + 2, w, h); g.clip(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = NIGHT ? 'rgba(6,21,42,.45)' : 'rgba(23,69,127,.42)'; g.fillRect(0, Fy, w, h); g.restore();
+  }
   var ART = {
     /* CIRCULAR STRATEGY: photographs above, turning; under them a dark patchy green with nothing on it; the band across both */
     photos: function (L, w, h, i) { var g = L.b, seam = h * 0.14 / 1.28 + w / 1.08 * 4 / 3;
@@ -220,7 +318,7 @@
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-kept" alt="" hidden><b class="rc-code">DA-YZ07</b><div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-lbl" aria-hidden="true">' + 'stories'.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b><canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
     else if (sk === 'radio') { var ks = [1]; for (var q = 0; q < 13; q++) ks.push(+(0.84 * Math.pow(0.885, q)).toFixed(3));
-      inner = '<h2 class="hm-t kas"><span>' + t + '</span></h2><div class="kas" aria-hidden="true">' + ks.slice(1).map(function (k, j) { return '<span style="--fk:' + k + ';--j:' + j + '"' + (j === 2 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
+      inner = '<h2 class="hm-t vh">' + t + '</h2><div class="kas" aria-hidden="true">' + ks.slice(3, 12).map(function (k, j) { return '<span style="--fk:' + k + ';--j:' + j + '"' + (j === 0 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM E-WASTE</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
@@ -229,7 +327,7 @@
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
+    var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
@@ -1148,6 +1246,7 @@
     jx.setTransform(1, 0, 0, 1, 0, 0); jx.clearRect(0, 0, jcv.width, jcv.height);
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
+    if (!away) rdSea(t, dt);
   }
   seaSize(); requestAnimationFrame(frame);
   receipt(); lastPrint();
