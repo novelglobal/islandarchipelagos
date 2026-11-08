@@ -291,7 +291,7 @@ function loopTick() {
   }
   if (late && now - LOAD.at > 1500) { LOAD.lv = Math.min(LOAD_B.length - 1, LOAD.lv + 1); LOAD.at = now; } else if (LOAD.lv && now - LOAD.at > 8000) { LOAD.lv--; LOAD.at = now; }
   bakedSync(hold, now, share);
-  let left = LOAD_B[LOAD.lv]; const r0 = due.length ? due[0].st % due.length : 0;
+  let left = LOAD_B[LOAD.lv]; const r0 = due.length ? ((due[0].st % due.length) + due.length) % due.length : 0;
   for (let j = 0; j < due.length; j++) { const d = due[(j + r0) % due.length], bk = d.tr.bk; if (bk) loopStep(d.tr, d.notes, d.turn, share, B, null, true);
     else left -= loopStep(d.tr, d.notes, d.turn, share, Math.min(B, Math.max(0, left))); for (const id of d.figs) strings.playFig(id); }
 }
@@ -494,8 +494,12 @@ function fourHTML() {
     return `<li><button type="button" class="f4${on ? ' on' : ''}" data-t4k="${esc(l.id)}" aria-pressed="${on}" aria-label="Track ${i + 1}: ${nm}" data-tip="${nm}"><img src="${loopArt(l)}" alt=""><small class="mono">${i + 1}</small></button><button type="button" class="f4x" data-t4x="${esc(l.id)}" aria-label="Let track ${i + 1} go">×</button></li>`; }).join('')}`
     + `<li class="f4k"><button type="button" class="f4m${all ? ' on' : ''}" data-t4all aria-pressed="${all}" aria-label="The four together" data-tip="All four together"${four.length > 1 ? '' : ' disabled'}>${icon('loop', 'sm')}<small class="mono">all</small></button>`
     + `<button type="button" class="f4m" data-t4save aria-label="Record what plays, one whole turn, as a sound file" data-tip="Record the whole loop"${four.length ? '' : ' disabled'}>${icon('download', 'sm')}<small class="mono">save</small></button>`
-    + (FILED && FILED.four ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '') + '</li></ol>';
+    + (FILED && FILED.four ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '') + '</li></ol>' + deskHTML();
 }
+/* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
+const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 8); } catch (e) { return []; } };
+const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs">${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
+document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; try { const r = parent.AURA && parent.AURA.play ? parent.AURA.play([b.dataset.dsong]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
 function refreshFour() { const f = $('#view .four'); if (f) f.outerHTML = fourHTML(); $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }
 /* the loops kept, in the portfolio: each its picture, its place and its day; pressed, it plays again */
 const LART = new Map();

@@ -39,6 +39,12 @@
   #pr .row { display: flex; gap: 8px; align-items: center; }
   #pr .row > * { flex: 1; }
   #prst { flex: 0 0 auto !important; font: 14px/1 ui-monospace, monospace; }
+  @font-face { font-family: 'Architects Daughter'; src: url('vendor/architects-daughter.woff2') format('woff2'); font-display: swap; }
+  #guide { position: fixed; inset: 0; z-index: 9; background: rgba(236, 235, 231, .78); cursor: pointer; }
+  html.night #guide { background: rgba(18, 19, 20, .8); }
+  #guide svg { position: absolute; inset: 0; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  #guide p { position: absolute; left: 24px; right: 24px; margin: 0; text-align: center; font: 400 26px/1.15 'Architects Daughter', 'Comic Sans MS', cursive; color: var(--ink); transform: rotate(-1.5deg); }
+  #guide b { position: absolute; right: 14px; top: calc(env(safe-area-inset-top) + 14px); font: 400 11px/1 'Departure Mono', monospace; color: var(--ink); opacity: .6; }
   #drop { position: fixed; inset: 0; z-index: 5; display: none; place-items: center; background: rgba(217, 242, 74, .35); border: 4px dashed var(--ink); font: 600 40px/1 'Archivo Narrow', Arial, sans-serif; }
   html.dragging #drop { display: grid; }
 </style>

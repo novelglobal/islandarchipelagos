@@ -23,7 +23,7 @@
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'full', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'zine', size: 'full', title: 'THERMAL ZINE MAKER', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'zine', size: 'full', title: 'DESIGN AND PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] }
@@ -117,11 +117,13 @@
     '<g class="wp"><circle cx="14" cy="146" r="1.6"/><circle cx="40" cy="118" r="1.2"/><circle cx="62" cy="94" r="1.2"/><circle cx="86" cy="62" r="1.2"/><circle cx="80" cy="22" r="1.8" class="to"/></g>' +
     '<circle class="me" r="1.4"><animateMotion dur="26s" repeatCount="indefinite" rotate="auto"><mpath href="#st-way"/></animateMotion></circle>' +
     '<g class="rose" transform="translate(88 12)"><circle r="5"/><path d="M0-7v14M-7 0h14"/><path class="n" d="M0-5l1.4 4h-2.8z"/></g></svg>';
+  var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF6B1A" stop-opacity="0"/><stop offset="1" stop-color="#FF6B1A" stop-opacity=".7"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#0B0B0B" fill-opacity=".07" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
-  /* THERMAL ZINE MAKER: marks drawn by hand, one after another */
+  /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
   var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+    '<path pathLength="1" class="fr" style="--d:0s" d="M3 4C30 2.4 70 3.4 97 3.2 96.4 50 97.6 110 96.8 156.6 66 157.4 34 156.2 3.4 157 4 110 2.6 50 3 4z"/>' +
     '<path pathLength="1" style="--d:0s" d="M8 64c10 2 24 1 36-2"/>' +
     '<path pathLength="1" class="o" style="--d:1.2s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
     '<path pathLength="1" style="--d:2.4s" d="M14 88c8-6 20-4 22 4s-8 14-16 10-6-14 4-16"/>' +
@@ -145,9 +147,9 @@
       g.clearRect(0, 0, w, seam); },
     /* RADIO: its photograph, the band in stepped blocks */
     blocks: function (L, w, h, i) { var g = L.b; grain(g, w, h, Math.round(w * h / 80), 'rgba(0,0,0,.12)', 31); },
-    /* THERMAL ZINE MAKER: the wall photograph, the title in dots */
+    /* DESIGN AND PRINT: the wall photograph, the title in dots */
     dots: function (L, w, h, i) { var m = L.m, cx = w * 0.8, cy = h * 0.2, R = Math.min(w, h) * 0.32, st = R / 7; m.fillStyle = '#FF5436'; for (var yy = cy - R; yy <= cy + R; yy += st) for (var xx = cx - R; xx <= cx + R; xx += st) { var dd = Math.hypot(xx - cx, yy - cy) / R; if (dd > 1) continue; m.beginPath(); m.arc(xx, yy, st * 0.48 * (1 - dd * dd * 0.85), 0, 7); m.fill(); } var t = L.t, s = Math.min(w * 0.16, h * 0.1), ox = w * 0.08, oy = h * 0.16;
-      dotText(t, 'THERMAL', ox, oy, s, '#0A0A0A', 44); dotText(t, 'ZINE', ox, oy + s * 0.98, s, '#0A0A0A', 45); dotText(t, 'MAKER', ox, oy + s * 1.96, s, '#0A0A0A', 46); },
+      dotText(t, 'DESIGN', ox, oy, s, '#0A0A0A', 44); dotText(t, 'AND', ox, oy + s * 0.98, s, '#0A0A0A', 45); dotText(t, 'PRINT', ox, oy + s * 1.96, s, '#0A0A0A', 46); },
     /* ISLAND: the printer on pale paper, the band as torn tape behind it */
     printer: function (L, w, h, i) { var g = L.b; g.fillStyle = '#EEEDEA'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 50), 'rgba(0,0,0,.1)', 51); },
     /* ISLAND ARCHIPELAGOS: rounded forms on soft grey, all in greys but the coral, which is its own; the band a glossy tube */
@@ -202,7 +204,7 @@
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? '<div class="hm-pics"></div>' + CHART : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? REFS : sk === 'space' ? SEA : '';
+    var extra = sk === 'wish' ? CHART + DRIFT + '<div class="hm-pics"></div>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? REFS : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="paper"></i><i class="led"></i></div>' : '';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
@@ -242,7 +244,9 @@
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
-    (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = l || []; var k = el.querySelector('.rc-kept'), last = l[0];
+    var st = store.get('da.hm.stories', 'moa'), k = el.querySelector('.rc-kept'); k.hidden = true; el.querySelector('.rc-code').textContent = 'DA-YZ07';
+    if (/^data:image\//.test(st)) { k.src = st; k.hidden = false; }
+    else if (st === 'last') (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = l || []; var last = l[0];
       if (last && last.src) { k.src = last.src; k.hidden = false; } if (last && last.code) el.querySelector('.rc-code').textContent = last.code; }).catch(function () {});
     var q = el.querySelector('.rc-qr'); (window.qrcode ? Promise.resolve(window.qrcode) : new Promise(function (ok, no) { var s = D.createElement('script'); s.src = 'vendor/qrcode.js'; s.onload = function () { ok(window.qrcode); }; s.onerror = no; D.head.appendChild(s); })).then(function (qr) {
       var m = qr(0, 'M'); m.addData('https://novel.global/research'); m.make(); var n = m.getModuleCount(), px = 4, pad = 2; q.width = q.height = (n + pad * 2) * px; var g = q.getContext('2d'); g.fillStyle = '#F4F1E8'; g.fillRect(0, 0, q.width, q.height); g.fillStyle = '#143D71';
@@ -322,15 +326,15 @@
   /* the island kit: the checklist, kept with the aura's, and printed as a slip */
   function kitIn(body) {
     var a = AU(), list = (a && a.isle ? a.isle() : []) || [], got = store.get('da.isle.v1', []) || [];
-    var GH = 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit', tick = new Array(5).join('+++++++++++++ ONE CLICK INSTALL ');
-    var spec = [['PAPER', '80 MM', 0.5], ['POWER', 'SOLAR', 0.86], ['SIGNAL', 'MESH', 0.34], ['WORKS', 'OFFLINE', 1]];
+    var GH = 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit';
+    var spec = [['PAPER', '80 MM ROLL'], ['PRINTER', 'EPSON TM-T88V'], ['COMPUTER', 'RASPBERRY PI'], ['POWER', '24 V OR SOLAR'], ['WORKS', 'OFFLINE']];
     body.classList.add('kt');
-    body.innerHTML = '<div class="kt-tick" aria-hidden="true"><span>' + tick + '</span><span>' + tick + '</span></div><div class="kt-bar"><b>ISLAND</b><a href="' + GH + '" target="_blank" rel="noopener">INSTALL</a></div>' +
-      '<img class="kt-hero" alt="" decoding="async" src="/cards/island-hero.jpg">' +
-      spec.map(function (s) { return '<div class="kt-row"><span>' + s[0] + '</span><span class="kt-mm">MIN<i style="--v:' + s[2] + '"></i>MAX</span></div><p class="kt-big">' + s[1] + '</p>'; }).join('') +
-      '<img class="kt-ph" alt="" loading="lazy" decoding="async" src="/cards/island-desk.jpg"><img class="kt-ph" alt="" loading="lazy" decoding="async" src="/cards/island-side.jpg">' +
+    body.innerHTML = '<div class="kt-bar"><b>ISLAND</b><a href="' + GH + '" target="_blank" rel="noopener">INSTALL</a></div>' +
+      '<img class="kt-hero" alt="" decoding="async" src="/printer-top.jpg">' +
+      spec.map(function (s) { return '<div class="kt-row"><span>' + s[0] + '</span><b>' + s[1] + '</b></div>'; }).join('') +
+      '<div class="kt-row"><a href="/build-a-solar-printer.txt" download>PARTS LIST</a><b>TXT</b></div>' +
       '<div class="kt-row"><span>PARTS</span><button class="kt-pr" id="hm-kprint" aria-label="Print the parts">PRINT</button></div><ol class="hm-list">' + list.map(function (s) { if (!s) return '<li class="gap" aria-hidden="true"></li>';
-      return '<li role="checkbox" tabindex="0" data-k="' + s[0] + '" aria-checked="' + (got.indexOf(s[0]) >= 0) + '"><i></i><span>' + (s[2] ? '<a href="' + s[2] + '" rel="noopener" target="_blank">' + esc(s[1]) + ' ↗</a>' : esc(s[1])) + '</span></li>'; }).join('') + '</ol><p class="hm-say" aria-live="polite"></p><div class="kt-bar kt-foot"><b>novel.global</b><a href="' + GH + '" target="_blank" rel="noopener">INSTALL</a></div>';
+      return '<li role="checkbox" tabindex="0" data-k="' + s[0] + '" aria-checked="' + (got.indexOf(s[0]) >= 0) + '"><i></i><span>' + (s[2] ? '<a href="' + s[2] + '" rel="noopener" target="_blank">' + esc(s[1]) + ' ↗</a>' : esc(s[1])) + '</span></li>'; }).join('') + '</ol><p class="hm-say" aria-live="polite"></p>';
     $$('[data-k]', body).forEach(function (li) { var flip = function () { var on = li.getAttribute('aria-checked') !== 'true'; li.setAttribute('aria-checked', String(on)); store.set('da.isle.v1', $$('[aria-checked="true"]', body).map(function (q) { return q.dataset.k; })); beep(on ? 880 : 440, 0.05); };
       li.addEventListener('click', function (e) { if (!e.target.closest('a')) flip(); }); li.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); } }); });
     $('#hm-kprint', body).addEventListener('click', function () { var say = $('.hm-say', body), ticks = store.get('da.isle.v1', []) || [];
@@ -345,12 +349,20 @@
   /* the control panel: this phone's settings and the network behind the site; island keepers' controls arrive with their key (stage H3) */
   function panelIn(body) {
     var dark = NIGHT, mo = MOTION || 'own';
-    body.innerHTML = '<div class="hm-row"><a class="hm-btn big" href="https://github.com/novelglobal/islandarchipelagos" target="_blank" rel="noopener">THE BUILDING HUB ↗</a></div><p class="hm-h">MOTION</p><div class="hm-row">' + [['own', 'EACH CARD'], ['shadow', 'SHADOW'], ['speed', 'SPEED']].map(function (m) { return '<button class="hm-btn' + (mo === m[0] ? ' on' : '') + '" data-mo="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+    body.innerHTML = '<div class="hm-row"><a class="hm-btn big" href="https://github.com/novelglobal/islandarchipelagos" target="_blank" rel="noopener">SOURCE CODE ↗</a></div><p class="hm-h">MOTION</p><div class="hm-row">' + [['own', 'EACH CARD'], ['shadow', 'SHADOW'], ['speed', 'SPEED']].map(function (m) { return '<button class="hm-btn' + (mo === m[0] ? ' on' : '') + '" data-mo="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h">LIGHT</p><div class="hm-row"><button class="hm-btn' + (dark ? '' : ' on') + '" data-dk="0">DAY</button><button class="hm-btn' + (dark ? ' on' : '') + '" data-dk="1">NIGHT</button></div>' +
-      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">AS IT STARTED</button></div>' +
-      '<div id="hm-keeper"></div><p class="hm-h">THE NETWORK</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>';
+      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false">WORDS</button></div><div class="hm-sbw" hidden></div>' +
+      '<p class="hm-h">STORIES CARD</p><div class="hm-row">' + [['moa', 'MOA'], ['last', 'LAST PRINT'], ['own', 'MY PICTURE']].map(function (m) { var v = store.get('da.hm.stories', 'moa'); return '<button class="hm-btn' + ((v === m[0] || (m[0] === 'own' && /^data:/.test(v))) ? ' on' : '') + '" data-st="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '<input type="file" accept="image/*" id="hm-stf" hidden></div>' +
+      '<div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>';
     $$('[data-mo]', body).forEach(function (b) { b.addEventListener('click', function () { MOTION = b.dataset.mo === 'own' ? null : b.dataset.mo; store.set('da.hm.motion', MOTION); find('style'); cards.forEach(function (el) { var c = byId(el.dataset.id); el.classList.remove('shadow', 'speed'); el.classList.add(MOTION || c.motion); }); $$('[data-mo]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); beep(550, 0.05); }); });
     $$('[data-dk]', body).forEach(function (b) { b.addEventListener('click', function () { setNight(b.dataset.dk === '1'); $$('[data-dk]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); }); });
+    $$('[data-st]', body).forEach(function (b) { b.addEventListener('click', function () { var set = function (v) { store.set('da.hm.stories', v); $$('[data-st]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); receipt(); beep(550, 0.05); };
+      if (b.dataset.st !== 'own') return set(b.dataset.st); var fi = $('#hm-stf', body); fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return; var im = new Image(), u = URL.createObjectURL(f); im.onload = function () { var k = Math.min(1, 900 / Math.max(im.width, im.height)), cv = D.createElement('canvas'); cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u); set(cv.toDataURL('image/jpeg', 0.8)); }; im.src = u; }; fi.click(); }); });
+    $('#hm-sbw', body).addEventListener('click', function () { var w = $('.hm-sbw', body), op = w.hidden; w.hidden = !op; this.setAttribute('aria-expanded', String(op)); if (!op) return;
+      var rows = []; Object.keys(PORTS).filter(function (id) { return !/^isle/.test(id); }).forEach(function (id) { rows.push(['n.' + id, 'NAME', nameOf(id)]); Object.keys(PORTS[id].ins).forEach(function (e) { rows.push(['i.' + id + '.' + e, GETS[e] + ' IN', PORTS[id].ins[e]]); }); });
+      w.innerHTML = rows.map(function (r) { return '<label' + (r[1] === 'NAME' ? ' class="nm"' : '') + '><span>' + esc(r[1]) + '</span><input data-k="' + r[0] + '" value="' + esc(r[2]) + '" maxlength="40" spellcheck="false"></label>'; }).join('') + '<button class="hm-btn" id="hm-sbw0">AS THEY WERE</button>';
+      w.addEventListener('change', function (e) { var k = e.target.dataset && e.target.dataset.k; if (!k) return; var o = store.get('da.sb.words', {}) || {}; o[k] = e.target.value.trim().toUpperCase().slice(0, 40); if (!o[k]) delete o[k]; store.set('da.sb.words', o); sbWords(); board(); });
+      $('#hm-sbw0', w).addEventListener('click', function () { store.set('da.sb.words', {}); location.reload(); }); });
     $('#hm-rewire', body).addEventListener('click', function () { WIRES = START.slice(); saveWires(); board(); beep(440, 0.08); });
     keeperIn($('#hm-keeper', body));
     partners(true).then(function (l) { var ol = $('.hm-isles', body); if (ol) ol.innerHTML = l.length ? l.map(function (p) { return '<li class="' + (p.ready ? 'on' : '') + '"><i></i><span>' + esc(p.name || p.id) + (p.number ? ' · ' + p.number : '') + '</span></li>'; }).join('') : '<li>—</li>'; });
@@ -555,7 +567,7 @@
     ['portfolio', 'PORTFOLIO', 1, G('<path d="M6 2.5h12v19l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M8.5 7h7M8.5 10h7M8.5 13h4"/>')],
     ['wish', 'I W.I.S.H.', 1, G('<path d="M2 12h20"/><circle cx="5.5" cy="12" r="1.9" class="f"/><circle cx="10" cy="12" r="1.9" class="f"/><circle cx="14.5" cy="12" r="1.9" class="f"/><circle cx="19" cy="12" r="1.9" class="f"/>')],
     ['radio', 'DIRECT ACTION RADIO', 1, G('<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l6.4-6.4"/><circle cx="12" cy="12" r="1.6" class="f"/><circle cx="7" cy="15" r=".9" class="f"/>')],
-    ['zine', 'THERMAL ZINE MAKER', 1, G('<path d="M9 2h6v20H9z"/><path d="M9 15l2-4 1.3 2 1.2-3.5L15 13"/>')],
+    ['zine', 'DESIGN AND PRINT', 1, G('<path d="M9 2h6v20H9z"/><path d="M9 15l2-4 1.3 2 1.2-3.5L15 13"/>')],
     ['research', 'RESEARCH BOARD', 1, G('<path d="M3 4h7v5H3zM14 4h7v8h-7zM3 14h8v6H3z"/><path d="M10 6.5h4M7 9v5M17.5 12v5h-6.5"/><circle cx="17.5" cy="17" r="1.3" class="f"/>')],
     ['kit', 'ISLAND KIT', 1, G('<path d="M3 7h18v11H3z"/><path d="M6 10h4v4H6z"/><path d="M13 10h5M13 13h5" stroke-dasharray="1 1.6"/><circle cx="5" cy="16.3" r=".7" class="f"/><circle cx="19" cy="16.3" r=".7" class="f"/>')],
     ['space', 'ARCHIPELAGOS ENGINE', 1, G('<path d="M4.5 9.5c0-2 1.6-3 3.2-2.6 1.4.4 1.8 2.2.8 3.3-1.2 1.2-4 .9-4-.7zM14 6.5c.6-1.6 3.2-1.8 4-.3.7 1.3-.5 2.6-2 2.5-1.3 0-2.4-1-2-2.2zM12.5 17c.2-2.4 3.6-3 5-1.4 1.3 1.6-.4 3.8-2.6 3.6-1.5-.1-2.5-1-2.4-2.2z"/><path d="M8.8 10.5l4.6 5M11 8.6l3-1.2" stroke-dasharray=".2 2"/>')],
@@ -594,8 +606,11 @@
     map: { outs: ['CODE'], ins: { WORDS: 'WORDS ON THE MAP' } }, style: { outs: ['LENGTH'], ins: {} }, booth: { outs: ['PICTURE'], ins: {} }, folio: { outs: ['SOUND'], ins: {} }
   };
   for (var pi = 0; pi < 7; pi++) PORTS['isle' + pi] = { outs: ['CODE'], ins: { WORDS: 'PRINTS ON THAT ISLAND', PICTURE: 'PRINTS ON THAT ISLAND' } };
-  var SHORT = { portfolio: 'PORTFOLIO', wish: 'W.I.S.H.', radio: 'RADIO', zine: 'ZINE', kit: 'ISLAND', space: 'ENGINE', reef: 'REEF', eye: 'EYE', moon: 'MOON', stamp: 'PRINT', signal: 'KIN', map: 'MAP', style: 'MOTION', booth: 'PHOTO', folio: 'SONG' };
+  var SHORT = { portfolio: 'PORTFOLIO', wish: 'W.I.S.H.', radio: 'RADIO', zine: 'DESIGN', kit: 'ISLAND', space: 'ENGINE', reef: 'REEF', eye: 'EYE', moon: 'MOON', stamp: 'PRINT', signal: 'KIN', map: 'MAP', style: 'MOTION', booth: 'PHOTO', folio: 'SONG' };
   var GETS = { WORDS: 'WORDS', PICTURE: 'PHOTO', SOUND: 'SONG', CODE: 'QR', LIST: 'LIST', LENGTH: 'LONG' };
+  /* the owner's own words for the switchboard, set in settings */
+  function sbWords() { var o = store.get('da.sb.words', {}) || {}; Object.keys(o).forEach(function (k) { var p = k.split('.'); if (p[0] === 'n' && PORTS[p[1]]) SHORT[p[1]] = o[k]; else if (p[0] === 'i' && PORTS[p[1]] && PORTS[p[1]].ins[p[2]] != null) PORTS[p[1]].ins[p[2]] = o[k]; }); }
+  sbWords();
   function carry(a, b) { var A = PORTS[a], B = PORTS[b]; if (!A || !B || a === b) return []; return A.outs.filter(function (e) { return !!B.ins[e]; }); }
   function fits(a, b) { return carry(a, b).length > 0 || carry(b, a).length > 0; }
 
@@ -674,13 +689,21 @@
   }
   /* fits lit, the rest dull */
   function fitsShow(from) { $$('.sl', jk).forEach(function (q) { var id = q.dataset.s; q.classList.toggle('ok', !!from && id !== from && fits(from, id)); q.classList.toggle('dl', !!from && id !== from && !fits(from, id)); }); }
+  /* a preview of what a cable would do, while it is held over a jack */
+  var pv = D.createElement('p'); pv.className = 'pv'; pv.hidden = true; pv.setAttribute('aria-live', 'polite'); sb.appendChild(pv);
+  function preview(from, to) { if (!from) { pv.hidden = true; return; } var lines = [];
+    if (to && to !== from) { carry(from, to).forEach(function (e) { lines.push(nameOf(to) + ' GETS ' + PORTS[to].ins[e]); }); carry(to, from).forEach(function (e) { lines.push(nameOf(from) + ' GETS ' + PORTS[from].ins[e]); }); if (!lines.length) lines.push(nameOf(from) + ' AND ' + nameOf(to) + ' DO NOT JOIN'); else if (wired(from, to)) lines.push('JOINED ALREADY'); }
+    else { var P0 = PORTS[from] || { outs: [], ins: {} }; lines.push(nameOf(from) + ' GIVES ' + P0.outs.map(function (e) { return GETS[e]; }).join(', ')); }
+    pv.style.setProperty('--mx', to ? mix(SC[from], SC[to] || INK) : SC[from]); pv.innerHTML = lines.map(esc).join('<br>'); pv.hidden = false; }
+  jk.addEventListener('pointerover', function (e) { if (drag || e.pointerType !== 'mouse' || sb.classList.contains('low')) return; var sl = e.target.closest('.sl'); preview(sl ? sl.dataset.s : null); });
+  jk.addEventListener('pointerleave', function () { if (!drag) preview(null); });
   var drag = null, showT = 0;
   jk.addEventListener('pointerdown', function (e) { var j = e.target.closest('.j'); if (!j) return; e.preventDefault(); ac(); if (sb.classList.contains('low')) { rise(); return; }
-    clearTimeout(showT); drag = { from: j.dataset.j, x: e.clientX, y: e.clientY, moved: false }; try { j.setPointerCapture(e.pointerId); } catch (x) { /* none */ } j.parentNode.classList.add('hot'); fitsShow(drag.from); beep(330, 0.04); });
+    clearTimeout(showT); drag = { from: j.dataset.j, x: e.clientX, y: e.clientY, moved: false }; try { j.setPointerCapture(e.pointerId); } catch (x) { /* none */ } j.parentNode.classList.add('hot'); fitsShow(drag.from); preview(drag.from); beep(330, 0.04); });
   jk.addEventListener('pointermove', function (e) { if (!drag) return; if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) drag.moved = true; if (!drag.moved) return;
     var o = sb.getBoundingClientRect(), over = D.elementFromPoint(e.clientX, e.clientY), osl = over && over.closest && over.closest('.sl'), to = osl && osl.dataset.s !== drag.from && fits(drag.from, osl.dataset.s) ? osl.dataset.s : null;
-    LOOSE = { from: drag.from, x: e.clientX - o.left, y: e.clientY - o.top, to: to }; $$('.sl', jk).forEach(function (q) { q.classList.toggle('hot', q.dataset.s === drag.from || q.dataset.s === to); }); });
-  function up(e) { if (!drag) return; var from = drag.from, moved = drag.moved; drag = null; $$('.sl', jk).forEach(function (q) { q.classList.remove('hot'); }); idleSoon();
+    LOOSE = { from: drag.from, x: e.clientX - o.left, y: e.clientY - o.top, to: to }; preview(drag.from, osl ? osl.dataset.s : null); $$('.sl', jk).forEach(function (q) { q.classList.toggle('hot', q.dataset.s === drag.from || q.dataset.s === to); }); });
+  function up(e) { if (!drag) return; var from = drag.from, moved = drag.moved; drag = null; preview(null); $$('.sl', jk).forEach(function (q) { q.classList.remove('hot'); }); idleSoon();
     if (!moved) { LOOSE = null; var at = -1; WIRES.forEach(function (w, i) { if (w[0] === from || w[1] === from) at = i; });
       if (at >= 0) { WIRES.splice(at, 1); saveWires(); fitsShow(null); board(); beep(196, 0.1); } else { say(from); showT = setTimeout(function () { fitsShow(null); }, 1800); } return; }
     fitsShow(null); var t = D.elementFromPoint(e.clientX, e.clientY), sl = t && t.closest && t.closest('.sl'), to = sl && sl.dataset.s;

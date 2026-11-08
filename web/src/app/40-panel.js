@@ -722,7 +722,9 @@ function flowView(x) {
   const last = NGp && NGp.store ? NGp.store.get('da.base.printer', '') : '';
   v.innerHTML = `<div class="fv-stage"><img src="${esc(x.img)}" alt="" draggable="false"></div><nav class="fv-bar"><button type="button" class="fv-x" aria-label="Close">${icon('close')}</button>`
     + `<select class="fv-to" aria-label="Printer">${list.length ? list.map(([id, n]) => `<option value="${esc(id)}"${id === last ? ' selected' : ''}>${esc(String(n).toUpperCase())}</option>`).join('') : '<option value="">NO PRINTER ON</option>'}</select>`
-    + `<button type="button" class="fv-go" aria-label="Print"${list.length && NGp && NGp.printAgain ? '' : ' disabled'}>${icon('print')}</button><span class="fv-st"></span></nav>`;
+    + (songsOf(x).length ? `<button type="button" class="fv-pl" aria-label="Play">${icon('play')}</button>` : '')
+    + `<button type="button" class="fv-go" aria-label="Print"${list.length && NGp && NGp.printAgain ? '' : ' disabled'}>${icon('print')}</button><span class="fv-st"></span></nav>`
+    + ((x.code && !/^songs:/.test(x.code)) || x.place ? `<p class="fv-cap mono">${esc([x.code && !/^songs:/.test(x.code) ? x.code : '', x.place || ''].filter(Boolean).join(' · '))}</p>` : '');
   document.body.appendChild(v); const im = v.querySelector('img'), st = v.querySelector('.fv-st');
   let k = 1, tx = 0, ty = 0; const pts = new Map(); let base = null;
   const put = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${k})`; };
@@ -737,6 +739,7 @@ function flowView(x) {
   stage.addEventListener('dblclick', () => { k = k > 1 ? 1 : 2.5; tx = ty = 0; put(); });
   const shut = () => v.remove();
   v.querySelector('.fv-x').addEventListener('click', shut);
+  const pl = v.querySelector('.fv-pl'); if (pl) pl.addEventListener('click', () => { try { const r = parent.AURA && parent.AURA.play ? parent.AURA.play(songsOf(x)) : false; pl.classList.toggle('on', r === 'play'); if (!r) toast('♪'); } catch (e) { toast('♪'); } });
   addEventListener('keydown', function esc0(e) { if (e.key === 'Escape') { shut(); removeEventListener('keydown', esc0); } });
   v.querySelector('.fv-go').addEventListener('click', function () { const to = v.querySelector('.fv-to').value; if (!to || !NGp) return; this.disabled = true;
     try { NGp.store.set('da.base.printer', to); } catch (e) { /* the first on */ }
@@ -780,6 +783,7 @@ document.addEventListener('click', e => {
   else if (a === 'poster') { wallShut(); if (IN_AURA) toAura(f.src, true); else { setView(2); setTimeout(() => placeOnPage(f.src, 'art', 240), 500); } snd.tick(1900); }
   else if (a === 'play') { const cs = songsOf(f); try { if (IN_AURA && parent.AURA && parent.AURA.play) { const r = parent.AURA.play(cs); if (b) b.classList.toggle('on', r === 'play'); } else toast('♪'); } catch (er) { toast('♪'); } }
 });
+document.addEventListener('click', e => { const t = e.target.closest('[data-pft]'); if (!t) return; const dm = t.dataset.pft === '1'; document.documentElement.classList.toggle('pf-dm', dm); $$('[data-pft]').forEach(b => b.setAttribute('aria-selected', String(b === t))); const v = $('#view'); if (v) v.scrollTop = 0; });
 document.addEventListener('keydown', e => { if (WALLAT < 0) return; if (e.key === 'Escape') wallShut(); else if (e.key === 'ArrowLeft') wallShow(WALLAT - 1); else if (e.key === 'ArrowRight') wallShow(WALLAT + 1); });
 /* the board, in the portfolio: everyone's few words in the journey's four sections, by kin; written with the code from a print */
 const TALK = { s: 'notice' };
@@ -802,7 +806,8 @@ function viewPortfolio() {
   /* the W.I.S.H.es made here are among the stories, marked as one's own: one module, not two */
   setTimeout(wallFill, 30); setTimeout(flowFill, 30);
   if (IN_AURA) setTimeout(talkFill, 60);
-  return printerTop() + flowSection() + quickHTML() + wallSection() + talkSection() + postsSection() + `<section class="sec board" id="sec-board"><div class="lab-row">${labI('stories', 'Stories', sigs.length)}<button type="button" class="pill sq" id="rx-open" aria-expanded="false" aria-label="Receive" data-tip="A code from a slip, or a link">${icon('receive', 'sm')}</button></div>`
+  const tabs = AURA_ONLY === 3 ? `<nav class="pf-tabs" role="tablist"><button type="button" role="tab" data-pft="0" aria-selected="${!document.documentElement.classList.contains('pf-dm')}">stories</button><button type="button" role="tab" data-pft="1" aria-selected="${document.documentElement.classList.contains('pf-dm')}">message</button></nav>` : '';
+  return tabs + printerTop() + flowSection() + quickHTML() + wallSection() + talkSection() + postsSection() + `<section class="sec board" id="sec-board"><div class="lab-row">${labI('stories', 'Stories', sigs.length)}<button type="button" class="pill sq" id="rx-open" aria-expanded="false" aria-label="Receive" data-tip="A code from a slip, or a link">${icon('receive', 'sm')}</button></div>`
       + `<form class="rx" id="rx" hidden><textarea id="rx-t" rows="2" aria-label="A code from a slip, or a link" placeholder="DA-····" spellcheck="false" autocapitalize="characters"></textarea><button type="submit" class="ib" aria-label="Receive">${icon('check')}</button></form>`
       /* eight as cards; the rest as a list, a photograph and a headline each */
       + (() => { const all = boardOrder(sigs); const more = all.slice(8); askKindPhotos(all); return `<ol class="sigs cards big">${all.slice(0, 8).map(sigRow).join('')}</ol>` + (more.length ? `<ol class="sigs list">${more.map(sigLine).join('')}</ol>` : ''); })()
