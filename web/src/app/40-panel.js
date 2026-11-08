@@ -649,7 +649,7 @@ document.addEventListener('click', e => {
   /* read out: what was said with it, its four lines, or its number */
   if (a.dataset.gl === 'listen') { const ss = window.speechSynthesis; if (!ss) return; if (ss.speaking) { ss.cancel(); a.classList.remove('on'); return; }
     const sg = p.story ? S.signals.find(x => x.key === p.story) : null; const say = [p.said, ...(sg ? linesOf(sg) : [])].filter(Boolean).join('. ') || ('story number ' + wallNo(p));
-    const u = new SpeechSynthesisUtterance(say); u.rate = 0.92; u.onend = u.onerror = () => a.classList.remove('on'); a.classList.add('on'); ss.speak(u); return; }
+    const u = new SpeechSynthesisUtterance(say); u.rate = 0.92; u.onend = u.onerror = () => { a.classList.remove('on'); tellSound(false, 'voice'); }; a.classList.add('on'); tellSound(true, 'voice'); ss.speak(u); return; }
   if (a.dataset.gl === 'card' && !p.ex && !p.site) openPosterCard(p.id);
   if (a.dataset.gl === 'png' && p.img) { const l = document.createElement('a'); l.href = p.img; l.download = p.ex ? 'novel-global-example-zine.png' : p.site ? `novel-global-${p.code}.jpg` : `poster-${isoDay(new Date(p.at))}.jpg`; l.click(); tick(1800); }
 });

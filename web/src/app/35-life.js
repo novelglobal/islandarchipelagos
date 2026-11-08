@@ -678,8 +678,8 @@ const life = (() => {
     if (!prefs.sound) { toast('SOUND OFF'); return; }
     /* a life's own call: the radio and its songs wait under it, and come back when it ends or is paused */
     if (playing === url && !audio.paused) { audio.pause(); hush(false); if (btn) btn.innerHTML = icon('play'); return; }
-    playing = url; audio.src = url; audio.play().then(() => { hush(true); if (btn) btn.innerHTML = icon('pause'); }).catch(() => { hush(false); toast('NO SOUND HERE'); });
-    audio.onended = audio.onpause = () => { hush(false); if (btn) btn.innerHTML = icon('play'); };
+    playing = url; audio.src = url; audio.play().then(() => { hush(true); tellSound(true, 'call'); if (btn) btn.innerHTML = icon('pause'); }).catch(() => { hush(false); toast('NO SOUND HERE'); });
+    audio.onended = audio.onpause = () => { hush(false); tellSound(false, 'call'); if (btn) btn.innerHTML = icon('play'); };
   }
   return {
     start, data, resize, tempo, sweepAt: () => sweepB, moved: () => { dirty = true; }, redraw: () => { fxDirty = true; }, hover, retag, play, hit, badgeOf, offer, searchOf, blob, inScan, moveScan, setScan, findStart, replay,

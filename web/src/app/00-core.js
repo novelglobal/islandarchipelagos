@@ -111,6 +111,8 @@ const savePrefs = () => store.set('da.prefs', prefs);
 /* the first visit is one simple way through, gate by gate (43-journey.js): 0 the map, 1 the radio, 2 W.I.S.H., 3 PRINT, 4 done.
    A device that has been here before has done it */
 const IN_AURA = window.parent !== window && /[?&]from=aura\b/.test(location.search);
+/* a sound of this window's own (a call, a recording, a voice): the home's radio waits under it */
+function tellSound(on, k) { if (IN_AURA) try { window.parent.postMessage({ ng: 'sound', on: !!on, k: k }, location.origin); } catch (e) { /* alone */ } }
 /* the one device the aura opened this window for: its page, and no other */
 let AURA_ONLY = IN_AURA ? ({ radio: 0, wish: 1, print: 2, portfolio: 3 })[new URLSearchParams(location.search).get('only')] : undefined;
 if (AURA_ONLY != null) document.documentElement.classList.add('only-' + ['radio', 'wish', 'print', 'portfolio'][AURA_ONLY]);   // one device in the aura's window: laid out for it alone

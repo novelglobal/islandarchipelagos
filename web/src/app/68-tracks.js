@@ -459,9 +459,9 @@ function recPlay(id) {
   if (!q.length) { if (tp && tapeLoops(tp).length) { startPlay(tracksOf(mixOf(tapeLoops(tp)))); loopSync(true); return; } toast('NOT ON THIS PHONE'); return; }
   REC = { id, q: q.slice(1), radio: S.radio }; if (S.radio) setRadio(false);
   const on = u => { const a = new Audio(u); REC.a = a; a.onended = () => { if (REC && REC.q.length) on(REC.q.shift()); else recStop(); }; a.play().catch(() => recStop()); };
-  on(q[0]); recSync();
+  on(q[0]); recSync(); tellSound(true, 'rec');
 }
-function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); }
+function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); tellSound(false, 'rec'); }
 const recSync = () => $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); });
 /* each kept loop's file made ready as SONGS is drawn, so a press plays or saves it at once */
 async function recLoad() { for (const l of LOOPS) { if (!l.rec || RECURL.has(l.id)) continue; const b = await big.get('rec:' + l.id); if (b) RECURL.set(l.id, URL.createObjectURL(b)); else delete l.rec; }

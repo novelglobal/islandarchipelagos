@@ -27,10 +27,11 @@
     q.onsuccess = function () { try { var c = q.result.transaction('kv').objectStore('kv').openCursor(), got = {}; c.onsuccess = function () { var k = c.result; if (k) { if (/^poster:/.test(k.key)) got[k.key.slice(7)] = k.value; k.continue(); } else { SPIC = got; res(); } }; c.onerror = function () { res(); }; } catch (e) { res(); } }; q.onerror = function () { res(); }; } catch (e) { res(); } }); }
   /* a loop's recording, kept by the studio (rec:<id>), heard in the SOUND playlist as it was recorded */
   var RECA = null;
+  function auraSound(on, k) { try { window.dispatchEvent(new CustomEvent('ng-sound', { detail: { on: !!on, k: 'aura-' + k } })); } catch (e) { /* old */ } }
   function recHear(id, b) { if (RECA) { var was = RECA.id; try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; deskKept(); if (was === id) return; }
     try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
       q.onsuccess = function () { try { var g = q.result.transaction('kv').objectStore('kv').get('rec:' + id); g.onsuccess = function () { if (!g.result) { NG.toast && NG.toast('NOT ON THIS PHONE'); return; }
-        if (DESK.play) songPlay(false); var a = new Audio(URL.createObjectURL(g.result)); RECA = { id: id, a: a }; a.onended = function () { RECA = null; deskKept(); ampEnded(); }; a.play().catch(function () { RECA = null; deskKept(); }); deskKept(); }; } catch (e) { /* none */ } }; } catch (e) { /* none */ } }
+        if (DESK.play) songPlay(false); var a = new Audio(URL.createObjectURL(g.result)); RECA = { id: id, a: a }; auraSound(true, 'rec'); a.addEventListener('pause', function () { auraSound(false, 'rec'); }); a.onended = function () { auraSound(false, 'rec'); RECA = null; deskKept(); ampEnded(); }; a.play().catch(function () { RECA = null; deskKept(); }); deskKept(); }; } catch (e) { /* none */ } }; } catch (e) { /* none */ } }
   function spicDrop(id) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); }; q.onsuccess = function () { try { q.result.transaction('kv', 'readwrite').objectStore('kv').delete('poster:' + id); } catch (e) { /* fine */ } }; } catch (e) { /* fine */ } delete SPIC[id]; }
   function folioLoad() {
     return spicLoad().then(folioDB).then(function (d) {
@@ -926,9 +927,9 @@
     clearInterval(DESK.iv); DESK.iv = 0; DESK.list = !!on && !!list && DESK.kept.length > 0; DESK.step = -1;
     if (DESK.list) { DESK.li = Math.min(DESK.li || 0, DESK.kept.length - 1); var s0 = keptSong(DESK.kept[DESK.li]); if (s0) { DESK.song = s0; DESK.mood = s0.m; DESK.src = s0.s; } }
     DESK.play = !!on && (!songEmpty(DESK.song) || (!list && layered().length > 0)); if (DESK.play && songEmpty(DESK.song)) DESK.song = layered()[0]; if (DESK.el) { DESK.el.classList.toggle('playing', DESK.play); DESK.el.classList.toggle('listing', DESK.list && DESK.play); deskSync(); }
-    if (!DESK.play) { DESK.list = false; deskHeld = null; ampDraw(); if (studioHeld) { studioHeld = false; studioTell(false); humSet(false); } else humSet(S.mode !== 'seed' && S.win == null); return; }
+    if (!DESK.play) { auraSound(false, 'desk'); DESK.list = false; deskHeld = null; ampDraw(); if (studioHeld) { studioHeld = false; studioTell(false); humSet(false); } else humSet(S.mode !== 'seed' && S.win == null); return; }
     /* one music at a time: the studio's radio, if it plays, waits under the desk's song and comes back when it stops */
-    beat('desk-play'); txtRead(); deskHeld = null; if (WIN && !studioHeld) { studioHeld = true; studioTell(true); } humSet(false); var c = NG.ac(), out = NG.bus(c), sg = DESK.song, sd = stepDur(sg), next = c.currentTime + 0.08, n = 0, li = DESK.li || 0; DESK.t0 = next; ampDraw();
+    auraSound(true, 'desk'); beat('desk-play'); txtRead(); deskHeld = null; if (WIN && !studioHeld) { studioHeld = true; studioTell(true); } humSet(false); var c = NG.ac(), out = NG.bus(c), sg = DESK.song, sd = stepDur(sg), next = c.currentTime + 0.08, n = 0, li = DESK.li || 0; DESK.t0 = next; ampDraw();
     DESK.iv = setInterval(function () { if (!DESK.play || (!DESK.list && DESK.song !== sg)) return; while (next < c.currentTime + 0.25) {
       if (amp && n >= STEPS_N * 2) { clearInterval(DESK.iv); setTimeout(ampEnded, 0); return; }
       if (DESK.list && n === STEPS_N * 2) { li = (li + 1) % DESK.kept.length; DESK.li = li; setTimeout(deskKept, 0); var s2 = keptSong(DESK.kept[li] || {}); if (s2) { sg = DESK.song = s2; DESK.mood = s2.m; DESK.src = s2.s; sd = stepDur(sg); DESK.t0 = next; deskSync(); } n = 0; }
