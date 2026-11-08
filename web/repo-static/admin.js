@@ -730,7 +730,7 @@
     return el('section', { class: 'ed' }, el('h3', { text: 'BACKUP AND REBUILD' }),
       el('p', { class: 'note', text: 'ONE ZIP OF EVERYTHING KEPT HERE (THE DATA FILE, EVERY PHOTOGRAPH AND FULL-SIZE PICTURE), AND ONE ZIP OF THE CODE THAT RUNS THE SITE, THE PI AND THE TOUCH SCREEN. WITH BOTH, ALL OF IT CAN BE BUILT AGAIN FROM NOTHING: THE GUIDE SAYS HOW. KEEP A COPY SOMEWHERE ELSE TOO.' }),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'EVERYTHING KEPT (.ZIP)', onclick: () => zipAll().catch(() => { out.textContent = 'NO ANSWER · TRY AGAIN'; }) }),
-        el('a', { href: GH + '/archive/refs/heads/main.zip', class: 'note', text: 'THE CODE (.ZIP) ↓' }), ln('THE REBUILD GUIDE ↗', GH + '/blob/main/docs/rebuild.md'), ln('TOUCH SCREEN SKETCH ↗', GH + '/blob/main/src/touch/novel-touch/novel-touch.ino'), ln('DEVICES GUIDE ↗', GH + '/blob/main/docs/devices.md')),
+        el('a', { href: GH + '/archive/refs/heads/main.zip', class: 'note', text: 'THE CODE (.ZIP) ↓' }), ln('TOUCH SCREEN SKETCH ↗', GH + '/blob/main/web/src/touch/novel-touch/novel-touch.ino')),
       el('p', { class: 'note', text: 'THE PI, BUILT AGAIN OR UPDATED (ON THE PI, OVER SSH): curl -fsSL https://raw.githubusercontent.com/novelglobal/islandarchipelagos/main/web/receiver/setup/install.sh | sh' }),
       el('h3', { text: 'BRING A BACKUP BACK' }), el('p', { class: 'note', text: 'THE .JSON FROM A BACKUP (OR EVERYTHING .JSON). PRINTERS ARE PAIRED AGAIN BY HAND; PHOTOGRAPHS STAY IN THE ZIP.' }), file,
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'BRING IT BACK', onclick: back }), out));

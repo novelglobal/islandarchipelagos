@@ -1106,8 +1106,6 @@ html.aura-dark .au-talkp { background: rgba(20, 21, 24, .96); }
 .au-talkp li span { font-size: 9px; line-height: 1.4; } .au-talkp li b, .au-talkp li small { font-size: 7px; } .au-talkp li .kin svg { width: 12px; height: 12px; } .au-talkp li { grid-template-columns: 14px 1fr auto; padding: 4px; column-gap: 6px; }
 .au-talkp input { font-size: 16px; padding: 3px 2px; } .au-talkp form button { width: 28px; height: 28px; font-size: 13px; } .au-talkp .au-tks button { width: 22px; height: 22px; font-size: 11px; }
 /* the still version's key: small, low, at the start only (and always in the still version, to turn it back) */
-#aura .au-stillk { position: fixed; right: 12px; bottom: calc(10px + var(--sab, 0px)); z-index: 7; width: 28px; height: 28px; border: 0; background: none; color: var(--ink); font-size: 14px; opacity: .3; cursor: pointer; display: none; }
-#aura.m-seed .au-stillk, #aura.au-plain .au-stillk { display: block; } #aura .au-stillk:hover { opacity: .8; } #aura.au-plain .au-stillk { opacity: .6; bottom: auto; top: calc(10px + var(--sat, 0px)); }
 
 /* the style: its chips in one row, then a few plain controls to make it one's own (1.0 C) */
 .au-stp { margin: 6px auto 10px; max-width: 520px; font: 600 10px "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }

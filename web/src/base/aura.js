@@ -1609,12 +1609,8 @@
      in, or has failed: a browser that draws keeps the creature as it is, whatever its name (DuckDuckGo's is counted apart). ?plain=1 or
      ?plain=0 to try it either way */
   (function () { var q = window.__LH && /[?&]plain=([01])/.exec(location.search), on = function (why) { if (S.plain) return; S.plain = 1; root.classList.add('au-plain'); /* found frozen: the drawing's last picture, stuck, is put away */ if (why !== 'asked') document.documentElement.classList.add('au-frozen'); if (/^(bang|morph|unmorph)$/.test(S.mode)) setMode(S.mode); setTimeout(function () { beat('plain-' + why); }, 0); };
-    /* and by hand: a small key at the start turns the still version on (kept on this phone) or back off, for a browser whose
-       protections stop the motion without the drawing seeming to stall */
-    var sk = document.createElement('button'); sk.className = 'au-stillk'; sk.id = 'au-stillk'; sk.textContent = '◌'; sk.setAttribute('aria-label', 'Still version on or off'); root.appendChild(sk);
-    sk.addEventListener('click', function (e) { e.stopPropagation(); if (S.plain) { store.set('da.plain', 0); location.replace(location.pathname + '?plain=0'); } else { store.set('da.plain', 1); on('asked'); } });
     if (q) { if (q[1] === '1') on('asked'); return; }
-    if (+store.get('da.plain', 0) === 1) { on('asked'); return; }
+    if (+store.get('da.plain', 0) === 1) store.set('da.plain', 0);   /* the old hand key's choice, let go */
     var look = function () { if (document.hidden || asleep) { setTimeout(look, 3000); return; } var f0 = S.frames || 0, e0 = S.ferr || 0; setTimeout(function () { var df = (S.frames || 0) - f0, de = (S.ferr || 0) - e0; if (asleep) { setTimeout(look, 3000); return; } if (!document.hidden && (df < 4 || de > df / 2)) on(/DuckDuckGo\/|\bDdg\//.test(navigator.userAgent || '') ? 'ddg' : 'still'); }, 3000); };
     setTimeout(look, 1500); })();
 
