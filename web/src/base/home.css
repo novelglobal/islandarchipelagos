@@ -535,7 +535,9 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 .hm-bcn [data-pick] { font: inherit; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
 
 /* the radio on air, out of sight: alive, tiny, never in the way */
-#hm-x iframe.hm-air { position: absolute; left: 0; bottom: 0; flex: none; width: 2px; height: 2px; opacity: 0 !important; pointer-events: none; }
+#hm-x iframe.hm-air { position: absolute; left: 0; bottom: 0; flex: none; width: 2px; height: 2px; opacity: .01 !important; pointer-events: none; visibility: visible; }
+/* parked while the sheet is down: just inside the screen's bottom edge, so the browser keeps its clock at full speed and it never stutters */
+#hm-x:not(.on) iframe.hm-air { bottom: 100%; }
 
 /* card keys: light on dark, dark on light, whatever is under them (never ink on ink) */
 #hm .hm-card .hm-keys { mix-blend-mode: difference; }
