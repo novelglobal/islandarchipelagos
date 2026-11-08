@@ -118,22 +118,36 @@
     '<circle class="me" r="1.4"><animateMotion dur="26s" repeatCount="indefinite" rotate="auto"><mpath href="#st-way"/></animateMotion></circle>' +
     '<g class="rose" transform="translate(88 12)"><circle r="5"/><path d="M0-7v14M-7 0h14"/><path class="n" d="M0-5l1.4 4h-2.8z"/></g></svg>';
   var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
+  /* CIRCULAR STRATEGY: the photographs as evidence in an open case, pinned and strung; a knight's move between them */
+  var EVID = '<div class="st-ev" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="str" d="M31 8.4L79 18.2L53 38.6L31 8.4"/></svg>' +
+    '<figure class="ev ev-b"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"><b>B</b></figure><figure class="ev ev-c"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"><b>C</b></figure>' +
+    '<i class="pin" style="left:31%;top:8.4%"></i><i class="pin w" style="left:79%;top:18.2%"></i><i class="pin" style="left:53%;top:38.6%"></i><b class="tag">A</b><b class="case">CASE 07 · OPEN</b><b class="q">?</b></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF6B1A" stop-opacity="0"/><stop offset="1" stop-color="#FF6B1A" stop-opacity=".7"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#0B0B0B" fill-opacity=".07" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
   /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
   var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
     '<path pathLength="1" class="fr" style="--d:0s" d="M3 4C30 2.4 70 3.4 97 3.2 96.4 50 97.6 110 96.8 156.6 66 157.4 34 156.2 3.4 157 4 110 2.6 50 3 4z"/>' +
-    '<path pathLength="1" style="--d:0s" d="M8 64c10 2 24 1 36-2"/>' +
-    '<path pathLength="1" class="o" style="--d:1.2s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
-    '<path pathLength="1" style="--d:2.4s" d="M14 88c8-6 20-4 22 4s-8 14-16 10-6-14 4-16"/>' +
-    '<path pathLength="1" class="o" style="--d:3.6s" d="M44 100c8 6 16 8 26 6M64 101l7 5-6 6"/>' +
-    '<path pathLength="1" style="--d:4.8s" d="M78 56c-4 4-2 10 4 10s8-8 2-12-12 0-12 8 8 14 16 10"/>' +
-    '<path pathLength="1" class="o" style="--d:6s" d="M10 118l4 4M14 118l-4 4M20 118l4 4M24 118l-4 4M30 118l4 4M34 118l-4 4"/></svg>';
+    '<path pathLength="1" class="o" style="--d:.4s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
+    '<path pathLength="1" class="o b" style="--d:1.4s" d="M36.7 66A10.5 10.5 0 1 1 26.4 64.1 M28.5 63.6l1.2 -1.6 M22 86L30.6 61L39 86.5 M17 77L44 75.6"/>' +
+    '<path pathLength="1" class="b" style="--d:2.6s" d="M78 54.63A6.5 6.5 0 1 1 70 54.63A4.42 4.42 0 0 0 78 54.63z M81.85 75.15A6.5 6.5 0 1 1 85.85 68.22A4.42 4.42 0 0 0 81.85 75.15z M62.15 68.22A6.5 6.5 0 1 1 66.15 75.15A4.42 4.42 0 0 0 62.15 68.22z M82 66A8 8 0 1 1 66 66A8 8 0 1 1 82 66 M75.7 66A1.7 1.7 0 1 1 72.3 66A1.7 1.7 0 1 1 75.7 66"/>' +
+    '<path pathLength="1" class="b dm" style="--d:3.8s" d="M12 101L17 101L21 106L17 111L12 111z M14 97.5V114.5 M28.5 101L33 106L28.5 111L24 106z M28.5 101v-3.5M28.5 111v3.5M24 106h-2.5M33 106h2.5 M40.5 101L45 106L40.5 111L36 106z M40.5 101v-3.5M40.5 111v3.5M36 106h-2.5M45 106h2.5 M48 111V101L52.5 107L57 101V111 M48 101l-1.6 -3.4M57 101l1.6 -3.4M48 111l-1.2 3.4M57 111l1.2 3.4 M8 118L62 117.4 M18 117.9v3.4M31 117.8v5M43 117.6v2.2M55 117.5v4.2"/>' +
+    '<path pathLength="1" class="o" style="--d:5.2s" d="M25 126.1A8.9 8.9 0 1 1 24.8 126.1 M25 127.5L29.4 141.1L17.9 132.7L32.1 132.7L20.6 141.1L25 127.5"/>' +
+    '</svg>';
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
   var REFC = REFAT.map(function (p) { return [p[0] + p[2] / 2, p[1] + p[2] * p[3] / 2]; });
-  var REFS = '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + [[0, 1], [0, 2], [1, 2]].map(function (q) { var a = REFC[q[0]], b = REFC[q[1]]; return '<path d="M' + a[0] + ' ' + a[1] + 'H' + b[0] + 'V' + b[1] + '"/><circle cx="' + b[0] + '" cy="' + a[1] + '" r="1.6"/>'; }).join('') + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') + '</div>';
+  var THEMES = ['RANGIWAHIA', 'SYNERGY', 'PRAXIS', 'SPECULATIVE FICTION', 'SPECULATIVE PRAXIS', 'RANGIWAHIA FUTURES', 'SYNERGY AS PRAXIS', 'FICTIONS OF PLACE', 'PRAXIS OF PLAY'];
+  function refs() { var R = Math.random, N = REFC.slice(), k, e = [];
+    for (k = 0; k < 15; k++) N.push([3 + R() * 94, -6 + R() * (k < 9 ? 104 : 134)]);
+    N.forEach(function (p, i) { var d = N.map(function (q, j) { return [Math.hypot(q[0] - p[0], q[1] - p[1]), j]; }).sort(function (x, y) { return x[0] - y[0]; }); [1, 2, 3].forEach(function (m) { var j = d[m][1]; if (!e.some(function (x) { return (x[0] === i && x[1] === j) || (x[0] === j && x[1] === i); })) e.push([i, j]); }); });
+    for (k = 0; k < 4; k++) e.push([Math.floor(R() * 3), 3 + Math.floor(R() * 13)]);
+    var path = e.map(function (q, n) { var a = N[q[0]], b = N[q[1]], mx = (a[0] + b[0]) / 2 + (R() - 0.5) * 14, my = (a[1] + b[1]) / 2 + (R() - 0.5) * 14;
+      return '<path pathLength="1" class="' + (n % 4 === 1 ? 'ds' : n % 5 === 2 ? 'lm' : '') + '" style="--d:' + (n * 0.06).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; }).join('');
+    var dots = N.slice(3).map(function (p, n) { return n % 3 ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (n % 2 ? 1 : 1.6) + '"/>' : '<path class="x" d="M' + (p[0] - 1.6).toFixed(1) + ' ' + (p[1] - 1.6).toFixed(1) + 'l3.2 3.2m0 -3.2l-3.2 3.2"/>'; }).join('');
+    var th = THEMES[Math.floor(R() * THEMES.length)], low = N.slice(3).filter(function (p) { return p[1] > 84 && p[1] < 124; }), wp = low.length ? low[Math.floor(R() * low.length)] : N[3];
+    return '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + path + dots + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') +
+      '<b class="rb-word" style="left:' + Math.min(52, Math.max(4, wp[0] - 18)).toFixed(1) + '%;top:' + Math.min(122, Math.max(30, wp[1])).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
   /* ISLAND ARCHIPELAGOS: the coast from above in the sea's blue, its cells drifting, islands joined */
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
@@ -167,7 +181,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-theme" aria-label="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header>' +
+    '<button id="hm-theme" aria-label="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + CARDS.map(cardHTML).join('') + '</main><nav class="hm-dots" aria-hidden="true">' + CARDS.map(function () { return '<i></i>'; }).join('') + '</nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -185,7 +199,7 @@
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = CARDS.map(cardHTML).join(''); cards = $$('.hm-card', col); receipt(); $('.hm-dots').innerHTML = CARDS.map(function () { return '<i></i>'; }).join(''); paintAll(); pics(); radars(); lamps(); parallax();
+    col.innerHTML = CARDS.map(cardHTML).join(''); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = CARDS.map(function () { return '<i></i>'; }).join(''); paintAll(); pics(); radars(); lamps(); parallax();
   }
   var CARDS_TXT = null;
   fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); }).catch(function () { /* the cards as they started */ });
@@ -197,15 +211,15 @@
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-kept" alt="" hidden><b class="rc-code">DA-YZ07</b><div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-lbl" aria-hidden="true">' + 'stories'.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b><canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
     else if (sk === 'radio') { var ks = [1, 0.78, 0.6, 0.47, 0.37, 0.29, 0.23, 0.18, 0.14, 0.11];
-      inner = '<h2 class="hm-t kas">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><div class="kas" aria-hidden="true">' + ks.slice(1).map(function (k, j) { return '<span style="--fk:' + k + '"' + (j === 2 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
+      inner = '<h2 class="hm-t kas"><span>' + t + '</span></h2><div class="kas" aria-hidden="true">' + ks.slice(1).map(function (k, j) { return '<span style="--fk:' + k + '"' + (j === 2 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER ISLAND COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? CHART + DRIFT + '<div class="hm-pics"></div>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? REFS : sk === 'space' ? SEA : '';
-    var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="paper"></i><i class="led"></i></div>' : '';
+    var extra = sk === 'wish' ? CHART + DRIFT + '<div class="hm-pics"></div>' + EVID : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
+    var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
@@ -227,7 +241,7 @@
   function pics() {
     TURN.forEach(clearInterval); TURN = [];
     cards.forEach(function (el) { var id = el.dataset.id, cp = CPICS[id] || {}, own = OWNPICS[id === 'wish' ? 'novelglobal' : id];
-      if (own && !(cp.pics && cp.pics.length)) cp = { pics: own, speed: cp.speed, shade: cp.shade };
+      if (own && !(cp.pics && cp.pics.length)) cp = { pics: id === 'wish' ? own.filter(function (u) { return !/chair-[48]\./.test(u); }) : own, speed: cp.speed, shade: cp.shade };
       var box = el.querySelector('.hm-pics'), bg = el.querySelector('.hm-bgimg');
       if (box) { var ls = (cp.pics || []).slice(0, 10); box.innerHTML = ls.map(function (u, j) { return '<img alt="" decoding="async" fetchpriority="' + (j ? 'low' : 'high') + '" src="' + esc(u) + '"' + (j === 0 ? ' class="on"' : '') + '>'; }).join(''); box.classList.toggle('none', !ls.length);
         /* every photograph is fetched and decoded before it is shown, and one not yet ready is passed over, so each change is instant */
@@ -249,9 +263,12 @@
     else if (st === 'last') (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = l || []; var last = l[0];
       if (last && last.src) { k.src = last.src; k.hidden = false; } if (last && last.code) el.querySelector('.rc-code').textContent = last.code; }).catch(function () {});
     var q = el.querySelector('.rc-qr'); (window.qrcode ? Promise.resolve(window.qrcode) : new Promise(function (ok, no) { var s = D.createElement('script'); s.src = 'vendor/qrcode.js'; s.onload = function () { ok(window.qrcode); }; s.onerror = no; D.head.appendChild(s); })).then(function (qr) {
-      var m = qr(0, 'M'); m.addData('https://novel.global/research'); m.make(); var n = m.getModuleCount(), px = 4, pad = 2; q.width = q.height = (n + pad * 2) * px; var g = q.getContext('2d'); g.fillStyle = '#F4F1E8'; g.fillRect(0, 0, q.width, q.height); g.fillStyle = '#143D71';
+      var m = qr(0, 'M'); m.addData('https://novel.global/?stories'); m.make(); var n = m.getModuleCount(), px = 4, pad = 2; q.width = q.height = (n + pad * 2) * px; var g = q.getContext('2d'); g.fillStyle = '#F4F1E8'; g.fillRect(0, 0, q.width, q.height); g.fillStyle = '#143D71';
       for (var r = 0; r < n; r++) for (var cc = 0; cc < n; cc++) if (m.isDark(r, cc)) g.fillRect((cc + pad) * px, (r + pad) * px, px, px); }).catch(function () {});
   }
+  /* the last print, hanging from ISLAND's slot */
+  function lastPrint() { var el = col.querySelector('[data-id="kit"] .paper'); if (!el) return; var pt = store.get('da.pt.v1', null), a = AU(), put = function (u) { if (u) el.innerHTML = '<img alt="" src="' + esc(u) + '">'; };
+    if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put((l && l[0] && l[0].src) || '/cards/portfolio.webp'); }).catch(function () { put('/cards/portfolio.webp'); }); }
   fetch('/api/cards').then(function (r) { return r.ok ? r.json() : { cards: {} }; }).then(function (j) { CPICS = j.cards || {}; pics(); partners().then(isleCards); }).catch(function () { /* none yet */ });
 
   var byId = function (id) { return CARDS.filter(function (c) { return c.id === id; })[0]; };
@@ -267,7 +284,7 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var at = Math.round(col.scrollTop / Math.max(1, cards[0].offsetHeight)), n = 0, best = 1e9; cards.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - col.getBoundingClientRect().top); if (dd < best) { best = dd; n = i; } });
-    $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === (at >= 0 ? n : 0)); });
+    CUR = cards[n] ? cards[n].dataset.id : ''; $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === (at >= 0 ? n : 0)); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
@@ -455,20 +472,24 @@
   /* ───────── the Irukandji, as it was first drawn: the box bell in one line with its shadow line, the eye in dots, four dots where the
      tentacles leave, four fine tentacles beaded with stinging cells. What is new: the eye is faint, the beads stop a fifth of the way
      down, and it swims slowly, crown first, with a pulse and a long glide; open the sea and it goes down into it ───────── */
+  var jcv = $('#hm-jf'), jx = jcv.getContext('2d'), CUR = '';
   var J = { x: 150, y: 26, vx: -3, vy: 0, a: Math.PI - 0.25, ph: Math.random(), p: 0, blink: 0, s: 1, tx: 0, ty: 0, until: 0 }, NTJ = 40, NRJ = 40;
   var noise = function (a, b, c) { return Math.sin(a * 1.7 + b * 2.3 + c) * 0.5 + Math.sin(a * 0.9 - b * 1.3 + c * 1.9) * 0.3 + Math.sin(b * 3.1 + c * 0.7) * 0.2; };
   function swim(dt, t, open) {
     J.ph += dt / 5.4; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
-    var S = J.s, lo = TOPH * 0.5;
-    if (open) { if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
+    var S = J.s, lo = TOPH * 0.5, O = J.orbit, far = O || J.back;
+    if (O) { J.th += dt * 0.13; J.tx = O.x + Math.cos(J.th) * O.rx; J.ty = O.y + Math.sin(J.th) * O.ry; }
+    else if (J.back) { J.tx = VW * 0.5; J.ty = lo; if (J.y < lo + 10) J.back = false; }
+    else if (open) { if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
     else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; }
-    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)); J.a += d * Math.min(1, dt * (open ? 0.7 : 0.3));
-    if (c < 0.28) { var th = (open ? 22 : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
+    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)); J.a += d * Math.min(1, dt * (far ? 2.4 : open ? 0.7 : 0.3));
+    if (c < 0.28) { var th = (far ? 40 : open ? 22 : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
     J.vx *= Math.pow(0.5, dt); J.vy *= Math.pow(0.5, dt); J.vy += 0.5 * dt;
     J.x += J.vx * dt; J.y += J.vy * dt;
-    if (!open) { J.y += (lo - J.y) * Math.min(1, dt * 0.6); if (J.x < -50) { J.x = VW + 50; J.y = lo; } if (J.x > VW + 60) J.x = -40; }
+    if (far) { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min((root.clientHeight || innerHeight) - 20, J.y)); }
+    else if (!open) { J.y += (lo - J.y) * Math.min(1, dt * 0.6); if (J.x < -50) { J.x = VW + 50; J.y = lo; } if (J.x > VW + 60) J.x = -40; }
     else { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min(CH - 40, J.y)); }
-    var ws = (open ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
+    var ws = (open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
   }
   function drawJelly(g, t) {
     var S = J.s, ink = function (a) { return 'rgba(244,241,232,' + a.toFixed(3) + ')'; };
@@ -736,17 +757,24 @@
     var dt = Math.min(0.05, (now - last) / 1000); last = now; requestAnimationFrame(frame); if (D.hidden) return;
     if (Math.round((top.clientWidth || innerWidth) * dpr) !== tcv.width || Math.abs(TOPH + reefH() - CH) > 1) seaSize();
     var open = root.classList.contains('reef') && !away, t = now / 1000;
-    if (!RM.matches) swim(dt, t, open); J.blink = Math.max(0, J.blink - dt);
+    var jr = tcv.getBoundingClientRect(), rr = root.getBoundingClientRect();
+    if (CUR === 'portfolio' && !open && !away && !xv.classList.contains('on')) { var lb = col.querySelector('[data-id="portfolio"] .rc-lbl'), lr = lb && lb.getBoundingClientRect();
+      if (lr && lr.width) { var ox = lr.left + lr.width / 2 - jr.left, oy = lr.top + lr.height / 2 - jr.top; if (!J.orbit) { J.th = Math.atan2(J.y - oy, J.x - ox) + 0.5; J.back = false; } J.orbit = { x: ox, y: oy, rx: Math.max(78, lr.width * 0.9), ry: Math.max(52, lr.height * 2.6) }; } }
+    else if (J.orbit) { J.orbit = null; J.back = true; }
+    if (!RM.matches) swim(dt * (J.orbit ? 5 : J.back ? 4 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
     tx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
-    if (!away) drawJelly(tx, t);
+    var jw = Math.round(rr.width * dpr), jh = Math.round(rr.height * dpr); if (jcv.width !== jw || jcv.height !== jh) { jcv.width = jw; jcv.height = jh; }
+    jx.setTransform(1, 0, 0, 1, 0, 0); jx.clearRect(0, 0, jcv.width, jcv.height);
+    if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
   }
   seaSize(); requestAnimationFrame(frame);
-  receipt();
+  receipt(); lastPrint();
+  if (/[?&]stories\b/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(function () { open('portfolio'); }, 400); }
   requestAnimationFrame(function () { paintAll(); parallax(); board(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
   window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J };
 })();
