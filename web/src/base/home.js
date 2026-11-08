@@ -190,7 +190,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -329,7 +329,7 @@
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
+    var c = byId(id); if (!c) return; careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
@@ -505,7 +505,7 @@
     i.disabled = true; say.textContent = '· · ·';
     (window.NG && NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: sec, who: who, text: t, re: re, cf: cf }) }); })
       .then(function (r) { i.disabled = false; if (r.status !== 201) { say.textContent = TKWHY[r.status] || 'NOT SENT'; return; }
-        return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); i.value = ''; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
+        return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); careEarn('talk'); i.value = ''; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
       .catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); });
   /* a piece's own talk, asked for from inside an experience */
   addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'talk' || !xv.classList.contains('on')) return;
@@ -577,7 +577,7 @@
 
   /* ───────── printing from the home: a canvas to the printer that is listening ───────── */
   function printCanvas(cv, was) { if (!NG.printAgain) return Promise.reject(new Error('no base')); return NG.printAgain(cv.toDataURL('image/png'), was); }
-  function quickPrint() {
+  function quickPrint() { careEarn('print');
     var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.setAttribute('capture', 'environment');
     f.addEventListener('change', function () { var file = f.files && f.files[0]; if (!file) return; find('booth'); var u = URL.createObjectURL(file), im = new Image();
       im.onload = function () { var W = 512, c; if (window.SLIPS && SLIPS.quick) c = SLIPS.quick(im, W); else { c = D.createElement('canvas'); c.width = W; c.height = Math.round(W * im.naturalHeight / im.naturalWidth); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); }
@@ -654,10 +654,11 @@
     var S = J.s, lo = TOPH * 0.5, O = J.orbit, far = O || J.back;
     if (O) { J.th += dt * 0.09; J.tx = O.x + Math.cos(J.th) * O.rx; J.ty = O.y + Math.sin(J.th) * O.ry; }
     else if (J.back) { J.tx = VW * 0.5; J.ty = lo; if (J.y < lo + 10) J.back = false; }
-    else if (open) { if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
+    else if (open && J.goal && t - J.goal.t < 30 && Math.hypot(J.goal.x - J.x, J.goal.y - J.y) > 26) { J.tx = J.goal.x; J.ty = J.goal.y; }
+    else if (open) { J.goal = null; if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
     else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; }
-    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)); J.a += d * Math.min(1, dt * (far ? 2.4 : open ? 0.7 : 0.3));
-    if (c < 0.28) { var th = (far ? 40 : open ? 22 : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
+    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)); J.a += d * Math.min(1, dt * (far ? 2.4 : open ? (J.goal ? 0.26 : 0.7) : 0.3));
+    if (c < 0.28) { var th = (far ? 40 : open ? (J.goal ? 13 : 22) : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
     J.vx *= Math.pow(0.5, dt); J.vy *= Math.pow(0.5, dt); J.vy += 0.5 * dt;
     J.x += J.vx * dt; J.y += J.vy * dt;
     if (far) { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min((root.clientHeight || innerHeight) - 20, J.y)); }
@@ -701,13 +702,20 @@
   function bellHit(cx, cy) { var r = tcv.getBoundingClientRect(); return Math.hypot(cx - r.left - J.x, cy - r.top - J.y) < 20 * J.s; }
   /* the eye: the fog horn. Held: a quick photograph, printed */
   var hold = null, held = false;
-  top.addEventListener('pointerdown', function (e) { if (e.target.closest('nav')) return; held = false; if (bellHit(e.clientX, e.clientY)) hold = setTimeout(function () { held = true; hold = null; J.blink = 0.4; quickPrint(); }, 650);
-    else if (root.classList.contains('reef')) { var p = pt(e), pc = pieceAt(p[0], p[1]);
-      if (pc) { HELD = { p: pc, x: p[0], y: p[1], dx: pc.x - p[0], dy: (pc.fall ? pc.cy : pc.y) - p[1] }; pc.held = true; pc.fall = 0; try { top.setPointerCapture(e.pointerId); } catch (x) { /* none */ } beep(330, 0.06); return; }
-      PT.x = p[0]; PT.y = p[1]; RIP.push({ x: p[0], y: p[1], r: 2, a: 0.8 }); beep(180 + Math.random() * 120, 0.08); } });
+  top.addEventListener('pointerdown', function (e) { if (e.target.closest('nav') || e.target.closest('#hm-care')) return; held = false; if (bellHit(e.clientX, e.clientY)) hold = setTimeout(function () { held = true; hold = null; J.blink = 0.4; quickPrint(); }, 650);
+    else if (root.classList.contains('reef')) { var p = pt(e);
+      if (CARE.sel && careUse(p[0], p[1])) return;
+      var pc = pieceAt(p[0], p[1]);
+      if (pc) { HELD = { p: pc, x: p[0], y: p[1], sx: p[0], sy: p[1], t0: performance.now(), vx: 0, dx: pc.x - p[0], dy: (pc.fall ? pc.cy : pc.y) - p[1] }; pc.held = true; pc.fall = 0; try { top.setPointerCapture(e.pointerId); } catch (x) { /* none */ } return; }
+      PT.x = p[0]; PT.y = p[1]; RIP.push({ x: p[0], y: p[1], r: 2, a: 0.8 }); beep(180 + Math.random() * 120, 0.08);
+      J.goal = { x: p[0], y: p[1], t: performance.now() / 1000 }; snakeNudge(p[0], p[1]); if (BIO.live) bio(p[0], p[1], 18); } });
   top.addEventListener('pointerup', function () { if (hold) { clearTimeout(hold); hold = null; }
-    if (HELD) { var pc = HELD.p, nx = Math.max(12, Math.min(REEF.w - 12, HELD.x + HELD.dx)), ny = HELD.y + HELD.dy, lo = REEF.sea - REEF.s * 0.17, hi = REEF.sea + REEF.s * 0.06; pc.held = false; pc.x = nx; pc.cy = ny;
-      if (pc === STAR) { pc.fy = Math.max(REEF.sea + 6, Math.min(hi + 10, ny)); pc.fall = 1; pc.vy = 0; } else { pc.y = Math.max(lo, Math.min(hi, ny)); pc.fall = 1; pc.vy = 0; } HELD = null; keepReef(); } });
+    if (!HELD) return; var pc = HELD.p, moved = Math.hypot(HELD.x - HELD.sx, HELD.y - HELD.sy), quick = performance.now() - HELD.t0 < 380; pc.held = false;
+    if (moved < 8 && quick) { HELD = null; touchPiece(pc); return; }
+    var nx = Math.max(12, Math.min(REEF.w - 12, HELD.x + HELD.dx)), ny = HELD.y + HELD.dy, hi = REEF.sea + REEF.s * 0.06; pc.x = nx; pc.cy = ny;
+    if (pc === STAR) { pc.fy = Math.max(REEF.sea + 6, Math.min(hi + 10, ny)); pc.fall = 1; pc.vy = 0; }
+    else { pc.y = restY(pc); pc.cy = Math.min(ny, pc.y); pc.fall = 1; pc.vy = 0; pc.vx = Math.max(-320, Math.min(320, HELD.vx * 0.5)); }
+    beep(330, 0.05); HELD = null; keepReef(); });
   top.addEventListener('pointerleave', function () { if (hold) { clearTimeout(hold); hold = null; } PT.x = PT.y = -999; });
   top.addEventListener('click', function (e) { if (e.target.closest('nav')) return; if (held) { held = false; return; }
     if (bellHit(e.clientX, e.clientY)) { J.blink = 0.25; horn(); J.vx += Math.cos(J.a) * 6; J.vy += Math.sin(J.a) * 6; return; }
@@ -730,8 +738,110 @@
 
   /* ───────── the reef: the forms rounded and lit, in their own colours; the life on it in white line, alive to a touch ───────── */
   var RB = null, PT = { x: -999, y: -999, vx: 0, vy: 0 };
-  var FISH = [], SNOW = [], WORMS = [], SNAKE = { x: -120, y: 0, t: 0 }, SLUG = { u: 0.15, gill: 1 }, RIP = [], STAR = null;
-  function reef(on) { root.classList.toggle('reef', on); top.setAttribute('aria-expanded', String(on)); $('#hm-snork').hidden = !on; if (on) { beep(220, 0.12); J.until = 0; } else beep(330, 0.08); }
+  var FISH = [], SNOW = [], WORMS = [], SNAKE = { x: -120, y: 0, t: 0, wig: 0 }, SLUG = { u: 0.15, gill: 1 }, RIP = [], STAR = null, BUB = [], FIRE = [], GLOW = [], BIO = { live: false, on: 0, next: 0 }, SHD = null, SHN = 0;
+  /* the sea snake does not flee: a touch near it only sets it wiggling */
+  function snakeNudge(x, y) { var d = Math.abs(y - (SNAKE.sy || SNAKE.y)), inside = x < SNAKE.x + 20 && x > SNAKE.x - 150; SNAKE.wig = Math.max(SNAKE.wig, inside && d < 60 ? 1 : d < 160 ? 0.45 : 0.15); }
+  /* the giants: every half minute to a minute something huge passes far back in the water, never clear (a whale, a squid, a ray),
+     drawn small and soft and laid in large; while it passes every fish clears out of the sea */
+  function giantArt(kind, L) {
+    var q = 0.16, W = Math.ceil(L * 1.3 * q), H = Math.ceil(L * 0.85 * q), c = D.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d');
+    g.shadowColor = '#000'; g.shadowBlur = 9; g.shadowOffsetX = 4000; g.scale(q, q); g.translate(L * 0.72 - 4000 / q, L * 0.42); g.fillStyle = '#000'; g.strokeStyle = '#000';
+    var E = function (x, y, rx, ry, a) { g.beginPath(); g.ellipse(x, y, rx, ry, a || 0, 0, 7); g.fill(); };
+    if (kind === 0) { E(0, 0, L * 0.42, L * 0.085); E(L * 0.26, L * 0.012, L * 0.17, L * 0.1); g.beginPath(); g.moveTo(-L * 0.3, -L * 0.05); g.quadraticCurveTo(-L * 0.5, -L * 0.01, -L * 0.53, 0); g.quadraticCurveTo(-L * 0.5, L * 0.02, -L * 0.3, L * 0.05); g.fill();
+      g.beginPath(); g.moveTo(-L * 0.5, 0); g.quadraticCurveTo(-L * 0.6, -L * 0.15, -L * 0.66, -L * 0.13); g.quadraticCurveTo(-L * 0.58, -L * 0.02, -L * 0.56, 0); g.quadraticCurveTo(-L * 0.58, L * 0.02, -L * 0.66, L * 0.13); g.quadraticCurveTo(-L * 0.6, L * 0.15, -L * 0.5, 0); g.fill(); E(L * 0.1, L * 0.1, L * 0.11, L * 0.025, 0.5); }
+    else if (kind === 1) { E(L * 0.24, 0, L * 0.22, L * 0.07); g.beginPath(); g.moveTo(L * 0.44, 0); g.lineTo(L * 0.36, -L * 0.1); g.lineTo(L * 0.3, 0); g.lineTo(L * 0.36, L * 0.1); g.fill(); g.lineCap = 'round';
+      for (var i = 0; i < 9; i++) { var o = (i - 4) * L * 0.012, len = i === 2 || i === 6 ? 0.66 : 0.42; g.lineWidth = L * (i === 2 || i === 6 ? 0.016 : 0.03); g.beginPath(); g.moveTo(L * 0.04, o); g.bezierCurveTo(-L * 0.12, o * 3 + L * 0.04, -L * 0.25, o * 5 - L * 0.05, -L * len, o * 7 + Math.sin(i) * L * 0.06); g.stroke(); } }
+    else { g.beginPath(); g.moveTo(L * 0.22, 0); g.bezierCurveTo(L * 0.12, -L * 0.12, L * 0.02, -L * 0.36, -L * 0.04, -L * 0.4); g.bezierCurveTo(-L * 0.08, -L * 0.2, -L * 0.14, -L * 0.06, -L * 0.14, 0); g.bezierCurveTo(-L * 0.14, L * 0.06, -L * 0.08, L * 0.2, -L * 0.04, L * 0.4); g.bezierCurveTo(L * 0.02, L * 0.36, L * 0.12, L * 0.12, L * 0.22, 0); g.fill();
+      g.lineWidth = L * 0.01; g.beginPath(); g.moveTo(-L * 0.12, 0); g.quadraticCurveTo(-L * 0.4, L * 0.03, -L * 0.62, -L * 0.02); g.stroke(); }
+    return { c: c, q: q, ox: L * 0.72, oy: L * 0.42 };
+  }
+  function giants(g, dt, t, w, h, y0) {
+    if (!SHN) SHN = t + 20 + Math.random() * 15;
+    if (!SHD && t > SHN) { var L = w * (1.1 + Math.random() * 0.6), k = Math.floor(Math.random() * 3), dir = Math.random() < 0.5 ? 1 : -1, dur = 24 + Math.random() * 8;
+      SHD = { k: k, L: L, art: giantArt(k, L), dir: dir, dur: dur, t0: t, y: y0 + (h - y0) * (0.2 + Math.random() * 0.28), p: 0 }; beep(46, 1.6); }
+    if (!SHD) return; var S = SHD; S.p = (t - S.t0) / S.dur; if (S.p >= 1) { SHD = null; SHN = t + 30 + Math.random() * 30; return; }
+    var x = S.dir > 0 ? -S.L * 0.7 + S.p * (w + S.L * 1.4) : w + S.L * 0.7 - S.p * (w + S.L * 1.4), a = Math.min(1, S.p * 5, (1 - S.p) * 5) * (NIGHT ? 0.62 : 0.42), A = S.art;
+    g.save(); g.globalAlpha = a; g.translate(x, S.y + Math.sin(t * 0.25) * 10); g.scale(S.dir, 1); g.rotate(Math.sin(t * 0.18) * 0.04); g.imageSmoothingEnabled = true; g.drawImage(A.c, -A.ox, -A.oy, A.c.width / A.q, A.c.height / A.q); g.restore();
+  }
+  /* the water clouds slowly as the reef is let go, and clears as it is cared for */
+  function murk(g, w, h, y0) { if (CARE.murk < 0.02) return; g.fillStyle = 'rgba(70,92,48,' + (CARE.murk * 0.34).toFixed(3) + ')'; g.fillRect(0, y0, w, h - y0); }
+  /* by night: the fireworms' circles near the top, and now and then (every few minutes) the sea lit by whatever touches, moves or drops */
+  function nightSea(t) { if (!NIGHT) { BIO.live = false; return; } if (!BIO.next) BIO.next = t + 15 + Math.random() * 30; if (t > BIO.next) { BIO.on = t + 40; BIO.next = t + 120 + Math.random() * 120; } BIO.live = t < BIO.on; }
+  function bio(x, y, n) { if (GLOW.length > 280) return; for (var i = 0; i < n; i++) { var a = Math.random() * 7, v = 6 + Math.random() * (n > 2 ? 36 : 8); GLOW.push({ x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 6, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4, a: 1, r: 0.7 + Math.random() * 1.5 }); } }
+  function glow(g, dt) { if (!GLOW.length) return; g.save(); g.globalCompositeOperation = 'lighter';
+    GLOW = GLOW.filter(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= Math.pow(0.3, dt); p.vy *= Math.pow(0.3, dt); p.a -= dt * 0.55; if (p.a <= 0) return false;
+      g.fillStyle = 'rgba(95,243,255,' + (p.a * 0.18).toFixed(3) + ')'; g.beginPath(); g.arc(p.x, p.y, p.r * 4, 0, 7); g.fill(); g.fillStyle = 'rgba(190,252,255,' + p.a.toFixed(3) + ')'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); return true; });
+    g.restore(); }
+  function fireworms(g, dt, t) { if (!NIGHT || !FIRE.length) return; g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    FIRE.forEach(function (f) { f.a += f.w * dt; f.cx += Math.sin(t * 0.05 + f.r) * 3 * dt; var x = f.cx + Math.cos(f.a) * f.r, y = f.cy + Math.sin(f.a) * f.r * 0.55; f.k -= dt; if (f.k < 0) { f.k = 0.06; f.tr.push([x, y, 1]); if (f.tr.length > 60) f.tr.shift(); }
+      f.tr.forEach(function (q) { q[2] -= dt * 0.4; if (q[2] <= 0) return; g.fillStyle = 'rgba(150,255,120,' + (q[2] * 0.35).toFixed(3) + ')'; g.beginPath(); g.arc(q[0], q[1], 1.6, 0, 7); g.fill(); });
+      f.tr = f.tr.filter(function (q) { return q[2] > 0; });
+      var b = f.tr.slice(-6); g.strokeStyle = 'rgba(200,255,150,.95)'; g.lineWidth = 1.6; g.beginPath(); b.forEach(function (q, i) { g[i ? 'lineTo' : 'moveTo'](q[0], q[1]); }); g.lineTo(x, y); g.stroke(); });
+    g.restore(); }
+
+  /* ───────── caring for the reef: slow needs on a real clock (litter settling, crown-of-thorns on the coral, algae over it, the water
+     clouding), and the tools to meet them, one earned for each card opened in a day, a word said, a print. Kept on this phone ───────── */
+  var TOOLS = [['net', 'A litter net', '<path d="M5 3l7 7M12 10c3-1 6 0 7 3s-1 7-5 7-6-3-5-6"/><path d="M10 13l6 5M13 11l3 7M9.5 16l7-2"/>'],
+    ['pick', 'Crown-of-thorns tongs', '<path d="M6 21l7-9M10 21l5-9"/><path d="M13 12l3-7M15 12l4-6"/><circle cx="17" cy="5" r="1.5"/>'],
+    ['urchin', 'An urchin to graze the algae', '<circle cx="12" cy="13" r="4"/><path d="M12 9V4M12 17v4M8 13H3M16 13h5M9 10L5.5 6.5M15 10l3.5-3.5M9 16l-3.5 3.5M15 16l3.5 3.5"/>'],
+    ['vial', 'A water test', '<path d="M9 3h6M10 3v13a2 2 0 0 0 4 0V3"/><path d="M10 11h4"/>'],
+    ['oyster', 'An oyster to filter the water', '<path d="M4 14c0-5 4-9 9-9 4 0 7 3 7 6 0 5-6 8-11 8-3 0-5-2-5-5z"/><path d="M8 13c2-3 5-4 8-3M9 16c2-1 4-1 6 0"/>']];
+  var GIVE = { radio: 'vial', research: 'vial', wish: 'pick', zine: 'net', kit: 'net', portfolio: 'oyster', space: 'urchin', talk: 'urchin', print: 'oyster' };
+  var CARE = (function () { var c = store.get('da.reef.care.v1', null) || {}; c.at = c.at || Date.now(); c.trash = c.trash || []; c.cots = c.cots || []; c.algae = c.algae || {}; c.murk = c.murk || 0;
+    c.items = c.items || { net: 1 }; c.got = c.got || {}; c.oys = c.oys || []; c.acc = c.acc || { t: 0.6, c: 0.3 }; c.sel = null; return c; })();
+  var NIB = [], VIAL = null;
+  function careSave() { var o = {}; for (var k in CARE) if (k !== 'sel' && k !== 'tk') o[k] = CARE[k]; store.set('da.reef.care.v1', o); }
+  function careTick() { var now = Date.now(), hrs = Math.min(96, Math.max(0, (now - CARE.at) / 36e5)); if (hrs < 0.001) return; CARE.at = now;
+    CARE.acc.t += hrs / 0.8; while (CARE.acc.t >= 1) { CARE.acc.t -= 1; if (CARE.trash.length < 8) CARE.trash.push([+(0.06 + Math.random() * 0.88).toFixed(3), Math.floor(Math.random() * 4), 1]); }
+    CARE.acc.c += hrs / 2; while (CARE.acc.c >= 1) { CARE.acc.c -= 1; if (CARE.cots.length < 4) CARE.cots.push([FDEF[Math.floor(Math.random() * FDEF.length)][0], +(Math.random() - 0.5).toFixed(2)]); }
+    FDEF.forEach(function (d) { CARE.algae[d[0]] = Math.min(1, (CARE.algae[d[0]] || 0) + hrs * 0.06); });
+    CARE.murk = Math.max(0, Math.min(0.85, CARE.murk + hrs * (0.02 + CARE.trash.length * 0.008) - hrs * CARE.oys.length * 0.05)); careSave(); }
+  function careEarn(why) { var tool = GIVE[why]; if (!tool) return; var day = new Date().toDateString(), key = day + ':' + why; if (CARE.got[key]) return;
+    var g2 = {}; for (var k in CARE.got) if (k.indexOf(day) === 0) g2[k] = 1; g2[key] = 1; CARE.got = g2; CARE.items[tool] = (CARE.items[tool] || 0) + 1; careSave(); trayDraw(tool); }
+  function trayDraw(got) { var el = $('#hm-care'); if (!el) return;
+    el.innerHTML = TOOLS.filter(function (q) { return CARE.items[q[0]] > 0; }).map(function (q) { return '<button type="button" data-tool="' + q[0] + '" aria-label="' + q[1] + '" title="' + q[1] + '" aria-pressed="' + (CARE.sel === q[0]) + '"' + (got === q[0] ? ' class="got"' : '') + '><svg viewBox="0 0 24 24">' + q[2] + '</svg><b>' + CARE.items[q[0]] + '</b></button>'; }).join(''); }
+  D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#hm-care [data-tool]'); if (!b) return; e.stopPropagation(); CARE.sel = CARE.sel === b.dataset.tool ? null : b.dataset.tool; trayDraw(); beep(CARE.sel ? 620 : 420, 0.04); }, true);
+  /* where each need is, this frame */
+  var TR = [];
+  function trashAt(i) { var q = CARE.trash[i], x = q[0] * REEF.w, rest = REEF.sea + 5 + (q[1] * 3) % 7; return [x, rest]; }
+  function cotsAt(q) { var f = FORMS.filter(function (o) { return o.d[0] === q[0]; })[0]; if (!f) return null; var R = radOf(f), X = f.dx0 != null ? f.dx0 : f.x, Y = f.dy0 != null ? f.dy0 : f.y; return [X + q[1] * R, Y - (f.d[1] === 'fan' ? R * 1.25 : R * 0.7)]; }
+  function careUse(x, y) { var tool = CARE.sel, done = false, i;
+    if (tool === 'net') { for (i = 0; i < CARE.trash.length; i++) { var tp = TR[i] || trashAt(i); if (Math.hypot(tp[0] - x, tp[1] - y) < 34) { CARE.trash.splice(i, 1); TR.splice(i, 1); done = true; break; } } }
+    else if (tool === 'pick') { for (i = 0; i < CARE.cots.length; i++) { var cp = cotsAt(CARE.cots[i]); if (cp && Math.hypot(cp[0] - x, cp[1] - y) < 30) { CARE.cots.splice(i, 1); done = true; break; } } }
+    else if (tool === 'urchin') { var f = pieceAt(x, y); if (f && f !== STAR && (CARE.algae[f.d[0]] || 0) > 0.08 && !NIB.some(function (n) { return n.f === f; })) { NIB.push({ f: f, t: 8 }); done = true; } }
+    else if (tool === 'vial') { if (y < REEF.sea) { VIAL = { x: x, y: y, t: 4.5, m: CARE.murk }; done = true; } }
+    else if (tool === 'oyster') { if (y > REEF.sea - 30 && CARE.oys.length < 6) { CARE.oys.push(+(x / REEF.w).toFixed(3)); done = true; } }
+    if (!done) return false;
+    CARE.items[tool]--; if (CARE.items[tool] <= 0) { delete CARE.items[tool]; CARE.sel = null; } careSave(); trayDraw(); RIP.push({ x: x, y: y, r: 3, a: 0.9 }); beep(740, 0.05); setTimeout(function () { beep(988, 0.06); }, 90); if (BIO.live) bio(x, y, 20); return true; }
+  function careDraw(g, dt, t, w, h, y0) {
+    var ink = NIGHT ? 'rgba(200,225,255,.85)' : 'rgba(244,241,232,.92)';
+    /* algae over the coral, as fine green strands; an urchin set on one grazes it away */
+    FORMS.forEach(function (f) { var a = CARE.algae[f.d[0]] || 0; if (a < 0.05) return; var R = radOf(f), X = f.dx0, Y = f.dy0, top = f.d[1] === 'fan' ? R * 1.1 : R * 0.65, n = Math.round(4 + a * 14);
+      g.strokeStyle = 'rgba(126,190,64,' + (0.55 + a * 0.45).toFixed(2) + ')'; g.lineWidth = 1.4; g.beginPath();
+      for (var i = 0; i < n; i++) { var u = (i / (n - 1) - 0.5) * 1.3, bx = X + u * R, by = Y - top * (1 - u * u * 0.6), l = 6 + a * 9; g.moveTo(bx, by); g.quadraticCurveTo(bx + Math.sin(t * 1.3 + i) * 3, by - l * 0.6, bx + Math.sin(t + i * 2) * 2, by - l); } g.stroke(); });
+    NIB = NIB.filter(function (n) { n.t -= dt; var id = n.f.d[0]; CARE.algae[id] = Math.max(0, (CARE.algae[id] || 0) - dt * 0.14); var R = radOf(n.f), X = n.f.dx0 + R * 0.25, Y = n.f.dy0 - R * 0.5;
+      g.strokeStyle = ink; g.lineWidth = 1; g.beginPath(); g.arc(X, Y, 4, 0, 7); for (var k = 0; k < 12; k++) { var an = k / 12 * 6.283 + t * 0.4; g.moveTo(X + Math.cos(an) * 4, Y + Math.sin(an) * 4); g.lineTo(X + Math.cos(an) * 8, Y + Math.sin(an) * 8); } g.stroke();
+      if (n.t <= 0) { careSave(); return false; } return true; });
+    /* crown-of-thorns, dark and spiny, on the coral */
+    CARE.cots.forEach(function (q) { var p = cotsAt(q); if (!p) return; g.save(); g.translate(p[0], p[1]); g.rotate(Math.sin(t * 0.1 + q[1] * 5) * 0.1);
+      g.fillStyle = NIGHT ? 'rgba(120,70,140,.9)' : 'rgba(92,52,104,.92)'; g.beginPath(); for (var k = 0; k <= 26; k++) { var an = k / 26 * 6.283, rr = k % 2 ? 6.5 : 13; g[k ? 'lineTo' : 'moveTo'](Math.cos(an) * rr, Math.sin(an) * rr * 0.7); } g.closePath(); g.fill();
+      g.fillStyle = 'rgba(244,241,232,.7)'; for (var m = 0; m < 13; m++) { var a2 = m / 13 * 6.283; g.beginPath(); g.arc(Math.cos(a2) * 10, Math.sin(a2) * 7, 0.8, 0, 7); g.fill(); } g.restore(); });
+    /* litter: new pieces drift down from the surface and settle; the oysters set on the sand */
+    g.strokeStyle = ink; g.lineWidth = 1.1;
+    CARE.trash.forEach(function (q, i) { var p = trashAt(i), cur = TR[i]; if (!cur) cur = TR[i] = [p[0], q[2] ? y0 + 6 : p[1]]; if (q[2]) { cur[1] += dt * 12; cur[0] = p[0] + Math.sin(t * 0.6 + i) * 10 * (1 - (cur[1] - y0) / (p[1] - y0)); if (cur[1] >= p[1]) { cur[1] = p[1]; cur[0] = p[0]; q[2] = 0; careSave(); } }
+      var x = cur[0], y = cur[1]; g.save(); g.translate(x, y); g.rotate(q[2] ? Math.sin(t + i) * 0.6 : (q[1] - 1.5) * 0.3); g.beginPath();
+      if (q[1] === 0) { g.rect(-7, -3, 11, 6); g.rect(4, -1.5, 4, 3); } else if (q[1] === 1) { g.rect(-3.5, -5, 7, 10); g.moveTo(-3.5, -2); g.lineTo(3.5, -2); }
+      else if (q[1] === 2) { g.moveTo(-7, 3); g.quadraticCurveTo(-5, -7, 0, -5); g.quadraticCurveTo(6, -8, 7, 3); g.quadraticCurveTo(0, 6, -7, 3); } else { g.arc(0, 0, 6, 0, 7); g.moveTo(-6, 0); g.lineTo(6, 0); g.moveTo(0, -6); g.lineTo(0, 6); }
+      g.stroke(); g.restore(); });
+    TR.length = CARE.trash.length;
+    CARE.oys.forEach(function (u, i) { var x = u * w, y = REEF.sea + 7; g.beginPath(); g.ellipse(x, y, 7, 3.6, -0.15, 0, 7); g.moveTo(x - 5, y); g.quadraticCurveTo(x, y - 3, x + 5, y + 0.5); g.stroke(); if (Math.sin(t * 0.7 + i * 2) > 0.97) BUB.push({ x: x + 3, y: y - 4, vy: -18, a: 0.7, r: 0.8 }); });
+    /* a water test: a small tube, clear blue to cloudy green with the water as it is */
+    if (VIAL) { VIAL.t -= dt; var va = Math.min(1, VIAL.t), m = VIAL.m, cr = Math.round(127 - 5 * m * 10), cg = Math.round(216 - 70 * m), cb = Math.round(255 - 200 * m);
+      g.save(); g.globalAlpha = va; g.translate(VIAL.x, VIAL.y - 26); g.fillStyle = 'rgb(' + cr + ',' + cg + ',' + cb + ')'; g.beginPath(); g.moveTo(-4, -4); g.lineTo(-4, 12); g.arc(0, 12, 4, Math.PI, 0, true); g.lineTo(4, -4); g.closePath(); g.fill();
+      g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-5, -14); g.lineTo(5, -14); g.moveTo(-4, -14); g.lineTo(-4, 12); g.arc(0, 12, 4, Math.PI, 0, true); g.lineTo(4, -14); g.stroke(); g.restore(); if (VIAL.t <= 0) VIAL = null; }
+  }
+
+  function reef(on) { root.classList.toggle('reef', on); top.setAttribute('aria-expanded', String(on)); $('#hm-snork').hidden = !on; $('#hm-care').hidden = !on; if (on) { beep(220, 0.12); J.until = 0; careTick(); trayDraw(); } else { beep(330, 0.08); CARE.sel = null; J.goal = null; } }
   function reefBuild() {
     var w = VW, h = CH, y0 = TOPH, rh = h - y0; RB = D.createElement('canvas'); RB.width = tcv.width; RB.height = tcv.height; var g = RB.getContext('2d'), r = rnd(77), sea = y0 + rh * 0.86, s = Math.min(w, rh);
     g.scale(dpr, dpr);
@@ -742,7 +852,9 @@
     grain(g, w, h, Math.round(w * rh / 30), NIGHT ? 'rgba(200,225,255,.16)' : 'rgba(80,60,30,.18)', 78);
     /* the forms: each its own piece, where it was last planted */
     REEF = { sea: sea, s: s, w: w }; var kept = store.get('da.reef.v1', {}) || {}, kf = kept.forms || {};
-    FORMS = FDEF.map(function (d) { var p = kf[d[0]], f = { d: d, x: (p ? p[0] : d[2]) * w, y: sea + (p ? p[1] : d[3]) * s, k: 1, vy: 0, fall: 0 }; f.cy = f.y; f.sp = sprite(d, s, NIGHT); return f; });
+    FORMS = FDEF.map(function (d) { var p = kf[d[0]], f = { d: d, x: (p ? p[0] : d[2]) * w, y: 0, k: 1, vy: 0, vx: 0, fall: 0, rot: 0, sq: 0, wob: 0, spin: 0, glint: 0, ph: Math.random() * 6 }; f.y = restY(f); f.cy = f.y; f.sp = sprite(d, s, NIGHT); return f; });
+    FIRE = []; for (var fw = 0; fw < 5; fw++) FIRE.push({ cx: w * (0.12 + r() * 0.76), cy: y0 + rh * (0.08 + r() * 0.3), r: 10 + r() * 14, a: r() * 6, w: (r() < 0.5 ? -1 : 1) * (1.6 + r()), tr: [], k: 0 });
+    careTick();
     /* the white-line life sits on the forms */
     WORMS = []; for (var wi = 0; wi < 5; wi++) WORMS.push({ dx: (wi - 2) * s * 0.035, dy: -s * 0.08 + Math.abs(wi - 2) * s * 0.01, x: 0, y: 0, out: 1 });
     STAR = kept.star ? { x: kept.star[0] * w, y: sea + kept.star[1] * s } : { x: w * 0.3, y: sea + 18 }; STAR.cy = STAR.y; STAR.vy = 0; STAR.fall = 0;
@@ -765,16 +877,49 @@
     return { c: c, ax: ax + pad, ay: ay + pad };
   }
   /* a piece set down: sand thrown up, the water rings, the fish dart off, the worms pull in */
-  function land(x, y, k) { var n = Math.round(14 * (k || 1)); for (var i = 0; i < n; i++) { var a = -Math.PI * (0.1 + Math.random() * 0.8); PUFF.push({ x: x + (Math.random() - 0.5) * 20, y: y, vx: Math.cos(a) * (30 + Math.random() * 60), vy: Math.sin(a) * (40 + Math.random() * 70), a: 0.9, r: 0.8 + Math.random() * 1.8 }); }
-    RIP.push({ x: x, y: y, r: 4, a: 0.7 }); QK.x = x; QK.y = y; QK.t = 2.2; FISH.forEach(function (f) { var d = Math.hypot(f.x - x, f.y - y); if (d < 180) { f.a = Math.atan2(f.y - y, f.x - x); f.v = 90; } }); beep(90 + Math.random() * 40, 0.12); }
+  function land(x, y, k, tone) { if (BIO.live) bio(x, y, Math.round(16 * (k || 1))); var n = Math.round(14 * (k || 1)); for (var i = 0; i < n; i++) { var a = -Math.PI * (0.1 + Math.random() * 0.8); PUFF.push({ x: x + (Math.random() - 0.5) * 20, y: y, vx: Math.cos(a) * (30 + Math.random() * 60), vy: Math.sin(a) * (40 + Math.random() * 70), a: 0.9, r: 0.8 + Math.random() * 1.8 }); }
+    RIP.push({ x: x, y: y, r: 4, a: 0.7 }); QK.x = x; QK.y = y; QK.t = 2.2; FISH.forEach(function (f) { var d = Math.hypot(f.x - x, f.y - y); if (d < 180) { f.a = Math.atan2(f.y - y, f.x - x); f.v = 90; } }); beep((tone || 90) + Math.random() * 30, 0.12); }
+  /* each piece its own weight in the water: the disc heavy and rolling, the fan a leaf that sways down, chrome a stone that thuds,
+     honey a jelly that bounces, glass a slow glint. It comes to rest on the sand (or where its makers set it), never in mid-water,
+     and eases aside from what it lands against */
+  var TY = { disc: { g: 2600, term: 900, b: 0.22, land: 1, tone: 120 }, fan: { g: 420, term: 115, b: 0, sway: 1, land: 0.4, tone: 300 },
+    chrome: { g: 3400, term: 1500, b: 0.1, land: 1.7, tone: 70 }, honey: { g: 1700, term: 800, b: 0.55, land: 0.8, tone: 170 }, glass: { g: 560, term: 170, b: 0.12, spin: 1, land: 0.5, tone: 880 } };
+  var REST = { glass: -0.075 };
+  function restY(f) { var o = REST[f.d[0]]; return REEF.sea + (o != null ? o : f.d[3]) * REEF.s; }
+  function radOf(f) { return f.d[4] * REEF.s * (f.d[1] === 'fan' ? 0.62 : 0.95); }
+  /* a touch without a drag: each answers in its own way */
+  function touchPiece(f) { if (f === STAR) { STAR.spin = 5; beep(640, 0.05); return; } var k = f.d[1], R = radOf(f);
+    if (k === 'disc') { f.spin = (Math.random() < 0.5 ? -1 : 1) * 7; beep(240, 0.06); }
+    else if (k === 'fan') { f.wob = 1; for (var i = 0; i < 10; i++) BUB.push({ x: f.x + (Math.random() - 0.5) * R, y: f.y - R * (0.4 + Math.random() * 0.8), vy: -(16 + Math.random() * 20), a: 0.9, r: 0.7 + Math.random() }); beep(300, 0.07); }
+    else if (k === 'chrome') { RIP.push({ x: f.x, y: f.y, r: R * 0.6, a: 0.8 }, { x: f.x, y: f.y, r: R * 0.2, a: 0.6 }); beep(70, 0.2); setTimeout(function () { beep(140, 0.1); }, 120); }
+    else if (k === 'honey') { f.sq = 1; beep(170, 0.1); }
+    else { f.glint = 0.9; beep(1320, 0.04); setTimeout(function () { beep(1760, 0.03); }, 90); }
+    if (BIO.live) bio(f.x, f.y - R * 0.5, 14); }
   function drawForms(g, dt, t) {
-    FORMS.slice().sort(function (a, b) { return a.y - b.y; }).forEach(function (f) { var X = f.x, Y = f.y, sp = f.sp, k;
+    FORMS.forEach(function (f) { var T = TY[f.d[1]] || TY.disc; if (f.held) return;
+      if (f.fall) { f.vy = Math.min(T.term, f.vy + T.g * dt); f.cy += f.vy * dt; f.x += f.vx * dt; f.vx *= Math.pow(0.4, dt);
+        if (T.sway) { f.x += Math.sin(t * 2.4 + f.ph) * 38 * dt; f.rot = Math.sin(t * 2.4 + f.ph) * 0.22; }
+        if (T.spin) f.rot += dt * 1.6;
+        if (BIO.live && Math.random() < 0.3) bio(f.x, f.cy, 1);
+        if (f.cy >= f.y) { f.cy = f.y;
+          if (T.b && f.vy > 240) { f.vy *= -T.b; if (f.d[1] === 'honey') f.sq = 1; land(f.x, f.y, T.land * 0.4, T.tone); }
+          else { f.fall = 0; f.vy = 0; f.k = f.d[1] === 'chrome' ? 0.8 : 0.88; if (f.d[1] === 'honey') f.sq = 1; if (f.d[1] === 'disc') f.vx += (Math.random() < 0.5 ? -1 : 1) * 70; land(f.x, f.y, T.land, T.tone); f.wake = 2.5; } } }
+      else { if (f.d[1] === 'disc' && Math.abs(f.vx) > 1) { f.x += f.vx * dt; f.rot += f.vx * dt / Math.max(8, radOf(f)); f.vx *= Math.pow(0.15, dt); } else f.vx = 0;
+        if (f.d[1] !== 'disc') f.rot *= Math.pow(0.02, dt); f.cy = f.y; }
+      f.rot += f.spin * dt; f.spin *= Math.pow(0.25, dt); f.sq *= Math.pow(0.05, dt); f.wob *= Math.pow(0.12, dt);
+      if (f.wake > 0) { f.wake -= dt; FORMS.forEach(function (o) { if (o === f || o.held || o.fall) return; var dx = f.x - o.x, need = (radOf(f) + radOf(o)) * 0.6;
+          if (Math.abs(dx) < need && Math.abs(f.y - o.y) < need * 1.4) f.x += (need - Math.abs(dx)) * Math.min(1, dt * 5) * (dx < 0 ? -1 : 1) + (dx ? 0 : need * dt); });
+        var rr = radOf(f) * 0.5; f.x = Math.max(rr, Math.min(REEF.w - rr, f.x)); if (f.wake <= 0) keepReef(); }
+    });
+    FORMS.slice().sort(function (a, b) { return a.y - b.y; }).forEach(function (f) { var X = f.x, Y = f.fall ? f.cy : f.y, sp = f.sp, k, R = radOf(f);
       if (f.held) { X = HELD.x + HELD.dx; Y = HELD.y + HELD.dy; }
-      else if (f.fall) { f.vy += 2200 * dt; f.cy += f.vy * dt; if (f.cy >= f.y) { f.cy = f.y; if (f.vy > 260) { f.vy *= -0.28; land(f.x, f.y, 0.4); } else { f.fall = 0; f.vy = 0; f.k = 0.86; land(f.x, f.y, 1); } } Y = f.cy; }
-      f.k += ((f.held ? 1.1 : 1) - f.k) * Math.min(1, dt * 7); k = f.k;
-      g.save(); g.translate(X, Y); if (f.held) g.rotate(Math.sin(t * 5) * 0.07); g.scale(k, k); if (f.held) { g.globalAlpha = 0.92; }
-      g.drawImage(sp.c, -sp.ax, -sp.ay, sp.c.width / dpr, sp.c.height / dpr); g.restore(); });
+      f.k += ((f.held ? 1.1 : 1) - f.k) * Math.min(1, dt * 7); k = f.k; f.dx0 = X; f.dy0 = Y;
+      var q = f.sq * Math.cos(t * 18), sx = 1 + 0.22 * q, sy = 1 - 0.22 * q;
+      g.save(); g.translate(X, Y); g.rotate((f.held ? Math.sin(t * 5) * 0.07 : 0) + f.rot + Math.sin(t * 7) * 0.12 * f.wob); g.scale(k * sx, k * sy); if (f.held) g.globalAlpha = 0.92;
+      g.drawImage(sp.c, -sp.ax, -sp.ay, sp.c.width / dpr, sp.c.height / dpr); g.restore();
+      if (f.glint > 0) { f.glint -= dt; var gx = X + R * 0.3, gy = Y - R * 0.5, gs = 10 * Math.sin(f.glint / 0.9 * Math.PI); g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(gx - gs, gy); g.lineTo(gx + gs, gy); g.moveTo(gx, gy - gs); g.lineTo(gx, gy + gs); g.stroke(); } });
     PUFF = PUFF.filter(function (p) { p.vy += 120 * dt; p.vx *= 0.96; p.x += p.vx * dt; p.y += p.vy * dt; p.a -= dt * 0.8; if (p.a <= 0) return false; g.globalAlpha = p.a; g.fillStyle = NIGHT ? '#AFC3E8' : '#D9C79E'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); g.globalAlpha = 1; return true; });
+    BUB = BUB.filter(function (b) { b.y += b.vy * dt; b.x += Math.sin(t * 3 + b.y * 0.1) * 6 * dt; b.a -= dt * 0.4; if (b.a <= 0) return false; g.globalAlpha = b.a; g.strokeStyle = INK; g.lineWidth = 0.7; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.stroke(); g.globalAlpha = 1; return true; });
   }
   /* what is under a finger: a piece of the reef (by its own shape, not its box), or the starfish */
   function pieceAt(x, y) { if (STAR && Math.hypot(x - STAR.x, y - STAR.y) < 18) return STAR;
@@ -783,25 +928,35 @@
   function keepReef() { var o = { forms: {} }; FORMS.forEach(function (f) { o.forms[f.d[0]] = [+(f.x / REEF.w).toFixed(4), +((f.y - REEF.sea) / REEF.s).toFixed(4)]; }); if (STAR) o.star = [+(STAR.x / REEF.w).toFixed(4), +(((STAR.fy || STAR.y) - REEF.sea) / REEF.s).toFixed(4)]; store.set('da.reef.v1', o); }
   function drawReef(dt, t) {
     var g = tx, w = VW, h = CH, y0 = TOPH; g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(RB, 0, 0); g.restore();
+    if ((CARE.tk = (CARE.tk || 0) - dt) < 0) { CARE.tk = 5; careTick(); }
+    giants(g, dt, t, w, h, y0); murk(g, w, h, y0); nightSea(t);
     g.lineCap = 'round'; g.lineJoin = 'round'; PT.vx *= 0.9; PT.vy *= 0.9; var near = function (x, y, d) { return Math.hypot(x - PT.x, y - PT.y) < d || (QK.t > 0 && Math.hypot(x - QK.x, y - QK.y) < d * 1.6); }; QK.t -= dt;
     var gl = FORMS.filter(function (f) { return f.d[0] === 'glass'; })[0]; if (gl) WORMS.forEach(function (o) { var gx = gl.held ? HELD.x + HELD.dx : gl.x, gy = gl.held ? HELD.y + HELD.dy : gl.fall ? gl.cy : gl.y; o.x = gx + o.dx; o.y = gy + o.dy; });
     drawForms(g, dt, t);
     g.fillStyle = NIGHT ? 'rgba(150,255,205,.8)' : 'rgba(244,241,232,.55)'; SNOW.forEach(function (s) { if (NIGHT) g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s.r * 9 + s.x * 0.05)); var dx = s.x - PT.x, dy = s.y - PT.y, d = Math.hypot(dx, dy); if (d < 90) { s.vx += PT.vx * 0.02 + dx / d * 0.6; s.vy += PT.vy * 0.02 + dy / d * 0.6; } s.vx *= 0.96; s.vy += (5 - s.vy) * 0.02; s.x += s.vx * dt; s.y += s.vy * dt; if (s.y > h) { s.y = y0 - 10; s.x = Math.random() * w; } if (s.x < 0) s.x += w; if (s.x > w) s.x -= w; g.beginPath(); g.arc(s.x, s.y, s.r * (NIGHT ? 1.3 : 1), 0, 7); g.fill(); }); g.globalAlpha = 1;
     g.strokeStyle = NIGHT ? '#FF8BEA' : 'rgba(244,241,232,.92)'; g.lineWidth = 1.1;
     WORMS.forEach(function (o) { var want = near(o.x, o.y, 70) ? 0 : 1; o.out += (want - o.out) * (want ? 0.02 : 0.25); if (o.out < 0.05) return; g.beginPath(); for (var i = 0; i < 6; i++) { var yy = o.y - i * 3.2 * o.out, ww = (6 - i) * 1.3 * o.out; g.moveTo(o.x - ww, yy); g.lineTo(o.x + ww, yy - 2 * o.out); } g.stroke(); });
-    if (STAR) { if (STAR.held) { STAR.x = HELD.x + HELD.dx; STAR.y = HELD.y + HELD.dy; } else if (STAR.fall) { STAR.vy += 2200 * dt; STAR.cy += STAR.vy * dt; if (STAR.cy >= STAR.fy) { STAR.cy = STAR.fy; STAR.fall = 0; land(STAR.x, STAR.cy, 0.5); } STAR.y = STAR.cy; }
-      g.strokeStyle = NIGHT ? '#FFE15A' : 'rgba(244,241,232,.92)'; if (NIGHT) { g.fillStyle = 'rgba(255,225,90,' + (0.25 + 0.2 * Math.sin(t * 2)).toFixed(2) + ')'; } g.beginPath(); for (var s2 = 0; s2 <= 10; s2++) { var an = s2 / 10 * Math.PI * 2 - Math.PI / 2 + Math.sin(t * 0.2) * 0.05, rr = s2 % 2 ? 4 : 11; g[s2 ? 'lineTo' : 'moveTo'](STAR.x + Math.cos(an) * rr, STAR.y + Math.sin(an) * rr); } g.closePath(); if (NIGHT) g.fill(); g.stroke(); g.strokeStyle = NIGHT ? '#7DFFE6' : 'rgba(244,241,232,.92)'; }
-    FISH.forEach(function (f) { if (near(f.x, f.y, 100)) { var aw = Math.atan2(f.y - PT.y, f.x - PT.x); f.a += Math.atan2(Math.sin(aw - f.a), Math.cos(aw - f.a)) * 0.2; f.v = Math.min(80, f.v + 6); } else { f.v += (16 - f.v) * 0.02; f.a += Math.sin(t * 0.7 + f.w) * 0.004; }
-      if (f.y < y0 + 20) f.a += 0.05; if (f.y > y0 + (h - y0) * 0.62) f.a -= 0.05; f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * 0.5; if (f.x < -20) f.x = w + 20; if (f.x > w + 20) f.x = -20;
+    if (STAR) { STAR.spin = (STAR.spin || 0) * Math.pow(0.3, dt); if (STAR.held) { STAR.x = HELD.x + HELD.dx; STAR.y = HELD.y + HELD.dy; } else if (STAR.fall) { STAR.vy += 2200 * dt; STAR.cy += STAR.vy * dt; if (STAR.cy >= STAR.fy) { STAR.cy = STAR.fy; STAR.fall = 0; land(STAR.x, STAR.cy, 0.5); } STAR.y = STAR.cy; }
+      g.strokeStyle = NIGHT ? '#FFE15A' : 'rgba(244,241,232,.92)'; if (NIGHT) { g.fillStyle = 'rgba(255,225,90,' + (0.25 + 0.2 * Math.sin(t * 2)).toFixed(2) + ')'; } g.beginPath(); for (var s2 = 0; s2 <= 10; s2++) { var an = s2 / 10 * Math.PI * 2 - Math.PI / 2 + Math.sin(t * 0.2) * 0.05 + (STAR.rot = (STAR.rot || 0) + (STAR.spin || 0) * dt / 11), rr = s2 % 2 ? 4 : 11; g[s2 ? 'lineTo' : 'moveTo'](STAR.x + Math.cos(an) * rr, STAR.y + Math.sin(an) * rr); } g.closePath(); if (NIGHT) g.fill(); g.stroke(); g.strokeStyle = NIGHT ? '#7DFFE6' : 'rgba(244,241,232,.92)'; }
+    var scare = SHD && SHD.p > 0.06 && SHD.p < 0.94;
+    FISH.forEach(function (f) {
+      if (scare) { if (!f.flee) { f.flee = 1; f.a = f.x < w / 2 ? Math.PI + (Math.random() - 0.5) * 0.5 : (Math.random() - 0.5) * 0.5; } f.v = Math.min(140, f.v + 8); }
+      else if (f.flee) { f.flee = 0; }
+      if (f.off) { if (scare || Math.random() > 0.006) return; f.off = 0; f.x = f.ex < 0 ? -20 : w + 20; f.a = f.ex < 0 ? 0 : Math.PI; f.v = 22; }
+      if (f.flee) { f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * 0.5; if (f.x < -40 || f.x > w + 40) { f.off = 1; f.ex = f.x < 0 ? -1 : 1; return; } }
+      else if (near(f.x, f.y, 100)) { var aw = Math.atan2(f.y - PT.y, f.x - PT.x); f.a += Math.atan2(Math.sin(aw - f.a), Math.cos(aw - f.a)) * 0.2; f.v = Math.min(80, f.v + 6); } else { f.v += (16 - f.v) * 0.02; f.a += Math.sin(t * 0.7 + f.w) * 0.004; }
+      if (f.y < y0 + 20) f.a += 0.05; if (f.y > y0 + (h - y0) * 0.62) f.a -= 0.05; if (!f.flee) { f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * 0.5; if (f.x < -20) f.x = w + 20; if (f.x > w + 20) f.x = -20; }
+      if (BIO.live && Math.random() < 0.05) bio(f.x - Math.cos(f.a) * 12 * f.s, f.y, 1);
       g.save(); g.translate(f.x, f.y); g.rotate(f.a); g.scale(f.s, f.s); var wag = Math.sin(t * 9 + f.w) * 2.5; g.beginPath(); g.moveTo(9, 0); g.quadraticCurveTo(0, -5, -8, 0); g.quadraticCurveTo(0, 5, 9, 0); g.moveTo(-8, 0); g.lineTo(-14, -4 + wag); g.lineTo(-13, 4 + wag); g.lineTo(-8, 0); g.stroke(); g.beginPath(); g.arc(5, -1, NIGHT ? 1.4 : 0.9, 0, 7); g.fillStyle = NIGHT ? '#FFE15A' : INK; g.fill(); g.restore(); });
-    SNAKE.t += dt; SNAKE.x += dt * 16; if (SNAKE.x > w + 200) SNAKE.x = -200; var sy0 = SNAKE.y + Math.sin(SNAKE.t * 0.3) * 20;
-    g.strokeStyle = NIGHT ? '#8FD3FF' : 'rgba(244,241,232,.92)'; g.lineWidth = 2.2; for (var b = 0; b < 22; b++) { var x0 = SNAKE.x - b * 6, yA = sy0 + Math.sin(SNAKE.t * 3 - b * 0.45) * 6, x1 = x0 - 6, y1 = sy0 + Math.sin(SNAKE.t * 3 - (b + 1) * 0.45) * 6; g.globalAlpha = b % 2 ? 0.95 : 0.35; g.beginPath(); g.moveTo(x0, yA); g.lineTo(x1, y1); g.stroke(); } g.globalAlpha = 1; g.lineWidth = 1.1;
+    SNAKE.t += dt * (1 + SNAKE.wig * 1.6); SNAKE.wig *= Math.pow(0.35, dt); SNAKE.x += dt * 16; if (SNAKE.x > w + 200) SNAKE.x = -200; var sy0 = SNAKE.y + Math.sin(SNAKE.t * 0.3) * 20, samp = 6 * (1 + SNAKE.wig * 2.2); SNAKE.sy = sy0;
+    g.strokeStyle = NIGHT ? '#8FD3FF' : 'rgba(244,241,232,.92)'; g.lineWidth = 2.2; for (var b = 0; b < 22; b++) { var x0 = SNAKE.x - b * 6, yA = sy0 + Math.sin(SNAKE.t * 3 - b * 0.45) * samp, x1 = x0 - 6, y1 = sy0 + Math.sin(SNAKE.t * 3 - (b + 1) * 0.45) * samp; if (BIO.live && Math.random() < 0.01) bio(x0, yA, 1); g.globalAlpha = b % 2 ? 0.95 : 0.35; g.beginPath(); g.moveTo(x0, yA); g.lineTo(x1, y1); g.stroke(); } g.globalAlpha = 1; g.lineWidth = 1.1;
     if (SLUG.sea) { SLUG.u += dt * 0.004; if (SLUG.u > 0.95) SLUG.u = 0.05; var ux = SLUG.u * SLUG.w, uy = SLUG.sea + 8; SLUG.gill += ((near(ux, uy, 60) ? 0 : 1) - SLUG.gill) * 0.1;
       g.beginPath(); g.ellipse(ux, uy, 10, 3.2, 0, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(ux + 8, uy - 2); g.lineTo(ux + 11, uy - 7); g.moveTo(ux + 6, uy - 2); g.lineTo(ux + 7, uy - 7); for (var gi = 0; gi < 4; gi++) { g.moveTo(ux - 6, uy - 2); g.lineTo(ux - 6 + Math.cos(-2 - gi * 0.35) * 6 * SLUG.gill, uy - 2 + Math.sin(-2 - gi * 0.35) * 6 * SLUG.gill); } g.stroke(); }
     RIP = RIP.filter(function (q) { q.r += dt * 120; q.a -= dt * 1.4; if (q.a <= 0) return false; g.globalAlpha = q.a; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.stroke(); g.globalAlpha = 1; return true; });
+    careDraw(g, dt, t, w, h, y0); fireworms(g, dt, t); glow(g, dt);
   }
   var pt = function (e) { var r = tcv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  top.addEventListener('pointermove', function (e) { if (!root.classList.contains('reef')) return; var p = pt(e); PT.vx = (p[0] - PT.x) * 2; PT.vy = (p[1] - PT.y) * 2; PT.x = p[0]; PT.y = p[1]; if (HELD) { HELD.x = p[0]; HELD.y = p[1]; } });
+  top.addEventListener('pointermove', function (e) { if (!root.classList.contains('reef')) return; var p = pt(e); PT.vx = (p[0] - PT.x) * 2; PT.vy = (p[1] - PT.y) * 2; PT.x = p[0]; PT.y = p[1]; if (HELD) { HELD.vx = HELD.vx * 0.5 + (p[0] - HELD.x) * 30; HELD.x = p[0]; HELD.y = p[1]; } });
 
   /* ───────── the switchboard: one jack to each thing, each by its own mark; the starting ones lit, the rest dark holes until found ───────── */
   var G = function (s) { return s; };

@@ -569,3 +569,15 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 @keyframes kas-wave { 0%, 100% { opacity: 1; transform: none; } 9% { opacity: .38; transform: translateX(.6cqw); } 18% { opacity: 1; transform: none; } }
 @keyframes kas-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 26, .6); } 30%, 100% { box-shadow: 0 0 0 10px rgba(255, 107, 26, 0); } }
 @media (prefers-reduced-motion: reduce) { #hm .sk-radio div.kas span, #hm .sk-radio div.kas::after { animation: none; } }
+
+/* the reef's care: the tools earned, small, by the sand */
+#hm-care { position: absolute; left: 10px; top: calc(env(safe-area-inset-top) + 10px); z-index: 2; display: flex; gap: 5px; }
+#hm-care[hidden] { display: none; }
+#hm-care button { position: relative; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #F4F1E8; background: rgba(8, 20, 44, .42); border: 1px solid rgba(244, 241, 232, .25); transition: transform .2s; }
+#hm-care button:hover { transform: translateY(-2px); }
+#hm-care button[aria-pressed="true"] { background: #FF5436; border-color: #FF5436; color: #0B0B0B; }
+#hm-care button.got { animation: care-got .9s ease; }
+#hm-care svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#hm-care b { position: absolute; right: -3px; top: -3px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: #F4F1E8; color: #0B0B0B; font: 600 9px/14px 'IBM Plex Mono', monospace; text-align: center; }
+@keyframes care-got { 30% { transform: scale(1.35); box-shadow: 0 0 0 6px rgba(255, 84, 54, .35); } }
+@media (prefers-reduced-motion: reduce) { #hm-care button.got { animation: none; } }
