@@ -352,7 +352,7 @@
       el('div', { class: 'note', text: `EVERY NEW VISITOR'S FIRST BOARD: A BOX FOR EACH OF W, I, S AND H, AND A NOTE ON EACH TOOL. A BLANK LINE BETWEEN NOTES; A NOTE'S FIRST LINE IS ITS TITLE, AND ITS TITLE HOLDS ITS KEY (W, I, S, H, HOW, NOTE, SECT, LINK, IMG, ZOOM, LOCK, OUT). ${st.template ? 'REWRITTEN HERE.' : "THE SITE'S OWN WORDS."}` }), ta,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ template: ta.value.trim() === own.trim() ? '' : ta.value }) }); show('stations'); } }),
         el('button', { type: 'button', text: "THE SITE'S OWN WORDS", onclick: async () => { if (!confirm("Go back to the site's own words for the template?")) return; await api('settings', { method: 'POST', body: JSON.stringify({ template: '' }) }); show('stations'); } })));
-    main.replaceChildren(...head('Words and boards'), card, lr, mo, bu, ex, tp, wordsCard(st), citiesCard(st), cardsCard(st), picsCard());
+    main.replaceChildren(...head('Words and boards'), card, lr, mo, bu, ex, tp, wordsCard(st), citiesCard(st), cardsCard(st), photosCard(st), picsCard());
   }
   /* ───────── places (stage 5): the listed places beyond the ones written into the site. Suggestions from visitors wait here, to show
      or refuse; places shown can be changed or deleted; a new one can be added, shown at once ───────── */
@@ -414,9 +414,17 @@
   function cardsCard(st) {
     const ta = el('textarea', { class: 'body', maxlength: 8000, spellcheck: 'false', 'aria-label': 'The cards on the home', placeholder: CARD_EG }); ta.value = st.cards || '';
     const sec = el('section', { class: 'printer ed' }); sec.append(el('h3', { text: 'CARDS' }),
-      el('div', { class: 'note', text: 'THE CARDS ON NOVEL.GLOBAL, IN THEIR ORDER. # AND A CARD\'S NAME (wish, radio, zine, kit, space, or a new one), THEN ITS LINES: title, line, after, tag, key, island, opens (aura, radio, kit, panel or stack:NAME), where (lat, lng: its radar\'s beacon), motion (shadow or speed), art (rings, radar, strip, kit, isles), skin (wish, radio, zine, kit, space: its look), size (full or half), hide. A CARD NOT WRITTEN HERE STAYS AS IT IS, AFTER THESE.' }), ta,
+      el('div', { class: 'note', text: 'THE CARDS ON NOVEL.GLOBAL, IN THEIR ORDER. # AND A CARD\'S NAME (wish, radio, zine, kit, space, or a new one), THEN ITS LINES: title, line, after, tag, key, island, opens (aura, radio, kit, panel or stack:NAME), where (lat, lng: its radar\'s beacon), motion (shadow or speed), art (rings, radar, strip, kit, isles), skin (wish, radio, zine, kit, space: its look), size (full or half), sea (off: no sea banner over it), hide. A CARD NOT WRITTEN HERE STAYS AS IT IS, AFTER THESE.' }), ta,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ cards: ta.value.trim() }) }); show('stations'); } }),
         el('button', { type: 'button', text: 'AS THEY STARTED', onclick: async () => { if (!confirm('Put every card back as it started?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ cards: '' }) }); show('stations'); } })));
+    return sec;
+  }
+  /* the pictures on the cards: a word on hover, and a link */
+  function photosCard(st) {
+    const ta = el('textarea', { class: 'body', maxlength: 3000, spellcheck: 'false', 'aria-label': 'The pictures, their words and links', placeholder: 'cathaya https://www.erinforsyth.com Erin Forsyth\nmoa reenactment\ncells https://en.wikipedia.org/wiki/Cargo_cult memory' }); ta.value = st.photos || '';
+    const sec = el('section', { class: 'printer ed' }); sec.append(el('h3', { text: 'PHOTOS' }),
+      el('div', { class: 'note', text: 'ONE PICTURE A LINE: ITS NAME (moa, cathaya, cells), THEN A LINK IF IT GOES SOMEWHERE, THEN THE WORD SHOWN ON HOVER.' }), ta,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ photos: ta.value.trim() }) }); show('stations'); } })));
     return sec;
   }
   /* cities and data packs: another place to make in, written plainly; the aura reads them, a chip each in its intel */

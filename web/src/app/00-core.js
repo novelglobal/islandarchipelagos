@@ -213,7 +213,8 @@ const snd = (() => {
         /* the tamer: no ding, squeak or honk gets through sharp. A dip where a squeak lives, and the very top let down */
         const dip = ctx.createBiquadFilter(); dip.type = 'peaking'; dip.frequency.value = 2800; dip.Q.value = 1.1; dip.gain.value = -7;
         const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 4800; shelf.gain.value = -6;
-        bus.connect(dip); dip.connect(shelf); shelf.connect(heatWS); heatWS.connect(mixLP); mixLP.connect(comp); comp.connect(ctx.destination); heatSet(!!prefs.nino, true);
+        const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.15;   /* never past full scale, so never static */
+        bus.connect(dip); dip.connect(shelf); shelf.connect(heatWS); heatWS.connect(mixLP); mixLP.connect(comp); comp.connect(lim); lim.connect(ctx.destination); heatSet(!!prefs.nino, true);
         mon = ctx.createAnalyser(); mon.fftSize = 1024; comp.connect(mon); tap = comp; rooms();
         /* the Moog ladder (ladder.js), once it has loaded; a plain low-pass until then */
         try { if (ctx.audioWorklet) ctx.audioWorklet.addModule('ladder.js').then(() => { hasLadder = true; }).catch(() => {}); } catch (e) { /* a plain low-pass */ }

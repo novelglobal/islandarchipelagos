@@ -90,6 +90,7 @@
     else if (t === 'undo') { var prev = HIST.pop(); if (prev == null) return; quiet = true; last = prev; load(JSON.parse(prev), function () { save(); }); b.disabled = !HIST.length; }
     else if (t === 'lock') { LOCKED = !LOCKED; b.setAttribute('aria-pressed', String(LOCKED)); cv.discardActiveObject(); cv.getObjects().forEach(function (o) { if (o.daKind !== 'tpl' && o.daKind !== 'link') o.set({ selectable: !LOCKED, evented: !LOCKED }); }); cv.selection = !LOCKED; }
     else if (t === 'fit') fit();
+    else if (t === 'kits') kitsShow($('#kits').hidden);
     else if (t === 'form') { var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); cv.getObjects().forEach(function (o) { if (o.daKind === 'tpl') o.visible = on; }); }
     else if (t === 'out') { var pr = $('#pr'); pr.hidden = !pr.hidden; if (!pr.hidden) printers(); }
     cv.requestRenderAll();
@@ -136,11 +137,13 @@
   /* the view moved, gently, so what was just added sits in the middle of the screen */
   function look(o) { if (!o) return; var c = o.getCenterPoint(), v = cv.viewportTransform.slice(), tx = cv.getWidth() / 2 - c.x * v[0], ty = cv.getHeight() * 0.42 - c.y * v[3], x0 = v[4], y0 = v[5], t0 = performance.now();
     (function step(t) { var k = Math.min(1, (t - t0) / 320), e = 1 - Math.pow(1 - k, 3); v[4] = x0 + (tx - x0) * e; v[5] = y0 + (ty - y0) * e; cv.setViewportTransform(v.slice()); grid(); if (k < 1) requestAnimationFrame(step); })(t0); }
-  function fit() { var b = bounds(); if (!b) { cv.setViewportTransform([1, 0, 0, 1, 0, 0]); grid(); return; } var z = Math.min(2, Math.min((cv.getWidth() - 60) / b.w, (cv.getHeight() - 120) / b.h)); cv.setViewportTransform([z, 0, 0, z, (cv.getWidth() - b.w * z) / 2 - b.x * z, (cv.getHeight() - b.h * z) / 2 - b.y * z + 20]); grid(); saveView(); }
+  var Z0 = 0.5;
+  function fit(cap) { var b = bounds(); if (!b) { cv.setViewportTransform([1, 0, 0, 1, 0, 0]); grid(); return; } var z = Math.min(cap || 2, Math.min((cv.getWidth() - 60) / b.w, (cv.getHeight() - 120) / b.h)); cv.setViewportTransform([z, 0, 0, z, (cv.getWidth() - b.w * z) / 2 - b.x * z, (cv.getHeight() - b.h * z) / 2 - b.y * z + 20]); grid(); saveView(); }
 
   /* ───── the boards: several, named, each kept ───── */
   function openBoard(id) { at = id; keepList(); var b = LIST.filter(function (x) { return x.id === id; })[0]; $('#bname').textContent = b ? b.n : 'BOARD';
-    HIST = []; key('undo').disabled = true; tx('readonly', function (s) { return s.get(id); }).then(function (r) { load(r && r.objects, function () { if (r && r.v) { cv.setViewportTransform(r.v); grid(); } else if (!r || !(r.objects || []).length) { cv.setViewportTransform([1, 0, 0, 1, 0, 0]); grid(); } }); }).catch(function () { load([]); }); }
+    HIST = []; key('undo').disabled = true; tx('readonly', function (s) { return s.get(id); }).then(function (r) { load(r && r.objects, function () { var has = r && (r.objects || []).length; if (r && r.v && r.v[0] <= Z0) { cv.setViewportTransform(r.v); grid(); } else if (has) fit(Z0); else { cv.setViewportTransform([Z0, 0, 0, Z0, cv.getWidth() / 2 - 160 * Z0, cv.getHeight() * 0.3]); grid(); }
+      if (!has && !LIST.some(function (b) { return b.id !== id; }) && !WISH) setTimeout(function () { kitsShow(true); }, 700); }); }).catch(function () { load([]); }); }
   function newBoard() { var n = 'BOARD ' + String(LIST.length + 1).padStart(2, '0'), id = uid(); LIST.push({ id: id, n: n, t: Date.now() }); keepList(); openBoard(id); }
   $('#bname').addEventListener('click', function (e) { e.stopPropagation(); var m = $('#menu'); if (!m.hidden) { m.hidden = true; return; }
     m.innerHTML = LIST.map(function (b) { return '<button type="button" data-b="' + b.id + '" class="' + (b.id === at ? 'on' : '') + '">' + b.n.replace(/[<>&]/g, '') + '</button>'; }).join('') + '<hr><button type="button" data-b="+">NEW BOARD</button><button type="button" data-b="rn">RENAME</button>' + (LIST.length > 1 ? '<button type="button" data-b="x">TAKE THIS BOARD AWAY</button>' : '');
@@ -149,7 +152,7 @@
     if (k === '+') newBoard(); else if (k === 'rn') { var cur = LIST.filter(function (x) { return x.id === at; })[0], n = prompt('Name', cur ? cur.n : ''); if (n && n.trim() && cur) { cur.n = n.trim().toUpperCase().slice(0, 24); keepList(); $('#bname').textContent = cur.n; } }
     else if (k === 'x') { if (!confirm('Take this board away? Its pieces go with it.')) return; tx('readwrite', function (s) { s.delete(at); }); LIST = LIST.filter(function (x) { return x.id !== at; }); keepList(); openBoard(LIST[0].id); }
     else openBoard(k); });
-  D.addEventListener('click', function (e) { if (!e.target.closest('#menu, #bname')) $('#menu').hidden = true; if (!e.target.closest('#pr, [data-t="out"]')) $('#pr').hidden = true; });
+  D.addEventListener('click', function (e) { if (!e.target.closest('#menu, #bname')) $('#menu').hidden = true; if (!e.target.closest('#pr, [data-t="out"]')) $('#pr').hidden = true; if (!e.target.closest('#kits, [data-t="kits"]')) kitsShow(false); });
 
   /* ───── OUT: the board as a picture, saved or printed on a printer that is on ───── */
   function picture(w) { var b = bounds(); if (!b) return null; var hide = cv.getObjects().filter(function (o) { return o.daKind === 'tpl' && !o.visible; }); var v = cv.viewportTransform.slice(), pad = 24, k = Math.min(3, w / (b.w + pad * 2));
@@ -164,6 +167,22 @@
   $('#prgo').addEventListener('click', function () { var b = this, st = $('#prst'), u = picture(1024); if (!u) return empty(); if (!NG || !NG.printAgain) return here(u); b.disabled = true; try { NG.store.set('da.base.printer', $('#prto').value); } catch (e) { /* first on */ }
     st.innerHTML = NG.pips ? NG.pips('sending') : '…'; NG.printAgain(u, 'board').then(function (s) { st.innerHTML = NG.pips ? NG.pips(s) : s; }).catch(function (e) { st.innerHTML = NG.pips ? NG.pips(e && e.status ? 'failed' : 'outbox') : '✕'; }).then(function () { b.disabled = false; }); });
 
+  /* ───── quick starts: a card drawn at random, a fan of sideways moves, found pictures, three questions, the three steps, the form ───── */
+  var DECK = ['WORK FROM THE EDGE IN', 'WHAT WOULD THE SEA DO', 'MAKE IT SMALLER, THEN SMALLER', 'ASK WHO CLEANS IT UP', 'USE WHAT IS ALREADY HERE', 'TURN IT UPSIDE DOWN', 'GIVE IT TO A STRANGER', 'FIND THE QUIETEST VERSION', 'REPAIR BEFORE YOU REPLACE', 'DRAW IT WITH YOUR OTHER HAND', 'WHO IS MISSING FROM THE ROOM', 'LEAVE A GAP ON PURPOSE', 'MAKE ONE, THEN MAKE TEN', 'FOLLOW THE WASTE', 'HALVE THE SPEED', 'MAKE IT LAST A HUNDRED YEARS', 'START WITH THE ENDING', 'LISTEN BEFORE YOU MAKE', 'PRINT IT AND PIN IT UP', 'BORROW A TOOL', 'NAME WHAT YOU ARE AVOIDING', 'THE MISTAKE IS THE MAP', 'TAKE ONE THING AWAY', 'ASK THE OLDEST PERSON YOU KNOW', 'LET THE WEATHER DECIDE', 'WALK IT AROUND THE BLOCK'];
+  var FOUNDP = ['found-pigeon', 'found-puddle', 'found-lora', 'found-dog', 'found-grille', 'found-gutter', 'found-cooler', 'found-tap', 'ref-moa', 'ref-cathaya', 'ref-cells', 'ref-coast', 'chair-1', 'chair-3', 'chair-5', 'chair-7', 'chair-9'];
+  function kitsShow(on) { var k = $('#kits'); k.hidden = !on; key('kits').setAttribute('aria-pressed', String(!!on)); }
+  var seen = function () { var v = cv.viewportTransform; return { x: (cv.getWidth() / 2 - v[4]) / v[0], y: (cv.getHeight() * 0.45 - v[5]) / v[0] }; };
+  var deal = function (n, from) { var a = from.slice(), out = []; while (out.length < n && a.length) out.push(a.splice(Math.floor(Math.random() * a.length), 1)[0]); return out; };
+  function tint(n, i) { n.daC = i % NOTES.length; n.set({ backgroundColor: NOTES[n.daC][0], fill: NOTES[n.daC][1] }); return n; }
+  $('#kits').addEventListener('click', function (e) { var b = e.target.closest('[data-k]'); if (!b) return; var k = b.dataset.k, c = seen(), R = Math.random; kitsShow(false);
+    if (k === 'shuffle') { var n = tint(note(deal(1, DECK)[0], c.x - 100, c.y - 40), 2); n.set({ angle: (R() - 0.5) * 10 }); cv.setActiveObject(n); }
+    else if (k === 'deck') deal(5, DECK).forEach(function (w, i) { var n = tint(note(w, c.x - 100 + (i - 2) * 70, c.y - 50 + Math.abs(i - 2) * 16), i); n.set({ angle: (i - 2) * 8 }); });
+    else if (k === 'photos') deal(4, FOUNDP).forEach(function (f, i) { pic('/cards/' + f + '.jpg', c.x - 290 + (i % 2) * 300, c.y - 260 + Math.floor(i / 2) * 290).then(function (im) { if (im) im.set({ angle: (R() - 0.5) * 6 }); }); });
+    else if (k === 'notes') ['WHAT DID I NOTICE', 'WHAT COULD I DO', 'WHO CAN I ASK'].forEach(function (w, i) { tint(note(w, c.x - 330 + i * 230, c.y - 40), i + 1); });
+    else if (k === 'steps') { ['NOTICED', 'RESPONSE', 'DIRECT ACTION'].forEach(function (w, i) { var x = c.x - 620 + i * 420; sect(w, x, c.y - 200); tint(note('', x, c.y - 60), i + 1); }); setTimeout(function () { fit(Z0); }, 60); }
+    else if (k === 'form') { form('', ''); key('form').setAttribute('aria-pressed', 'true'); setTimeout(function () { fit(Z0); }, 60); }
+    cv.requestRenderAll(); });
+
   /* ───── wired to W.I.S.H.: its form is the ground the board is built on ───── */
   function form(words, img) {
     cv.getObjects().filter(function (o) { return o.daKind === 'tpl'; }).forEach(function (o) { cv.remove(o); });
@@ -176,8 +195,8 @@
     if (img) F.Image.fromURL(img, function (im) { if (!im || !im.width) return; var k = Math.min(180 / im.width, 180 / im.height); im.set({ left: -40 + 720 - 24 - im.width * k, top: -16, scaleX: k, scaleY: k, selectable: false, evented: false, daKind: 'tpl' }); cv.add(im); cv.sendToBack(im); cv.sendToBack(g); cv.requestRenderAll(); });
     cv.requestRenderAll();
   }
-  addEventListener('message', function (e) { if (e.origin !== location.origin || !e.data || e.data.hm !== 'form') return; form(e.data.words, e.data.img); });
-  if (WISH) form('', '');
+  addEventListener('message', function (e) { if (e.origin !== location.origin || !e.data || e.data.hm !== 'form') return; form(e.data.words, e.data.img); if (!cv.getObjects().some(function (o) { return o.daKind && o.daKind !== 'tpl'; })) setTimeout(function () { fit(Z0); }, 80); });
+  if (WISH) { form('', ''); setTimeout(function () { if (!cv.getObjects().some(function (o) { return o.daKind && o.daKind !== 'tpl'; })) fit(Z0); }, 400); }
 
   /* start */
   size();

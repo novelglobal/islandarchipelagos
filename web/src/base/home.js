@@ -41,6 +41,7 @@
   function dotsHTML() { return pages().map(function () { return '<i></i>'; }).join(''); }
   var MOTION = store.get('da.hm.motion', null);   // null: each card's own; or 'shadow' / 'speed' for all
   var OWN = { portfolio: '#143D71', wish: '#3D7BE0', radio: '#FF6B1A', zine: '#FF5436', research: '#D9F24A', kit: '#FFB000', space: '#F59878' };
+  var FOUND = ['pigeon', 'puddle', 'lora', 'dog', 'grille', 'gutter', 'cooler'].map(function (n) { return '/cards/found-' + n + '.jpg'; });
   var OWNPICS = { novelglobal: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '/cards/chair-' + n + '.jpg'; }), radio: ['/cards/radio.jpg'], zine: ['/cards/zine.jpg'] };
   var CPICS = {};   // each card's own pictures, from /api/cards: { pics: [url], speed, shade }
 
@@ -119,6 +120,11 @@
   }
   /* novel.global's mark: the square and the sun */
   var MARK = '<svg class="ng-mark" viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="currentColor" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg>';
+  /* 888 in fat pixels, stood up in three dimensions, die-cut and stuck on */
+  var STICK888 = (function () { var P = '.###.#...##...#.###.#...##...#.###.', o = '';
+    for (var d = 0; d < 3; d++) for (var r = 0; r < 7; r++) for (var c = 0; c < 5; c++) if (P[r * 5 + c] === '#') { var x = 2 + d * 6 + c, y = 2 + r;
+      o += '<rect x="' + (x + 0.9) + '" y="' + (y + 0.9) + '" width="1" height="1" fill="#2A1450"/><rect x="' + (x + 0.45) + '" y="' + (y + 0.45) + '" width="1" height="1" fill="#6B2FB3"/><rect x="' + x + '" y="' + y + '" width="1" height="1" fill="url(#rc8g)"/>' + (r === 0 || (c === 0 && r < 3) ? '<rect x="' + x + '" y="' + y + '" width=".34" height=".34" fill="#FFFFFF" opacity=".85"/>' : ''); }
+    return '<i class="rc-888" aria-hidden="true"><svg viewBox="0 0 21 11" shape-rendering="crispEdges"><defs><linearGradient id="rc8g" x1="0" y1="2" x2="0" y2="9" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE45C"/><stop offset=".45" stop-color="#FF4FB3"/><stop offset="1" stop-color="#3FD3FF"/></linearGradient></defs>' + o + '</svg></i>'; })();
   var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
   /* CIRCULAR STRATEGY: a loop, never a line. Chairs ride round it through four stops (picked up, mended, used again, home), each stop changing them; a touch or a scroll spins it */
   var ORBIT = '<div class="st-orb" aria-hidden="true"><svg viewBox="-50 -50 100 100"><circle class="lp" r="40"/><circle class="lp2" r="40"/><path class="cv" transform="rotate(45) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(135) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(225) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(315) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><g class="st-nd n0" transform="translate(0 -40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M12 18V7M7.5 11.5L12 7l4.5 4.5M7 20h10"/></g></g><g class="st-nd n1" transform="translate(40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M14.6 5.2a3.8 3.8 0 0 0-4.9 4.9L5 14.8 7.2 17l4.7-4.7a3.8 3.8 0 0 0 4.9-4.9l-2.2 2.2-2.1-.4-.4-2.1z"/></g></g><g class="st-nd n2" transform="translate(0 40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M17.5 9A6 6 0 1 0 18 14M18 5v4h-4"/></g></g><g class="st-nd n3" transform="translate(-40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M5.5 11.5L12 6l6.5 5.5M7.5 10.5V18h9v-7.5"/></g></g></svg>' +
@@ -141,12 +147,17 @@
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
   var REFC = REFAT.map(function (p) { return [p[0] + p[2] / 2, p[1] + p[2] * p[3] / 2]; });
   var THEMES = ['RANGIWAHIA', 'SYNERGY', 'PRAXIS', 'SPECULATIVE', 'FUTURES', 'KINSHIP', 'COMMONS'];
+  /* each reference picture: a word on hover, and where a touch takes you; novel.global can rewrite these (PHOTOS: a name, a link, the word) */
+  var PLINK0 = { cathaya: { u: 'https://www.erinforsyth.com', w: 'Erin Forsyth' }, moa: { w: 'reenactment' }, cells: { u: 'https://en.wikipedia.org/wiki/Cargo_cult', w: 'memory' } }, PLINK = PLINK0;
+  function photoLinks(txt) { var o = {}; Object.keys(PLINK0).forEach(function (k) { o[k] = PLINK0[k]; });
+    String(txt || '').split('\n').forEach(function (l) { var m = /^\s*([a-z0-9-]{1,24})\s*(https:\/\/[^\s"<>]+)?\s*(.*)$/i.exec(l); if (!m || (!m[2] && !m[3].trim())) return; o[m[1].toLowerCase()] = { u: m[2] || '', w: m[3].trim().slice(0, 60) }; }); PLINK = o; }
   function refs() { var R = Math.random, P = REFC, path = '';
     [[0, 1], [0, 2], [1, 2]].forEach(function (q, n) { var a = P[q[0]], b = P[q[1]], k = 1 + Math.floor(R() * 2);
       for (var j = 0; j < k; j++) { var bow = (R() - 0.5) * 26, mx = (a[0] + b[0]) / 2 + bow, my = (a[1] + b[1]) / 2 + bow * 0.6;
         path += '<path pathLength="1" class="' + (j ? 'ds' : n === 1 ? 'lm' : '') + '" style="--d:' + (n * 0.3 + j * 0.2).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; } });
     var th = THEMES[Math.floor(R() * THEMES.length)];
-    return '<div class="rb-refs" aria-hidden="true"><svg viewBox="0 0 100 100">' + path + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k]; return '<i style="left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg"></i>'; }).join('') +
+    return '<div class="rb-refs"><svg viewBox="0 0 100 100" aria-hidden="true">' + path + '</svg>' + ['moa', 'cathaya', 'cells'].map(function (n, k) { var p = REFAT[k], L = PLINK[n] || {}, st = 'left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg', im = '<img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg">';
+      return L.u ? '<a class="rf" href="' + esc(L.u) + '" target="_blank" rel="noopener" title="' + esc(L.w || '') + '" aria-label="' + esc(L.w || L.u) + '" style="' + st + '">' + im + '</a>' : '<i class="rf" data-open="research" title="' + esc(L.w || '') + '" style="' + st + '">' + im + '</i>'; }).join('') +
       '<b class="rb-word" style="right:' + (5 + R() * 8).toFixed(1) + '%;top:' + (-11 + R() * 3).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
   /* ISLAND ARCHIPELAGOS: the coast from above in the sea's blue, its cells drifting, islands joined */
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
@@ -268,6 +279,10 @@
       g.globalCompositeOperation = 'source-over'; }
     if ((RS.rt -= dt) < 0) { RS.rt = 2.6 + Math.random() * 1.4; RS.rip.push({ r: 0, a: 0.5 }); }
     g.strokeStyle = ink; g.lineWidth = 1; RS.rip = RS.rip.filter(function (p) { p.r += dt * 9 * u; p.a -= dt * 0.16; if (p.a <= 0) return false; var R = 24 * u + p.r; g.globalAlpha = p.a; g.beginPath(); g.ellipse(bx, Fy + 1, R, R * 0.14, 0, 0, 7); g.stroke(); return true; }); g.globalAlpha = 1;
+    /* what floats: a few pieces of packaging riding the surface, drifting by */
+    if (!RS.lit) { RS.lit = []; for (var li = 0; li < 5; li++) RS.lit.push({ x: Math.random(), k: Math.floor(Math.random() * 10), v: 0.006 + Math.random() * 0.008, p: Math.random() * 7 }); }
+    RS.lit.forEach(function (o) { o.x += o.v * (dt || 0) * (1 + heat * 2); if (o.x > 1.08) { o.x = -0.08; o.k = Math.floor(Math.random() * 10); }
+      g.save(); g.translate(o.x * w, Fy + 1.2 * u + (Math.sin(t * 0.9 + o.p) * 1.3 + Math.sin(t * 0.85) * 0.6) * u); g.rotate(Math.sin(t * 0.7 + o.p) * 0.3 + (o.k % 3 - 1) * 0.5); litter(g, o.k, u * 0.5); g.restore(); });
     /* its mooring, dropping out of the paint */
     var kx = bx - Math.sin(roll) * 24 * u, ky = by + Math.cos(roll) * 24 * u, mg = g.createLinearGradient(0, ky, 0, h); mg.addColorStop(0, 'rgba(244,241,232,.55)'); mg.addColorStop(1, 'rgba(244,241,232,0)');
     g.strokeStyle = mg; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(kx, ky); g.quadraticCurveTo(kx + (10 + Math.sin(t * 0.5) * 3) * u, ky + (h - ky) * 0.5, kx + 4 * u, h); g.stroke(); g.setLineDash([]);
@@ -386,7 +401,7 @@
   D.body.appendChild(root);
   var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col); $('.hm-dots').innerHTML = dotsHTML();
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
-  var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size'];
+  var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   function applyCards(text) {
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
@@ -400,14 +415,20 @@
     col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax();
   }
   var CARDS_TXT = null;
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = !!j.buoyScrap; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = !!j.buoyScrap; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
 
+  /* a label-maker strip: each letter pressed a little off its line */
+  function tape(w, cls) { return '<b class="' + cls + '" aria-hidden="true">' + w.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b>'; }
   function cardHTML(c, i) {
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
     var keys = (JACKED.indexOf(c.id) < 0 ? '' : '<button class="hm-rk hm-pg" data-plug="' + c.id + '" aria-label="Cables" title="Cables"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><circle cx="12" cy="9" r="1.6" class="f"/><path d="M12 14v3.5c0 1.8 1.5 3 3.5 3"/></svg></button>') + (c.ph ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (c.ph ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
-    if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-kept" alt="" hidden><b class="rc-code">DA-YZ07</b><div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-lbl" aria-hidden="true">' + 'stories'.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b><canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
+    if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-YZ07</b>' +
+      '<a class="rc-ad" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener" aria-label="Tap key, at the hardware store"><b>TAP KEY</b><span>VANDAL PROOF</span><strong>4<small>WAY</small></strong><span>+ BELT CLIP</span><em>I/N 0524216 ↗</em></a>' +
+      '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') + STICK888 +
+      '<a class="rc-eco" href="https://en.wikipedia.org/wiki/Deep_ecology" target="_blank" rel="noopener" aria-label="Deep ecology"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="rc-eco-r" d="M50 50m-37 0a37 37 0 1 1 74 0a37 37 0 1 1 -74 0"/></defs><circle cx="50" cy="50" r="48" class="bg"/><circle cx="50" cy="50" r="28" class="in"/><text><textPath href="#rc-eco-r">DEEP ECOLOGY · DEEP ECOLOGY ·</textPath></text><path class="lf" d="M50 70C38 60 38 42 50 30C62 42 62 60 50 70ZM50 74V40M50 52l-6-6M50 60l7-7"/></svg></a>' +
+      '<canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
     else if (sk === 'radio') { var ks = [1]; for (var q = 0; q < 13; q++) ks.push(+(0.84 * Math.pow(0.885, q)).toFixed(3));
       inner = '<h2 class="hm-t vh">' + t + '</h2><div class="kas" aria-hidden="true">' + ks.slice(3, 12).map(function (k, j) { return '<span style="--fk:' + k + ';--j:' + j + '"' + (j === 0 ? ' class="own"' : '') + '>' + t + '</span>'; }).join('') + '</div><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
@@ -441,7 +462,7 @@
   function pics() {
     TURN.forEach(clearInterval); TURN = [];
     cards.forEach(function (el) { var id = el.dataset.id, cp = CPICS[id] || {}, own = OWNPICS[id === 'wish' ? 'novelglobal' : id];
-      if (own && !(cp.pics && cp.pics.length)) cp = { pics: id === 'wish' ? own.filter(function (u) { return !/chair-[4862]\./.test(u); }) : own, speed: cp.speed, shade: cp.shade };
+      if (own && !(cp.pics && cp.pics.length)) cp = { pics: id === 'wish' ? FOUND : own, speed: cp.speed, shade: cp.shade };
       var box = el.querySelector('.hm-pics'), bg = el.querySelector('.hm-bgimg');
       if (box) { var ls = (cp.pics || []).slice(0, 10); box.innerHTML = ls.map(function (u, j) { return '<img alt="" decoding="async" fetchpriority="' + (j ? 'low' : 'high') + '" src="' + esc(u) + '"' + (j === 0 ? ' class="on"' : '') + '>'; }).join(''); box.classList.toggle('none', !ls.length);
         /* every photograph is fetched and decoded before it is shown, and one not yet ready is passed over, so each change is instant */
@@ -468,10 +489,11 @@
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
-    var st = store.get('da.hm.stories', 'moa'), k = el.querySelector('.rc-kept'); k.hidden = true; el.querySelector('.rc-code').textContent = 'DA-YZ07';
-    if (/^data:image\//.test(st)) { k.src = st; k.hidden = false; }
+    var st = store.get('da.hm.stories', 'tap'), k = el.querySelector('.rc-kept'), rc = el.querySelector('.hm-rc'); k.hidden = true; rc.classList.remove('kept'); el.querySelector('.rc-code').textContent = 'DA-YZ07';
+    var keep = function (u) { k.src = u; k.hidden = false; rc.classList.add('kept'); };
+    if (/^data:image\//.test(st)) keep(st);
     else if (st === 'last') (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = l || []; var last = l[0];
-      if (last && last.src) { k.src = last.src; k.hidden = false; } if (last && last.code) el.querySelector('.rc-code').textContent = last.code; }).catch(function () {});
+      if (last && last.src) keep(last.src); if (last && last.code) el.querySelector('.rc-code').textContent = last.code; }).catch(function () {});
     var q = el.querySelector('.rc-qr'); (window.qrcode ? Promise.resolve(window.qrcode) : new Promise(function (ok, no) { var s = D.createElement('script'); s.src = 'vendor/qrcode.js'; s.onload = function () { ok(window.qrcode); }; s.onerror = no; D.head.appendChild(s); })).then(function (qr) {
       var m = qr(0, 'M'); m.addData('https://novel.global/?stories'); m.make(); var n = m.getModuleCount(), px = 4, pad = 2; q.width = q.height = (n + pad * 2) * px; var g = q.getContext('2d'); g.fillStyle = '#F4F1E8'; g.fillRect(0, 0, q.width, q.height); g.fillStyle = '#143D71';
       for (var r = 0; r < n; r++) for (var cc = 0; cc < n; cc++) if (m.isDark(r, cc)) g.fillRect((cc + pad) * px, (r + pad) * px, px, px); }).catch(function () {});
@@ -518,7 +540,7 @@
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
+    var c = byId(id); if (!c) return; H.classList.toggle('hm-nosea', c.sea === 'off'); careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
@@ -557,7 +579,7 @@
     if (fr && fr.dataset.ld) go(); else if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
     history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
-  function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up');
+  function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
     var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME'; });
     if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on && airWired()) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
     SH.gone = SH.gone.concat(old);
@@ -728,7 +750,7 @@
     body.innerHTML = '<div class="hm-row"><a class="hm-btn big" href="https://github.com/novelglobal/islandarchipelagos" target="_blank" rel="noopener">SOURCE CODE ↗</a></div><p class="hm-h">MOTION</p><div class="hm-row">' + [['own', 'EACH CARD'], ['shadow', 'SHADOW'], ['speed', 'SPEED']].map(function (m) { return '<button class="hm-btn' + (mo === m[0] ? ' on' : '') + '" data-mo="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h">LIGHT</p><div class="hm-row"><button class="hm-btn' + (dark ? '' : ' on') + '" data-dk="0">DAY</button><button class="hm-btn' + (dark ? ' on' : '') + '" data-dk="1">NIGHT</button></div>' +
       '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false">WORDS</button></div><div class="hm-sbw" hidden></div>' +
-      '<p class="hm-h">STORIES CARD</p><div class="hm-row">' + [['moa', 'MOA'], ['last', 'LAST PRINT'], ['own', 'MY PICTURE']].map(function (m) { var v = store.get('da.hm.stories', 'moa'); return '<button class="hm-btn' + ((v === m[0] || (m[0] === 'own' && /^data:/.test(v))) ? ' on' : '') + '" data-st="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '<input type="file" accept="image/*" id="hm-stf" hidden></div>' +
+      '<p class="hm-h">STORIES CARD</p><div class="hm-row">' + [['tap', 'TAP'], ['last', 'LAST PRINT'], ['own', 'MY PICTURE']].map(function (m) { var v = store.get('da.hm.stories', 'tap'); if (v === 'moa') v = 'tap'; return '<button class="hm-btn' + ((v === m[0] || (m[0] === 'own' && /^data:/.test(v))) ? ' on' : '') + '" data-st="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '<input type="file" accept="image/*" id="hm-stf" hidden></div>' +
       '<div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>';
     $$('[data-mo]', body).forEach(function (b) { b.addEventListener('click', function () { MOTION = b.dataset.mo === 'own' ? null : b.dataset.mo; store.set('da.hm.motion', MOTION); find('style'); cards.forEach(function (el) { var c = byId(el.dataset.id); el.classList.remove('shadow', 'speed'); el.classList.add(MOTION || c.motion); }); $$('[data-mo]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); beep(550, 0.05); }); });
     $$('[data-dk]', body).forEach(function (b) { b.addEventListener('click', function () { setNight(b.dataset.dk === '1'); $$('[data-dk]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); }); });
@@ -918,11 +940,14 @@
   function orbit(now) { requestAnimationFrame(orbit); var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
     if (!el || D.hidden || away || xv.classList.contains('on')) return; var r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
-    var hit = [0, 0, 0, 0];
+    var hit = [0, 0, 0, 0]; if (!ORB.pre) { ORB.pre = 1; for (var pc = 1; pc <= 10; pc++) new Image().src = '/cards/chair-' + pc + '.jpg'; }
     $$('.st-th', el).forEach(function (t, k) { var a = ORB.a + k * TAU / 4 + TAU / 8, A = ((a % TAU) + TAU) % TAU, s = (A + Math.PI / 2) / (Math.PI / 2), q = Math.floor(s) % 4, near = Math.abs(s - Math.round(s));
-      t.style.left = (50 + 40 * Math.cos(a)) + '%'; t.style.top = (50 + 40 * Math.sin(a)) + '%'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; t.classList.toggle('pop', near < 0.09); });
+      t.style.left = (50 + 40 * Math.cos(a)) + '%'; t.style.top = (50 + 40 * Math.sin(a)) + '%'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
     $$('.st-nd', el).forEach(function (n, k) { n.classList.toggle('hit', !!hit[k]); }); }
   requestAnimationFrame(orbit);
+  /* a chair reaching a stop comes out of it as another of the ten, never one already on the loop */
+  var ORBC = 6; function nextChair(el, th) { var im = th.querySelector('img'), on = $$('.st-th img', el).map(function (m) { return m.getAttribute('src'); });
+    for (var i = 0; i < 10; i++) { ORBC = ORBC % 10 + 1; var u = '/cards/chair-' + ORBC + '.jpg'; if (on.indexOf(u) < 0) { im.src = u; return; } } }
   col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
 
@@ -982,7 +1007,7 @@
   var NIB = [], VIAL = null;
   function careSave() { var o = {}; for (var k in CARE) if (k !== 'sel' && k !== 'tk') o[k] = CARE[k]; store.set('da.reef.care.v1', o); }
   function careTick() { var now = Date.now(), hrs = Math.min(96, Math.max(0, (now - CARE.at) / 36e5)); if (hrs < 0.001) return; CARE.at = now;
-    CARE.acc.t += hrs / 0.8; while (CARE.acc.t >= 1) { CARE.acc.t -= 1; if (CARE.trash.length < 8) CARE.trash.push([+(0.06 + Math.random() * 0.88).toFixed(3), Math.floor(Math.random() * 4), 1]); }
+    CARE.acc.t += hrs / 0.8; while (CARE.acc.t >= 1) { CARE.acc.t -= 1; if (CARE.trash.length < 8) CARE.trash.push([+(0.06 + Math.random() * 0.88).toFixed(3), Math.floor(Math.random() * 10), 1]); }
     CARE.acc.c += hrs / 2; while (CARE.acc.c >= 1) { CARE.acc.c -= 1; if (CARE.cots.length < 4) CARE.cots.push([FDEF[Math.floor(Math.random() * FDEF.length)][0], +(Math.random() - 0.5).toFixed(2)]); }
     FDEF.forEach(function (d) { CARE.algae[d[0]] = Math.min(1, (CARE.algae[d[0]] || 0) + hrs * 0.06); });
     CARE.murk = Math.max(0, Math.min(0.85, CARE.murk + hrs * (0.02 + CARE.trash.length * 0.008) - hrs * CARE.oys.length * 0.05)); careSave(); }
@@ -1003,6 +1028,18 @@
     else if (tool === 'oyster') { if (y > REEF.sea - 30 && CARE.oys.length < 6) { CARE.oys.push(+(x / REEF.w).toFixed(3)); done = true; } }
     if (!done) return false;
     CARE.items[tool]--; if (CARE.items[tool] <= 0) { delete CARE.items[tool]; CARE.sel = null; } careSave(); trayDraw(); RIP.push({ x: x, y: y, r: 3, a: 0.9 }); beep(740, 0.05); setTimeout(function () { beep(988, 0.06); }, 90); if (BIO.live) bio(x, y, 20); return true; }
+  /* ten kinds of throwaway packaging, small and in colour: a soft-drink bottle, a can, a chip packet, a chocolate wrapper, a milk bottle, a water bottle, a coffee cup, a noodle cup, a bar wrapper, a bag */
+  function litter(g, k, s) { g.save(); g.scale(s, s); g.lineWidth = 0.7; g.strokeStyle = 'rgba(11,11,11,.5)'; var f = function (c) { g.fillStyle = c; g.fill(); g.stroke(); }, box = function (x, y, w, h, r) { g.beginPath(); rrect(g, x, y, w, h, r); };
+    if (k === 0 || k === 5) { box(-7, -2.6, 11, 5.2, 2); f(k ? 'rgba(200,230,245,.9)' : 'rgba(150,200,225,.9)'); g.fillStyle = k ? '#2FA4E0' : '#D62A2A'; g.fillRect(-3, -2.6, 4, 5.2); box(4, -1.4, 2.4, 2.8, 0.4); f('rgba(200,230,245,.9)'); box(6.2, -1.7, 1.8, 3.4, 0.4); f(k ? '#F4F4EF' : '#D62A2A'); }
+    else if (k === 1) { box(-3, -5, 6, 10, 1.2); f('#C8202A'); g.fillStyle = '#C9CDD2'; g.fillRect(-3, -5, 6, 1.5); g.fillRect(-3, 3.6, 6, 1.4); g.fillStyle = '#F4F1E8'; g.fillRect(-3, -0.4, 6, 0.9); }
+    else if (k === 2) { g.beginPath(); g.moveTo(-6, -5); for (var i = 0; i <= 6; i++) g.lineTo(-6 + i * 2, i % 2 ? -4.2 : -5); g.quadraticCurveTo(7.4, 0, 6, 5); for (var j = 6; j >= 0; j--) g.lineTo(-6 + j * 2, j % 2 ? 4.2 : 5); g.quadraticCurveTo(-7.4, 0, -6, -5); f('#F2C230'); g.fillStyle = '#2A62C9'; g.beginPath(); g.ellipse(0, 0.3, 3, 2, 0, 0, 7); g.fill(); }
+    else if (k === 3) { box(-6, -2.2, 12, 4.4, 0.6); f('#5B2A86'); g.fillStyle = '#E8C25A'; g.fillRect(-2, -2.2, 1.2, 4.4); g.fillStyle = '#8E5BC0'; g.fillRect(-7.4, -1.8, 1.4, 3.6); g.fillRect(6, -1.8, 1.4, 3.6); }
+    else if (k === 4) { box(-3.6, -3.8, 7.2, 9, 2); f('#F4F4EF'); box(-1.6, -6, 3.2, 2.2, 0.4); f('#2A62C9'); g.fillStyle = '#2A62C9'; g.fillRect(-3.6, 1, 7.2, 1.3); }
+    else if (k === 6) { g.beginPath(); g.moveTo(-3.6, -4); g.lineTo(3.6, -4); g.lineTo(2.6, 5); g.lineTo(-2.6, 5); g.closePath(); f('#F1EDE4'); g.fillStyle = '#8A5A3B'; g.fillRect(-3.1, -0.6, 6.2, 2.6); box(-4.2, -5.4, 8.4, 1.6, 0.6); f('#222222'); }
+    else if (k === 7) { g.beginPath(); g.moveTo(-4.4, -4); g.lineTo(4.4, -4); g.lineTo(3.2, 4.6); g.lineTo(-3.2, 4.6); g.closePath(); f('#E23B2E'); g.fillStyle = '#F6D046'; g.fillRect(-4, -2.6, 8, 2); g.fillStyle = '#F4F1E8'; g.fillRect(-4.6, -4.8, 9.2, 0.9); }
+    else if (k === 8) { box(-5, -1.7, 10, 3.4, 0.4); f('#F07A1A'); g.fillStyle = '#F4F1E8'; g.fillRect(-2.6, -0.4, 5.2, 0.8); g.fillStyle = '#C45A0E'; g.fillRect(-6.2, -1.4, 1.2, 2.8); g.fillRect(5, -1.4, 1.2, 2.8); }
+    else { g.beginPath(); g.moveTo(-4.6, -2); g.quadraticCurveTo(-5.6, 5.4, 0, 5.6); g.quadraticCurveTo(5.6, 5.4, 4.6, -2); g.lineTo(2.6, -2); g.quadraticCurveTo(2.4, -6, 1, -2); g.lineTo(-1, -2); g.quadraticCurveTo(-2.4, -6, -2.6, -2); g.closePath(); f('rgba(244,241,232,.6)'); }
+    g.restore(); }
   function careDraw(g, dt, t, w, h, y0) {
     var ink = NIGHT ? 'rgba(200,225,255,.85)' : 'rgba(244,241,232,.92)';
     /* algae over the coral, as fine green strands; an urchin set on one grazes it away */
@@ -1019,10 +1056,7 @@
     /* litter: new pieces drift down from the surface and settle; the oysters set on the sand */
     g.strokeStyle = ink; g.lineWidth = 1.1;
     CARE.trash.forEach(function (q, i) { var p = trashAt(i), cur = TR[i]; if (!cur) cur = TR[i] = [p[0], q[2] ? y0 + 6 : p[1]]; if (q[2]) { cur[1] += dt * 12; cur[0] = p[0] + Math.sin(t * 0.6 + i) * 10 * (1 - (cur[1] - y0) / (p[1] - y0)); if (cur[1] >= p[1]) { cur[1] = p[1]; cur[0] = p[0]; q[2] = 0; careSave(); } }
-      var x = cur[0], y = cur[1]; g.save(); g.translate(x, y); g.rotate(q[2] ? Math.sin(t + i) * 0.6 : (q[1] - 1.5) * 0.3); g.beginPath();
-      if (q[1] === 0) { g.rect(-7, -3, 11, 6); g.rect(4, -1.5, 4, 3); } else if (q[1] === 1) { g.rect(-3.5, -5, 7, 10); g.moveTo(-3.5, -2); g.lineTo(3.5, -2); }
-      else if (q[1] === 2) { g.moveTo(-7, 3); g.quadraticCurveTo(-5, -7, 0, -5); g.quadraticCurveTo(6, -8, 7, 3); g.quadraticCurveTo(0, 6, -7, 3); } else { g.arc(0, 0, 6, 0, 7); g.moveTo(-6, 0); g.lineTo(6, 0); g.moveTo(0, -6); g.lineTo(0, 6); }
-      g.stroke(); g.restore(); });
+      var x = cur[0], y = cur[1]; g.save(); g.translate(x, y); g.rotate(q[2] ? Math.sin(t + i) * 0.6 : ((q[1] % 4) - 1.5) * 0.3); litter(g, q[1] % 10, 1.1); g.restore(); });
     TR.length = CARE.trash.length;
     CARE.oys.forEach(function (u, i) { var x = u * w, y = REEF.sea + 7; g.beginPath(); g.ellipse(x, y, 7, 3.6, -0.15, 0, 7); g.moveTo(x - 5, y); g.quadraticCurveTo(x, y - 3, x + 5, y + 0.5); g.stroke(); if (Math.sin(t * 0.7 + i * 2) > 0.97) BUB.push({ x: x + 3, y: y - 4, vy: -18, a: 0.7, r: 0.8 }); });
     /* a water test: a small tube, clear blue to cloudy green with the water as it is */

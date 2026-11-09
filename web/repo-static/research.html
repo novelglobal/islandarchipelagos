@@ -34,6 +34,13 @@
   #menu hr { border: 0; border-top: 1px solid var(--ink); opacity: .25; margin: 4px 6px; }
   #pr { position: fixed; right: 10px; bottom: calc(58px + env(safe-area-inset-bottom)); z-index: 4; background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 10px; display: grid; gap: 8px; width: min(280px, calc(100vw - 20px)); }
   #pr[hidden] { display: none; }
+  #kits { position: fixed; left: 10px; bottom: calc(58px + env(safe-area-inset-bottom)); z-index: 4; width: min(320px, calc(100vw - 20px)); background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 10px; padding: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #kits[hidden] { display: none; }
+  #kits button { display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 8px; min-height: 48px; text-align: left; border: 1.5px solid var(--ink); border-radius: 7px; background: none; color: inherit; padding: 6px 8px; font: 600 14px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .04em; cursor: pointer; }
+  #kits button:hover, #kits button:focus-visible { background: var(--ink); color: var(--paper); }
+  #kits svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  #kits .f { fill: currentColor; stroke: none; }
+  #kits small { display: block; margin-top: 3px; font: 400 9px/1.2 'Departure Mono', ui-monospace, monospace; letter-spacing: .04em; opacity: .7; }
   #pr select, #pr button { height: 34px; border-radius: 17px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font: 600 15px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .04em; padding: 0 12px; }
   #pr .go { background: var(--ink); color: var(--paper); cursor: pointer; }
   #pr .row { display: flex; gap: 8px; align-items: center; }
@@ -54,8 +61,18 @@
 <div id="top"><a id="home" href="/">novel.global</a><button type="button" id="bname">BOARD 01</button><span id="saved"></span></div>
 <div id="menu" hidden></div>
 <div id="pr" hidden><select id="prto" aria-label="Printer"></select><div class="row"><button type="button" class="go" id="prgo">PRINT</button><span id="prst"></span></div><button type="button" id="prpng">SAVE PICTURE</button></div>
+<div id="kits" hidden>
+  <button type="button" data-k="shuffle"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5" class="f"/><circle cx="16" cy="16" r="1.5" class="f"/><circle cx="12" cy="12" r="1.5" class="f"/></svg><span>SHUFFLE<small>one card drawn at random</small></span></button>
+  <button type="button" data-k="deck"><svg viewBox="0 0 24 24"><path d="M5 7l9-3 4 13-9 3z"/><path d="M9 4.7L11 4"/></svg><span>STRATEGIES<small>five sideways moves</small></span></button>
+  <button type="button" data-k="photos"><svg viewBox="0 0 24 24"><path d="M3 6h13v11H3z"/><path d="M8 3h13v11"/><path d="M3 14l4-4 3 3 2-2 4 4"/></svg><span>PHOTOS<small>four found pictures</small></span></button>
+  <button type="button" data-k="notes"><svg viewBox="0 0 24 24"><path d="M3 4h8v8H3z" class="f"/><path d="M13 8h8v8h-8zM6 14h8v7H6z"/></svg><span>NOTES<small>three questions to start</small></span></button>
+  <button type="button" data-k="steps"><svg viewBox="0 0 24 24"><path d="M3 5h5M10 5h4M16 5h5M3 9v10M10 9v10M16 9v10"/></svg><span>THREE STEPS<small>noticed, response, action</small></span></button>
+  <button type="button" data-k="form"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>W.I.S.H. FORM<small>the form as the ground</small></span></button>
+</div>
 <div id="drop">DROP</div>
 <nav id="tools">
+  <button type="button" data-t="kits" aria-label="Quick starts" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" class="f"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><path d="M17.25 13.5v7.5M13.5 17.25H21"/></svg><span>START</span></button>
+  <i class="sep"></i>
   <button type="button" data-t="note" aria-label="Note"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z" class="f"/></svg><span>NOTE</span></button>
   <button type="button" data-t="sect" aria-label="Section"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/></svg><span>SECT</span></button>
   <button type="button" data-t="dot" aria-label="Dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" class="f"/></svg><span>DOT</span></button>

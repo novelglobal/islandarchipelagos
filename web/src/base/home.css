@@ -24,7 +24,7 @@ html.hm-away #hm > :not(#hm-top) { display: none; }
 #hm.reef #hm-top { height: calc(var(--hm-top) + env(safe-area-inset-top) + min(68vh, 640px)); cursor: default; touch-action: none; box-shadow: 0 30px 60px rgba(0, 0, 0, .3); }
 #hm-top canvas { position: absolute; left: 0; top: 0; width: 100%; display: block; }
 #hm-jf { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; pointer-events: none; }
-html.hm-away #hm-jf, html.hm-sheet #hm-jf { visibility: hidden; }
+html.hm-away #hm-jf, html.hm-sheet.hm-nosea #hm-jf { visibility: hidden; }
 #hm-top nav { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 10px); display: flex; gap: 4px; z-index: 1; }
 #hm-top nav button { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; opacity: .85; color: #F4F1E8; }
 #hm-top nav button[hidden] { display: none; }
@@ -215,7 +215,7 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .st-alert i { width: 1.6cqw; height: 1.6cqw; border-radius: 50%; background: #E25C40; box-shadow: 0 0 6px #E25C40; animation: st-live 1.4s steps(1) infinite; }
 @keyframes st-live { 50% { opacity: .2; } }
 .sp-sub { margin: 0; font: 500 2.9cqw/1.3 'IBM Plex Mono', monospace; letter-spacing: .16em; color: rgba(244, 241, 232, .82); }
-.rc-lbl { left: 50%; top: 76.4%; transform: translate(-50%, -50%) rotate(-1.6deg); display: flex; padding: .6cqw 1.7cqw .8cqw; border-radius: .4cqw; font: 600 4.7cqw/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .06em; color: #F7F7F4; white-space: nowrap;
+.rc-lbl { left: 6%; top: 81.2%; transform: rotate(-3.4deg); transform-origin: 0 50%; display: flex; padding: .6cqw 1.7cqw .8cqw; border-radius: .4cqw; font: 600 4.7cqw/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .06em; color: #F7F7F4; white-space: nowrap;
   background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 3px), linear-gradient(#262626, #0B0B0B 55%, #151515); box-shadow: 0 1.4cqw 2cqw -.6cqw rgba(0, 0, 0, .6), inset 0 .3cqw 0 rgba(255, 255, 255, .12), inset 0 -.3cqw 0 rgba(0, 0, 0, .5); }
 .rc-lbl i { font-style: normal; display: inline-block; transform: translateY(calc(var(--j) * .25cqw)); text-shadow: 0 -.25cqw 0 rgba(0, 0, 0, .55), 0 .2cqw 0 rgba(255, 255, 255, .28); }
 .hm-card.sk-isle { --c-bg: #16271C; --c-ink: #F4F1E8; }
@@ -261,8 +261,8 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 /* an experience, opened in place of the column */
 #hm-x { position: absolute; left: 0; right: 0; top: calc(var(--hm-top) + env(safe-area-inset-top)); bottom: 0; z-index: 5; background: var(--hm-bg); display: flex; flex-direction: column; transform: translateY(100%); transition: transform .45s cubic-bezier(.2, .8, .2, 1); visibility: hidden; }
 #hm-x.on { transform: none; visibility: visible; }
-html.hm-sheet #hm-x { top: 0; }
-html.hm-up #hm-top { visibility: hidden; }
+html.hm-sheet.hm-nosea #hm-x { top: 0; }
+html.hm-up.hm-nosea #hm-top { visibility: hidden; }
 #hm-guide { position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: 0; transition: opacity .25s; background: radial-gradient(var(--rx) var(--ry) at var(--gx) var(--gy), transparent 96%, rgba(244, 241, 232, .86) 150%); color: #0C0E0E; }
 #hm-guide.dk { background: radial-gradient(var(--rx) var(--ry) at var(--gx) var(--gy), transparent 96%, rgba(8, 10, 12, .84) 150%); color: #F4F1E8; }
 #hm-guide.still, #hm-guide.still p { transition: none; } #hm-guide.still path { animation: none; stroke-dashoffset: 0; } #hm-guide.key.still path.ring { stroke-dashoffset: 0; animation: hm-ring 1.4s ease-in-out infinite; }
@@ -555,7 +555,7 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 #hm-talk.in-card .x { display: none; }
 #hm-talk.in-card .tk-bk { display: inline-flex; }
 /* copy never sits under the card keys */
-#hm .rc-code { right: auto; left: 5.4%; }
+#hm .rc-code { right: auto; left: 5.4%; padding-right: 3cqw; }
 #hm .sk-radio .hm-in { padding-top: max(5cqw, 50px); }
 #hm .sk-kit .sp-sub { display: inline-block; width: fit-content; background: #0A0A0A; color: #FFB000; padding: .45em .7em; text-shadow: none; }
 /* DIRECT ACTION RADIO: the name across the card under its keys; its echoes step down to the radio and stop above it, a signal running through them */
@@ -616,3 +616,36 @@ html.hm-away .hm-ghost, html.hm-sheet .hm-ghost { display: none; }
 @keyframes hm-ghost { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 26, .5); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 107, 26, 0); } }
 @keyframes hm-ghost-in { from { opacity: 0; transform: translateY(24px); } }
 @media (prefers-reduced-motion: reduce) { .hm-ghost { animation: none; } }
+
+/* the sea stays over every experience (its card can say sea: off, as W.I.S.H. has none); the jellyfish and the reef with it */
+html.hm-sheet:not(.hm-nosea) #hm-top { z-index: 6; }
+html.hm-sheet:not(.hm-nosea) #hm-jf { z-index: 7; }
+html.hm-sheet:not(.hm-nosea) #hm-x > header { height: 34px; }
+html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: 5px; }
+/* the stories card: the tap in the frame, whole; its shelf ticket; the mark in the middle; tape and stickers pressed on */
+.rc-tap { left: 6.3%; top: 7%; width: 87.6%; height: 61.5%; object-fit: contain; background: #0E2240; }
+.hm-rc.kept .rc-tap, .hm-rc.kept .rc-ad { display: none; }
+.rc-hide { right: 4.4%; top: 3.1%; width: 13.4%; height: 2.6%; background: #163F73; }
+.rc-ad { left: 9.4%; top: 47.6%; width: 30cqw; transform: rotate(-2.4deg); display: flex; flex-direction: column; background: #FFFFFF; color: #111111; text-decoration: none; box-shadow: 0 1.6cqw 2.6cqw -1cqw rgba(0, 0, 0, .6); font: 700 2.3cqw/1.1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; pointer-events: auto; z-index: 2; }
+.rc-ad b { display: block; background: #D7262E; color: #FFFFFF; font: 700 4.4cqw/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; padding: 1.2cqw 1.8cqw 1cqw; border-bottom: .9cqw solid #0D5A3A; }
+.rc-ad span { padding: 0 1.8cqw; margin-top: 1cqw; }
+.rc-ad strong { display: flex; align-items: flex-start; gap: .6cqw; padding: 0 1.8cqw; color: #D7262E; font: 700 11cqw/.9 'Archivo Narrow', Arial, sans-serif; }
+.rc-ad strong small { font-size: 3.4cqw; line-height: 1.2; color: #111111; }
+.rc-ad em { font: 500 2cqw/1 'Departure Mono', ui-monospace, monospace; font-style: normal; padding: 1.2cqw 1.8cqw; margin-top: 1cqw; background: #FFD200; color: #111111; }
+.rc-ad:hover, .rc-ad:focus-visible { transform: rotate(-1deg) scale(1.04); }
+.rc-ng { left: 50%; top: 76.4%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 2.4cqw; color: #F4F1E8; font: 600 8.6cqw/1 'Poppins', Arial, sans-serif; letter-spacing: -.02em; white-space: nowrap; }
+.rc-ng .ng-mark { width: 13cqw; height: auto; }
+.rc-work { left: auto; right: 6.4%; top: 64.6%; transform: rotate(2.6deg); transform-origin: 100% 50%; }
+.rc-888 { left: 8.4%; top: 8.8%; width: 27cqw; padding: 1.2cqw 1.6cqw; border-radius: 2.4cqw; background: #FFFFFF; transform: rotate(-7deg); box-shadow: 0 0 0 .5cqw #F4F1E8, 0 1.6cqw 2.4cqw -1cqw rgba(0, 0, 0, .6); }
+.rc-888 svg { display: block; width: 100%; height: auto; }
+.rc-eco { left: 51%; top: 90.6%; width: 17cqw; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(-8deg); pointer-events: auto; z-index: 2; filter: drop-shadow(0 1cqw 1.4cqw rgba(0, 0, 0, .5)); }
+.rc-eco svg { display: block; width: 100%; height: 100%; }
+.rc-eco .bg { fill: #F4F1E8; } .rc-eco .in { fill: #143D71; }
+.rc-eco text { font: 700 10.4px 'IBM Plex Mono', monospace; letter-spacing: .12em; fill: #143D71; }
+.rc-eco .lf { fill: none; stroke: #9FE870; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.rc-eco:hover, .rc-eco:focus-visible { transform: translate(-50%, -50%) rotate(4deg) scale(1.08); }
+.rc-ad, .rc-eco { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+/* the research board's pictures: a word on hover; some go somewhere */
+.sk-research .hm-art { z-index: 1; }
+.rb-refs .rf { pointer-events: auto; cursor: pointer; }
+.rb-refs a.rf::before { content: '↗'; position: absolute; right: 1.6cqw; bottom: 1.6cqw; width: 5cqw; height: 5cqw; display: grid; place-items: center; border-radius: 50%; background: #0B0B0B; color: #F4F1E8; font: 600 3cqw/1 'Poppins', Arial, sans-serif; }

@@ -1435,7 +1435,7 @@ function fit(list) {
 var AC = null;
 /* an old phone or tablet (few cores, little memory, or no audio worklets): the sound made lighter everywhere, so it does not stutter */
 var LITE = (function () { try { var n = navigator.hardwareConcurrency || 2, m = navigator.deviceMemory || 4; return n <= 4 || m <= 2 || !window.AudioWorkletNode; } catch (e) { return false; } })();
-function newAC() { var A = window.AudioContext || window.webkitAudioContext; try { return new A({ latencyHint: LITE ? 'playback' : 'balanced' }); } catch (e) { return new A(); } }
+function newAC() { var A = window.AudioContext || window.webkitAudioContext; try { return new A({ latencyHint: 'playback' }); } catch (e) { return new A(); } }
 function ac() { if (!AC) { playback(); AC = newAC(); } if (AC.state !== 'running') AC.resume().catch(function () {}); return AC; }
 /* a phone's camera (the booth's photo) turns its sound over to recording, and on an iPhone, whichever browser, the page's sound can stay
    silent or suspended after: asked back to playing, and woken again on the next touch and each return to the page */
@@ -1480,7 +1480,9 @@ function room(c) {
   var lo = c.createBiquadFilter(), hi = c.createBiquadFilter(), comp = c.createDynamicsCompressor(), out = c.createGain();
   lo.type = 'lowshelf'; lo.frequency.value = 220; lo.gain.value = 2; hi.type = 'highshelf'; hi.frequency.value = 5200; hi.gain.value = -6;
   comp.threshold.value = -20; comp.ratio.value = 2.5; comp.knee.value = 24; comp.attack.value = 0.02; comp.release.value = 0.4; out.gain.value = 0.9;
-  m.connect(lo); lo.connect(hi); comp.connect(out); out.connect(c.destination);
+  /* last, a limiter: the loudest moments are held just under full scale, so nothing ever clips into static */
+  var lim = c.__lim; if (!lim) { lim = c.__lim = c.createDynamicsCompressor(); lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.15; lim.connect(c.destination); }
+  m.connect(lo); lo.connect(hi); comp.connect(out); out.gain.value = 0.82; out.connect(lim);
   var dry = c.createGain(); dry.gain.value = 0.62; hi.connect(dry); dry.connect(comp);
   var T = window.Tuna && new window.Tuna(c), fv = window.Freeverb && window.Freeverb(c);
   /* the chorus, native: two short delays swayed slowly and out of step, one to each side */
