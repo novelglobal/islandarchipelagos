@@ -10,6 +10,11 @@
   /* a browser's own bar floating over the foot of the page (Safari on a phone): the page stops above it, so nothing at the bottom is hidden */
   (function () { var vv = window.visualViewport; if (!vv) return; var set = function () { var b = Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)); document.documentElement.style.setProperty('--hm-vvb', (b > 4 && b < 140 && vv.scale <= 1.01 ? b : 0) + 'px'); };
     vv.addEventListener('resize', set); vv.addEventListener('scroll', set); addEventListener('orientationchange', set); set(); })();
+  /* the ad on the stories card sized from its own height, the same in every browser */
+  (function () { var fit = function (el) { var h = el.getBoundingClientRect().height; if (h) el.style.setProperty('--adu', (h / 100).toFixed(3) + 'px'); };
+    var ro = 'ResizeObserver' in window ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
+    var look = function () { document.querySelectorAll('.rc-ad').forEach(function (el) { if (el.__adu) return; el.__adu = 1; fit(el); if (ro) ro.observe(el); }); };
+    new MutationObserver(look).observe(document.documentElement, { childList: true, subtree: true }); addEventListener('resize', function () { document.querySelectorAll('.rc-ad').forEach(fit); }); look(); })();
   /* a link on a card going out: a tentacle holds out where it goes, a thumb up to go, a thumb down to stay */
   (function () { var box = null, go = null;
     var shut = function () { if (box) { box.remove(); box = null; go = null; } };
