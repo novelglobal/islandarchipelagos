@@ -654,3 +654,7 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: 5px; }
 .rb-refs .rf { pointer-events: auto; cursor: pointer; }
 
 .st-orb .hm-pics img { object-fit: cover; }
+
+/* start again, asked once */
+#hm-x .hm-wipe.sure { background: #E5262B !important; border-color: #E5262B !important; color: #FFFFFF !important; }
+#hm-x .hm-note { margin: 8px 0 0; font: 500 10px/1.5 'IBM Plex Mono', monospace; letter-spacing: .06em; opacity: .8; }

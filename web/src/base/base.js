@@ -1851,7 +1851,7 @@ function shopSheet() {
   var io = $('#s-ico-out'); if (io) io.addEventListener('click', function () { var a = document.createElement('a'); a.download = 'novel-global-icons.json'; a.href = URL.createObjectURL(new Blob([JSON.stringify({ pack: 'novel.global/icons', name: 'novel.global icons', icons: ICONS.map(function (i) { return { src: i.src, t: i.t }; }) })], { type: 'application/json' })); document.body.appendChild(a); a.click(); a.remove(); });
   var ix = $('#s-ico-x'); if (ix) sureTap(ix, function () { var at = -1; ICONS.forEach(function (i, k) { if (i.id === ICON_NEXT) at = k; }); if (at < 0) return; var gone = ICONS.splice(at, 1)[0]; ICON_NEXT = null; saveIcons(); shopSheet(); undoToast(function () { ICONS.splice(at, 0, gone); saveIcons(); shopSheet(); }); });
   /* a fresh start, only with a check: everything this device made is wiped, and the site begins again */
-  sureTap($('#s-wipe'), function () { try { Object.keys(localStorage).filter(function (k) { return /^da\.base\./.test(k) && k !== 'da.base.theme'; }).forEach(function (k) { localStorage.removeItem(k); }); } catch (e) { /* no storage */ } location.replace(siteURL()); if (!location.hash) location.reload(); });
+  sureTap($('#s-wipe'), wipeAll);
   var sh = $('#sheet .shot'); sh.addEventListener('change', function () { var f = sh.files && sh.files[0]; BACKTO = shopSheet; onShot(f); setTimeout(function () { sh.value = ''; }, 1500); });
   $$('#s-rec [data-i]').forEach(function (b) { b.addEventListener('click', function () { BACKTO = shopSheet; stepS(mine[+b.dataset.i]); }); });
   /* a poster made: deleted with a check, and ↶ for a moment to put it back (one already sent stays with the printer) */
@@ -2574,7 +2574,21 @@ if (location.hash) route();
 /* what the aura (aura.js) is given of the base: its engine, its stores, its print and its sound */
 /* when someone last touched the page, so the studio inside it asks nothing while it is left alone */
 var USED = Date.now(); ['pointerdown', 'keydown', 'wheel'].forEach(function (k) { addEventListener(k, function () { USED = Date.now(); }, { passive: true }); });
-window.NG = { usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
+/* start again, for the whole site on this device: every page and panel stops saving, everything made here goes (saved keys, the
+   boards, the kept prints and pictures, drafts in this tab, the offline copy), and the site opens fresh. Only what was fetched from
+   elsewhere (sightings, tiles, weather) is kept, so the map is not downloaded again */
+var WIPE_KEEP = /^da\.(obs|hist|tx|hg|wx|tiles|kph|partners|posts|epoch)\b/;
+function wipeAll() {
+  var wins = [window]; try { [].forEach.call(document.querySelectorAll('iframe'), function (f) { try { if (f.contentWindow && f.contentWindow.localStorage) wins.push(f.contentWindow); } catch (e) { /* elsewhere */ } }); } catch (e) { /* none */ }
+  wins.forEach(function (w) { try { w.__wiping = true; w.Storage.prototype.setItem = function () {}; } catch (e) { /* not ours */ } });
+  try { Object.keys(localStorage).forEach(function (k) { if (/^da\./.test(k) && !WIPE_KEEP.test(k)) localStorage.removeItem(k); }); } catch (e) { /* no storage */ }
+  try { Object.keys(sessionStorage).forEach(function (k) { if (/^da\./.test(k)) sessionStorage.removeItem(k); }); } catch (e) { /* none */ }
+  var gone = ['novelglobal', 'novelglobal-kept', 'novelglobal-research'].map(function (n) { return new Promise(function (ok) { try { var r = indexedDB.deleteDatabase(n); r.onsuccess = r.onerror = r.onblocked = function () { ok(); }; } catch (e) { ok(); } }); });
+  if (window.caches) gone.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }).catch(function () {}));
+  if (navigator.serviceWorker) gone.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () {}));
+  var go = function () { location.replace(location.origin + '/'); }; Promise.all(gone).then(go, go); setTimeout(go, 2500);
+}
+window.NG = { wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
   read: read, wishOptions: wishOptions, wishLines: wishLines, context: context, weather: weather, db: db, DB: function () { return DB; }, outlookNow: outlookNow, nowItems: nowItems, seasonNow: seasonNow,
   reveal: reveal, far: far, dist: dist, code: code, SIGN: SIGN, actions: actions, PHOTOS: PHOTOS, notes: function () { return NOTES; }, saveNotes: saveNotes, attend: attend,
   place: function (c) { cur = c; place(); var n = cur.note; cur = null; return n; },

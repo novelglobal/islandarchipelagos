@@ -762,9 +762,10 @@
     var dark = NIGHT, mo = MOTION || 'own';
     body.innerHTML = '<div class="hm-row"><a class="hm-btn big" href="https://github.com/novelglobal/islandarchipelagos" target="_blank" rel="noopener">SOURCE CODE ↗</a></div><p class="hm-h">MOTION</p><div class="hm-row">' + [['own', 'EACH CARD'], ['shadow', 'SHADOW'], ['speed', 'SPEED']].map(function (m) { return '<button class="hm-btn' + (mo === m[0] ? ' on' : '') + '" data-mo="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h">LIGHT</p><div class="hm-row"><button class="hm-btn' + (dark ? '' : ' on') + '" data-dk="0">DAY</button><button class="hm-btn' + (dark ? ' on' : '') + '" data-dk="1">NIGHT</button></div>' +
-      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false">WORDS</button></div><div class="hm-sbw" hidden></div>' +
+      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false">WORDS</button><button class="hm-btn' + (CX.on ? ' on' : '') + '" id="hm-cxo" aria-pressed="' + CX.on + '">CABLES ON CARDS</button></div><div class="hm-sbw" hidden></div>' +
       '<p class="hm-h">STORIES CARD</p><div class="hm-row">' + [['tap', 'TAP'], ['last', 'LAST PRINT'], ['own', 'MY PICTURE']].map(function (m) { var v = store.get('da.hm.stories', 'tap'); if (v === 'moa') v = 'tap'; return '<button class="hm-btn' + ((v === m[0] || (m[0] === 'own' && /^data:/.test(v))) ? ' on' : '') + '" data-st="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '<input type="file" accept="image/*" id="hm-stf" hidden></div>' +
-      '<div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>';
+      '<div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>' +
+      '<p class="hm-h">THIS DEVICE</p><div class="hm-row"><button class="hm-btn" id="hm-hints">HINTS AGAIN</button><button class="hm-btn hm-wipe" id="hm-wipe">START AGAIN</button></div><p class="hm-note" id="hm-wipe-say" hidden>EVERYTHING MADE ON THIS DEVICE GOES: PRINTS, BOARDS, W.I.S.H.ES, SONGS, CABLES, SETTINGS. TAP START AGAIN ONCE MORE.</p>';
     $$('[data-mo]', body).forEach(function (b) { b.addEventListener('click', function () { MOTION = b.dataset.mo === 'own' ? null : b.dataset.mo; store.set('da.hm.motion', MOTION); find('style'); cards.forEach(function (el) { var c = byId(el.dataset.id); el.classList.remove('shadow', 'speed'); el.classList.add(MOTION || c.motion); }); $$('[data-mo]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); beep(550, 0.05); }); });
     $$('[data-dk]', body).forEach(function (b) { b.addEventListener('click', function () { setNight(b.dataset.dk === '1'); $$('[data-dk]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); }); });
     $$('[data-st]', body).forEach(function (b) { b.addEventListener('click', function () { var set = function (v) { store.set('da.hm.stories', v); $$('[data-st]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); receipt(); beep(550, 0.05); };
@@ -775,6 +776,13 @@
       w.addEventListener('change', function (e) { var k = e.target.dataset && e.target.dataset.k; if (!k) return; var o = store.get('da.sb.words', {}) || {}; o[k] = e.target.value.trim().toUpperCase().slice(0, 40); if (!o[k]) delete o[k]; store.set('da.sb.words', o); sbWords(); board(); });
       $('#hm-sbw0', w).addEventListener('click', function () { store.set('da.sb.words', {}); location.reload(); }); });
     $('#hm-rewire', body).addEventListener('click', function () { WIRES = START.slice(); saveWires(); board(); beep(440, 0.08); });
+    $('#hm-cxo', body).addEventListener('click', function () { var x = sb.querySelector('.ex'); if (x) x.click(); this.classList.toggle('on', CX.on); this.setAttribute('aria-pressed', String(CX.on)); });
+    /* the first-visit notes and hints, seen again */
+    $('#hm-hints', body).addEventListener('click', function () { ['da.hm.intro', 'da.sb.ghost', 'da.rb.guide', 'da.bench.tips', 'da.kinds.told', 'da.journey.v1'].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) { /* none */ } }); beep(523, 0.05); this.textContent = 'HINTS ON'; });
+    /* start again: asked once, then the whole site on this device */
+    var wipeT = 0; $('#hm-wipe', body).addEventListener('click', function () { var say = $('#hm-wipe-say', body);
+      if (!this.classList.contains('sure')) { this.classList.add('sure'); say.hidden = false; beep(220, 0.1); clearTimeout(wipeT); var b = this; wipeT = setTimeout(function () { b.classList.remove('sure'); say.hidden = true; }, 6000); return; }
+      beep(160, 0.2); if (NG.wipe) NG.wipe(); });
     keeperIn($('#hm-keeper', body));
     partners(true).then(function (l) { var ol = $('.hm-isles', body); if (ol) ol.innerHTML = l.length ? l.map(function (p) { return '<li class="' + (p.ready ? 'on' : '') + '"><i></i><span>' + esc(p.name || p.id) + (p.number ? ' · ' + p.number : '') + '</span></li>'; }).join('') : '<li>—</li>'; });
   }

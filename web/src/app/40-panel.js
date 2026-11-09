@@ -849,11 +849,15 @@ function viewPortfolio() {
 const sigLine = s => { const p = s.pin || {}; const L = linesOf(s); const act = L[L.length - 1] || s.threat || p.cn || p.n || '';
   return `<li><button type="button" class="sig-line${s.ex ? ' ex' : ''}" data-sig="${esc(s.key)}" data-tip="${esc([p.cn || p.n, s.threat].filter(Boolean).join(' · '))}">${sigArt(s)}<span class="hl">${esc(act)}</span><b class="mono code">${esc(s.code)}</b></button></li>`; };
 function openReceive(on) { const f = $('#rx'), b = $('#rx-open'); if (!f) return; f.hidden = !on; b.setAttribute('aria-expanded', String(on)); if (on) setTimeout(() => $('#rx-t').focus(), 30); }
-/* start again: everything made on this device cleared (the caches of what was fetched stay), then a fresh page */
-const KEEP_ON_RESET = /^da\.(obs|hist|tx|hg|wx|tiles|shared|partners|posts|kph|me|cfg)\b/;
+/* start again: the whole site on this device, not only this panel. Inside novel.global the page round it does it (so nothing it holds
+   is saved back); alone, the same here: saved keys, boards, kept prints, the offline copy, then a fresh page */
+const KEEP_ON_RESET = /^da\.(obs|hist|tx|hg|wx|tiles|kph|partners|posts|epoch)\b/;
 function resetAll() {
-  try { for (const k of Object.keys(localStorage)) if (/^da\./.test(k) && !KEEP_ON_RESET.test(k)) localStorage.removeItem(k); } catch (e) { /* no storage */ }
-  snd.tear(); setTimeout(() => location.reload(), 250);
+  snd.tear(); let top = null; try { top = window.top !== window && window.top.NG && window.top.NG.wipe ? window.top.NG : null; } catch (e) { /* elsewhere */ }
+  if (top) { setTimeout(() => top.wipe(), 200); return; } if (window.NG && window.NG.wipe) { setTimeout(() => window.NG.wipe(), 200); return; }
+  try { window.Storage.prototype.setItem = () => {}; for (const k of Object.keys(localStorage)) if (/^da\./.test(k) && !KEEP_ON_RESET.test(k)) localStorage.removeItem(k); } catch (e) { /* no storage */ }
+  for (const n of ['novelglobal', 'novelglobal-kept', 'novelglobal-research']) try { indexedDB.deleteDatabase(n); } catch (e) { /* none */ }
+  setTimeout(() => location.replace(location.origin + '/'), 350);
 }
 function bindPortfolio() {
   const art = (id, list) => { const host = $('#' + id); if (host) host.innerHTML = list.map(b => `<img src="${badgeImg(b, 30)}" alt="">`).join(''); };
@@ -866,7 +870,7 @@ function bindPortfolio() {
   $('#ix-devices').addEventListener('click', e => { const on = document.documentElement.classList.contains('plain'); e.currentTarget.setAttribute('aria-pressed', String(on)); store.set('da.devices.v2', on ? 1 : 0); document.documentElement.classList.toggle('plain', !on); });
   $('#ix-motion').addEventListener('click', e => { prefs.motion = !prefs.motion; e.currentTarget.setAttribute('aria-pressed', String(prefs.motion)); savePrefs(); document.documentElement.classList.toggle('still', reduced()); life.data(); tick(); });
   $('#ix-areas').addEventListener('click', e => { prefs.areas = !prefs.areas; e.currentTarget.setAttribute('aria-pressed', String(prefs.areas)); savePrefs(); life.redraw(); tick(); });
-  $('#ix-night').addEventListener('click', e => { prefs.night = !darkNow(); e.currentTarget.setAttribute('aria-pressed', String(prefs.night)); e.currentTarget.dataset.tip = `Day or night: ${prefs.night ? 'night' : 'day'} now`; const ic = e.currentTarget.querySelector('svg.i'); if (ic) ic.outerHTML = icon(prefs.night ? 'night' : 'day'); savePrefs(); applyNight(); tick(); });
+  $('#ix-night').addEventListener('click', e => { prefs.night = !darkNow(); e.currentTarget.setAttribute('aria-pressed', String(prefs.night)); e.currentTarget.dataset.tip = `Day or night: ${prefs.night ? 'night' : 'day'} now`; const ic = e.currentTarget.querySelector('svg.i'); if (ic) ic.outerHTML = icon(prefs.night ? 'night' : 'day'); savePrefs(); applyNight(); try { if (window.top !== window && window.top.HOME && window.top.HOME.night) window.top.HOME.night(prefs.night, true); } catch (e2) { /* alone */ } tick(); });
   $('#ix-printers').addEventListener('click', e => { prefs.printers = !prefs.printers; e.currentTarget.setAttribute('aria-pressed', String(prefs.printers)); savePrefs(); life.redraw(); tick(); });
   const hb = $('#ix-hidden'); if (hb) hb.addEventListener('click', () => { const n = HIDE.size; showAllHidden(); life.data(); hb.remove(); toast(`${n} SHOWN`); snd.pluck(0.3, 0); });
   $('#ix-sign').addEventListener('input', e => { S.me.by = e.target.value.trim(); store.set('da.me', S.me); });
