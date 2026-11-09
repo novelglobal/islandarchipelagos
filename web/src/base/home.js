@@ -7,6 +7,20 @@
   if (!H.classList.contains('aura-on') || (window.__LH && /[?&](aura|base)\b/.test(location.search))) return;
   H.classList.add('hm-on');
   var NG = window.NG || {}, AU = function () { return window.AURA || null; };
+  /* a browser's own bar floating over the foot of the page (Safari on a phone): the page stops above it, so nothing at the bottom is hidden */
+  (function () { var vv = window.visualViewport; if (!vv) return; var set = function () { var b = Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)); document.documentElement.style.setProperty('--hm-vvb', (b > 4 && b < 140 && vv.scale <= 1.01 ? b : 0) + 'px'); };
+    vv.addEventListener('resize', set); vv.addEventListener('scroll', set); addEventListener('orientationchange', set); set(); })();
+  /* a link on a card going out: a tentacle holds out where it goes, a thumb up to go, a thumb down to stay */
+  (function () { var box = null, go = null;
+    var shut = function () { if (box) { box.remove(); box = null; go = null; } };
+    document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('#hm-col a[href]'); if (!a || e.defaultPrevented) return; var u; try { u = new URL(a.href, location.href); } catch (er) { return; } if (u.origin === location.origin) return;
+      e.preventDefault(); e.stopPropagation(); shut(); go = u.href; box = document.createElement('div'); box.className = 'hm-tl'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Leaving for ' + u.hostname);
+      box.innerHTML = '<svg viewBox="0 0 40 60" aria-hidden="true"><path d="M20 0c-9 10 9 16 0 26s9 16 0 26"/></svg><span>' + u.hostname.replace(/^www[.]/, '').replace(/[<>&]/g, '') + '</span><button type="button" class="up" aria-label="Go">&#128077;</button><button type="button" class="dn" aria-label="Stay">&#128078;</button>';
+      var x = Math.max(12, Math.min(innerWidth - 212, e.clientX - 100)), y = Math.max(70, Math.min(innerHeight - 120, e.clientY - 20)); box.style.left = x + 'px'; box.style.top = y + 'px'; document.getElementById('hm').appendChild(box);
+      box.querySelector('.up').addEventListener('click', function (ev) { ev.stopPropagation(); var h = go; shut(); window.open(h, '_blank', 'noopener'); });
+      box.querySelector('.dn').addEventListener('click', function (ev) { ev.stopPropagation(); shut(); }); box.querySelector('.up').focus({ preventScroll: true }); }, true);
+    document.addEventListener('pointerdown', function (e) { if (box && !box.contains(e.target)) shut(); }, true);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); }); })();
   var store = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window */ } } };
   var RM = matchMedia('(prefers-reduced-motion: reduce)');
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -130,6 +144,10 @@
   var ORBIT = '<div class="st-orb" aria-hidden="true"><svg viewBox="-50 -50 100 100"><circle class="lp" r="40"/><circle class="lp2" r="40"/><path class="cv" transform="rotate(45) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(135) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(225) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(315) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><g class="st-nd n0" transform="translate(0 -40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M12 18V7M7.5 11.5L12 7l4.5 4.5M7 20h10"/></g></g><g class="st-nd n1" transform="translate(40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M14.6 5.2a3.8 3.8 0 0 0-4.9 4.9L5 14.8 7.2 17l4.7-4.7a3.8 3.8 0 0 0 4.9-4.9l-2.2 2.2-2.1-.4-.4-2.1z"/></g></g><g class="st-nd n2" transform="translate(0 40)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M17.5 9A6 6 0 1 0 18 14M18 5v4h-4"/></g></g><g class="st-nd n3" transform="translate(-40 0)"><circle r="7.4"/><g transform="scale(.42) translate(-12 -12)"><path d="M5.5 11.5L12 6l6.5 5.5M7.5 10.5V18h9v-7.5"/></g></g></svg>' +
     '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6.jpg"></i></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
+  /* a line in a made-up hand, written, crossed out, rubbed away, and another tried: the doubt before the poem, small, in the gap */
+  var ELV = '<svg class="hm-elv" viewBox="0 0 120 30" aria-hidden="true"><path class="e1" pathLength="1" d="M4 20c4-10 8-10 9-2s3 6 6-4 2-8 5 0c2 6 6 6 8-2M34 12c2 4 6 4 8 0s-2-6-4-2c-2 5 4 10 9 4M49 20c3-12 5-12 6-6 1 5 5 5 7-3"/>' +
+    '<path class="sc" pathLength="1" d="M2 16l10-6-6 10 14-9-8 11 16-10-9 11 17-11-10 12 18-10-8 9"/>' +
+    '<path class="e2" pathLength="1" d="M6 18c2-8 6-8 6-2s4 5 6-3c1-4 4-4 5 1M27 20c4-2 6-10 2-10s-3 9 3 9 5-6 8-6M46 18q4-10 7-2t7-1M64 20c2-6 7-6 6 0c-1 4 3 4 6-1M80 14c3 0 3 6 0 6s-3-6 1-6h6"/></svg>';
   var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
   /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
@@ -285,7 +303,6 @@
     if (!cv || !cv.isConnected) { cv = RS.cv = col.querySelector('.sk-radio .rd-sea'); RS.w = 0; if (RS.io) RS.io.disconnect(); if (!cv) return;
       if ('IntersectionObserver' in window) { RS.io = new IntersectionObserver(function (es) { RS.on = es[es.length - 1].isIntersecting; }); RS.io.observe(cv); } }
     if (!RS.on || xv.classList.contains('on')) return;
-    if (RS.song) songTick();
     var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
     if (w !== RS.w || h !== RS.h || RS.nt !== NIGHT) { RS.w = w; RS.h = h; RS.nt = NIGHT; RS.k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * RS.k); cv.height = Math.round(h * RS.k); RS.E = h / 1.4; RS.base = rsBase(w, h, RS.E);
       var r = rnd(305); RS.snow = []; for (var i = 0; i < 26; i++) RS.snow.push({ x: r() * w, y: r() * RS.E, r: 0.5 + r() * 1.1, v: 2 + r() * 4, p: r() * 7 }); RS.drawn = false; }
@@ -477,7 +494,7 @@
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
-      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
+      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'wish' || sk === 'research' ? ELV : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
   }
   /* each card painted to its own size; again when the size changes */
   function paint(el) {
@@ -578,7 +595,7 @@
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'portfolio') { return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
-    if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print&fmt=long#print'));
+    if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
@@ -1480,6 +1497,8 @@
     if (wide) jx.clearRect(0, 0, jcv.width, jcv.height); else jx.clearRect(Math.floor((jr.left - rr.left) * dpr) - 1, Math.floor((jr.top - rr.top) * dpr) - 1, Math.ceil(jr.width * dpr) + 2, Math.ceil(jr.height * dpr) + 2);
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
     if (sheet) return;
+    /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself */
+    if (RS.song && !away) songTick();
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
     if (CX.on && !away) cxDraw(t, RM.matches ? 0 : dt);

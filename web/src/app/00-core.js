@@ -111,6 +111,8 @@ const savePrefs = () => store.set('da.prefs', prefs);
 /* the first visit is one simple way through, gate by gate (43-journey.js): 0 the map, 1 the radio, 2 W.I.S.H., 3 PRINT, 4 done.
    A device that has been here before has done it */
 const IN_AURA = window.parent !== window && /[?&]from=aura\b/.test(location.search);
+/* the aura itself up behind this window (its poster takes the print); opened from the home's cards it sleeps, and a print goes to a printer */
+const auraUp = () => { if (!IN_AURA) return false; try { const a = window.parent.AURA; return !!(a && (!a.awake || a.awake())); } catch (e) { return false; } };
 /* a sound of this window's own (a call, a recording, a voice): the home's radio waits under it */
 function tellSound(on, k) { if (IN_AURA) try { window.parent.postMessage({ ng: 'sound', on: !!on, k: k }, location.origin); } catch (e) { /* alone */ } }
 /* the one device the aura opened this window for: its page, and no other */

@@ -307,6 +307,8 @@ async function zineTool(k) {
     const look = { fontFamily: fc.f, fontStyle: fc.st || 'normal' }; if (window.fabric.util.clearFabricFontCache) window.fabric.util.clearFabricFontCache();
     if (again) { sel.set({ ...look, fontSize: k === 'head' ? Math.round(W / 7.5 * (fc.k > 1.2 ? 0.9 : 1)) : Math.round(13 * fc.k) }); sel.initDimensions && sel.initDimensions(); }
     else if (k === 'text') { const t = new f.Textbox(words() || '…', { left: x, top: y, width: W * 0.6, ...look, fontSize: Math.round(13 * fc.k), fill: ZCOL, daKind: 'text' }); c.add(t); c.setActiveObject(t); }
+    /* on the long strip the words run down it sideways, big and white, an edge of ink round them so the paper still shows them */
+    else if (FORMATS[PRESS.fmt].long) { const H = c.getHeight(), t = new f.Textbox((words() || '★').toUpperCase(), { left: W - 10, top: Math.max(12, y), width: Math.max(200, H - 40), ...look, fontSize: Math.round(W / 3.4), lineHeight: 0.86, angle: 90, fill: '#FFFFFF', stroke: '#0C0E0E', strokeWidth: Math.max(2, Math.round(W / 90)), paintFirst: 'stroke', daKind: 'head' }); c.add(t); c.setActiveObject(t); }
     else { const t = new f.Textbox((words() || '★').toUpperCase(), { left: 12, top: y, width: W - 24, ...look, fontSize: Math.round(W / 7.5 * (fc.k > 1.2 ? 0.9 : 1)), lineHeight: 0.9, fill: ZCOL, daKind: 'head' }); c.add(t); c.setActiveObject(t); }
   }
   if (k === 'stk') { const ks = ['jelly', 'life', 'zone', 'goth', 'witch', 'ink', 'turtle']; const pk = PACKS_ALL[ks[Math.floor(Math.random() * ks.length)]]; const st = pk[Math.floor(Math.random() * pk.length)]; placeOnPage(sticker({ ...st, col: ZCOL }), 'sticker', st.j ? 90 : 70, false, stickerColour(st)); if (st.j) snd.jelly(0.3); return; }
@@ -639,7 +641,7 @@ async function pressOut(k, given) {
   if (k === 'send' && !given && !s && zc && !zc.getObjects().length) { tick(600); return; }
   const out = given || await stripOut(); if (!out) return; const { url, F } = out; const SW = out.w || F.w, SH = out.h || 520;
   /* inside the aura the strip goes onto the poster there; printing is the aura's own last step */
-  if (IN_AURA && !given && (k === 'send' || k === 'print')) { const cs = await colourStrip(s, 4).catch(() => null); toAura(cs ? cs.toDataURL('image/png') : url, false); tick(1800); return; }
+  if (auraUp() && !given && (k === 'send' || k === 'print')) { const cs = await colourStrip(s, 4).catch(() => null); toAura(cs ? cs.toDataURL('image/png') : url, false); tick(1800); return; }
   if (!given && ['print', 'send', 'png', 'escpos', 'oled', 'mesh'].includes(k)) keepExport(out, s && s.code);
   /* the paper is torn off at 1.5 s; the tear is heard then, not when the network answers */
   const tearAt = performance.now() + (reduced() ? 0 : 1500);
@@ -680,7 +682,7 @@ async function pressOut(k, given) {
     else if (faceOf(2) === 'front' && S.view === 2) { setView(3); if (phone()) setPane('page'); }
   }
 }
-$('#zine').addEventListener('click', e => { const lg = e.target.closest('[data-zlong]'); if (lg) { setFormat(PRESS.fmt === 'long' ? 'r80' : 'long'); lg.setAttribute('aria-pressed', String(PRESS.fmt === 'long')); return; } const b = e.target.closest('[data-zt]'); if (b) { zineTool(b.dataset.zt); return; } const ink = e.target.closest('[data-ink]'); if (ink) { setInk(ink.dataset.ink); snd.tick(1300); } });
+$('#zine').addEventListener('click', e => { const lg = e.target.closest('[data-zlong]'); if (lg) { setFormat(PRESS.fmt === 'long' ? 'r80' : 'long'); lg.setAttribute('aria-pressed', String(PRESS.fmt === 'long')); if (PRESS.fmt === 'long') { toast('A WIDE PHOTO RUNS DOWN THE STRIP'); const f = $('#zine-file'); if (f) f.click(); } return; } const b = e.target.closest('[data-zt]'); if (b) { zineTool(b.dataset.zt); return; } const ink = e.target.closest('[data-ink]'); if (ink) { setInk(ink.dataset.ink); snd.tick(1300); } });
 $('#zine').addEventListener('change', e => {
   const fl = e.target.files && e.target.files[0]; if (!fl || e.target.id !== 'zine-file') return;
   const rd = new FileReader(); rd.onload = () => { const im = new Image(); im.onload = async () => { const LG = FORMATS[PRESS.fmt].long, turn = LG && im.width > im.height, k = Math.min(1, (LG ? 2400 : 1200) / Math.max(im.width, im.height)); const t = document.createElement('canvas'), iw = Math.round(im.width * k), ih = Math.round(im.height * k); t.width = turn ? ih : iw; t.height = turn ? iw : ih; const tx = t.getContext('2d'); if (turn) { tx.translate(ih, 0); tx.rotate(Math.PI / 2); } tx.drawImage(im, 0, 0, iw, ih);

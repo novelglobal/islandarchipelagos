@@ -143,6 +143,7 @@
   /* ───── the boards: several, named, each kept ───── */
   function openBoard(id) { at = id; keepList(); var b = LIST.filter(function (x) { return x.id === id; })[0]; $('#bname').textContent = b ? b.n : 'BOARD';
     HIST = []; key('undo').disabled = true; tx('readonly', function (s) { return s.get(id); }).then(function (r) { load(r && r.objects, function () { var has = r && (r.objects || []).length; if (r && r.v && r.v[0] <= Z0) { cv.setViewportTransform(r.v); grid(); } else if (has) fit(Z0); else { cv.setViewportTransform([Z0, 0, 0, Z0, cv.getWidth() / 2 - 160 * Z0, cv.getHeight() * 0.3]); grid(); }
+      BOARD_IN = true; poemLines();
       if (!has && !LIST.some(function (b) { return b.id !== id; }) && !WISH) { FRESH = true; setTimeout(function () { peek(function () { starter(); kitsShow(true); }); }, 300); } }); }).catch(function () { load([]); }); }
   function newBoard() { var n = 'BOARD ' + String(LIST.length + 1).padStart(2, '0'), id = uid(); LIST.push({ id: id, n: n, t: Date.now() }); keepList(); openBoard(id); }
   $('#bname').addEventListener('click', function (e) { e.stopPropagation(); var m = $('#menu'); if (!m.hidden) { m.hidden = true; return; }
@@ -212,8 +213,16 @@
     parts.push(new F.Textbox(String(words || '').toUpperCase(), { left: 24, top: 24, width: img ? 470 : 672, fontSize: 44, lineHeight: .95, fontFamily: 'Archivo Narrow', fontWeight: 600, fill: INK }));
     var g = new F.Group(parts, { left: -40, top: -40, selectable: false, evented: false, daKind: 'tpl', daId: 'tpl', excludeFromExport: false });
     cv.add(g); cv.sendToBack(g); key('form').hidden = false;
+    /* the poem's four lines come with it, each a note on its rule, strung one to the next, the first open for typing */
     if (img) F.Image.fromURL(img, function (im) { if (!im || !im.width) return; var k = Math.min(180 / im.width, 180 / im.height); im.set({ left: -40 + 720 - 24 - im.width * k, top: -16, scaleX: k, scaleY: k, selectable: false, evented: false, daKind: 'tpl' }); cv.add(im); cv.sendToBack(im); cv.sendToBack(g); cv.requestRenderAll(); });
     cv.requestRenderAll();
+    if (BOARD_IN) poemLines();
+  }
+  var BOARD_IN = false;
+  function poemLines() { if (!cv.getObjects().some(function (o) { return o.daKind === 'tpl'; })) return;
+    var on = cv.getObjects().filter(function (o) { if (o.daKind !== 'note') return false; var c = o.getCenterPoint(); return c.x > -40 && c.x < 680 && c.y > 170 && c.y < 960; });
+    if (!on.length) { var prev = null, first = null; [2, 1, 4, 0].forEach(function (ci, i) { var n = note('', 150, 232 + i * 176); n.set({ width: 480 }); n.daC = ci; n.set({ backgroundColor: NOTES[ci][0], fill: NOTES[ci][1] }); if (prev) join(prev, n); prev = n; if (!first) first = n; });
+      setTimeout(function () { fit(Z0); cv.setActiveObject(first); first.enterEditing(); if (first.hiddenTextarea) first.hiddenTextarea.focus({ preventScroll: true }); cv.requestRenderAll(); }, 120); }
   }
   addEventListener('message', function (e) { if (e.origin !== location.origin || !e.data || e.data.hm !== 'form') return; form(e.data.words, e.data.img); if (!cv.getObjects().some(function (o) { return o.daKind && o.daKind !== 'tpl'; })) setTimeout(function () { fit(Z0); }, 80); });
   if (WISH) { form('', ''); setTimeout(function () { if (!cv.getObjects().some(function (o) { return o.daKind && o.daKind !== 'tpl'; })) fit(Z0); }, 400); }
