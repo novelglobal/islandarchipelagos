@@ -134,10 +134,13 @@
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
   /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
   var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><filter id="zn-sp" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale=".7" result="d"/><feGaussianBlur in="d" stdDeviation=".7" result="h"/><feComponentTransfer in="h" result="hz"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feGaussianBlur in="d" stdDeviation=".1" result="e"/><feMerge><feMergeNode in="hz"/><feMergeNode in="e"/></feMerge></filter><filter id="zn-mk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale=".9"/></filter><mask id="zn-bm" maskUnits="userSpaceOnUse" x="58" y="50" width="32" height="32"><circle cx="74" cy="60.8" r="6.6" fill="#fff" stroke="none"/><circle cx="78.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="69.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="74" cy="58.9" r="4.7" fill="#000" stroke="none"/><circle cx="80.15" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="67.85" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="74" cy="66" r="5.3" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="74" cy="66" r="2.3" fill="#000" stroke="none"/><path d="M74 64L74 61.4" stroke="#000" stroke-width=".9"/><path d="M75.73 67L77.98 68.3" stroke="#000" stroke-width=".9"/><path d="M72.27 67L70.02 68.3" stroke="#000" stroke-width=".9"/></mask></defs>' +
+    '<path pathLength="1" class="o" style="--d:.5s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
     '<g class="gf" filter="url(#zn-sp)">' +
     '<g transform="translate(24 74) scale(.58) translate(-31.5 -74)"><path pathLength="1" class="mk" style="--d:0s" filter="url(#zn-mk)" d="M35.27 62.72 L37.36 63.19 L39.28 64.17 L40.82 65.65 L41.87 67.47 L42.47 69.43 L42.81 71.38 L43.06 73.29 L43.27 75.24 L43.31 77.28 L42.97 79.36 L42.08 81.32 L40.63 82.94 L38.78 84.11 L36.76 84.87 L34.73 85.37 L32.72 85.78 L30.67 86.13 L28.51 86.33 L26.28 86.15 L24.14 85.43 L22.31 84.14 L20.92 82.43 L19.95 80.51 L19.25 78.57 L18.65 76.63 L18.1 74.65 L17.73 72.55 L17.75 70.35 L18.36 68.2 L19.58 66.31 L21.28 64.82 L23.22 63.71 L25.22 62.86 L27.22 62.11 L29.28 61.41 L31.48 60.89 L33.8 60.75 L36.12 61.18 L38.21 62.22 L39.93 63.76 M21.5 88.5L30.6 59.2L40.8 89 M15.5 78.2Q31 75.5 47.5 76.4"/></g>' +
     '<g transform="translate(63 66) scale(.6) translate(-74 -66)"><g class="bz" style="--d:3s"><rect x="58" y="50" width="32" height="32" fill="#0A0A0A" stroke="none" mask="url(#zn-bm)" transform="translate(1.1 1.1)"/><rect x="58" y="50" width="32" height="32" fill="#FF2BD6" stroke="none" mask="url(#zn-bm)"/></g></g>' +
+    '<g transform="translate(32 103) scale(.5) translate(-35 -110)"><path pathLength="1" class="b dm" style="--d:3.5s" d="M12 101L17 101L21 106L17 111L12 111z M14 97.5V114.5 M28.5 101L33 106L28.5 111L24 106z M28.5 101v-3.5M28.5 111v3.5M24 106h-2.5M33 106h2.5 M40.5 101L45 106L40.5 111L36 106z M40.5 101v-3.5M40.5 111v3.5M36 106h-2.5M45 106h2.5 M48 111V101L52.5 107L57 101V111 M48 101l-1.6 -3.4M57 101l1.6 -3.4M48 111l-1.2 3.4M57 111l1.2 3.4 M8 118L62 117.4 M18 117.9v3.4M31 117.8v5M43 117.6v2.2M55 117.5v4.2"/></g>' +
     '<g transform="translate(60 97) scale(.55) translate(-31 -140)"><path pathLength="1" class="pg" style="--d:6s" d="M31 150 L24.53 130.1 L41.46 142.4 L20.54 142.4 L37.47 130.1 L31 150 M42 139A11 11 0 1 1 20 139A11 11 0 1 1 42 139 M43.9 139A12.9 12.9 0 1 1 18.1 139A12.9 12.9 0 1 1 43.9 139 M27.88 151.52L26.09 154.12L26.17 150.96M21.12 147.29L19.19 147.58L20.06 145.84M18.13 139.9L15.1 139L18.13 138.1M20.06 132.16L19.19 130.42L21.12 130.71M26.17 127.04L26.09 123.88L27.88 126.48M34.12 126.48L35.51 125.11L35.83 127.04M40.88 130.71L43.86 129.65L41.94 132.16M43.87 138.1L45.6 139L43.87 139.9M41.94 145.84L43.86 148.35L40.88 147.29M35.83 150.96L35.51 152.89L34.12 151.52 M27 151.4v3M33.5 151.7v5"/></g>' +
+    '<path pathLength="1" class="dr" style="--d:6.5s" d="M18.6 82.6v3.4M28.4 83.2v2.2M32.6 81.6v4.6M22 115.2v3M30.4 114.8v4.4M41.2 115.2v2.4"/><path pathLength="1" class="dr p" style="--d:6.8s" d="M58.6 74.8v3.8M66.2 75.4v2.2"/></g>' +
     '</svg>';
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
@@ -186,19 +189,20 @@
   function scrapBuoy(g, u, t, sw, heat) {
     var RU = '#8C4A26', RL = '#C77A48', VG = '#6FA595', RP = '#B9A47A', TP = '#CDBD8C', PL = '#DCD6C4';
     g.lineCap = 'round'; g.lineJoin = 'round';
-    /* the flag: a black rag on a driftwood staff, flying off the can, a skull and crossed bones on it */
-    var fx = 26 * u, fy = -90 * u, FW = 46 * u, FH = 25 * u, N = 14, wv = function (k) { return Math.sin(t * 2.1 - k * 0.6) * k / N * 3.6 * u + Math.sin(t * 3.3 - k * 1.1) * k / N * 1.2 * u; };
-    g.strokeStyle = '#8A6A44'; g.lineWidth = 1.7 * u; hand(g, [[15 * u, -4 * u], [21 * u, -50 * u], [fx, fy - 2 * u]], 420);
+    /* the banner: a long strip of black cloth on a driftwood staff, flying off the can, the card's name set along it */
+    var fx = 26 * u, fy = -64 * u, FW = Math.max(60 * u, Math.min(118 * u, (RS.w || 300) * 0.62 - fx - 8)), FH = 13 * u, N = 24, wv = function (k) { return Math.sin(t * 1.9 - k * 0.42) * k / N * 3.2 * u + Math.sin(t * 3.1 - k * 0.9) * k / N * 0.9 * u; }, dy = function (k) { return k / N * 3 * u; };
+    g.strokeStyle = '#8A6A44'; g.lineWidth = 1.7 * u; hand(g, [[15 * u, -4 * u], [21 * u, -50 * u], [fx, fy - 3 * u]], 420);
     g.fillStyle = '#121212'; g.beginPath(); g.moveTo(fx, fy);
-    for (var k = 1; k <= N; k++) g.lineTo(fx + FW * k / N, fy + wv(k) + k / N * 2.4 * u);
-    for (var k2 = N; k2 >= 0; k2--) g.lineTo(fx + FW * k2 / N - (k2 === N ? 0 : 0) , fy + FH + wv(k2) + k2 / N * 1.2 * u + (k2 > N - 3 ? (k2 % 2 ? -2.6 : 1.4) * u : 0));
-    g.closePath(); g.fill(); g.strokeStyle = 'rgba(241,240,236,.25)'; g.lineWidth = 0.5 * u; g.stroke();
-    var sk = 6, scx = fx + FW * sk / N, scy = fy + FH * 0.46 + wv(sk) + sk / N * 1.8 * u, ss = u * 1.05;
-    g.save(); g.translate(scx, scy); g.rotate(Math.sin(t * 2.1 - sk * 0.6) * 0.08); g.strokeStyle = '#ECE7D8'; g.lineWidth = 1.5 * ss; g.beginPath(); g.moveTo(-7 * ss, 3 * ss); g.lineTo(7 * ss, 9 * ss); g.moveTo(7 * ss, 3 * ss); g.lineTo(-7 * ss, 9 * ss); g.stroke();
-    [[-7, 3], [7, 9], [7, 3], [-7, 9]].forEach(function (b) { g.fillStyle = '#ECE7D8'; g.beginPath(); g.arc(b[0] * ss, b[1] * ss - 0.8 * ss, 1.1 * ss, 0, 7); g.arc(b[0] * ss, b[1] * ss + 0.8 * ss, 1.1 * ss, 0, 7); g.fill(); });
-    g.fillStyle = '#ECE7D8'; g.beginPath(); g.arc(0, -2.4 * ss, 5 * ss, 0, 7); g.fill(); g.fillRect(-2.8 * ss, 1 * ss, 5.6 * ss, 3 * ss);
-    g.fillStyle = '#121212'; [-1.9, 1.9].forEach(function (e) { g.beginPath(); g.arc(e * ss, -2.4 * ss, 1.3 * ss, 0, 7); g.fill(); }); g.beginPath(); g.moveTo(0, -0.6 * ss); g.lineTo(-0.7 * ss, 0.6 * ss); g.lineTo(0.7 * ss, 0.6 * ss); g.fill();
-    g.fillRect(-1.3 * ss, 2.4 * ss, 0.5 * ss, 1.6 * ss); g.fillRect(0.8 * ss, 2.4 * ss, 0.5 * ss, 1.6 * ss); g.restore();
+    for (var k = 1; k <= N; k++) g.lineTo(fx + FW * k / N, fy + wv(k) + dy(k));
+    g.lineTo(fx + FW - 7 * u, fy + FH / 2 + wv(N - 1) + dy(N));
+    for (var k2 = N; k2 >= 0; k2--) g.lineTo(fx + FW * k2 / N, fy + FH + wv(k2) + dy(k2) * 0.8);
+    g.closePath(); g.fill();
+    var ttl = String(((typeof byId === 'function' && byId('radio')) || {}).title || 'DIRECT ACTION RADIO').toUpperCase(), n = ttl.length, x0 = fx + 3 * u, span = FW - 12 * u, fs = Math.min(FH * 0.68, span / n * 1.75);
+    g.font = '600 ' + fs.toFixed(1) + 'px "Archivo Narrow", Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    var tw = g.measureText(ttl).width, sc = Math.min(1, span / tw), cx0 = x0 + (span - tw * sc) / 2, last = ttl.lastIndexOf(' ');
+    for (var ci = 0, acc = 0; ci < n; ci++) { var ch = ttl[ci], cw = g.measureText(ch).width * sc, lx2 = cx0 + acc + cw / 2, kk = (lx2 - fx) / FW * N; acc += cw; if (ch === ' ') continue;
+      var sl = (wv(kk + 0.5) - wv(kk - 0.5)) / (FW / N); g.save(); g.translate(lx2, fy + FH / 2 + wv(kk) + dy(kk) * 0.9); g.rotate(Math.atan(sl)); g.scale(sc, 1); g.fillStyle = ci > last ? '#FF6B1A' : '#F1F0EC'; g.fillText(ch, 0, 0); g.restore(); }
+    g.textAlign = 'start'; g.textBaseline = 'alphabetic';
     /* a rope down to a brick */
     g.strokeStyle = RP; g.lineWidth = 0.9 * u; hand(g, [[0, 8 * u], [-1.2 * u, 15 * u], [-0.6 * u, 22 * u]], 401);
     g.fillStyle = '#8E4A32'; g.save(); g.translate(-0.6 * u, 24 * u); g.rotate(0.08); g.fillRect(-4.5 * u, -2 * u, 9 * u, 4 * u); g.strokeStyle = 'rgba(230,220,200,.5)'; g.lineWidth = 0.4 * u; g.beginPath(); g.moveTo(-4.5 * u, 0); g.lineTo(4.5 * u, 0); g.moveTo(0, -2 * u); g.lineTo(0, 0); g.stroke(); g.restore();
