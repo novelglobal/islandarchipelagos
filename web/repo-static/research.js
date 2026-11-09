@@ -62,7 +62,7 @@
   function join(a, b) { var was = cv.getObjects('line').filter(function (l) { return (l.daFrom === a.daId && l.daTo === b.daId) || (l.daFrom === b.daId && l.daTo === a.daId); })[0]; if (was) { cv.remove(was); return; }
     var ca = a.getCenterPoint(), cb = b.getCenterPoint(), l = new F.Line([ca.x, ca.y, cb.x, cb.y], { stroke: INK, strokeWidth: 3, selectable: false, evented: true, hoverCursor: 'pointer', daId: uid(), daKind: 'link', daFrom: a.daId, daTo: b.daId });
     cv.add(l); cv.sendToBack(l); cv.getObjects().filter(function (o) { return o.daKind === 'tpl'; }).forEach(function (o) { cv.sendToBack(o); }); }
-  cv.on('text:editing:exited', function (e) { var o = e.target; if (o && o.daKind === 'sect' && !String(o.text || '').trim()) { cv.remove(o); cv.requestRenderAll(); } });
+  cv.on('text:editing:exited', function (e) { var o = e.target; if (o && o.daStart) { o.daStart = false; if (GUIDE_AFTER) { GUIDE_AFTER = false; setTimeout(function () { guide(0); }, 900); } } if (o && (o.daKind === 'sect' || o.daStart) && !String(o.text || '').trim()) { cv.remove(o); cv.requestRenderAll(); } });
   cv.on('object:moving', follow); cv.on('object:scaling', follow); cv.on('object:rotating', follow);
 
   /* ───── tools ───── */
@@ -143,7 +143,7 @@
   /* ───── the boards: several, named, each kept ───── */
   function openBoard(id) { at = id; keepList(); var b = LIST.filter(function (x) { return x.id === id; })[0]; $('#bname').textContent = b ? b.n : 'BOARD';
     HIST = []; key('undo').disabled = true; tx('readonly', function (s) { return s.get(id); }).then(function (r) { load(r && r.objects, function () { var has = r && (r.objects || []).length; if (r && r.v && r.v[0] <= Z0) { cv.setViewportTransform(r.v); grid(); } else if (has) fit(Z0); else { cv.setViewportTransform([Z0, 0, 0, Z0, cv.getWidth() / 2 - 160 * Z0, cv.getHeight() * 0.3]); grid(); }
-      if (!has && !LIST.some(function (b) { return b.id !== id; }) && !WISH) setTimeout(function () { kitsShow(true); }, 700); }); }).catch(function () { load([]); }); }
+      if (!has && !LIST.some(function (b) { return b.id !== id; }) && !WISH) { FRESH = true; setTimeout(function () { peek(function () { starter(); kitsShow(true); }); }, 300); } }); }).catch(function () { load([]); }); }
   function newBoard() { var n = 'BOARD ' + String(LIST.length + 1).padStart(2, '0'), id = uid(); LIST.push({ id: id, n: n, t: Date.now() }); keepList(); openBoard(id); }
   $('#bname').addEventListener('click', function (e) { e.stopPropagation(); var m = $('#menu'); if (!m.hidden) { m.hidden = true; return; }
     m.innerHTML = LIST.map(function (b) { return '<button type="button" data-b="' + b.id + '" class="' + (b.id === at ? 'on' : '') + '">' + b.n.replace(/[<>&]/g, '') + '</button>'; }).join('') + '<hr><button type="button" data-b="+">NEW BOARD</button><button type="button" data-b="rn">RENAME</button>' + (LIST.length > 1 ? '<button type="button" data-b="x">TAKE THIS BOARD AWAY</button>' : '');
@@ -167,7 +167,7 @@
   $('#prgo').addEventListener('click', function () { var b = this, st = $('#prst'), u = picture(1024); if (!u) return empty(); if (!NG || !NG.printAgain) return here(u); b.disabled = true; try { NG.store.set('da.base.printer', $('#prto').value); } catch (e) { /* first on */ }
     st.innerHTML = NG.pips ? NG.pips('sending') : '…'; NG.printAgain(u, 'board').then(function (s) { st.innerHTML = NG.pips ? NG.pips(s) : s; }).catch(function (e) { st.innerHTML = NG.pips ? NG.pips(e && e.status ? 'failed' : 'outbox') : '✕'; }).then(function () { b.disabled = false; }); });
 
-  /* ───── quick starts: a card drawn at random, a fan of sideways moves, found pictures, three questions, the three steps, the form ───── */
+  /* ───── quick starts: a card drawn at random, a fan of sideways moves, found pictures, three questions, the three steps, the poem ───── */
   var DECK = ['WORK FROM THE EDGE IN', 'WHAT WOULD THE SEA DO', 'MAKE IT SMALLER, THEN SMALLER', 'ASK WHO CLEANS IT UP', 'USE WHAT IS ALREADY HERE', 'TURN IT UPSIDE DOWN', 'GIVE IT TO A STRANGER', 'FIND THE QUIETEST VERSION', 'REPAIR BEFORE YOU REPLACE', 'DRAW IT WITH YOUR OTHER HAND', 'WHO IS MISSING FROM THE ROOM', 'LEAVE A GAP ON PURPOSE', 'MAKE ONE, THEN MAKE TEN', 'FOLLOW THE WASTE', 'HALVE THE SPEED', 'MAKE IT LAST A HUNDRED YEARS', 'START WITH THE ENDING', 'LISTEN BEFORE YOU MAKE', 'PRINT IT AND PIN IT UP', 'BORROW A TOOL', 'NAME WHAT YOU ARE AVOIDING', 'THE MISTAKE IS THE MAP', 'TAKE ONE THING AWAY', 'ASK THE OLDEST PERSON YOU KNOW', 'LET THE WEATHER DECIDE', 'WALK IT AROUND THE BLOCK'];
   var FOUNDP = ['found-pigeon', 'found-puddle', 'found-lora', 'found-dog', 'found-grille', 'found-gutter', 'found-cooler', 'found-tap', 'ref-moa', 'ref-cathaya', 'ref-cells', 'ref-coast', 'chair-1', 'chair-3', 'chair-5', 'chair-7', 'chair-9'];
   function kitsShow(on) { var k = $('#kits'); k.hidden = !on; key('kits').setAttribute('aria-pressed', String(!!on)); }
@@ -183,7 +183,27 @@
     else if (k === 'form') { form('', ''); key('form').setAttribute('aria-pressed', 'true'); setTimeout(function () { fit(Z0); }, 60); }
     cv.requestRenderAll(); });
 
-  /* ───── wired to W.I.S.H.: its form is the ground the board is built on ───── */
+  /* ───── a first board: a glimpse of a whole one (a strategy loop and a board of blocks, squiggles for words), then a note open for typing ───── */
+  var FRESH = false, GUIDE_AFTER = false;
+  function peek(done) {
+    var gd = D.getElementById('guide'); if (gd) { gd.remove(); GUIDE_AFTER = true; }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { done(); return; }
+    var sq = function (x, y, w, a) { var d = 'M' + x + ' ' + y, n = Math.max(2, Math.round(w / 9)), s = w / n; for (var i = 0; i < n; i++) d += ' q' + (s / 2) + ' ' + (i % 2 ? a : -a) + ' ' + s + ' 0'; return '<path class="sq" d="' + d + '"/>'; };
+    var blk = function (x, y, w, h, bg, fg, k, i) { var g = '<g class="b" style="--i:' + i + '"><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + bg + '"/>'; for (var l = 0; l < k; l++) g += sq(x + 8, y + 12 + l * 9, w - 16 - (l === k - 1 ? w * 0.3 : 0), 2.2).replace('class="sq"', 'class="sq" stroke="' + fg + '"'); return g + '</g>'; };
+    var loop = '<g class="b" style="--i:0"><circle cx="78" cy="150" r="52" class="ln"/>' + [0, 1, 2, 3].map(function (k) { var a = k * Math.PI / 2 - Math.PI / 4, x = 78 + 52 * Math.cos(a), y = 150 + 52 * Math.sin(a), c = [LIME, BLUE, CORAL, INK][k]; return '<rect x="' + (x - 9) + '" y="' + (y - 9) + '" width="18" height="18" fill="' + c + '"/><path class="ln" d="M' + (78 + 52 * Math.cos(a + 0.55)) + ' ' + (150 + 52 * Math.sin(a + 0.55)) + 'l' + (6 * Math.cos(a + 0.55 + 2.4)) + ' ' + (6 * Math.sin(a + 0.55 + 2.4)) + '"/>'; }).join('') + sq(54, 150, 48, 3).replace('class="sq"', 'class="sq" stroke="' + INK + '"') + '</g>';
+    var pic = '<g class="b" style="--i:5"><rect x="250" y="168" width="84" height="66" fill="' + WHITE + '"/><rect x="256" y="174" width="72" height="44" fill="#BFC3C4"/><circle cx="312" cy="186" r="6" fill="' + PAPER + '"/><path d="M256 218l20-18 14 10 12-8 26 16z" fill="#8E9496"/>' + sq(258, 226, 50, 1.6).replace('class="sq"', 'class="sq" stroke="' + INK + '"') + '</g>';
+    var wires = '<g class="w"><path d="M130 150C150 150 150 92 168 92"/><path d="M130 150C150 150 150 208 168 208"/><path d="M236 108C246 108 244 150 250 196"/><path d="M236 214C242 214 244 210 250 206"/></g>';
+    var svg = '<svg viewBox="0 0 360 300" aria-hidden="true">' + '<g class="b" style="--i:1"><rect x="168" y="38" width="140" height="22" fill="' + INK + '"/>' + sq(176, 49, 96, 3).replace('class="sq"', 'class="sq" stroke="' + PAPER + '"') + '</g>' +
+      loop + wires + blk(168, 72, 68, 54, BLUE, '#F1F0EC', 3, 2) + blk(168, 140, 64, 44, LIME, INK, 2, 3) + blk(168, 196, 68, 46, CORAL, INK, 3, 4) + blk(250, 74, 84, 80, WHITE, INK, 5, 4) + pic +
+      '<path class="pen" d="M28 252c18-14 34 10 52-2s26-16 40 2 30 6 44-6"/></svg>';
+    var el = D.createElement('div'); el.id = 'peek'; el.innerHTML = svg; D.body.appendChild(el);
+    var gone = false, end = function () { if (gone) return; gone = true; el.classList.add('out'); setTimeout(function () { el.remove(); done(); }, 520); };
+    el.addEventListener('pointerdown', end); setTimeout(end, 2800);
+  }
+  /* the first note: in the middle, open, the caret in it; a touch and the keys are all it takes */
+  function starter() { if (cv.getObjects().some(function (o) { return o.daKind !== 'tpl'; })) return; var c = seen(), n = tint(note('', c.x - 100, c.y - 40), 2); n.daStart = true; cv.setActiveObject(n); look(n); n.enterEditing(); if (n.hiddenTextarea) n.hiddenTextarea.focus({ preventScroll: true }); cv.requestRenderAll(); }
+
+  /* ───── wired to W.I.S.H.: its poem is the ground the board is built on ───── */
   function form(words, img) {
     cv.getObjects().filter(function (o) { return o.daKind === 'tpl'; }).forEach(function (o) { cv.remove(o); });
     var parts = [new F.Rect({ left: 0, top: 0, width: 720, height: 1000, fill: '#FFFFFF', stroke: INK, strokeWidth: 2 }), new F.Rect({ left: 0, top: 210, width: 720, height: 5, fill: INK })];
@@ -213,5 +233,5 @@
     var tx = r ? r.left + r.width / 2 : W / 2, ty = r ? r.top - 6 : Hh * 0.5, sx = Math.min(W - 40, Math.max(40, W * 0.5)), sy = Hh * 0.42;
     g.innerHTML = '<svg width="' + W + '" height="' + Hh + '">' + (r ? '<path d="M' + sx + ' ' + (sy + 34) + ' Q' + ((sx + tx) / 2 + 40) + ' ' + ((sy + ty) / 2) + ' ' + tx + ' ' + ty + '"/><path d="M' + (tx - 9) + ' ' + (ty - 14) + ' L' + tx + ' ' + ty + ' L' + (tx + 11) + ' ' + (ty - 12) + '"/>' : '<path d="M' + (W / 2 - 70) + ' ' + (sy + 70) + ' l40 -30 M' + (W / 2 + 70) + ' ' + (sy + 70) + ' l-40 -30"/><circle cx="' + (W / 2 - 74) + '" cy="' + (sy + 74) + '" r="12"/><circle cx="' + (W / 2 + 74) + '" cy="' + (sy + 74) + '" r="12"/>') + '</svg>' +
       '<p style="top:' + (sy - 30) + 'px">' + TIPS[i][1] + '</p><b>' + (i + 1) + ' / ' + TIPS.length + '</b>'; }
-  try { if (!/[?&]in=1/.test(location.search) && !localStorage.getItem('da.rb.guide')) setTimeout(function () { guide(0); }, 500); } catch (e) { /* no storage */ }
+  try { if (!/[?&]in=1/.test(location.search) && !localStorage.getItem('da.rb.guide')) setTimeout(function () { if (FRESH) GUIDE_AFTER = true; else guide(0); }, 500); } catch (e) { /* no storage */ }
 })();

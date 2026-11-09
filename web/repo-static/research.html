@@ -54,6 +54,18 @@
   #guide b { position: absolute; right: 14px; top: calc(env(safe-area-inset-top) + 14px); font: 400 11px/1 'Departure Mono', monospace; color: var(--ink); opacity: .6; }
   #drop { position: fixed; inset: 0; z-index: 5; display: none; place-items: center; background: rgba(217, 242, 74, .35); border: 4px dashed var(--ink); font: 600 40px/1 'Archivo Narrow', Arial, sans-serif; }
   html.dragging #drop { display: grid; }
+  #peek { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 88%, transparent); cursor: pointer; transition: opacity .5s, transform .5s; }
+  #peek.out { opacity: 0; transform: scale(.82); }
+  #peek svg { width: min(92vw, 560px); height: auto; overflow: visible; }
+  #peek .b { opacity: 0; transform-box: fill-box; transform-origin: center; animation: pk-in .34s cubic-bezier(.3, 1.6, .5, 1) calc(var(--i) * .16s + .1s) forwards; }
+  #peek .sq, #peek .ln, #peek .w path, #peek .pen { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  #peek .sq { stroke-width: 2; }
+  #peek .ln, #peek .pen { stroke: var(--ink); }
+  #peek .w path { stroke: var(--ink); stroke-dasharray: 4 5; opacity: 0; animation: pk-fade .4s 1.05s forwards; }
+  #peek .pen { stroke-dasharray: 260; stroke-dashoffset: 260; animation: pk-pen .9s 1.2s ease-out forwards; }
+  @keyframes pk-in { from { opacity: 0; transform: scale(.6) rotate(-4deg); } to { opacity: 1; transform: none; } }
+  @keyframes pk-fade { to { opacity: .7; } }
+  @keyframes pk-pen { to { stroke-dashoffset: 0; } }
 </style>
 </head>
 <body>
@@ -67,7 +79,7 @@
   <button type="button" data-k="photos"><svg viewBox="0 0 24 24"><path d="M3 6h13v11H3z"/><path d="M8 3h13v11"/><path d="M3 14l4-4 3 3 2-2 4 4"/></svg><span>PHOTOS<small>four found pictures</small></span></button>
   <button type="button" data-k="notes"><svg viewBox="0 0 24 24"><path d="M3 4h8v8H3z" class="f"/><path d="M13 8h8v8h-8zM6 14h8v7H6z"/></svg><span>NOTES<small>three questions to start</small></span></button>
   <button type="button" data-k="steps"><svg viewBox="0 0 24 24"><path d="M3 5h5M10 5h4M16 5h5M3 9v10M10 9v10M16 9v10"/></svg><span>THREE STEPS<small>noticed, response, action</small></span></button>
-  <button type="button" data-k="form"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>W.I.S.H. FORM<small>the form as the ground</small></span></button>
+  <button type="button" data-k="form"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>W.I.S.H. POEM<small>the poem as the ground</small></span></button>
 </div>
 <div id="drop">DROP</div>
 <nav id="tools">
@@ -88,7 +100,7 @@
   <i class="sep"></i>
   <button type="button" data-t="lock" aria-label="Lock" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 11h12v9H6z"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>LOCK</span></button>
   <button type="button" data-t="fit" aria-label="Fit"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span>FIT</span></button>
-  <button type="button" data-t="form" aria-label="W.I.S.H." aria-pressed="true" hidden><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>FORM</span></button>
+  <button type="button" data-t="form" aria-label="W.I.S.H." aria-pressed="true" hidden><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>POEM</span></button>
   <button type="button" data-t="out" aria-label="Out"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg><span>OUT</span></button>
 </nav>
 <input type="file" id="fi" accept="image/*" multiple hidden>

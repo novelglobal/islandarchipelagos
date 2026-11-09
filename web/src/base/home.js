@@ -182,7 +182,26 @@
     g.globalCompositeOperation = 'source-over'; flaws(g, w, h, 304, 0.22);
     return c;
   }
-  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); }, true);
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); if (RS.nino) songOn(); else songOff(); }, true);
+  /* El Niño on the buoy: a small song dropped at random on the radar, the hand at its fast turn (two bars of 120, a note on a sixteenth as the hand
+     crosses it), timed by the sound's own clock; off, it stops and the radar is as it was. Off screen or behind an experience it waits */
+  var SONG_TURN = 4, PENTA = [0, 3, 5, 7, 10, 12, 15, 17];
+  function songOn() { var c = ac(), svg = col.querySelector('.sk-radio .rd-fx svg'); if (!c || !svg) return; songOff(); var at = {}, n = 6 + Math.floor(Math.random() * 4), notes = [];
+    while (notes.length < n) { var k = Math.floor(Math.random() * 32); if (at[k]) continue; at[k] = 1; notes.push({ k: k, a: k / 32 * 360, r: 14 + Math.random() * 30, f: 110 * Math.pow(2, PENTA[Math.floor(Math.random() * PENTA.length)] / 12), d: Math.random() < 0.3 ? 2 : 1 }); }
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'sg');
+    g.innerHTML = notes.map(function (o, i) { var x = (o.r * Math.cos(o.a * Math.PI / 180)).toFixed(2), y = (o.r * Math.sin(o.a * Math.PI / 180)).toFixed(2); return '<rect x="' + (x - 1.6 * o.d) + '" y="' + (y - 1.6 * o.d) + '" width="' + (3.2 * o.d) + '" height="' + (3.2 * o.d) + '" style="animation-delay:' + (i * 0.07) + 's"/>'; }).join('');
+    svg.appendChild(g); RS.song = { notes: notes, g: g, sw: svg.querySelector('.sw'), t0: c.currentTime + 0.12, next: 0 }; }
+  function songOff() { var S = RS.song; if (!S) return; RS.song = null; S.g.remove(); S.sw.style.animation = ''; S.sw.style.transform = ''; }
+  function songNote(c, f, t, d) { var o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(), len = 0.22 * d + 0.12;
+    o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; lp.type = 'lowpass'; lp.frequency.setValueAtTime(2600, t); lp.frequency.exponentialRampToValueAtTime(500, t + len);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(lp); o2.connect(lp); lp.connect(g).connect(c.destination); o.start(t); o2.start(t); o.stop(t + len + 0.05); o2.stop(t + len + 0.05); }
+  function songTick() { var S = RS.song, c = ac(); if (!S || !c) return; if (!S.g.isConnected) { songOn(); return; } var now = c.currentTime, SL = SONG_TURN / 32;
+    /* back after a wait: the song picks up from the next sixteenth instead of crowding in what it missed */
+    if (S.t0 + S.next * SL < now - 0.05) S.next = Math.ceil((now - S.t0) / SL);
+    while (S.t0 + S.next * SL < now + 0.15) { var t = S.t0 + S.next * SL, k = S.next % 32; S.notes.forEach(function (o) { if (o.k === k) songNote(c, o.f, t, o.d); }); S.next++; }
+    var th = ((now - S.t0) / SONG_TURN * 360) % 360; if (th < 0) th += 360; S.sw.style.animation = 'none'; S.sw.style.transform = 'rotate(' + th.toFixed(1) + 'deg)';
+    var rs = S.g.children; for (var i = 0; i < rs.length; i++) { var d = (th - S.notes[i].a + 360) % 360; rs[i].classList.toggle('on', d < 40); } }
   /* the buoy as found things: a jerrycan for its float, a bent pole, a cracked panel tied on, a jar for its lamp, a coat hanger for an aerial; drawn by hand, nothing quite straight */
   function hand(g, P, seed, n) { var r = rnd(seed); for (var p = 0; p < (n || 2); p++) { g.beginPath(); P.forEach(function (q, i) { var x = q[0] + (r() - 0.5) * 1.3, y = q[1] + (r() - 0.5) * 1.3; if (i) g.lineTo(x, y); else g.moveTo(x, y); }); g.globalAlpha = p ? 0.4 : 1; g.stroke(); } g.globalAlpha = 1; }
   function specks(g, x, y, w, h, n, cols, seed, rs) { var r = rnd(seed); for (var i = 0; i < n; i++) { g.fillStyle = cols[i % cols.length]; g.globalAlpha = 0.35 + r() * 0.5; g.beginPath(); g.arc(x + r() * w, y + r() * h, (0.3 + r() * 0.8) * rs, 0, 7); g.fill(); } g.globalAlpha = 1; }
@@ -266,6 +285,7 @@
     if (!cv || !cv.isConnected) { cv = RS.cv = col.querySelector('.sk-radio .rd-sea'); RS.w = 0; if (RS.io) RS.io.disconnect(); if (!cv) return;
       if ('IntersectionObserver' in window) { RS.io = new IntersectionObserver(function (es) { RS.on = es[es.length - 1].isIntersecting; }); RS.io.observe(cv); } }
     if (!RS.on || xv.classList.contains('on')) return;
+    if (RS.song) songTick();
     var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
     if (w !== RS.w || h !== RS.h || RS.nt !== NIGHT) { RS.w = w; RS.h = h; RS.nt = NIGHT; RS.k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * RS.k); cv.height = Math.round(h * RS.k); RS.E = h / 1.4; RS.base = rsBase(w, h, RS.E);
       var r = rnd(305); RS.snow = []; for (var i = 0; i < 26; i++) RS.snow.push({ x: r() * w, y: r() * RS.E, r: 0.5 + r() * 1.1, v: 2 + r() * 4, p: r() * 7 }); RS.drawn = false; }
@@ -481,7 +501,7 @@
         /* every photograph is fetched and decoded before it is shown, and one not yet ready is passed over, so each change is instant */
         if (ls.length > 1 && !RM.matches) { (function (box, ms) { var at = 0, ims = $$('img', box), ok = ims.map(function () { return false; });
           ims.forEach(function (im, j) { (im.decode ? im.decode() : Promise.resolve()).then(function () { ok[j] = true; }, function () {}); });
-          TURN.push(setInterval(function () { if (D.hidden || away) return; var n = at; do { n = (n + 1) % ims.length; } while (!ok[n] && n !== at); if (n === at) return; ims[at].classList.remove('on'); at = n; ims[at].classList.add('on'); }, ms)); })(box, Math.max(1, cp.speed || 2) * 1000); } }
+          TURN.push(setInterval(function () { if (D.hidden || away || xv.classList.contains('on')) return; var n = at; do { n = (n + 1) % ims.length; } while (!ok[n] && n !== at); if (n === at) return; ims[at].classList.remove('on'); at = n; ims[at].classList.add('on'); }, ms)); })(box, Math.max(1, cp.speed || 2) * 1000); } }
       if (bg) { var u = (cp.pics || [])[0]; bg.style.backgroundImage = u ? 'url("' + u.replace(/"/g, '') + '")' : ''; bg.style.opacity = u ? String(cp.shade == null ? 1 : cp.shade) : '0'; } });
   }
   /* an island whose keeper has given it pictures, with CARDS switched on, stands in the column too */
@@ -1243,7 +1263,7 @@
     space: { outs: ['WORDS', 'CODE'], ins: { PICTURE: 'PICTURE ON ITS CARD', LIST: 'BUILD LIST IN THE PANEL' } },
     reef: { outs: ['PICTURE'], ins: { SOUND: 'THE REEF PLAYS IT' } },
     portfolio: { outs: ['PICTURE', 'CODE'], ins: { PICTURE: 'KEPT IN THE PORTFOLIO', SOUND: 'SONG KEPT WITH IT' } },
-    research: { outs: ['LIST', 'PICTURE'], ins: { WORDS: 'PINNED AS A BLOCK', CODE: 'THE W.I.S.H. FORM BEHIND IT', PICTURE: 'PINNED AS A PICTURE' } },
+    research: { outs: ['LIST', 'PICTURE'], ins: { WORDS: 'PINNED AS A BLOCK', CODE: 'THE W.I.S.H. POEM BEHIND IT', PICTURE: 'PINNED AS A PICTURE' } },
     eye: { outs: ['PICTURE', 'SOUND'], ins: { WORDS: 'WORDS UNDER THE PHOTO', PICTURE: 'PHOTO HELD' } },
     moon: { outs: ['PICTURE'], ins: {} }, stamp: { outs: ['CODE'], ins: {} }, signal: { outs: ['WORDS'], ins: { CODE: 'CODE SENT TO KIN' } },
     map: { outs: ['CODE'], ins: { WORDS: 'WORDS ON THE MAP' } }, style: { outs: ['LENGTH'], ins: {} }, booth: { outs: ['PICTURE'], ins: {} }, folio: { outs: ['SOUND'], ins: {} }
@@ -1438,7 +1458,10 @@
   /* ───────── one loop for everything that moves ───────── */
   var last = performance.now(), wasOpen = false;
   function frame(now) {
-    var dt = Math.min(0.05, (now - last) / 1000); last = now; requestAnimationFrame(frame); if (D.hidden) return;
+    requestAnimationFrame(frame); if (D.hidden) return;
+    /* behind an open experience only the jellyfish shows: half the frames, and nothing the sheet covers is drawn (the studio shares this thread and its sound) */
+    var sheet = xv.classList.contains('on'); if (sheet && (H.classList.contains('hm-nosea') || now - last < 31)) return;
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (Math.round((top.clientWidth || innerWidth) * dpr) !== tcv.width || Math.abs(TOPH + reefH() - CH) > 1) seaSize();
     var open = root.classList.contains('reef') && !away, t = now / 1000;
     var jr = tcv.getBoundingClientRect(), rr = root.getBoundingClientRect();
@@ -1455,8 +1478,10 @@
     tx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
     var jw = Math.round(rr.width * dpr), jh = Math.round(rr.height * dpr); if (jcv.width !== jw || jcv.height !== jh) { jcv.width = jw; jcv.height = jh; }
-    jx.setTransform(1, 0, 0, 1, 0, 0); jx.clearRect(0, 0, jcv.width, jcv.height);
+    var wide = J.orbit || J.back || J.wide; J.wide = !!(J.orbit || J.back); jx.setTransform(1, 0, 0, 1, 0, 0);
+    if (wide) jx.clearRect(0, 0, jcv.width, jcv.height); else jx.clearRect(Math.floor((jr.left - rr.left) * dpr) - 1, Math.floor((jr.top - rr.top) * dpr) - 1, Math.ceil(jr.width * dpr) + 2, Math.ceil(jr.height * dpr) + 2);
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
+    if (sheet) return;
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
     if (CX.on && !away) cxDraw(t, RM.matches ? 0 : dt);

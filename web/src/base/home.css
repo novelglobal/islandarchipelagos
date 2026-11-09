@@ -130,6 +130,9 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .rd-fx .ax { stroke-dasharray: 1 2; stroke: rgba(255, 255, 255, .4); }
 .rd-fx .sw { animation: rd-sw 7s linear infinite; transform-origin: 0 0; opacity: .32; } .rd-fx .sw path { stroke: none; }
 .rd-fx .pl { fill: rgba(255, 255, 255, .7); stroke: none; transform-origin: 1px 0; animation: rd-pl 3.5s ease-in-out infinite; }
+.rd-fx .sg rect { fill: #FF6B1A; stroke: none; opacity: .5; transform-box: fill-box; transform-origin: center; animation: rd-sg .3s cubic-bezier(.3, 1.6, .5, 1) backwards; transition: opacity .25s, transform .25s; }
+.rd-fx .sg rect.on { opacity: 1; transform: scale(1.5); transition: none; }
+@keyframes rd-sg { from { opacity: 0; transform: scale(0); } }
 @keyframes rd-sw { to { transform: rotate(360deg); } } @keyframes rd-pl { 50% { transform: scale(1.25); opacity: .35; } }
 .sk-radio .hm-lamps { position: absolute; left: 6cqw; bottom: 6cqw; }
 
@@ -281,6 +284,8 @@ html.hm-up.hm-nosea #hm-top { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { #hm-guide path, #hm-guide.key path.ring { animation: none; stroke-dashoffset: 0; } }
 #hm-x iframe { opacity: 0; transition: opacity .25s; } #hm-x.on iframe { opacity: 1; }
 html.hm-sheet #hm-sb { transform: translateY(115%); pointer-events: none; }
+/* once an experience has covered them, the cards stop painting and their loops rest; they are back the moment it closes */
+html.hm-sheet #hm-col { visibility: hidden; transition: visibility 0s .5s; }
 #hm-x > header { flex: none; height: calc(env(safe-area-inset-top) + 42px); position: relative; }
 #hm-x .hm-back { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 10px); width: 56px; height: 24px; border-radius: 12px; transform: translateX(-50%); background: var(--grain), var(--sea); background-size: 180px, auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
 #hm-x .hm-back::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-left: 1.5px solid #F4F1E8; border-bottom: 1.5px solid #F4F1E8; transform: translate(-25%, -50%) rotate(45deg); }
@@ -619,10 +624,11 @@ html.hm-away .hm-ghost, html.hm-sheet .hm-ghost { display: none; }
 @media (prefers-reduced-motion: reduce) { .hm-ghost { animation: none; } }
 
 /* the sea stays over every experience (its card can say sea: off, as W.I.S.H. has none); the jellyfish and the reef with it */
-html.hm-sheet:not(.hm-nosea) #hm-top { z-index: 6; }
+/* the back key rides in the sea itself, left of the jellyfish: no bar of its own, the whole height goes to the experience */
+html.hm-sheet:not(.hm-nosea) #hm.reef #hm-top { z-index: 6; }
 html.hm-sheet:not(.hm-nosea) #hm-jf { z-index: 7; }
-html.hm-sheet:not(.hm-nosea) #hm-x > header { height: 34px; }
-html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: 5px; }
+html.hm-sheet:not(.hm-nosea) #hm-x > header { height: 0; z-index: 2; }
+html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14px); left: calc(env(safe-area-inset-left) + 12px); width: 52px; height: 28px; border-radius: 14px; transform: none; background: #0B0B0B; box-shadow: none; }
 /* the stories card: the tap in the frame, whole; its shelf ticket; the mark in the middle; tape and stickers pressed on */
 .rc-tap { left: 6.3%; top: 7%; width: 87.6%; height: 61.5%; object-fit: contain; background: #0E2240; }
 .hm-rc.kept .rc-tap, .hm-rc.kept .rc-ad { display: none; }
