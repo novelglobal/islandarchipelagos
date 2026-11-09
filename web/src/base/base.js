@@ -1436,7 +1436,13 @@ var AC = null;
 /* an old phone or tablet (few cores, little memory, or no audio worklets): the sound made lighter everywhere, so it does not stutter */
 var LITE = (function () { try { var n = navigator.hardwareConcurrency || 2, m = navigator.deviceMemory || 4; return n <= 4 || m <= 2 || !window.AudioWorkletNode; } catch (e) { return false; } })();
 function newAC() { var A = window.AudioContext || window.webkitAudioContext; try { return new A({ latencyHint: 'playback' }); } catch (e) { return new A(); } }
-function ac() { if (!AC) { playback(); AC = newAC(); } if (AC.state !== 'running') AC.resume().catch(function () {}); return AC; }
+function ac() { if (!AC) { playback(); AC = newAC(); } AC_USE = Date.now(); if (AC.state !== 'running') AC.resume().catch(function () {}); return AC; }
+/* the drones only ever go quiet, so this sound stays awake under everything, and a phone then runs it beside the studio's own
+   sound and stutters. With both drones down, nothing of the aura playing and nothing asked of it for a while, it is put to sleep;
+   the next sound asked for wakes it */
+var AC_USE = 0, AC_ON = {};
+addEventListener('ng-sound', function (e) { var d = e.detail || {}; if (d.k) { if (d.on) AC_ON[d.k] = 1; else delete AC_ON[d.k]; } AC_USE = Date.now(); });
+setInterval(function () { if (!AC || AC.state !== 'running' || window.__hum || window.__auraHum || Object.keys(AC_ON).length || Date.now() - AC_USE < 8000) return; AC.suspend().catch(function () {}); }, 3000);
 /* a phone's camera (the booth's photo) turns its sound over to recording, and on an iPhone, whichever browser, the page's sound can stay
    silent or suspended after: asked back to playing, and woken again on the next touch and each return to the page */
 function playback() { try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { /* not here */ } }
@@ -2508,7 +2514,7 @@ var ORB = (function () {
       o.connect(f); o2.connect(f); f.connect(g); if (p) { g.connect(p); p.connect(out); } else g.connect(out); o.start(); o2.start(); return { f: f, g: g, p: p }; }) };
     out.gain.setTargetAtTime(0.55, c.currentTime, 1.8); window.__hum = 1;
   }
-  function humSet(on) { if (!hum || !AC) return; hum.out.gain.setTargetAtTime(on ? 0.55 : 0, AC.currentTime, on ? 1.2 : 0.35); window.__hum = on ? 1 : 0; }
+  function humSet(on) { if (!hum || !AC) return; if (on) ac(); hum.out.gain.setTargetAtTime(on ? 0.55 : 0, AC.currentTime, on ? 1.2 : 0.35); window.__hum = on ? 1 : 0; }
   document.addEventListener('pointerdown', function (e) { var b = document.body.classList; if (AURA_ON || b.contains('away') || b.contains('mapmode') || b.contains('booth') || (e.target.closest && e.target.closest('.orb'))) return; humStart(); });
   function frame(now) {
     raf = 0; if (!t0) t0 = now; var t = (now - t0) / 1000, spin = 0.6 + (still ? 0 : t * 2 * Math.PI / 110);

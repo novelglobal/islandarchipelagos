@@ -1320,9 +1320,9 @@
     cg.globalAlpha = A0; [[a, ca], [b, cb]].forEach(function (p) { cg.fillStyle = p[1]; cg.beginPath(); cg.arc(p[0][0], p[0][1], 4, 0, 7); cg.fill(); }); cg.globalAlpha = 1;
   }
   /* the cables let out onto the cards: a switch on the board, then each cable down its own path, plugged into the cards it joins, hanging and swinging as they move */
-  var CX = { on: !!store.get('da.sb.out', false), cv: null, g: null, rope: {}, k: 1 };
+  var CX = { on: !!store.get('da.sb.out', true), cv: null, g: null, rope: {}, k: 1 };
   (function () { var cv = D.createElement('canvas'); cv.id = 'hm-cx'; cv.setAttribute('aria-hidden', 'true'); root.insertBefore(cv, $('#hm-jf')); CX.cv = cv; CX.g = cv.getContext('2d');
-    var b = D.createElement('button'); b.className = 'ex'; b.title = 'Cables out on the cards'; b.setAttribute('aria-label', 'Cables out on the cards'); b.setAttribute('aria-pressed', String(CX.on)); b.innerHTML = '<i></i>'; sb.insertBefore(b, sb.querySelector('.rs'));
+    var b = D.createElement('button'); b.className = 'ex'; b.title = 'Cables out on the cards'; b.setAttribute('aria-label', 'Cables out on the cards'); b.setAttribute('aria-pressed', String(CX.on)); b.innerHTML = '<span>CABLES</span><i></i>'; sb.insertBefore(b, sb.querySelector('.rs'));
     b.addEventListener('click', function (e) { e.stopPropagation(); CX.on = !CX.on; store.set('da.sb.out', CX.on); b.setAttribute('aria-pressed', String(CX.on)); root.classList.toggle('cx', CX.on); CX.rope = {}; beep(CX.on ? 523 : 262, 0.05); if (!CX.on) CX.g.clearRect(0, 0, CX.cv.width, CX.cv.height); });
     root.classList.toggle('cx', CX.on); })();
   function chaikin(P, n) { for (var it = 0; it < n; it++) { var o = [P[0]]; for (var i = 0; i < P.length - 1; i++) { var a = P[i], b = P[i + 1]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } o.push(P[P.length - 1]); P = o; } return P; }
@@ -1386,24 +1386,22 @@
   function board() {
     $$('.sl', jk).forEach(function (sl) { var id = sl.dataset.s, ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; }); sl.classList.toggle('on', ws.length > 0); sl.style.setProperty('--mx', ws.length ? wireCol(ws[ws.length - 1]) : SC[id]); });
     var cb = sb.querySelector('.cb'); if (cb) cb.innerHTML = START.map(function (q, i) { return '<i' + (i < WIRES.length ? ' class="in"' : '') + '></i>'; }).join('');
-    var outs = outcomes();
-    oc.innerHTML = stacks().map(function (s) { var lines = outs.filter(function (o) { return s.wires.some(function (w) { return (w[0] === o.from && w[1] === o.to) || (w[1] === o.from && w[0] === o.to); }); });
-      return '<li style="--mx:' + wireCol(s.wires[0]) + '"><b>' + s.ids.map(nameOf).map(esc).join(' · ') + '</b>' + lines.map(function (o) { return '<span style="--mx:' + o.col + '">' + esc(o.line) + '</span>'; }).join('') + '</li>'; }).join('');
-    oc.hidden = !WIRES.length;
+    /* no list of what the wiring does: it shows in the things made, never as a read-out */
+    oc.hidden = true; oc.innerHTML = '';
     lamps(); drawCables();
   }
   function lamps() {
-    var outs = outcomes();
     cards.forEach(function (el) { var id = el.dataset.id, l = el.querySelector('.hm-lamps'), ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; });
       el.classList.toggle('wired', ws.length > 0); if (ws.length) el.style.setProperty('--mx', wireCol(ws[0])); else el.style.removeProperty('--mx');
-      if (!l) return; var got = outs.filter(function (o) { return o.to === id; });
-      l.innerHTML = ws.map(function (w) { return '<i style="color:' + wireCol(w) + '"></i>'; }).join('') + got.filter(function (o, i) { return got.findIndex(function (q) { return q.el === o.el; }) === i; }).slice(0, 3).map(function (o) { return '<b style="--mx:' + o.col + '">+ ' + GETS[o.el] + '</b>'; }).join(''); });
+      /* what a card takes in shows in what it makes, never as tags on the card: the engine stays out of sight */
+      if (l) l.innerHTML = ''; });
   }
   /* fits lit, the rest dull */
   function fitsShow(from) { $$('.sl', jk).forEach(function (q) { var id = q.dataset.s; q.classList.toggle('ok', !!from && id !== from && fits(from, id)); q.classList.toggle('dl', !!from && id !== from && !fits(from, id)); }); }
   /* a preview of what a cable would do, while it is held over a jack */
   var pv = D.createElement('p'); pv.className = 'pv'; pv.hidden = true; pv.setAttribute('aria-live', 'polite'); sb.appendChild(pv);
-  function preview(from, to) { if (!from) { pv.hidden = true; return; } var lines = [];
+  /* no read-out of the wiring: the jacks lighting up say what fits, the cards show what it made */
+  function preview(from, to) { pv.hidden = true; if (pv) return; var lines = [];
     if (to && to !== from && WIRES.length >= MAXW && !wired(from, to) && fits(from, to)) lines.push('FOUR CABLES IN · TAP A LIT JACK TO LIFT ONE');
     else if (to && to !== from) { carry(from, to).forEach(function (e) { lines.push(nameOf(to) + ' GETS ' + PORTS[to].ins[e]); }); carry(to, from).forEach(function (e) { lines.push(nameOf(from) + ' GETS ' + PORTS[from].ins[e]); }); if (!lines.length) lines.push(nameOf(from) + ' AND ' + nameOf(to) + ' DO NOT JOIN'); else if (wired(from, to)) lines.push('JOINED ALREADY'); }
     else { var P0 = PORTS[from] || { outs: [], ins: {} }; lines.push(nameOf(from) + ' GIVES ' + P0.outs.map(function (e) { return GETS[e]; }).join(', ')); }

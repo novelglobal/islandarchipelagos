@@ -28,7 +28,7 @@ const metresPerPx = (lat, z) => 78271.51696 * Math.cos(lat * Math.PI / 180) / Ma
 function scanZoom(r = S.scan.r) { const c = $('#world'); const dim = Math.min(c.clientWidth || innerWidth, (c.clientHeight || innerHeight) * (phone() && S.open ? 0.5 : 1)); return clamp(Math.log2(78271.51696 * Math.cos(S.scan.lat * Math.PI / 180) / (r / (dim * 0.36))), 12.5, 17.5); }
 const map = new maplibregl.Map({
   container: 'world', style, center: [S.scan.lng, S.scan.lat], zoom: 13, pitch: 0, bearing: 0, maxPitch: 70,
-  attributionControl: false, fadeDuration: 0, renderWorldCopies: false,
+  attributionControl: false, fadeDuration: 0, renderWorldCopies: false, pixelRatio: Math.min(2, devicePixelRatio || 1),
   maxBounds: [[B.w - 0.07, B.s - 0.06], [B.e + 0.07, B.n + 0.06]],
 });
 /* the information corner: who made it, where everything comes from, the build this page came from, and the way to the approval page */
