@@ -3381,6 +3381,8 @@ html.in-aura #sec-set{display:none!important}
 #zine-tools .zt.zlong { width: auto; padding: 0 9px; font: 600 11px/1 "Departure Mono", ui-monospace, monospace; letter-spacing: .08em; }
 #zine-tools .zt.zlong[aria-pressed="true"] { background: #111214; color: #F4F1E8; }
 html.only-portfolio #sec-printer, html.only-portfolio #sec-songs { display: none !important; }
+/* the portfolio from its card is the one page: the old page's talk, board, tools and folding lists stay out of it */
+html.only-portfolio #sec-talk, html.only-portfolio #sec-board, html.only-portfolio #sec-tools, html.only-portfolio #sec-briefs, html.only-portfolio #sec-src { display: none !important; }
 .flow{padding:0!important;background:none!important;box-shadow:none!important;border:0!important}
 .flow::before,.flow::after{display:none!important}
 .fl-track{list-style:none;margin:0;padding:6px calc(50% - min(29vw,140px)) 14px;display:flex;gap:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;height:min(44vh,440px);align-items:center}
@@ -3456,3 +3458,11 @@ html.only-radio .band.dev.radio .four .f4{height:52px!important}
 html.only-radio .band.dev.radio .lyrs{margin:4px 0 2px!important;padding:6px 8px!important}
 html.only-radio .band.dev.radio .lyrs > *{height:28px!important}
 }
+/* the species card sent to a board: a small key on the button, to go and see it there */
+.sent-pop{position:fixed;z-index:40;display:flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:12px;background:#0B0B0B;color:#F4F1E8;border:0;box-shadow:0 6px 16px rgba(0,0,0,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;cursor:pointer;animation:sentin .32s cubic-bezier(.2,1.4,.4,1)}
+.sent-pop svg{width:12px;height:12px}
+@keyframes sentin{from{transform:translateY(8px) scale(.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.sent-pop{animation:none}}
+
+/* DESIGN PRINT inside novel.global: the banner above carries the mark, so the studio's own lockup stays out from under the design tabs */
+html.only-print #ph .lockup{display:none}

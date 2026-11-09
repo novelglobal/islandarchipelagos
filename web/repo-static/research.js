@@ -143,8 +143,8 @@
   /* ───── the boards: several, named, each kept ───── */
   function openBoard(id) { at = id; keepList(); var b = LIST.filter(function (x) { return x.id === id; })[0]; $('#bname').textContent = b ? b.n : 'BOARD';
     HIST = []; key('undo').disabled = true; tx('readonly', function (s) { return s.get(id); }).then(function (r) { load(r && r.objects, function () { var has = r && (r.objects || []).length; if (r && r.v && r.v[0] <= Z0) { cv.setViewportTransform(r.v); grid(); } else if (has) fit(Z0); else { cv.setViewportTransform([Z0, 0, 0, Z0, cv.getWidth() / 2 - 160 * Z0, cv.getHeight() * 0.3]); grid(); }
-      BOARD_IN = true; poemLines();
-      if (!has && !LIST.some(function (b) { return b.id !== id; }) && !WISH) { FRESH = true; setTimeout(function () { peek(function () { starter(); kitsShow(true); }); }, 300); } }); }).catch(function () { load([]); }); }
+      BOARD_IN = true; poemLines(); if (inbox()) has = true;
+      if (!has &&!LIST.some(function (b) { return b.id !== id; }) && !WISH) { FRESH = true; setTimeout(function () { peek(function () { starter(); kitsShow(true); }); }, 300); } }); }).catch(function () { load([]); }); }
   function newBoard() { var n = 'BOARD ' + String(LIST.length + 1).padStart(2, '0'), id = uid(); LIST.push({ id: id, n: n, t: Date.now() }); keepList(); openBoard(id); }
   $('#bname').addEventListener('click', function (e) { e.stopPropagation(); var m = $('#menu'); if (!m.hidden) { m.hidden = true; return; }
     m.innerHTML = LIST.map(function (b) { return '<button type="button" data-b="' + b.id + '" class="' + (b.id === at ? 'on' : '') + '">' + b.n.replace(/[<>&]/g, '') + '</button>'; }).join('') + '<hr><button type="button" data-b="+">NEW BOARD</button><button type="button" data-b="rn">RENAME</button>' + (LIST.length > 1 ? '<button type="button" data-b="x">TAKE THIS BOARD AWAY</button>' : '');
@@ -219,6 +219,14 @@
     if (BOARD_IN) poemLines();
   }
   var BOARD_IN = false;
+  /* species cards sent from the radio wait in this browser and are laid here as the board opens: the name as a note, its photograph tied on */
+  function inbox() { var q = []; try { q = JSON.parse(localStorage.getItem('da.rb.in') || '[]'); localStorage.removeItem('da.rb.in'); } catch (e) { return 0; } if (!q.length) return 0;
+    var p = mid(), lastN = null;
+    q.forEach(function (sp, i) { if (!sp || !sp.n || byId('sp:' + sp.id)) return; var x = p.x - 120 + i * 36, y = p.y - 60 + i * 36;
+      var n = note([String(sp.n).toUpperCase(), sp.latin || '', sp.place || ''].filter(Boolean).join('\n'), x, y); n.set({ daId: 'sp:' + sp.id, daC: 3, backgroundColor: NOTES[3][0], fill: NOTES[3][1], fontSize: 22 }); lastN = n;
+      if (sp.ph) pic(sp.ph, x + 250, y).then(function (im) { if (im) { join(n, im); cv.setActiveObject(n); look(n); cv.requestRenderAll(); } }); });
+    if (lastN) { cv.setActiveObject(lastN); look(lastN); cv.requestRenderAll(); } return q.length; }
+  addEventListener('storage', function (e) { if (e.key === 'da.rb.in' && e.newValue && BOARD_IN) inbox(); });
   function poemLines() { if (!cv.getObjects().some(function (o) { return o.daKind === 'tpl'; })) return;
     var on = cv.getObjects().filter(function (o) { if (o.daKind !== 'note') return false; var c = o.getCenterPoint(); return c.x > -40 && c.x < 680 && c.y > 170 && c.y < 960; });
     if (!on.length) { var prev = null, first = null; [2, 1, 4, 0].forEach(function (ci, i) { var n = note('', 150, 232 + i * 176); n.set({ width: 480 }); n.daC = ci; n.set({ backgroundColor: NOTES[ci][0], fill: NOTES[ci][1] }); if (prev) join(prev, n); prev = n; if (!first) first = n; });

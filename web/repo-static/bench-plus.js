@@ -275,7 +275,7 @@
     var text = ('NEW CARD · ' + name + ' · ' + kind + ' · ' + (THEMES[cd.th] || {}).n + ' · FROM ' + at.toUpperCase() + (cd.line ? ' · ' + cd.line : '')).slice(0, 280);
     if (!who) { say.textContent = 'OPEN THIS FROM NOVEL.GLOBAL TO SEND'; return; } btn.disabled = true; say.textContent = 'SENDING'; beep(700, 0.05);
     (NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: 'c.space.show', who: who, text: text, cf: cf }) }); })
-      .then(function (r) { btn.disabled = false; if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN A LITTLE' : 'NOT SENT'; return; } say.textContent = 'SENT. IT GOES UP ONCE IT IS CHECKED'; confetti(); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
+      .then(function (r) { btn.disabled = false; if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN A LITTLE' : r.status === 401 ? 'A CODE FROM A PRINT FIRST' : 'NOT SENT'; return; } say.textContent = 'SENT. IT GOES UP ONCE IT IS CHECKED'; confetti(); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
       .catch(function () { btn.disabled = false; say.textContent = 'OFFLINE. TRY AGAIN SOON'; }); }
   /* sent: torn paper bits fly out of the card */
   function confetti() { var k = $('#cd .cd-card'), r = k.getBoundingClientRect(); for (var i = 0; i < 26; i++) { var s = D.createElement('i'); s.className = 'bit'; var a = Math.random() * Math.PI * 2, d = 80 + Math.random() * 180;

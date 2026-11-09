@@ -252,17 +252,20 @@ const POSTER_SEC = /^p\.DA-[0-9A-HJKMNP-TV-Z]{4}$/, SONG_SEC = /^p\.S-[0-9a-z]{6
 /* a talk's place: a step, or a poster shown on the site (never a private message, never one taken down); its own maker can
    always talk on it, shown or still a draft */
 async function secOf(db, s, who) {
-  if (SECS.includes(s) || SONG_SEC.test(s || '') || CARD_SEC.test(s || '')) return s;   // every card's own rooms are open to all   // a song's art: anyone who has it may talk on it
+  if (SECS.includes(s) || SONG_SEC.test(s || '') || CARD_SEC.test(s || '')) return s;   // every card's own rooms, the steps and a song's art: anyone with a code
   if (!POSTER_SEC.test(s || '')) return null;
   if (who && (await db.prepare("SELECT 1 AS k FROM stories WHERE code = ? AND who = ? AND gone IS NULL AND kind != 'message'").bind(s.slice(2), who).first())) return s;
   if (!(await madeOn(db))) return null;
   return (await db.prepare("SELECT 1 AS k FROM stories WHERE code = ? AND status = 'shown' AND gone IS NULL AND quiet IS NULL AND kind != 'message'").bind(s.slice(2)).first()) ? s : null;
 }
 const TALK_K = ['swap', 'share'];
+/* a code a printer has given: the talk is read and written only with one */
+async function coded(db, who) { return !!(await db.prepare('SELECT 1 AS k FROM makers WHERE who = ? AND printed IS NOT NULL').bind(who).first()); }
 async function talkList(db, env, req, url) {
   const s = url.searchParams.get('s'), who = url.searchParams.get('who') || ''; if (!WHO.test(who)) return fail(400, 'talk');
   if (await tooMany(db, env, req, 'talkr', 120, 10 * 60e3)) return fail(429, 'too many');
   const sec = await secOf(db, s, who); if (!sec) return fail(400, 'talk');
+  if (!(await coded(db, who))) return fail(401, 'code');
   const { results } = await db.prepare(`SELECT t.id, t.sec, t.text, t.re, t.at, t.k, m.kin FROM talk t LEFT JOIN makers m ON m.who = t.who WHERE t.hidden IS NULL${sec ? ' AND t.sec = ?' : ''} ORDER BY t.at DESC LIMIT 80`).bind(...(sec ? [sec] : [])).all();
   return json({ talk: results });
 }
@@ -292,9 +295,8 @@ async function talkSay(db, env, req) {
   if (levelOf() >= 2) return fail(503, 'resting');
   if (await tooMany(db, env, req, 'talk', 20, 10 * 60e3)) return fail(429, 'too many');
   if (!(await human(env, req, b.cf))) return fail(403, 'human');
-  /* anyone with a code may talk (kept in check by the limits, the hours and the approval page, which can hide a word); a code
-     the site has not met yet is met here */
-  await db.prepare('INSERT INTO makers (who, first, last, posts, stage, lv, kin) VALUES (?, ?, ?, 0, NULL, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, now(), now()).run();
+  /* only those who have a code already may talk: one a printer has given (kept in check by the limits, the hours and the approval page, which can hide a word) */
+  if (!(await coded(db, who))) return fail(401, 'code');
   const mk = await kinOf(db, who); if (!mk) return fail(400, 'talk');
   const re = typeof b.re === 'string' && /^[a-z0-9]{6,24}$/.test(b.re) ? b.re : null, id = rid(), t = now();
   await db.batch([db.prepare('INSERT INTO talk (id, sec, who, text, re, at, k) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, sec, who, text, re, t, TALK_K.includes(b.k) ? b.k : null), db.prepare('UPDATE makers SET last = ? WHERE who = ?').bind(t, who)]);

@@ -2301,7 +2301,7 @@
   var LIVE = store.get('da.live', []) || [];
   var TK = { re: null, sec: null, k: null, st: 0 }, TSECS = ['notice', 'story', 'make', 'print'];
   /* what became of a word sent, or why the talk is closed, as a mark under it: the key (a code from a print opens it), wait, rest, gone */
-  var TK_WHY = { 400: '∅', 403: '↻', 429: '…', 503: '☾' };
+  var TK_WHY = { 400: '∅', 401: '⚿', 403: '↻', 429: '…', 503: '☾' };
   function talkSays(t, ok) { var e = $('#au-talkp .au-tkst'); if (!e) return; e.textContent = t || ''; e.classList.toggle('ok', !!ok); clearTimeout(TK.st); if (ok) TK.st = setTimeout(function () { e.textContent = ''; }, 2600); }
   /* closed as one moves on: another poster, another step, a device */
   function talkShut() { if (!TK) return; var p = $('#au-talkp'); if (p && !p.hidden) p.hidden = true; TK.sec = null; TK.re = null; }

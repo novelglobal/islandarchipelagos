@@ -13,8 +13,8 @@
   /* the ad on the stories card sized from its own height, the same in every browser */
   (function () { var fit = function (el) { var h = el.getBoundingClientRect().height; if (h) el.style.setProperty('--adu', (h / 100).toFixed(3) + 'px'); };
     var ro = 'ResizeObserver' in window ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
-    var look = function () { document.querySelectorAll('.rc-ad').forEach(function (el) { if (el.__adu) return; el.__adu = 1; fit(el); if (ro) ro.observe(el); }); };
-    new MutationObserver(look).observe(document.documentElement, { childList: true, subtree: true }); addEventListener('resize', function () { document.querySelectorAll('.rc-ad').forEach(fit); }); look(); })();
+    var look = function () { document.querySelectorAll('.rc-tp').forEach(function (el) { if (el.__adu) return; el.__adu = 1; fit(el); if (ro) ro.observe(el); }); };
+    new MutationObserver(look).observe(document.documentElement, { childList: true, subtree: true }); addEventListener('resize', function () { document.querySelectorAll('.rc-tp').forEach(fit); }); look(); })();
   /* a link on a card going out: a tentacle holds out where it goes, a thumb up to go, a thumb down to stay */
   (function () { var box = null, go = null;
     var shut = function () { if (box) { box.remove(); box = null; go = null; } };
@@ -55,7 +55,11 @@
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
   function colHTML() { var out = '', run = [];
     var flush = function () { for (var k = 0; k < run.length; k += 3) out += '<section class="hm-trio n' + Math.min(3, run.length - k) + '">' + run.slice(k, k + 3).join('') + '</section>'; run = []; };
-    CARDS.forEach(function (c, i) { if (c.size === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out; }
+    CARDS.forEach(function (c, i) { if (c.size === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out + FOOT; }
+  /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
+  var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
+  var FOOT = '<footer class="hm-foot" aria-hidden="true"><div class="hf-grid">' + FOOT_T.map(function (t, k) { return '<canvas class="hf-t t' + k + '" data-pat="' + t.join(',') + '"></canvas>'; }).join('') +
+    '<b class="hf-pill">' + 'novel.global'.split('').map(function (c) { return '<i>' + c + '</i>'; }).join('') + '</b></div><b class="hf-m"></b></footer>';
   function pages() { return $$('#hm-col > .hm-slot > .hm-card, #hm-col > .hm-trio'); }
   function dotsHTML() { return pages().map(function () { return '<i></i>'; }).join(''); }
   var MOTION = store.get('da.hm.motion', null);   // null: each card's own; or 'shadow' / 'speed' for all
@@ -72,6 +76,21 @@
     for (var i = 0; i < 260 * (k || 1); i++) { g.globalAlpha = 0.3 + r() * 0.7; g.beginPath(); g.arc(r() * w, r() * h, 0.4 + r() * r() * 2.6, 0, 7); g.fill(); }
     g.lineCap = 'round'; for (var s = 0; s < 6 * (k || 1); s++) { var x = r() * w, y = r() * h, a = r() * 7, L = 20 + r() * 120; g.globalAlpha = 0.25 + r() * 0.4; g.lineWidth = 0.4 + r() * 1.1; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a + 0.3) * L * 0.5, y + Math.sin(a + 0.3) * L * 0.5, x + Math.cos(a) * L, y + Math.sin(a) * L); g.stroke(); }
     g.restore(); }
+  /* crumpled receipt paper: a jittered mesh of facets, each lit by its tilt, softened; creases drawn along a few folds */
+  function crumple(g, w, h, seed, base) {
+    var r = rnd(seed || 7), cs = Math.max(18, Math.min(w, h) / 9), nx = Math.ceil(w / cs) + 2, ny = Math.ceil(h / cs) + 2, P = [];
+    for (var y = 0; y < ny; y++) { P.push([]); for (var x = 0; x < nx; x++) P[y].push([(x - 0.5) * cs + (r() - 0.5) * cs * 0.9, (y - 0.5) * cs + (r() - 0.5) * cs * 0.9, (r() - 0.5) * cs * 0.55]); }
+    g.save(); g.fillStyle = base || '#F6F5F0'; g.fillRect(0, 0, w, h); try { g.filter = 'blur(' + Math.max(0.6, cs / 30) + 'px)'; } catch (e) { /* old */ }
+    var L = [-0.55, -0.7, 0.45], tri = function (a, b, c) { var ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+      var nx2 = uy * vz - uz * vy, ny2 = uz * vx - ux * vz, nz = ux * vy - uy * vx, d = Math.hypot(nx2, ny2, nz) || 1; if (nz < 0) { nx2 = -nx2; ny2 = -ny2; nz = -nz; }
+      var k = (nx2 * L[0] + ny2 * L[1] + nz * L[2]) / d - 0.45; g.fillStyle = k > 0 ? 'rgba(255,255,255,' + Math.min(0.55, k * 1.1).toFixed(3) + ')' : 'rgba(70,66,58,' + Math.min(0.16, -k * 0.32).toFixed(3) + ')';
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.closePath(); g.fill(); };
+    for (var y2 = 0; y2 < ny - 1; y2++) for (var x2 = 0; x2 < nx - 1; x2++) { var A = P[y2][x2], B = P[y2][x2 + 1], C = P[y2 + 1][x2], E = P[y2 + 1][x2 + 1]; if ((x2 + y2) % 2) { tri(A, B, E); tri(A, E, C); } else { tri(A, B, C); tri(B, E, C); } }
+    try { g.filter = 'none'; } catch (e) { /* old */ }
+    g.lineCap = 'round'; for (var f = 0; f < 9; f++) { var fx = r() * w, fy = r() * h, an = r() * 6.3, len = (0.3 + r() * 0.7) * Math.max(w, h); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(fx, fy); g.lineTo(fx + Math.cos(an) * len, fy + Math.sin(an) * len); g.stroke(); g.strokeStyle = 'rgba(60,56,50,.1)'; g.beginPath(); g.moveTo(fx + 1, fy + 1); g.lineTo(fx + 1 + Math.cos(an) * len, fy + 1 + Math.sin(an) * len); g.stroke(); }
+    g.restore(); grain(g, w, h, Math.round(w * h / 70), 'rgba(0,0,0,.06)', (seed || 7) + 1);
+  }
+  window.NG_CRUMPLE = function (cv, seed) { var k = Math.min(2, devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); crumple(g, w, h, seed); };
   /* the flowing band: where it comes in at the top of each card and leaves at the foot, so the column holds one band from end to end */
   var FLOW = [0.2, 0.78, 0.26, 0.72, 0.32, 0.7, 0.24, 0.8];
   function bandPts(w, h, i) { var a = FLOW[i % FLOW.length] * w, b = FLOW[(i + 1) % FLOW.length] * w, P = [[a, -0.06 * h], [a, 0.42 * h], [b, 0.58 * h], [b, 1.06 * h]], out = [];
@@ -129,14 +148,6 @@
     g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.4; g.beginPath(); g.arc(x - R * 0.2, y - R * 0.25, R * 0.5, 3.6, 4.6); g.stroke();
   }
   function shade(hex, k) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { return Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)); }); return 'rgb(' + c.join(',') + ')'; }
-  /* black type set as dots, the way a dot-matrix poster sets it: the letters drawn once, then read back as blobs along their strokes */
-  function dotText(g, text, x, y, size, col, seed) {
-    var c = D.createElement('canvas'), cg = c.getContext('2d'); cg.font = '600 ' + size + 'px "Archivo Narrow", Arial, sans-serif'; var tw = Math.ceil(cg.measureText(text).width) + 8;
-    c.width = tw; c.height = Math.ceil(size * 1.2); cg.font = '600 ' + size + 'px "Archivo Narrow", Arial, sans-serif'; cg.textBaseline = 'top'; cg.fillText(text, 4, size * 0.08);
-    var d = cg.getImageData(0, 0, c.width, c.height).data, st = Math.max(3, Math.round(size / 13)), r = rnd(seed || 3); g.fillStyle = col;
-    for (var yy = 0; yy < c.height; yy += st) for (var xx = 0; xx < c.width; xx += st) if (d[(yy * c.width + xx) * 4 + 3] > 140) { g.beginPath(); g.arc(x + xx + (r() - 0.5) * st * 0.5, y + yy + (r() - 0.5) * st * 0.5, st * (0.55 + r() * 0.35), 0, 7); g.fill(); }
-    return tw;
-  }
   /* novel.global's mark: the square and the sun */
   var MARK = '<svg class="ng-mark" viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="currentColor" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg>';
   /* 888 in fat pixels, stood up in three dimensions, die-cut and stuck on */
@@ -150,21 +161,15 @@
     '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6.jpg"></i></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   /* a line in a made-up hand, written, crossed out, rubbed away, and another tried: the doubt before the poem, small, in the gap */
-  var ELV = '<svg class="hm-elv" viewBox="0 0 120 30" aria-hidden="true"><path class="e1" pathLength="1" d="M4 20c4-10 8-10 9-2s3 6 6-4 2-8 5 0c2 6 6 6 8-2M34 12c2 4 6 4 8 0s-2-6-4-2c-2 5 4 10 9 4M49 20c3-12 5-12 6-6 1 5 5 5 7-3"/>' +
-    '<path class="sc" pathLength="1" d="M2 16l10-6-6 10 14-9-8 11 16-10-9 11 17-11-10 12 18-10-8 9"/>' +
-    '<path class="e2" pathLength="1" d="M6 18c2-8 6-8 6-2s4 5 6-3c1-4 4-4 5 1M27 20c4-2 6-10 2-10s-3 9 3 9 5-6 8-6M46 18q4-10 7-2t7-1M64 20c2-6 7-6 6 0c-1 4 3 4 6-1M80 14c3 0 3 6 0 6s-3-6 1-6h6"/></svg>';
   var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
     '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
-  /* DESIGN AND PRINT: marks drawn by hand, one after another; its frame drawn by hand too */
-  var DRAWN = '<svg class="zn-draw" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><filter id="zn-sp" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale=".7" result="d"/><feGaussianBlur in="d" stdDeviation=".7" result="h"/><feComponentTransfer in="h" result="hz"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feGaussianBlur in="d" stdDeviation=".1" result="e"/><feMerge><feMergeNode in="hz"/><feMergeNode in="e"/></feMerge></filter><filter id="zn-mk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale=".9"/></filter><mask id="zn-bm" maskUnits="userSpaceOnUse" x="58" y="50" width="32" height="32"><circle cx="74" cy="60.8" r="6.6" fill="#fff" stroke="none"/><circle cx="78.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="69.5" cy="68.6" r="6.6" fill="#fff" stroke="none"/><circle cx="74" cy="58.9" r="4.7" fill="#000" stroke="none"/><circle cx="80.15" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="67.85" cy="69.55" r="4.7" fill="#000" stroke="none"/><circle cx="74" cy="66" r="5.3" fill="none" stroke="#fff" stroke-width="1.7"/><circle cx="74" cy="66" r="2.3" fill="#000" stroke="none"/><path d="M74 64L74 61.4" stroke="#000" stroke-width=".9"/><path d="M75.73 67L77.98 68.3" stroke="#000" stroke-width=".9"/><path d="M72.27 67L70.02 68.3" stroke="#000" stroke-width=".9"/></mask></defs>' +
-    '<path pathLength="1" class="o" style="--d:.5s" d="M70 20l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>' +
-    '<g class="gf" filter="url(#zn-sp)">' +
-    '<g transform="translate(24 74) scale(.58) translate(-31.5 -74)"><path pathLength="1" class="mk" style="--d:0s" filter="url(#zn-mk)" d="M35.27 62.72 L37.36 63.19 L39.28 64.17 L40.82 65.65 L41.87 67.47 L42.47 69.43 L42.81 71.38 L43.06 73.29 L43.27 75.24 L43.31 77.28 L42.97 79.36 L42.08 81.32 L40.63 82.94 L38.78 84.11 L36.76 84.87 L34.73 85.37 L32.72 85.78 L30.67 86.13 L28.51 86.33 L26.28 86.15 L24.14 85.43 L22.31 84.14 L20.92 82.43 L19.95 80.51 L19.25 78.57 L18.65 76.63 L18.1 74.65 L17.73 72.55 L17.75 70.35 L18.36 68.2 L19.58 66.31 L21.28 64.82 L23.22 63.71 L25.22 62.86 L27.22 62.11 L29.28 61.41 L31.48 60.89 L33.8 60.75 L36.12 61.18 L38.21 62.22 L39.93 63.76 M21.5 88.5L30.6 59.2L40.8 89 M15.5 78.2Q31 75.5 47.5 76.4"/></g>' +
-    '<g transform="translate(63 66) scale(.6) translate(-74 -66)"><g class="bz" style="--d:3s"><rect x="58" y="50" width="32" height="32" fill="#0A0A0A" stroke="none" mask="url(#zn-bm)" transform="translate(1.1 1.1)"/><rect x="58" y="50" width="32" height="32" fill="#FF2BD6" stroke="none" mask="url(#zn-bm)"/></g></g>' +
-    '<g transform="translate(32 103) scale(.5) translate(-35 -110)"><path pathLength="1" class="b dm" style="--d:3.5s" d="M12 101L17 101L21 106L17 111L12 111z M14 97.5V114.5 M28.5 101L33 106L28.5 111L24 106z M28.5 101v-3.5M28.5 111v3.5M24 106h-2.5M33 106h2.5 M40.5 101L45 106L40.5 111L36 106z M40.5 101v-3.5M40.5 111v3.5M36 106h-2.5M45 106h2.5 M48 111V101L52.5 107L57 101V111 M48 101l-1.6 -3.4M57 101l1.6 -3.4M48 111l-1.2 3.4M57 111l1.2 3.4 M8 118L62 117.4 M18 117.9v3.4M31 117.8v5M43 117.6v2.2M55 117.5v4.2"/></g>' +
-    '<g transform="translate(60 97) scale(.55) translate(-31 -140)"><path pathLength="1" class="pg" style="--d:6s" d="M31 150 L24.53 130.1 L41.46 142.4 L20.54 142.4 L37.47 130.1 L31 150 M42 139A11 11 0 1 1 20 139A11 11 0 1 1 42 139 M43.9 139A12.9 12.9 0 1 1 18.1 139A12.9 12.9 0 1 1 43.9 139 M27.88 151.52L26.09 154.12L26.17 150.96M21.12 147.29L19.19 147.58L20.06 145.84M18.13 139.9L15.1 139L18.13 138.1M20.06 132.16L19.19 130.42L21.12 130.71M26.17 127.04L26.09 123.88L27.88 126.48M34.12 126.48L35.51 125.11L35.83 127.04M40.88 130.71L43.86 129.65L41.94 132.16M43.87 138.1L45.6 139L43.87 139.9M41.94 145.84L43.86 148.35L40.88 147.29M35.83 150.96L35.51 152.89L34.12 151.52 M27 151.4v3M33.5 151.7v5"/></g>' +
-    '<path pathLength="1" class="dr" style="--d:6.5s" d="M18.6 82.6v3.4M28.4 83.2v2.2M32.6 81.6v4.6M22 115.2v3M30.4 114.8v4.4M41.2 115.2v2.4"/><path pathLength="1" class="dr p" style="--d:6.8s" d="M58.6 74.8v3.8M66.2 75.4v2.2"/></g>' +
-    '</svg>';
+  /* DESIGN PRINT: a big street poster pasted up on the white wall in the photograph, piece by piece, torn paper and glitched type */
+  /* the poster's hero, pasted last: Design in a blackletter, acid lime, standing off the paper in depth. Its own layer, so the paper's
+     multiply never dulls it; it glitches and is torn down with the rest */
+  var ZHERO = '<svg class="zp-hero" viewBox="0 0 100 128" aria-hidden="true"><g class="zh-g" font-family="UnifrakturMaguntia, &#39;Old English Text MT&#39;, serif" font-size="27">' +
+    [2.4, 2, 1.6, 1.2, 0.8, 0.4].map(function (d) { return '<text x="' + (24 + d * 0.6) + '" y="' + (20 + d) + '" fill="' + (d > 2 ? '#0B0B0B' : '#3D4A08') + '">Design</text>'; }).join('') +
+    '<text x="24" y="20" fill="#DCFF1F" stroke="#0B0B0B" stroke-width=".35" paint-order="stroke">Design</text><text x="24" y="20" fill="none" stroke="#F6FFB8" stroke-width=".18" opacity=".55" transform="translate(-.25 -.3)">Design</text></g></svg>';
+  var ZPOST = '<svg class="zp" viewBox="0 0 100 128" aria-hidden="true"><defs><filter id="zp-tx" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .1  0 0 0 0 .09  0 0 0 0 .08  0 0 0 -1.6 1.05"/></filter><filter id="zp-cr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".035 .06" numOctaves="3" seed="9" result="n"/><feDiffuseLighting in="n" surfaceScale="2.4" lighting-color="#fff"><feDistantLight azimuth="235" elevation="52"/></feDiffuseLighting></filter><clipPath id="zp-ck"><path d="M4.0 64.0 9.9 63.6 20.0 63.6 26.3 61.2 33.6 61.1 40.0 60.0 49.8 61.7 58.7 62.0 68.5 62.1 79.9 61.5 90.0 63.0 90.2 68.8 89.6 75.9 88.0 78.8 87.8 86.8 88.0 92.0 81.4 93.3 78.1 97.3 71.0 100.5 65.0 102.1 60.0 104.0 53.0 105.0 49.0 107.7 43.2 107.2 36.3 108.2 30.0 110.0 24.4 108.0 22.3 107.1 17.5 105.4 11.7 100.9 8.0 100.0 7.0 92.1 5.5 85.3 6.0 78.4 4.2 72.3Z"/></clipPath><clipPath id="zp-pp"><path d="M0.0 0.0 9.9 0.1 20.6 -0.0 30.0 0.1 39.6 0.0 50.2 0.4 59.4 -0.3 69.4 0.4 80.3 -0.6 90.7 0.7 100.0 0.0 100.2 13.0 99.5 24.9 100.0 37.8 99.6 50.8 99.3 63.9 99.9 77.3 100.0 89.8 100.0 102.6 99.9 114.9 100.0 128.0 90.7 128.7 80.5 128.3 69.7 127.6 59.7 127.4 50.4 127.9 40.5 127.8 30.6 128.5 19.3 127.6 10.6 128.0 0.0 128.0 0.7 115.1 -0.6 102.6 0.4 89.3 -0.6 76.6 0.6 64.4 -0.5 50.8 -0.6 37.8 0.4 25.1 0.1 12.7Z"/></clipPath></defs><g clip-path="url(#zp-pp)"><path class="zp-p" style="--k:0" d="M0.0 0.0 9.9 0.1 20.6 -0.0 30.0 0.1 39.6 0.0 50.2 0.4 59.4 -0.3 69.4 0.4 80.3 -0.6 90.7 0.7 100.0 0.0 100.2 13.0 99.5 24.9 100.0 37.8 99.6 50.8 99.3 63.9 99.9 77.3 100.0 89.8 100.0 102.6 99.9 114.9 100.0 128.0 90.7 128.7 80.5 128.3 69.7 127.6 59.7 127.4 50.4 127.9 40.5 127.8 30.6 128.5 19.3 127.6 10.6 128.0 0.0 128.0 0.7 115.1 -0.6 102.6 0.4 89.3 -0.6 76.6 0.6 64.4 -0.5 50.8 -0.6 37.8 0.4 25.1 0.1 12.7Z" fill="#D7D3CA"/><g class="zp-p" style="--k:1" fill="#EF4A2C"><rect x="0" y="0" width="22" height="6"/><rect x="22" y="0.7" width="4.4" height="1.2"/><rect x="22" y="1.3" width="3.0" height="0.9"/><rect x="22" y="3.3" width="4.2" height="0.6"/><rect x="78" y="0" width="22" height="6"/><rect x="100" y="4.8" width="4.8" height="0.6"/><rect x="100" y="0.4" width="4.3" height="1.2"/><rect x="100" y="3.3" width="2.2" height="1.0"/><rect x="0" y="20" width="6" height="7"/><rect x="6" y="21.4" width="3.2" height="0.8"/><rect x="6" y="23.6" width="3.5" height="0.6"/><rect x="6" y="20.1" width="4.3" height="0.7"/><rect x="90" y="22" width="10" height="6"/><rect x="100" y="23.2" width="1.4" height="0.9"/><rect x="100" y="22.8" width="1.3" height="0.9"/><rect x="100" y="26.6" width="4.2" height="1.2"/><rect x="0" y="54" width="12" height="6"/><rect x="12" y="57.1" width="4.0" height="1.2"/><rect x="12" y="58.7" width="4.0" height="1.3"/><rect x="12" y="54.1" width="2.9" height="1.3"/><rect x="84" y="56" width="16" height="7"/><rect x="100" y="60.8" width="4.3" height="0.9"/><rect x="100" y="57.6" width="1.0" height="1.1"/><rect x="100" y="58.8" width="4.0" height="0.8"/><rect x="0" y="86" width="8" height="6"/><rect x="8" y="87.6" width="1.6" height="1.1"/><rect x="8" y="86.4" width="3.1" height="0.8"/><rect x="8" y="86.3" width="3.0" height="0.5"/><rect x="88" y="96" width="12" height="7"/><rect x="100" y="97.4" width="4.8" height="0.6"/><rect x="100" y="100.2" width="1.3" height="0.7"/><rect x="100" y="102.0" width="1.8" height="1.1"/><rect x="0" y="118" width="30" height="10"/><rect x="30" y="122.2" width="2.5" height="0.6"/><rect x="30" y="125.8" width="1.0" height="1.0"/><rect x="30" y="126.1" width="1.3" height="1.0"/><rect x="66" y="120" width="34" height="8"/><rect x="100" y="124.0" width="2.7" height="1.0"/><rect x="100" y="121.4" width="4.3" height="1.2"/><rect x="100" y="124.6" width="1.6" height="1.0"/></g><path class="zp-p" style="--k:2" d="M4.0 14.0 8.2 14.1 13.2 13.3 18.4 11.9 23.9 10.9 30.0 11.0 37.1 13.0 40.6 14.2 45.9 13.7 53.5 15.5 58.0 16.0 57.1 26.8 57.9 33.6 60.1 43.1 58.9 51.4 60.0 62.0 54.3 61.9 50.4 61.5 46.4 60.7 43.9 60.3 38.0 60.0 32.6 62.0 25.8 60.5 22.5 63.4 14.8 62.2 10.0 64.0 9.8 60.6 7.0 55.8 8.2 49.9 5.7 43.5 5.0 40.0 3.3 36.3 3.8 30.3 3.6 25.4 4.5 18.5Z" fill="#E4BD0C"/><path class="zp-p" style="--k:3" d="M26.0 3.0 33.8 4.3 42.3 3.4 52.6 5.9 61.5 4.7 70.0 6.0 76.5 4.7 78.9 4.5 85.4 3.5 89.8 4.0 96.0 4.0 96.6 8.1 96.4 15.6 98.6 20.1 98.2 25.1 98.0 30.0 96.1 34.2 95.0 42.4 96.2 48.2 93.4 52.8 94.0 58.0 86.3 59.5 78.3 61.1 69.9 60.5 64.3 62.4 56.0 62.0 50.9 61.8 45.3 61.6 38.2 60.2 34.0 59.9 27.0 58.0 26.6 47.9 27.7 36.2 26.8 24.6 26.4 14.3Z" fill="#1C3A96"/><path class="zp-p" style="--k:4" d="M4.0 64.0 9.9 63.6 20.0 63.6 26.3 61.2 33.6 61.1 40.0 60.0 49.8 61.7 58.7 62.0 68.5 62.1 79.9 61.5 90.0 63.0 90.2 68.8 89.6 75.9 88.0 78.8 87.8 86.8 88.0 92.0 81.4 93.3 78.1 97.3 71.0 100.5 65.0 102.1 60.0 104.0 53.0 105.0 49.0 107.7 43.2 107.2 36.3 108.2 30.0 110.0 24.4 108.0 22.3 107.1 17.5 105.4 11.7 100.9 8.0 100.0 7.0 92.1 5.5 85.3 6.0 78.4 4.2 72.3Z" fill="#1C3A96"/><g class="zp-p zp-ck" style="--k:5" clip-path="url(#zp-ck)"><circle cx="44" cy="103" r="24" fill="#D7D3CA"/><path class="zp-sp" d="M68.0 103.0 67.4 108.3 63.2 107.4 63.7 103.0ZM65.6 113.4 62.8 118.0 59.4 115.3 61.7 111.5ZM59.0 121.8 54.4 124.6 52.5 120.7 56.3 118.4ZM49.3 126.4 44.0 127.0 44.0 122.7 48.4 122.2ZM38.7 126.4 33.6 124.6 35.5 120.7 39.6 122.2ZM29.0 121.8 25.2 118.0 28.6 115.3 31.7 118.4ZM22.4 113.4 20.6 108.3 24.8 107.4 26.3 111.5ZM20.0 103.0 20.6 97.7 24.8 98.6 24.3 103.0ZM22.4 92.6 25.2 88.0 28.6 90.7 26.3 94.5ZM29.0 84.2 33.6 81.4 35.5 85.3 31.7 87.6ZM38.7 79.6 44.0 79.0 44.0 83.3 39.6 83.8ZM49.3 79.6 54.4 81.4 52.5 85.3 48.4 83.8ZM59.0 84.2 62.8 88.0 59.4 90.7 56.3 87.6ZM65.6 92.6 67.4 97.7 63.2 98.6 61.7 94.5ZM62.5 109.6 60.6 113.6 57.6 111.7 59.2 108.4ZM57.8 117.0 54.3 119.7 52.5 116.7 55.3 114.5ZM50.4 121.6 46.1 122.6 45.7 119.0 49.2 118.3ZM41.6 122.5 37.4 121.5 38.6 118.2 42.1 119.0ZM33.4 119.6 30.0 116.8 32.5 114.3 35.3 116.6ZM27.3 113.3 25.4 109.4 28.7 108.2 30.3 111.5ZM24.4 105.1 24.5 100.6 28.0 101.1 28.0 104.7ZM25.5 96.4 27.4 92.4 30.4 94.3 28.8 97.6ZM30.2 89.0 33.7 86.3 35.5 89.3 32.7 91.5ZM37.6 84.4 41.9 83.4 42.3 87.0 38.8 87.7ZM46.4 83.5 50.6 84.5 49.4 87.8 45.9 87.0ZM54.6 86.4 58.0 89.2 55.5 91.7 52.7 89.4ZM60.7 92.7 62.6 96.6 59.3 97.8 57.7 94.5ZM63.6 100.9 63.5 105.4 60.0 104.9 60.0 101.3ZM59.7 106.8 58.4 110.2 55.8 108.9 56.9 106.1ZM56.5 113.3 53.9 115.8 52.1 113.5 54.2 111.4ZM50.8 117.6 47.3 118.8 46.7 115.9 49.6 115.0ZM43.7 119.1 40.2 118.7 40.9 115.9 43.8 116.2ZM36.8 117.4 33.7 115.5 35.6 113.2 38.1 114.8ZM31.2 112.9 29.4 109.8 32.0 108.6 33.5 111.1ZM28.2 106.3 27.9 102.7 30.8 102.8 31.1 105.7ZM28.3 99.2 29.6 95.8 32.2 97.1 31.1 99.9ZM31.5 92.7 34.1 90.2 35.9 92.5 33.8 94.6ZM37.2 88.4 40.7 87.2 41.3 90.1 38.4 91.0ZM44.3 86.9 47.8 87.3 47.1 90.1 44.2 89.8ZM51.2 88.6 54.3 90.5 52.4 92.8 49.9 91.2ZM56.8 93.1 58.6 96.2 56.0 97.4 54.5 94.9ZM59.8 99.7 60.1 103.3 57.2 103.2 56.9 100.3ZM55.0 110.3 53.1 112.6 51.5 110.9 53.1 109.0ZM50.8 114.4 48.1 115.6 47.3 113.3 49.6 112.3ZM45.2 116.2 42.2 116.1 42.5 113.8 45.0 113.8ZM39.3 115.4 36.7 114.0 38.0 112.1 40.2 113.2ZM34.4 112.1 32.6 109.8 34.7 108.6 36.1 110.5ZM31.4 107.1 30.8 104.2 33.2 104.0 33.7 106.3ZM30.9 101.2 31.6 98.3 33.8 99.2 33.2 101.5ZM33.0 95.7 34.9 93.4 36.5 95.1 34.9 97.0ZM37.2 91.6 39.9 90.4 40.7 92.7 38.4 93.7ZM42.8 89.8 45.8 89.9 45.5 92.2 43.0 92.2ZM48.7 90.6 51.3 92.0 50.0 93.9 47.8 92.8ZM53.6 93.9 55.4 96.2 53.3 97.4 51.9 95.5ZM56.6 98.9 57.2 101.8 54.8 102.0 54.3 99.7ZM57.1 104.8 56.4 107.7 54.2 106.8 54.8 104.5ZM53.6 108.0 52.3 110.0 50.8 108.8 51.9 107.1ZM50.5 111.7 48.4 112.9 47.6 111.1 49.3 110.1ZM46.1 113.6 43.7 113.8 43.7 111.9 45.7 111.7ZM41.3 113.5 39.0 112.6 39.9 110.9 41.8 111.6ZM37.0 111.3 35.3 109.5 36.9 108.3 38.2 109.8ZM34.1 107.4 33.4 105.1 35.3 104.7 35.9 106.6ZM33.2 102.7 33.5 100.3 35.4 100.8 35.1 102.7ZM34.4 98.0 35.7 96.0 37.2 97.2 36.1 98.9ZM37.5 94.3 39.6 93.1 40.4 94.9 38.7 95.9ZM41.9 92.4 44.3 92.2 44.3 94.1 42.3 94.3ZM46.7 92.5 49.0 93.4 48.1 95.1 46.2 94.4ZM51.0 94.7 52.7 96.5 51.1 97.7 49.8 96.2ZM53.9 98.6 54.6 100.9 52.7 101.3 52.1 99.4ZM54.8 103.3 54.5 105.7 52.6 105.2 52.9 103.3ZM50.0 109.5 48.4 110.7 47.6 109.3 49.0 108.4ZM46.6 111.5 44.7 111.9 44.5 110.3 46.1 110.0ZM42.7 111.8 40.7 111.3 41.3 109.8 42.9 110.2ZM39.0 110.3 37.5 109.0 38.6 108.0 39.9 109.0ZM36.3 107.4 35.5 105.6 37.0 105.1 37.7 106.6ZM35.1 103.7 35.2 101.7 36.8 101.9 36.7 103.5ZM35.7 99.7 36.7 98.0 38.0 98.9 37.2 100.3ZM38.0 96.5 39.6 95.3 40.4 96.7 39.0 97.6ZM41.4 94.5 43.3 94.1 43.5 95.7 41.9 96.0ZM45.3 94.2 47.3 94.7 46.7 96.2 45.1 95.8ZM49.0 95.7 50.5 97.0 49.4 98.0 48.1 97.0ZM51.7 98.6 52.5 100.4 51.0 100.9 50.3 99.4ZM52.9 102.3 52.8 104.3 51.2 104.1 51.3 102.5ZM52.3 106.3 51.3 108.0 50.0 107.1 50.8 105.7ZM49.5 107.8 48.3 108.9 47.5 107.8 48.5 106.9ZM46.9 109.7 45.3 110.2 45.1 108.9 46.3 108.5ZM43.7 110.3 42.0 110.0 42.4 108.8 43.7 109.0ZM40.5 109.4 39.2 108.5 40.1 107.5 41.2 108.3ZM38.1 107.3 37.3 105.9 38.5 105.3 39.2 106.5ZM36.8 104.3 36.7 102.7 38.0 102.7 38.1 104.1ZM37.0 101.0 37.6 99.5 38.7 100.2 38.2 101.4ZM38.5 98.2 39.7 97.1 40.5 98.2 39.5 99.1ZM41.1 96.3 42.7 95.8 42.9 97.1 41.7 97.5ZM44.3 95.7 46.0 96.0 45.6 97.2 44.3 97.0ZM47.5 96.6 48.8 97.5 47.9 98.5 46.8 97.7ZM49.9 98.7 50.7 100.1 49.5 100.7 48.8 99.5ZM51.2 101.7 51.3 103.3 50.0 103.3 49.9 101.9ZM51.0 105.0 50.4 106.5 49.3 105.8 49.8 104.6ZM46.9 108.2 45.7 108.7 45.4 107.7 46.4 107.3ZM44.3 109.0 43.0 108.9 43.2 107.8 44.3 107.9ZM41.7 108.5 40.5 107.9 41.2 107.0 42.1 107.5ZM39.5 107.0 38.8 105.9 39.7 105.4 40.3 106.3ZM38.3 104.7 38.0 103.3 39.1 103.3 39.3 104.4ZM38.1 102.0 38.5 100.7 39.5 101.1 39.2 102.2ZM39.1 99.5 40.0 98.5 40.7 99.3 40.0 100.2ZM41.1 97.8 42.3 97.3 42.6 98.3 41.6 98.7ZM43.7 97.0 45.0 97.1 44.8 98.2 43.7 98.1ZM46.3 97.5 47.5 98.1 46.8 99.0 45.9 98.5ZM48.5 99.0 49.2 100.1 48.3 100.6 47.7 99.7ZM49.7 101.3 50.0 102.7 48.9 102.7 48.7 101.6ZM49.9 104.0 49.5 105.3 48.5 104.9 48.8 103.8ZM48.9 106.5 48.0 107.5 47.3 106.7 48.0 105.8ZM46.8 107.0 45.8 107.5 45.5 106.7 46.3 106.3ZM44.8 107.8 43.7 107.9 43.7 107.0 44.6 107.0ZM42.6 107.7 41.6 107.3 42.0 106.5 42.9 106.9ZM40.7 106.6 40.0 105.8 40.7 105.3 41.3 106.0ZM39.5 104.8 39.2 103.8 40.0 103.6 40.3 104.5ZM39.1 102.7 39.3 101.6 40.1 101.9 40.0 102.7ZM39.7 100.6 40.4 99.7 41.0 100.3 40.5 101.0ZM41.2 99.0 42.2 98.5 42.5 99.3 41.7 99.7ZM43.2 98.2 44.3 98.1 44.3 99.0 43.4 99.0ZM45.4 98.3 46.4 98.7 46.0 99.5 45.1 99.1ZM47.3 99.4 48.0 100.2 47.3 100.7 46.7 100.0ZM48.5 101.2 48.8 102.2 48.0 102.4 47.7 101.5ZM48.9 103.3 48.7 104.4 47.9 104.1 48.0 103.3ZM48.3 105.4 47.6 106.3 47.0 105.7 47.5 105.0ZM45.1 106.9 44.2 107.0 44.1 106.3 44.9 106.2ZM43.3 107.0 42.4 106.7 42.7 106.0 43.4 106.2ZM41.6 106.2 41.0 105.6 41.5 105.2 42.1 105.7ZM40.5 104.9 40.1 104.1 40.8 103.9 41.1 104.6ZM40.0 103.2 40.0 102.3 40.8 102.4 40.7 103.1ZM40.3 101.4 40.8 100.6 41.3 101.1 41.0 101.7ZM41.4 100.0 42.1 99.5 42.4 100.1 41.8 100.5ZM42.9 99.1 43.8 99.0 43.9 99.7 43.1 99.8ZM44.7 99.0 45.6 99.3 45.3 100.0 44.6 99.8ZM46.4 99.8 47.0 100.4 46.5 100.8 45.9 100.3ZM47.5 101.1 47.9 101.9 47.2 102.1 46.9 101.4ZM48.0 102.8 48.0 103.7 47.2 103.6 47.3 102.9ZM47.7 104.6 47.2 105.4 46.7 104.9 47.0 104.3ZM46.6 106.0 45.9 106.5 45.6 105.9 46.2 105.5ZM45.2 106.1 44.5 106.3 44.4 105.7 45.0 105.5ZM43.7 106.3 43.0 106.1 43.2 105.6 43.8 105.7ZM42.3 105.9 41.7 105.4 42.2 105.0 42.6 105.3ZM41.3 104.8 40.9 104.2 41.5 104.0 41.8 104.5ZM40.7 103.5 40.7 102.7 41.3 102.8 41.3 103.4ZM40.9 102.0 41.1 101.3 41.7 101.6 41.4 102.2ZM41.6 100.7 42.2 100.3 42.5 100.8 42.0 101.2ZM42.8 99.9 43.5 99.7 43.6 100.3 43.0 100.5ZM44.3 99.7 45.0 99.9 44.8 100.4 44.2 100.3ZM45.7 100.1 46.3 100.6 45.8 101.0 45.4 100.7ZM46.7 101.2 47.1 101.8 46.5 102.0 46.2 101.5ZM47.3 102.5 47.3 103.3 46.7 103.2 46.7 102.6ZM47.1 104.0 46.9 104.7 46.3 104.4 46.6 103.8ZM46.4 105.3 45.8 105.7 45.5 105.2 46.0 104.8ZM44.1 105.7 43.5 105.7 43.6 105.2 44.1 105.2ZM42.9 105.5 42.4 105.2 42.7 104.8 43.1 105.0ZM41.9 104.7 41.6 104.2 42.0 104.0 42.3 104.4ZM41.4 103.7 41.3 103.1 41.8 103.1 41.9 103.6ZM41.3 102.5 41.5 101.9 42.0 102.1 41.8 102.6ZM41.8 101.4 42.3 100.9 42.6 101.3 42.2 101.7ZM42.8 100.6 43.3 100.4 43.4 100.9 43.0 101.0ZM43.9 100.3 44.5 100.3 44.4 100.8 43.9 100.8ZM45.1 100.5 45.6 100.8 45.3 101.2 44.9 101.0ZM46.1 101.3 46.4 101.8 46.0 102.0 45.7 101.6ZM46.6 102.3 46.7 102.9 46.2 102.9 46.1 102.4ZM46.7 103.5 46.5 104.1 46.0 103.9 46.2 103.4ZM46.2 104.6 45.7 105.1 45.4 104.7 45.8 104.3ZM45.2 105.4 44.7 105.6 44.6 105.1 45.0 105.0Z" fill="#EF4A2C"/></g><g class="zp-p zp-ty" style="--k:6" font-family="&#39;Times New Roman&#39;,Times,&#39;Nimbus Roman&#39;,serif" font-size="19" letter-spacing="-1.1"><text x="27" y="33" fill="#CFC8B3" textLength="66" lengthAdjust="spacingAndGlyphs">print it</text><text x="27" y="49" fill="#CFC8B3" textLength="56" lengthAdjust="spacingAndGlyphs">paste it</text></g><g class="zp-p" style="--k:7"><text x="26" y="60" font-family="&#39;Arial Black&#39;,&#39;Helvetica Neue&#39;,Arial,sans-serif" font-weight="900" font-style="italic" font-size="13" fill="#CFC8B3" stroke="#0B0B0B" stroke-width=".25" textLength="70" lengthAdjust="spacingAndGlyphs" transform="skewX(-8) translate(8 0)">ZINE</text></g><g class="zp-p zp-gl" style="--k:8" font-family="&#39;Helvetica Neue&#39;,Helvetica,Arial,sans-serif" font-size="8.4" letter-spacing="-.25"><rect x="18" y="67" width="76" height="9" fill="#CFC8B3"/><rect x="84" y="67" width="16" height="9" fill="#0B0B0B"/><text x="20" y="74.6" fill="#1C3A96" textLength="78" lengthAdjust="spacingAndGlyphs">80 mm thermal</text><rect x="18" y="79" width="76" height="9" fill="#CFC8B3"/><rect x="84" y="79" width="16" height="9" fill="#0B0B0B"/><text x="20" y="86.6" fill="#1C3A96" textLength="78" lengthAdjust="spacingAndGlyphs">80 mm thermal</text></g><g class="zp-p" style="--k:9" font-family="&#39;Times New Roman&#39;,Times,&#39;Nimbus Roman&#39;,serif" font-size="10" letter-spacing="-.5" fill="#0B0B0B"><text x="3" y="114" textLength="34" lengthAdjust="spacingAndGlyphs">novel</text><text x="3" y="123" textLength="38" lengthAdjust="spacingAndGlyphs">.global</text><text x="58" y="123" font-family="&#39;Arial Black&#39;,&#39;Helvetica Neue&#39;,Arial,sans-serif" font-weight="900" font-style="italic" font-size="9.4" letter-spacing="-.4" textLength="39" lengthAdjust="spacingAndGlyphs">DA·0080</text></g><g class="zp-sl" fill="#EF4A2C"><rect x="0" y="40" width="100" height="1.6"/><rect x="0" y="92" width="100" height="1.2" fill="#1C3A96"/></g><rect class="zp-cr" width="100" height="128" filter="url(#zp-cr)"/><rect class="zp-tx" width="100" height="128" filter="url(#zp-tx)"/></g></svg>';
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [26, 60, 40, 300 / 450]];
   var REFC = REFAT.map(function (p) { return [p[0] + p[2] / 2, p[1] + p[2] * p[3] / 2]; });
@@ -420,10 +425,9 @@
     /* RADIO: its photograph, the band in stepped blocks */
     blocks: function (L, w, h, i) { var g = L.b; grain(g, w, h, Math.round(w * h / 80), 'rgba(0,0,0,.12)', 31); },
     /* DESIGN AND PRINT: the wall photograph, the title in dots */
-    dots: function (L, w, h, i) { var t = L.t, s = Math.min(w * 0.16, h * 0.1), ox = w * 0.08, oy = h * 0.16;
-      dotText(t, 'DESIGN', ox, oy, s, '#0A0A0A', 44); dotText(t, 'PRINT', ox, oy + s * 0.98, s, '#0A0A0A', 46); },
+    dots: function () { },
     /* ISLAND: the printer on pale paper, the band as torn tape behind it */
-    printer: function (L, w, h, i) { var g = L.b; g.fillStyle = '#EEEDEA'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 50), 'rgba(0,0,0,.1)', 51); },
+    printer: function (L, w, h, i) { crumple(L.b, w, h, 51, '#F7F6F1'); },
     /* ISLAND ARCHIPELAGOS: rounded forms on soft grey, all in greys but the coral, which is its own; the band a glossy tube */
     forms: function (L, w, h, i) { var g = L.b; g.fillStyle = '#0C2546'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 70), 'rgba(255,255,255,.06)', 61); },
     receipt: function (L, w, h, i) { },
@@ -449,7 +453,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -467,7 +471,7 @@
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = j.buoyScrap !== false; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
@@ -480,27 +484,125 @@
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-YZ07</b>' +
-      '<a class="rc-ad" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener sponsored" aria-label="Ad: Brasshards Vandal Proof Tap 4 Way and Belt Clip, $15.90 at Bunnings"><span class="ad-p"><small>ONLY</small><b>$15<sup>.90</sup></b></span><span class="ad-t"><i>AD · bunnings.com.au</i><b>Brasshards Vandal Proof Tap 4 Way &amp; Belt Clip</b><em>I/N 0524216</em></span><span class="ad-go">SHOP NOW ↗</span></a>' +
+      '<div class="rc-tp"><span class="tp-pr"><small>ONLY</small><b>$15<sup>.90</sup></b></span><span class="tp-tx"><i>AD · bunnings.com.au</i><b>Brasshards Vandal Proof Tap 4 Way &amp; Belt Clip</b><em>I/N 0524216</em></span><a class="tp-go" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener">SHOP NOW ↗</a></div>' +
       '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') + STICK888 +
       '<a class="rc-eco" href="https://en.wikipedia.org/wiki/Deep_ecology" target="_blank" rel="noopener" aria-label="Deep ecology"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="rc-eco-r" d="M50 50m-37 0a37 37 0 1 1 74 0a37 37 0 1 1 -74 0"/></defs><circle cx="50" cy="50" r="48" class="bg"/><circle cx="50" cy="50" r="28" class="in"/><text><textPath href="#rc-eco-r">DEEP ECOLOGY · DEEP ECOLOGY ·</textPath></text><path class="lf" d="M50 70C38 60 38 42 50 30C62 42 62 60 50 70ZM50 74V40M50 52l-6-6M50 60l7-7"/></svg></a>' +
       '<canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
     else if (sk === 'radio') { var ks = [1]; for (var q = 0; q < 13; q++) ks.push(+(0.84 * Math.pow(0.885, q)).toFixed(3));
       inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-lamps"></span>'; }
-    else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2>' + DRAWN + '<span class="hm-lamps"></span>';
+    else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
-    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="sp-sub">BUILD A SOLAR THERMAL PRINTER FROM E-WASTE</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
+    else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? DRIFT + ORBIT : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
+    var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
-      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'wish' || sk === 'research' ? ELV : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
+      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
   }
+  /* the street poster on DESIGN PRINT pastes itself up a piece at a time, holds with a glitch now and then, is painted over and goes up again.
+     Only while the card is in view and nothing is open over the cards; still and whole for reduced motion */
+  var ZP = { t: 0, k: 0, seen: false };
+  function zpTick() { clearTimeout(ZP.t); var el = col.querySelector('.sk-zine .zp'); if (!el) return;
+    var hero = el.parentNode.querySelector('.zp-hero'), both = function (m, c2) { el.classList[m](c2); if (hero) hero.classList[m](c2); }, ps = $$('.zp-p', el).concat(hero ? [hero] : []); if (RM.matches) { ps.forEach(function (p) { p.classList.add('on'); }); return; }
+    if (!ZP.seen || D.hidden || away || xv.classList.contains('on')) { ZP.t = setTimeout(zpTick, 900); return; }
+    var n = ps.length, k = ZP.k;
+    if (k < n) { ps[k].classList.add('on'); ZP.k++; ZP.t = setTimeout(zpTick, k === 0 ? 500 : 220 + Math.random() * 200); return; }
+    if (k < n + 9) { if (Math.random() < 0.6) { both('add', 'gl'); setTimeout(function () { both('remove', 'gl'); }, 330); } ZP.k++; ZP.t = setTimeout(zpTick, 1600 + Math.random() * 1400); return; }
+    both('add', 'wipe'); ZP.t = setTimeout(function () { ps.forEach(function (p) { p.classList.remove('on'); }); both('remove', 'wipe'); ZP.k = 0; ZP.t = setTimeout(zpTick, 1400); }, 900); }
+  function zpStart() { var el = col.querySelector('.sk-zine'); if (!el) return; /* first seen already up on the wall; then torn down and pasted again */ var ps0 = $$('.sk-zine .zp .zp-p, .sk-zine .zp-hero', col); ps0.forEach(function (p) { p.classList.add('on'); }); ZP.k = ps0.length; if ('IntersectionObserver' in window) { if (ZP.io) ZP.io.disconnect(); ZP.io = new IntersectionObserver(function (es) { ZP.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.25 }); ZP.io.observe(el); } else ZP.seen = true; zpTick(); }
+  /* RESEARCH BOARD: a hand writing runes and made-up symbols between the photographs and the name, one after another, then rubbing them out
+     and starting again. Every thirty seconds or so a rune finished calls the Irukandji down off the banner; it circles the rune and swims back up */
+  var RUNES = ['M10 2V26M10 8L17 3M10 14L17 9', 'M6 2V26M6 8L14 14L6 20', 'M4 2V26M16 2V26M4 10L16 18', 'M10 2V26M3 8L10 14L17 8', 'M4 2L16 26M16 2L4 26', 'M10 2V26M4 20L10 14L16 20',
+    'M3 26L10 2L17 26', 'M10 2L17 9L10 16L3 9ZM10 16V26', 'M10 14m-1 0a1 1 0 1 1 2 0a3 3 0 1 1-5 0a5 5 0 1 1 9 0a7 7 0 1 1-12 1', 'M2 14Q10 4 18 14Q10 24 2 14ZM7.5 14a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0',
+    'M10 2L12.5 11L20 14L12.5 17L10 26L7.5 17L0 14L7.5 11Z', 'M13 3A11 11 0 1 0 13 25A8 8 0 1 1 13 3Z', 'M2 6H18M10 6V26M5 14H15', 'M4 4L16 24M4 24L10 14M16 4L12 11',
+    'M2 14a8 8 0 1 0 16 0a8 8 0 1 0-16 0M10 2V26M2 14H18', 'M10 3L18 25H2ZM10 17V19', 'M3 4C9 10 11 18 17 24M17 4C11 10 9 18 3 24M10 2V6', 'M5 26V2L15 9L5 16L15 23'];
+  var RN = { t: 0, n: 0, seen: false, last: 0, call: null };
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function rnTick() { clearTimeout(RN.t); var sv = col.querySelector('.sk-research .hm-rune'); if (!sv) return; var w = sv.querySelector('.rn-w');
+    if (RM.matches) { if (!w.childNodes.length) for (var q = 0; q < 6; q++) rnAdd(sv, q, true); return; }
+    if (!RN.seen || D.hidden || away || xv.classList.contains('on')) { RN.t = setTimeout(rnTick, 900); return; }
+    if (RN.n < 6) { var g = rnAdd(sv, RN.n, false); RN.n++;
+      if (Date.now() - RN.last > 30000) { RN.last = Date.now(); setTimeout(function () { rnMagic(sv, g); }, 900); }
+      RN.t = setTimeout(rnTick, 1100 + Math.random() * 700); return; }
+    rnErase(sv, function () { RN.n = 0; RN.t = setTimeout(rnTick, 900); }); }
+  function rnAdd(sv, k, still) { var g = D.createElementNS(SVGNS, 'g'), d = RUNES[Math.floor(Math.random() * RUNES.length)], x = 6 + k * 25.5 + (Math.random() - 0.5) * 2, y = 5 + (Math.random() - 0.5) * 2, sc = 1.02 + Math.random() * 0.12, rot = (Math.random() - 0.5) * 10;
+    g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + rot.toFixed(1) + ' 10 14) scale(' + sc.toFixed(2) + ')');
+    var pa = D.createElementNS(SVGNS, 'path'); pa.setAttribute('d', d); pa.setAttribute('pathLength', '1'); pa.setAttribute('class', 'rn-p' + (still ? ' on' : '')); g.appendChild(pa); sv.querySelector('.rn-w').appendChild(g);
+    if (!still) { pa.getBoundingClientRect(); requestAnimationFrame(function () { pa.classList.add('on'); }); } return g; }
+  /* the eraser drawn across: each rune smudged out as it passes, a ghost of it left on the paper */
+  function rnErase(sv, done) { var er = sv.querySelector('.rn-er'), gs = [].slice.call(sv.querySelectorAll('.rn-w > g'));
+    er.classList.add('go'); gs.forEach(function (g, k) { setTimeout(function () { g.classList.add('gone'); }, 200 + k * 260); });
+    setTimeout(function () { er.classList.remove('go'); gs.forEach(function (g) { g.remove(); }); [].slice.call(sv.querySelectorAll('.rn-fx > *')).forEach(function (n) { n.remove(); }); done(); }, 200 + gs.length * 260 + 600); }
+  /* the magic: sparks off the rune, and the jellyfish called to it from the banner for a few seconds */
+  function rnMagic(sv, g) { if (!g.isConnected) return; var fx = sv.querySelector('.rn-fx'), bb = g.getBBox(), cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2, m = g.getCTM && g.getCTM();
+    if (m) { cx = m.a * cx + m.c * cy + m.e; cy = m.b * (bb.x + bb.width / 2) + m.d * cy + m.f; }
+    for (var i = 0; i < 7; i++) { var a = i / 7 * 6.28 + Math.random() * 0.5, r = 10 + Math.random() * 8, s = D.createElementNS(SVGNS, 'path'); s.setAttribute('class', 'rn-sp'); s.setAttribute('d', 'M0 -2.4V2.4M-2.4 0H2.4'); s.setAttribute('style', '--x:' + (Math.cos(a) * r).toFixed(1) + 'px;--y:' + (Math.sin(a) * r).toFixed(1) + 'px;animation-delay:' + (i * 0.04) + 's'); s.setAttribute('transform', 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')'); fx.appendChild(s); }
+    g.classList.add('lit'); var r0 = g.getBoundingClientRect(); RN.call = { x: r0.left + r0.width / 2, y: r0.top + r0.height / 2, until: performance.now() + 5200 }; beep(1320, 0.05); setTimeout(function () { beep(1760, 0.04); }, 90); }
+  function rnStart() { var el = col.querySelector('.sk-research'); if (!el) return; RN.n = 0; var w = el.querySelector('.rn-w'); if (w) w.innerHTML = '';
+    if ('IntersectionObserver' in window) { if (RN.io) RN.io.disconnect(); RN.io = new IntersectionObserver(function (es) { RN.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.3 }); RN.io.observe(el); } else RN.seen = true; rnTick(); }
+  /* receipt paper at the top and foot of the page: crumpled, torn, the mark set on the foot */
+  /* hand-cut patterns, after a sheet of printed textures: maze lines, cracked mosaic, spots, wavy rules, worms, eyes. Drawn here, never loaded */
+  function noise2(seed) { var r = rnd(seed), G = []; for (var i = 0; i < 64 * 64; i++) G.push(r());
+    var at = function (x, y) { return G[((y & 63) * 64) + (x & 63)]; }, sm = function (t) { return t * t * (3 - 2 * t); };
+    return function (x, y) { var xi = Math.floor(x), yi = Math.floor(y), fx = sm(x - xi), fy = sm(y - yi), a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1); return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy; }; }
+  function pattern(g, w, h, kind, fg, bg, seed) { var r = rnd(seed || 3); g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.strokeStyle = fg;
+    if (kind === 'maze' || kind === 'crack') { var S = 2, W = Math.ceil(w / S), H = Math.ceil(h / S);
+      if (kind === 'maze') { var n1 = noise2(seed), n2 = noise2(seed + 9); for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) { var v = n1(x / 9, y / 9) * 0.7 + n2(x / 4, y / 4) * 0.3, f = (v * 9) % 1; if (f < 0.13) g.fillRect(x * S, y * S, S, S); } return; }
+      var P = []; for (var k = 0; k < Math.round(w * h / 420); k++) P.push([r() * w, r() * h]);
+      for (var y2 = 0; y2 < H; y2++) for (var x2 = 0; x2 < W; x2++) { var px = x2 * S, py = y2 * S, d1 = 1e9, d2 = 1e9; for (var q = 0; q < P.length; q++) { var dx = P[q][0] - px, dy = P[q][1] - py, d = dx * dx + dy * dy; if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d; }
+        if (Math.sqrt(d2) - Math.sqrt(d1) > 2.6) g.fillRect(px, py, S, S); } return; }
+    if (kind === 'spots') { for (var i = 0; i < w * h / 90; i++) { g.beginPath(); g.ellipse(r() * w, r() * h, 1.5 + r() * 4, 1.2 + r() * 3.4, r() * 3, 0, 7); g.fill(); } return; }
+    if (kind === 'lines') { g.lineWidth = 1.6; for (var yy = 3; yy < h; yy += 5.2) { g.beginPath(); for (var xx = 0; xx <= w; xx += 4) { var yv = yy + Math.sin(xx * 0.03 + yy * 0.2) * 1.4; if (xx) g.lineTo(xx, yv); else g.moveTo(xx, yv); } g.stroke(); } return; }
+    if (kind === 'worms') { g.lineCap = 'round'; for (var j = 0; j < w * h / 520; j++) { var x0 = r() * w, y0 = r() * h, a = r() * 6.3, L = 8 + r() * 16; g.lineWidth = 4.6; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + Math.cos(a + 1) * L, y0 + Math.sin(a + 1) * L, x0 + Math.cos(a) * L * 1.6, y0 + Math.sin(a) * L * 1.6); g.stroke(); g.save(); g.strokeStyle = bg; g.lineWidth = 1.6; g.stroke(); g.restore(); } return; }
+    if (kind === 'eyes') { for (var e = 0; e < w * h / 700; e++) { var ex = 6 + r() * (w - 12), ey = 5 + r() * (h - 10), s = 3 + r() * 2.2; g.beginPath(); g.moveTo(ex - s, ey); g.quadraticCurveTo(ex, ey - s * 0.9, ex + s, ey); g.quadraticCurveTo(ex, ey + s * 0.9, ex - s, ey); g.fill(); g.save(); g.fillStyle = bg; g.beginPath(); g.arc(ex + (r() - 0.5) * s * 0.6, ey, s * 0.32, 0, 7); g.fill(); g.restore(); } } }
+  function patCanvas(cv, kind, fg, bg, seed) { var k = Math.min(2, devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); pattern(g, w, h, kind, fg, bg, seed); }
+  /* DIRECT ACTION RADIO: contour lines over the photograph, the sea's long swells at the top easing into the rings of hills, soft blue to white,
+     gone by halfway down so the picture has its white space */
+  function topo() { var cv = col.querySelector('.sk-radio .rd-topo'); if (!cv) return; var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || cv.dataset.pw === w + 'x' + h) return; cv.dataset.pw = w + 'x' + h;
+    var k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0);
+    var sea = noise2(301), land = noise2(302), hill = [[0.22, 0.62, 0.2], [0.74, 0.78, 0.24], [0.5, 0.95, 0.16]], S = 1.5;
+    
+    for (var y = 0; y < h; y += S) { var t = Math.min(1, Math.max(0, (y / h - 0.05) / 0.55)), e = t * t * (3 - 2 * t);
+      for (var x = 0; x < w; x += S) { var o = sea(x / 70, y / 16) * 0.8 + sea(x / 22, y / 9) * 0.2, l = land(x / 46, y / 46) * 0.6;
+        for (var q = 0; q < hill.length; q++) { var dx = x / w - hill[q][0], dy = y / h - hill[q][1]; l += Math.exp(-(dx * dx + dy * dy) / (hill[q][2] * hill[q][2])) * 0.9; }
+        var f = (o * (1 - e) + l * e) * 13, fr = f - Math.floor(f); if (fr < 0.07) { g.fillStyle = 'rgba(' + Math.round(62 + 80 * e) + ',' + Math.round(112 + 66 * e) + ',' + Math.round(190 + 36 * e) + ',' + (0.6 - 0.2 * e).toFixed(2) + ')'; g.fillRect(x, y, S, S); } } } }
+  /* CIRCULAR STRATEGY: a quiet field-study layer over the photographs, no words: a flow of fine marks drifting, thin orange paths with points
+     travelling along them, and a few tracker frames that settle on something, hold, and move on. About twenty frames a second, only in view */
+  var HUD = { cv: null, g: null, w: 0, h: 0, seen: false, last: 0, paths: [], boxes: [], fl: null };
+  function hudInit() { var cv = col.querySelector('.sk-wish .st-hud'); if (!cv) return; HUD.cv = cv; HUD.fl = noise2(511);
+    if ('IntersectionObserver' in window) { if (HUD.io) HUD.io.disconnect(); HUD.io = new IntersectionObserver(function (es) { HUD.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.2 }); HUD.io.observe(cv); } else HUD.seen = true;
+    HUD.w = 0; HUD.boxes = []; }
+  function hudSize() { var cv = HUD.cv, w = cv.clientWidth, h = cv.clientHeight; if (w === HUD.w && h === HUD.h) return; var k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * k); cv.height = Math.round(h * k); HUD.g = cv.getContext('2d'); HUD.g.setTransform(k, 0, 0, k, 0, 0); HUD.w = w; HUD.h = h;
+    var r = rnd(97); HUD.paths = [0, 1, 2].map(function (i) { var y0 = h * (0.12 + r() * 0.5), y1 = h * (0.15 + r() * 0.55); return [[-10, y0], [w * (0.25 + r() * 0.2), y0 + (r() - 0.5) * h * 0.4], [w * (0.55 + r() * 0.2), y1 + (r() - 0.5) * h * 0.4], [w + 10, y1]]; }); }
+  function bez(P, t) { var u = 1 - t; return [0, 1].map(function (j) { return u * u * u * P[0][j] + 3 * u * u * t * P[1][j] + 3 * u * t * t * P[2][j] + t * t * t * P[3][j]; }); }
+  function hudDraw(now) { if (!HUD.cv || !HUD.cv.isConnected) { hudInit(); if (!HUD.cv) return; } if (!HUD.seen || RM.matches || away || xv.classList.contains('on') || now - HUD.last < 48) return; HUD.last = now; hudSize();
+    var g = HUD.g, w = HUD.w, h = HUD.h, t = now / 1000; if (!g || !w) return; g.clearRect(0, 0, w, h);
+    /* the flow: a grid of short marks turning with a slow field */
+    g.strokeStyle = 'rgba(244,241,232,.24)'; g.fillStyle = 'rgba(244,241,232,.34)'; g.lineWidth = 0.6; var st = 17;
+    for (var y = st / 2; y < h; y += st) for (var x = st / 2; x < w; x += st) { var a = HUD.fl(x / 90 + t * 0.05, y / 90) * 6.28 * 1.4, dx = Math.cos(a) * 3.2, dy = Math.sin(a) * 3.2; g.beginPath(); g.moveTo(x - dx, y - dy); g.lineTo(x + dx, y + dy); g.stroke(); g.fillRect(x + dx - 0.6, y + dy - 0.6, 1.2, 1.2); }
+    /* the paths, and points riding them */
+    g.lineWidth = 0.8; HUD.paths.forEach(function (P, i) { g.strokeStyle = 'rgba(255,138,64,.5)'; g.beginPath(); g.moveTo(P[0][0], P[0][1]); g.bezierCurveTo(P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1]); g.stroke();
+      for (var k = 0; k < 5; k++) { var q = bez(P, ((t * 0.05 * (1 + i * 0.3) + k / 5) % 1)); g.fillStyle = 'rgba(255,150,80,.85)'; g.beginPath(); g.arc(q[0], q[1], 1.3, 0, 7); g.fill(); }
+      var n = bez(P, 0.5 + i * 0.12); g.strokeStyle = 'rgba(255,120,60,.7)'; g.beginPath(); g.arc(n[0], n[1], 3, 0, 7); g.stroke(); });
+    /* the trackers: a thin frame finds a spot, holds with its little linkage inside, and fades */
+    if (HUD.boxes.length < 3 && Math.random() < 0.02) { var bw = w * (0.14 + Math.random() * 0.12), bh = bw * (1 + Math.random() * 0.5); HUD.boxes.push({ x: Math.random() * (w - bw), y: h * 0.06 + Math.random() * (h * 0.6 - bh), w: bw, h: bh, t0: t, life: 5 + Math.random() * 4, j: [0, 1, 2, 3].map(function () { return [Math.random(), Math.random()]; }) }); }
+    HUD.boxes = HUD.boxes.filter(function (b) { var age = t - b.t0; if (age > b.life) return false; var al = Math.min(1, age / 0.6, (b.life - age) / 0.8), sc = 1 + Math.max(0, 0.6 - age) * 0.25;
+      g.save(); g.globalAlpha = al; var cx = b.x + b.w / 2, cy = b.y + b.h / 2, bw2 = b.w * sc, bh2 = b.h * sc; g.strokeStyle = 'rgba(244,241,232,.75)'; g.lineWidth = 0.8; g.strokeRect(cx - bw2 / 2, cy - bh2 / 2, bw2, bh2);
+      g.fillStyle = '#E5262B'; g.beginPath(); g.arc(cx + bw2 * 0.3, cy - bh2 / 2, 2.2, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(229,38,43,.75)'; g.beginPath(); b.j.forEach(function (p, k) { var px = b.x + b.w * (0.2 + p[0] * 0.6) + Math.sin(t * 1.3 + k) * 1.5, py = b.y + b.h * (0.15 + k * 0.22); if (k) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke();
+      b.j.forEach(function (p, k) { g.fillStyle = 'rgba(255,170,150,.9)'; g.beginPath(); g.arc(b.x + b.w * (0.2 + p[0] * 0.6) + Math.sin(t * 1.3 + k) * 1.5, b.y + b.h * (0.15 + k * 0.22), 1.3, 0, 7); g.fill(); });
+      g.fillStyle = 'rgba(244,241,232,.85)'; g.fillRect(b.x + b.w * 0.55, b.y + b.h * 0.12, b.w * 0.14, b.h * 0.2); g.fillStyle = 'rgba(11,11,11,.85)'; g.fillRect(b.x + b.w * 0.69, b.y + b.h * 0.12, b.w * 0.1, b.h * 0.2);
+      g.restore(); return true; }); }
+  function paperEdges() { var f = col.querySelector('.hm-foot'); if (f) { var m = f.querySelector('.hf-m'); if (m && !m.innerHTML) m.innerHTML = MARK + '<span>novel.global</span>';
+      $$('canvas[data-pat]', f).forEach(function (cv, k) { var t = cv.dataset.pat.split(','); patCanvas(cv, t[0], t[1], t[2], 40 + k * 7); }); }
+    var te = root.querySelector('.hm-tear canvas'); if (te) patCanvas(te, 'maze', '#F1EEE6', '#0B0B0B', 21); }
+  addEventListener('resize', function () { clearTimeout(paperEdges.t); paperEdges.t = setTimeout(function () { paperEdges(); topo(); }, 240); });
   /* each card painted to its own size; again when the size changes */
   function paint(el) {
     var c = byId(el.dataset.id); if (!c) return; var i = +el.dataset.i, L = {}, w = 0, h = 0, k = Math.min(1.5, devicePixelRatio || 1);
@@ -612,9 +714,8 @@
   }
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
   function inFrame(src) { return function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'); fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
-  /* the radio on air: wired on the switchboard, it keeps playing under the home and the other cards, and waits under any other sound */
+  /* the radio on air: once playing, it keeps playing under the home and every other card until stopped, and waits under any other sound */
   var AIR = { fr: null, on: false, kept: false, held: {} };
-  function airWired() { return WIRES.some(function (w) { return w[0] === 'radio' || w[1] === 'radio'; }); }
   function airTell() { if (!AIR.fr || !AIR.fr.contentWindow) return; var h = Object.keys(AIR.held).some(function (k) { return AIR.held[k]; }); try { AIR.fr.contentWindow.postMessage({ ng: 'hush', on: h }, location.origin); } catch (e) { /* gone */ } }
   function airSound(on, k) { if (!!AIR.held[k] === !!on) return; AIR.held[k] = !!on; airTell(); }
   function airDrop() { if (AIR.fr) { AIR.fr.remove(); } AIR.fr = null; AIR.on = false; AIR.kept = false; AIR.held = {}; }
@@ -627,7 +728,7 @@
   function sheet(title, fill) {
     clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
     xv.setAttribute('aria-label', title); var body = xv.querySelector('.hm-body');
-    if (AIR.fr && !AIR.kept) { if (AIR.on && airWired()) { AIR.kept = true; AIR.fr.classList.add('hm-air'); } else { AIR.fr = null; AIR.on = false; } }
+    if (AIR.fr && !AIR.kept) { if (AIR.on) { AIR.kept = true; AIR.fr.classList.add('hm-air'); } else { AIR.fr = null; AIR.on = false; } }
     [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME' && n !== AIR.fr) n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
     fill(body); var fr = xv.querySelector('iframe:not(.hm-air)'), done = false;
     var go = function () { if (done) return; done = true; clearTimeout(SH.up); H.classList.add('hm-sheet'); xv.classList.add('on'); SH.top = setTimeout(function () { H.classList.add('hm-up'); intro(); }, 470); };
@@ -636,10 +737,72 @@
   }
   function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
     var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME'; });
-    if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on && airWired()) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
+    if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
     SH.gone = SH.gone.concat(old);
     setTimeout(function () { old.forEach(function (n) { n.remove(); }); SH.gone = SH.gone.filter(function (n) { return old.indexOf(n) < 0; }); }, 460); if (!fromPop) history.back(); }
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'panel' && xv.classList.contains('on')) { shut(true); setTimeout(function () { sheet('ISLAND ARCHIPELAGOS', panelIn); }, 480); } });
+  /* an experience asking to go to another card (the radio's species card sent to the research board): the sheet turns to it */
+  /* SOUNDS: one small key in the banner, on every card. What sounds now (the radio on air, El Niño on the buoy), every loop recorded on
+     the radio and every mixtape, played here one after another; MIX picks loops and keeps them as a mixtape, the same list the radio keeps.
+     Small grey tiles in a pixel face, after a mixer's screens */
+  var SND = { el: null, rows: [], i: -1, q: null, a: null, mix: false, pick: {} };
+  var sndLoops = function () { return (store.get('da.loops.v1', []) || []).filter(function (l) { return l && l.id && l.rec; }); };
+  var sndTapes = function () { return store.get('da.tapes.v1', []) || []; };
+  var sndLen = function (s2) { s2 = Math.round(s2 || 0); return Math.floor(s2 / 60) + ':' + ('0' + s2 % 60).slice(-2); };
+  function sndList() { var ls = sndLoops(), rows = [];
+    sndTapes().forEach(function (t) { var ids = (t.ids || []).filter(function (id) { return ls.some(function (l) { return l.id === id; }); }); if (ids.length) rows.push({ k: 'tape', id: t.id, ids: ids, n: t.name || 'MIXTAPE', s: ids.reduce(function (n, id) { var l = ls.filter(function (q) { return q.id === id; })[0]; return n + ((l && l.rec.s) || 0); }, 0) }); });
+    ls.forEach(function (l) { rows.push({ k: 'rec', id: l.id, ids: [l.id], n: String((l.where && l.where.place) || 'RADIO').toUpperCase(), s: l.rec.s }); });
+    return rows; }
+  function sndBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
+    q.onsuccess = function () { try { var g = q.result.transaction('kv').objectStore('kv').get('rec:' + id); g.onsuccess = function () { res(g.result || null); }; g.onerror = function () { res(null); }; } catch (e) { res(null); } }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  function sndStop() { if (SND.a) { try { SND.a.pause(); URL.revokeObjectURL(SND.a.src); } catch (e) { /* gone */ } } SND.a = null; SND.q = null; airSound(false, 'snd'); sndDraw(); }
+  function sndRec(id) { sndBlob(id).then(function (b) { if (!b) { sndNext(); return; } if (SND.a) { try { SND.a.pause(); URL.revokeObjectURL(SND.a.src); } catch (e) { /* gone */ } }
+    var a = new Audio(URL.createObjectURL(b)); SND.a = a; airSound(true, 'snd'); a.onended = sndNext; a.play().catch(function () { sndStop(); }); sndDraw(); }); }
+  function sndNext() { if (SND.q && SND.q.length) { sndRec(SND.q.shift()); return; } if (SND.a === null) return; var n = SND.rows.length; if (n > 1) sndPlay((SND.i + 1) % n); else sndStop(); }
+  function sndPlay(i) { var r = SND.rows[i]; if (!r) return; SND.i = i; SND.q = r.ids.slice(1); sndRec(r.ids[0]); }
+  function sndKeep() { var ids = SND.rows.filter(function (r) { return r.k === 'rec' && SND.pick[r.id]; }).map(function (r) { return r.id; }); if (!ids.length) return;
+    var inp = SND.el.querySelector('.sn-nm'), ts = sndTapes(), first = SND.rows.filter(function (r) { return r.id === ids[0]; })[0];
+    ts.unshift({ id: 'tp' + Date.now().toString(36), at: Date.now(), name: ((inp && inp.value.trim()) || (first ? first.n : 'MIX')).slice(0, 32).toUpperCase(), ids: ids, sp: null, pub: false }); ts.splice(12);
+    store.set('da.tapes.v1', ts); SND.mix = false; SND.pick = {}; beep(880, 0.06); sndDraw(); }
+  var sndIc = { radio: '<svg viewBox="0 0 24 24"><path d="M12 13v8M8 21h8M8.5 9.5a5 5 0 0 1 7 0M5.6 6.6a9 9 0 0 1 12.8 0"/><circle cx="12" cy="12" r="1.3" class="f"/></svg>',
+    sea: '<svg viewBox="0 0 24 24"><path d="M2 15c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5-1M2 20c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5-1"/><path d="M12 3v7M9 6l3-3 3 3"/></svg>',
+    mix: '<svg viewBox="0 0 24 24"><circle cx="7" cy="12" r="4"/><circle cx="17" cy="12" r="4"/><path d="M7 16h10"/></svg>' };
+  function sndDraw() { if (!SND.el) return; SND.rows = sndList(); var on = !!SND.a, r0 = SND.rows[SND.i], el = SND.el, nino = col.querySelector('.rd-nino');
+    $('#hm-snd').classList.toggle('on', on || AIR.on || !!RS.nino);
+    el.querySelector('.sn-air').classList.toggle('on', AIR.on); el.querySelector('.sn-air small').textContent = AIR.on ? 'ON AIR' : 'TUNE IN';
+    el.querySelector('.sn-sea').classList.toggle('on', !!RS.nino); el.querySelector('.sn-sea').hidden = !nino || away; el.querySelector('.sn-sea small').textContent = RS.nino ? 'ON' : 'OFF';
+    el.querySelector('.sn-mx').classList.toggle('on', SND.mix); el.querySelector('.sn-mx small').textContent = SND.mix ? Object.keys(SND.pick).filter(function (k) { return SND.pick[k]; }).length + ' IN' : 'TAPE';
+    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = on && r0 ? r0.n : SND.rows.length ? 'LISTEN' : 'NOTHING YET';
+    el.querySelector('[data-sn="go"]').textContent = on ? '■' : '▶';
+    var ol = el.querySelector('.sn-pl'), rows = SND.mix ? SND.rows.filter(function (r) { return r.k === 'rec'; }) : SND.rows;
+    ol.innerHTML = rows.length ? rows.map(function (r) { var i = SND.rows.indexOf(r), pk = !!SND.pick[r.id];
+      return '<li class="' + (on && i === SND.i ? 'on' : '') + (r.k === 'tape' ? ' tp' : '') + '"><button data-snp="' + i + '"' + (SND.mix ? ' aria-pressed="' + pk + '"' : '') + '><b>' + (SND.mix ? (pk ? '■' : '□') : ('0' + (i + 1)).slice(-2)) + '</b><span>' + esc(r.n) + '</span><i>' + (r.k === 'tape' ? r.ids.length + '× ' : '') + sndLen(r.s) + '</i></button>' +
+        (r.k === 'tape' && !SND.mix ? '<button class="x" data-snx="' + esc(r.id) + '" aria-label="Let this mixtape go">×</button>' : '') + '</li>'; }).join('')
+      : '<li class="none"><button data-sn="rec"><b>●</b><span>RECORD A LOOP ON THE RADIO</span><i>→</i></button></li>';
+    var kp = el.querySelector('.sn-keep'); kp.hidden = !SND.mix; kp.querySelector('button').disabled = !Object.keys(SND.pick).some(function (k) { return SND.pick[k]; }); }
+  function sndOpen(on) { if (on && !SND.el) { var el = D.createElement('section'); el.id = 'hm-sounds'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Sounds'); el.hidden = true;
+      el.innerHTML = '<div class="sn-row"><b class="sn-t sn-id">SND<br>-01</b><button class="sn-t sn-air">' + sndIc.radio + '<span>RADIO</span><small></small></button><button class="sn-t sn-sea">' + sndIc.sea + '<span>EL NIÑO</span><small></small></button><button class="sn-t sn-mx">' + sndIc.mix + '<span>MIX</span><small></small></button></div>' +
+        '<div class="sn-tp"><i class="sn-vu" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></i><b class="sn-ttl"></b><button data-sn="prev" aria-label="Before">⏮</button><button data-sn="go" aria-label="Play or stop">▶</button><button data-sn="next" aria-label="Next">⏭</button></div>' +
+        '<ol class="sn-pl" aria-label="Loops and mixtapes"></ol><div class="sn-keep" hidden><input class="sn-nm" maxlength="32" autocomplete="off" placeholder="NAME" aria-label="Its name"><button>KEEP TAPE</button></div>';
+      root.appendChild(el); SND.el = el;
+      el.addEventListener('click', function (e) { e.stopPropagation(); var b = e.target.closest('button'); if (!b) return; var n = SND.rows.length;
+        if (b.classList.contains('sn-air')) { if (AIR.on) { sndOpen(false); airDrop(); beep(392, 0.06); sndDraw(); } else { sndOpen(false); if (xv.classList.contains('on')) { shut(false); setTimeout(function () { open('radio'); }, 480); } else open('radio'); } return; }
+        if (b.classList.contains('sn-sea')) { var nb = col.querySelector('.rd-nino'); if (nb) nb.click(); sndDraw(); return; }
+        if (b.classList.contains('sn-mx')) { SND.mix = !SND.mix; SND.pick = {}; beep(SND.mix ? 740 : 520, 0.04); sndDraw(); return; }
+        if (b.parentNode.classList.contains('sn-keep')) { sndKeep(); return; }
+        if (b.dataset.snx) { var ts = sndTapes().filter(function (t) { return t.id !== b.dataset.snx; }); store.set('da.tapes.v1', ts); if (SND.a && SND.rows[SND.i] && SND.rows[SND.i].id === b.dataset.snx) sndStop(); sndDraw(); return; }
+        if (b.dataset.snp != null) { var i = +b.dataset.snp, r = SND.rows[i]; if (SND.mix) { SND.pick[r.id] = !SND.pick[r.id]; beep(SND.pick[r.id] ? 990 : 660, 0.03); sndDraw(); return; } if (SND.a && i === SND.i) sndStop(); else sndPlay(i); return; }
+        var q = b.dataset.sn; if (q === 'rec') { b.closest('.none') && (sndOpen(false), xv.classList.contains('on') ? (shut(false), setTimeout(function () { open('radio'); }, 480)) : open('radio')); return; }
+        if (!n) return; if (q === 'go') { if (SND.a) sndStop(); else sndPlay(Math.max(0, SND.i)); } else sndPlay(((SND.i < 0 ? 0 : SND.i) + (q === 'next' ? 1 : -1) + n) % n); });
+      el.querySelector('.sn-nm').addEventListener('keydown', function (e) { if (e.key === 'Enter') sndKeep(); }); }
+    if (!SND.el) return; SND.el.hidden = !on; $('#hm-snd').setAttribute('aria-expanded', String(!!on)); if (on) { beep(1320, 0.03); sndDraw(); } }
+  $('#hm-snd').addEventListener('click', function (e) { e.stopPropagation(); sndOpen(!SND.el || SND.el.hidden); });
+  addEventListener('click', function (e) { if (SND.el && !SND.el.hidden && !e.target.closest('#hm-sounds, #hm-snd')) sndOpen(false); });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape' && SND.el && !SND.el.hidden) sndOpen(false); });
+  /* the key's lamp follows what sounds, and the list follows the radio as it keeps loops */
+  setInterval(function () { var b = $('#hm-snd'); if (b) b.classList.toggle('on', !!SND.a || AIR.on || !!RS.nino); if (SND.el && !SND.el.hidden) sndDraw(); }, 1500);
+  addEventListener('storage', function (e) { if (/^da\.(loops|tapes)\.v1$/.test(e.key || '')) sndDraw(); });
+  addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.hm !== 'go' || !/^(research|zine|portfolio)$/.test(d.id) || !byId(d.id)) return; if (xv.classList.contains('on')) { shut(false); setTimeout(function () { open(d.id); }, 480); } else open(d.id); });
   xv.querySelector('.hm-back').addEventListener('click', function () { shut(false); beep(330, 0.05); });
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
@@ -743,9 +906,15 @@
   root.appendChild(tkp);
   var tkk = D.createElement('button'); tkk.id = 'hm-tk'; tkk.setAttribute('aria-label', 'Talk about this'); tkk.title = 'Talk about this'; tkk.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg><b>TALK</b><i></i>'; root.appendChild(tkk);
   function tkWho() { try { return window.NG && NG.me ? NG.me() : ''; } catch (e) { return ''; } }
-  function tkGet(sec) { var who = tkWho(); if (!who) return Promise.resolve([]); return fetch('/api/talk?s=' + encodeURIComponent(sec) + '&who=' + encodeURIComponent(who)).then(function (r) { return r.ok ? r.json() : { talk: [] }; }).then(function (j) { return j.talk || []; }).catch(function () { return store.get('da.talk.' + sec, []) || []; }); }
+  /* the talk is only for those who have a code already, one a printer gave: without one the rooms stay shut, a field for a code from a print */
+  var TKOK = false;
+  function tkOk() { try { if (!store.get('da.who', '')) return Promise.resolve(TKOK = false); return (window.NG && NG.proof ? NG.proof() : Promise.resolve(false)).then(function (ok) { return (TKOK = !!ok); }); } catch (e) { return Promise.resolve(false); } }
+  var KEY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3.6"/><path d="M11.6 12H21M17.5 12v3M20 12v2.2"/></svg>';
+  function tkLock(on) { tkp.classList.toggle('locked', on); var i = tkp.querySelector('input'); i.maxLength = on ? 3 : 280; i.placeholder = on ? 'code' : 'say something'; i.setAttribute('aria-label', on ? 'Your code from a print' : 'Say something'); i.autocapitalize = on ? 'characters' : 'sentences';
+    if (on) tkp.querySelector('.tk-l').innerHTML = '<li class="none lock">' + KEY_SVG + '</li>'; }
+  function tkGet(sec) { if (!TKOK) return Promise.resolve([]); var who = tkWho(); if (!who) return Promise.resolve([]); return fetch('/api/talk?s=' + encodeURIComponent(sec) + '&who=' + encodeURIComponent(who)).then(function (r) { return r.ok ? r.json() : { talk: [] }; }).then(function (j) { return j.talk || []; }).catch(function () { return store.get('da.talk.' + sec, []) || []; }); }
   /* how many have spoken in each of the card's rooms, on the key and on each room */
-  function tkCount() { var id = TKH.card; if (!id) return; tkk.querySelector('i').textContent = '';
+  function tkCount() { var id = TKH.card; if (!id) return; tkk.querySelector('i').textContent = ''; if (!TKOK) { tkk.classList.remove('live'); return; }
     Promise.all(ROOMS.map(function (r) { return tkGet('c.' + id + '.' + r[0]); })).then(function (ls) { if (TKH.card !== id) return; var all = 0;
       ROOMS.forEach(function (r, k) { TKH.n[r[0]] = ls[k].length; all += ls[k].length; var b = tkp.querySelector('[data-room="' + r[0] + '"] i'); if (b) b.textContent = ls[k].length || ''; });
       tkk.querySelector('i').textContent = all || ''; tkk.classList.toggle('live', all > 0); }); }
@@ -758,20 +927,25 @@
     tkp.querySelector('.tk-t').textContent = c ? c.title : 'TALK'; var pb = tkp.querySelector('[data-room="piece"]'); if (piece) { pb.hidden = false; pb.dataset.sec = sec; } else if (!pb.dataset.sec) pb.hidden = true;
     $$('[data-room]', tkp).forEach(function (b) { b.setAttribute('aria-pressed', String(piece ? b.dataset.room === 'piece' : sec === 'c.' + TKH.card + '.' + b.dataset.room)); });
     tkp.hidden = false; requestAnimationFrame(function () { tkp.classList.add('on'); }); tkk.classList.add('open'); tkp.querySelector('.tk-say').textContent = '';
-    tkp.querySelector('.tk-l').innerHTML = '<li class="none"><span>· · ·</span></li>'; tkGet(sec).then(function (l) { if (TKH.sec === sec) tkFill(l); }); }
+    tkp.querySelector('.tk-l').innerHTML = '<li class="none"><span>· · ·</span></li>'; tkLock(!TKOK);
+    tkOk().then(function (ok) { if (TKH.sec !== sec) return; tkLock(!ok); if (ok) tkGet(sec).then(function (l) { if (TKH.sec === sec) tkFill(l); }); }); }
   function tkHome() { var el = tkp.closest('.hm-card'); if (!el) return; el.classList.remove('talking'); tkp.classList.remove('in-card', 'on'); tkp.hidden = true; root.appendChild(tkp); TKH.card = null; }
   function cardTalk(id) { var el = col.querySelector('.hm-card[data-id="' + id + '"]'); if (!el) return; if (el.classList.contains('talking')) { turn(el, -1, tkHome); return; }
     tkHome(); var bc = el.querySelector('.hm-bcn'), rk = el.querySelector('[data-radar].on'); if (bc && !bc.hidden) { bc.hidden = true; BCN = null; if (rk) rk.classList.remove('on'); }
     turn(el, 1, function () { TKH.card = id; el.appendChild(tkp); tkp.classList.add('in-card'); el.classList.add('talking'); tkShow('c.' + id + '.open'); tkCount(); }); }
   function tkHide() { if (tkp.classList.contains('in-card')) { tkHome(); tkk.classList.remove('open'); return; } tkp.classList.remove('on'); tkk.classList.remove('open'); var pb = tkp.querySelector('[data-room="piece"]'); pb.hidden = true; pb.dataset.sec = ''; setTimeout(function () { if (!tkp.classList.contains('on')) tkp.hidden = true; }, 300); }
+  tkOk();
   tkk.addEventListener('click', function (e) { e.stopPropagation(); if (tkp.classList.contains('on')) tkHide(); else if (TKH.card) tkShow('c.' + TKH.card + '.open'); beep(620, 0.04); });
   tkp.querySelector('.x').addEventListener('click', function () { tkHide(); });
   tkp.querySelector('.tk-bk').addEventListener('click', function (e) { e.stopPropagation(); var el = tkp.closest('.hm-card'); if (el) turn(el, -1, tkHome); else tkHide(); beep(330, 0.05); });
   $$('[data-room]', tkp).forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.room === 'piece') tkShow(b.dataset.sec); else if (TKH.card) tkShow('c.' + TKH.card + '.' + b.dataset.room); beep(540 + ROOMS.length * 20, 0.03); }); });
-  tkp.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); var i = tkp.querySelector('input'), t = i.value.trim(), sec = TKH.sec, re = TKH.re, say = tkp.querySelector('.tk-say'); if (!t || i.disabled || !sec) return; var who = tkWho(); if (!who) return;
+  tkp.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); var i = tkp.querySelector('input'), t = i.value.trim(), sec = TKH.sec, re = TKH.re, say = tkp.querySelector('.tk-say'); if (!t || i.disabled || !sec) return;
+    if (tkp.classList.contains('locked')) { if (!window.NG || !NG.useCode) return; i.disabled = true; say.textContent = '· · ·';
+      NG.useCode(t).then(function (ok) { return ok ? tkOk() : false; }).then(function (ok) { i.disabled = false; i.value = ''; say.textContent = ok ? '✓' : '∅'; beep(ok ? 880 : 220, 0.05); if (ok) { tkShow(sec); tkCount(); } }).catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); return; }
+    var who = tkWho(); if (!who) return;
     i.disabled = true; say.textContent = '· · ·';
     (window.NG && NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: sec, who: who, text: t, re: re, cf: cf }) }); })
-      .then(function (r) { i.disabled = false; if (r.status !== 201) { say.textContent = TKWHY[r.status] || 'NOT SENT'; return; }
+      .then(function (r) { i.disabled = false; if (r.status === 401) { TKOK = false; store.set('da.who.ok', 0); tkLock(true); return; } if (r.status !== 201) { say.textContent = TKWHY[r.status] || 'NOT SENT'; return; }
         return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); careEarn('talk'); i.value = ''; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
       .catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); });
   /* a piece's own talk, asked for from inside an experience */
@@ -997,7 +1171,7 @@
     if (away) { history.back(); return; } if (!root.classList.contains('reef')) reef(true); });
   $('#hm-theme').addEventListener('click', function (e) { e.stopPropagation(); setNight(!NIGHT); });
   /* the cards' frames, from the posters: none, dotted bitmap, lilac steps, cyan stripes, coral double rule, pink and green, blueprint */
-  addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'wires' && Array.isArray(d.w)) { WIRES = d.w.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW); saveWires(); if (AIR.kept && !airWired()) airDrop(); if (jk) board(); else lamps(); } });
+  addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'wires' && Array.isArray(d.w)) { WIRES = d.w.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW); saveWires(); if (jk) board(); else lamps(); } });
   /* the strategy's loop: a slow turn of its own, faster for a touch or a scroll; each chair takes on the stop it last passed */
   var ORB = { a: 0, v: 0.16, t: 0, top: 0 }, TAU = Math.PI * 2;
   function orbit(now) { requestAnimationFrame(orbit); var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
@@ -1042,7 +1216,8 @@
     g.save(); g.globalAlpha = a; g.translate(x, S.y + Math.sin(t * 0.25) * 10); g.scale(S.dir, 1); g.rotate(Math.sin(t * 0.18) * 0.04); g.imageSmoothingEnabled = true; g.drawImage(A.c, -A.ox, -A.oy, A.c.width / A.q, A.c.height / A.q); g.restore();
   }
   /* the water clouds slowly as the reef is let go, and clears as it is cared for */
-  function murk(g, w, h, y0) { if (CARE.murk < 0.02) return; g.fillStyle = 'rgba(70,92,48,' + (CARE.murk * 0.34).toFixed(3) + ')'; g.fillRect(0, y0, w, h - y0); }
+  /* the murk tints the whole sea, the banner and the reef below it as one water, day or night */
+  function murk() { var m = CARE.murk < 0.02 ? 0 : +(CARE.murk * 0.34).toFixed(3); if (m === murk.m) return; murk.m = m; top.style.setProperty('--murk', m); }
   /* by night: the fireworms' circles near the top, and now and then (every few minutes) the sea lit by whatever touches, moves or drops */
   function nightSea(t) { if (!NIGHT) { BIO.live = false; return; } if (!BIO.next) BIO.next = t + 15 + Math.random() * 30; if (t > BIO.next) { BIO.on = t + 40; BIO.next = t + 120 + Math.random() * 120; } BIO.live = t < BIO.on; }
   function bio(x, y, n) { if (GLOW.length > 280) return; for (var i = 0; i < n; i++) { var a = Math.random() * 7, v = 6 + Math.random() * (n > 2 ? 36 : 8); GLOW.push({ x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 6, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4, a: 1, r: 0.7 + Math.random() * 1.5 }); } }
@@ -1076,8 +1251,10 @@
     CARE.murk = Math.max(0, Math.min(0.85, CARE.murk + hrs * (0.02 + CARE.trash.length * 0.008) - hrs * CARE.oys.length * 0.05)); careSave(); }
   function careEarn(why) { var tool = GIVE[why]; if (!tool) return; var day = new Date().toDateString(), key = day + ':' + why; if (CARE.got[key]) return;
     var g2 = {}; for (var k in CARE.got) if (k.indexOf(day) === 0) g2[k] = 1; g2[key] = 1; CARE.got = g2; CARE.items[tool] = (CARE.items[tool] || 0) + 1; careSave(); trayDraw(tool); }
+  /* what each tool does, said in a few pixel words under it while a pointer rests there */
+  var CARE_SAY = { net: 'PICKS UP LITTER', pick: 'LIFTS CROWN-OF-THORNS', urchin: 'GRAZES THE ALGAE', vial: 'TESTS THE WATER', oyster: 'FILTERS THE WATER' };
   function trayDraw(got) { var el = $('#hm-care'); if (!el) return;
-    el.innerHTML = TOOLS.filter(function (q) { return CARE.items[q[0]] > 0; }).map(function (q) { return '<button type="button" data-tool="' + q[0] + '" aria-label="' + q[1] + '" title="' + q[1] + '" aria-pressed="' + (CARE.sel === q[0]) + '"' + (got === q[0] ? ' class="got"' : '') + '><svg viewBox="0 0 24 24">' + q[2] + '</svg><b>' + CARE.items[q[0]] + '</b></button>'; }).join(''); }
+    el.innerHTML = TOOLS.filter(function (q) { return CARE.items[q[0]] > 0; }).map(function (q) { return '<button type="button" data-tool="' + q[0] + '" aria-label="' + q[1] + '" aria-pressed="' + (CARE.sel === q[0]) + '"' + (got === q[0] ? ' class="got"' : '') + '><svg viewBox="0 0 24 24">' + q[2] + '</svg><b>' + CARE.items[q[0]] + '</b><i class="ct" aria-hidden="true">' + (CARE_SAY[q[0]] || '') + '</i></button>'; }).join(''); }
   D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('#hm-care [data-tool]'); if (!b) return; e.stopPropagation(); CARE.sel = CARE.sel === b.dataset.tool ? null : b.dataset.tool; trayDraw(); beep(CARE.sel ? 620 : 420, 0.04); }, true);
   /* where each need is, this frame */
   var TR = [];
@@ -1128,7 +1305,7 @@
       g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-5, -14); g.lineTo(5, -14); g.moveTo(-4, -14); g.lineTo(-4, 12); g.arc(0, 12, 4, Math.PI, 0, true); g.lineTo(4, -14); g.stroke(); g.restore(); if (VIAL.t <= 0) VIAL = null; }
   }
 
-  function reef(on) { root.classList.toggle('reef', on); top.setAttribute('aria-expanded', String(on)); $('#hm-snork').hidden = !on; $('#hm-care').hidden = !on; if (on) { beep(220, 0.12); J.until = 0; careTick(); trayDraw(); } else { beep(330, 0.08); CARE.sel = null; J.goal = null; } }
+  function reef(on) { root.classList.toggle('reef', on); if (on && SND.el && !SND.el.hidden) sndOpen(false); top.setAttribute('aria-expanded', String(on)); $('#hm-snork').hidden = !on; $('#hm-care').hidden = !on; if (on) { beep(220, 0.12); J.until = 0; careTick(); trayDraw(); } else { beep(330, 0.08); CARE.sel = null; J.goal = null; } }
   function reefBuild() {
     var w = VW, h = CH, y0 = TOPH, rh = h - y0; RB = D.createElement('canvas'); RB.width = tcv.width; RB.height = tcv.height; var g = RB.getContext('2d'), r = rnd(77), sea = y0 + rh * 0.86, s = Math.min(w, rh);
     g.scale(dpr, dpr);
@@ -1216,7 +1393,7 @@
   function drawReef(dt, t) {
     var g = tx, w = VW, h = CH, y0 = TOPH; g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(RB, 0, 0); g.restore();
     if ((CARE.tk = (CARE.tk || 0) - dt) < 0) { CARE.tk = 5; careTick(); }
-    giants(g, dt, t, w, h, y0); murk(g, w, h, y0); nightSea(t);
+    giants(g, dt, t, w, h, y0); nightSea(t);
     g.lineCap = 'round'; g.lineJoin = 'round'; PT.vx *= 0.9; PT.vy *= 0.9; var near = function (x, y, d) { return Math.hypot(x - PT.x, y - PT.y) < d || (QK.t > 0 && Math.hypot(x - QK.x, y - QK.y) < d * 1.6); }; QK.t -= dt;
     var gl = FORMS.filter(function (f) { return f.d[0] === 'glass'; })[0]; if (gl) WORMS.forEach(function (o) { var gx = gl.held ? HELD.x + HELD.dx : gl.x, gy = gl.held ? HELD.y + HELD.dy : gl.fall ? gl.cy : gl.y; o.x = gx + o.dx; o.y = gy + o.dy; });
     drawForms(g, dt, t);
@@ -1342,7 +1519,7 @@
     cg.globalAlpha = A0; [[a, ca], [b, cb]].forEach(function (p) { cg.fillStyle = p[1]; cg.beginPath(); cg.arc(p[0][0], p[0][1], 4, 0, 7); cg.fill(); }); cg.globalAlpha = 1;
   }
   /* the cables let out onto the cards: a switch on the board, then each cable down its own path, plugged into the cards it joins, hanging and swinging as they move */
-  var CX = { on: !!store.get('da.sb.out', true), cv: null, g: null, rope: {}, k: 1 };
+  var CX = { on: !!store.get('da.sb.out', false), cv: null, g: null, rope: {}, k: 1 };
   (function () { var cv = D.createElement('canvas'); cv.id = 'hm-cx'; cv.setAttribute('aria-hidden', 'true'); root.insertBefore(cv, $('#hm-jf')); CX.cv = cv; CX.g = cv.getContext('2d');
     var b = D.createElement('button'); b.className = 'ex'; b.title = 'Cables out on the cards'; b.setAttribute('aria-label', 'Cables out on the cards'); b.setAttribute('aria-pressed', String(CX.on)); b.innerHTML = '<span>CABLES</span><i></i>'; sb.insertBefore(b, sb.querySelector('.rs'));
     b.addEventListener('click', function (e) { e.stopPropagation(); CX.on = !CX.on; store.set('da.sb.out', CX.on); b.setAttribute('aria-pressed', String(CX.on)); root.classList.toggle('cx', CX.on); CX.rope = {}; beep(CX.on ? 523 : 262, 0.05); if (!CX.on) CX.g.clearRect(0, 0, CX.cv.width, CX.cv.height); });
@@ -1489,6 +1666,7 @@
     if (!open && !away && !xv.classList.contains('on')) {
       if (CUR === 'portfolio') { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect(); if (lr && lr.width) orb = { x: lr.left + lr.width / 2 - jr.left, y: lr.top + lr.height / 2 - jr.top, rx: lr.width * 0.34, ry: lr.height * 0.26 }; }
       else if (CUR === 'radio' && RS.on && RS.sx != null) orb = { x: RS.sx - jr.left, y: RS.sy - jr.top, rx: RS.su * 62, ry: RS.su * 34, slow: 1 }; }
+    if (RN.call) { if (now > RN.call.until || away || xv.classList.contains('on')) RN.call = null; else { var rr0 = col.querySelector('.sk-research .hm-rune'), rb0 = rr0 && rr0.getBoundingClientRect(); if (rb0 && rb0.bottom > 0 && rb0.top < innerHeight) orb = { x: RN.call.x - jr.left, y: RN.call.y - jr.top, rx: 34, ry: 18, slow: 1 }; } }
     if (orb) { if (!J.orbit) { J.th = Math.atan2(J.y - orb.y, J.x - orb.x) + 0.5; J.back = false; } J.orbit = orb; }
     else if (J.orbit) { J.orbit = null; J.back = true; }
     if (!RM.matches) swim(dt * (J.orbit ? (J.orbit.slow ? 1.4 : 3.5) : J.back ? 5.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
@@ -1496,21 +1674,25 @@
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
     tx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    murk();
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
     var jw = Math.round(rr.width * dpr), jh = Math.round(rr.height * dpr); if (jcv.width !== jw || jcv.height !== jh) { jcv.width = jw; jcv.height = jh; }
     var wide = J.orbit || J.back || J.wide; J.wide = !!(J.orbit || J.back); jx.setTransform(1, 0, 0, 1, 0, 0);
     if (wide) jx.clearRect(0, 0, jcv.width, jcv.height); else jx.clearRect(Math.floor((jr.left - rr.left) * dpr) - 1, Math.floor((jr.top - rr.top) * dpr) - 1, Math.ceil(jr.width * dpr) + 2, Math.ceil(jr.height * dpr) + 2);
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
     if (sheet) return;
-    /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself */
-    if (RS.song && !away) songTick();
+    /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself, and the radio on air takes over from it */
+    if (RS.song && !away && !(AIR.kept && AIR.on) && !(SND && SND.a)) songTick();
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
+    if (!away) hudDraw(now);
     if (CX.on && !away) cxDraw(t, RM.matches ? 0 : dt);
   }
   seaSize(); requestAnimationFrame(frame);
   receipt(); lastPrint();
   if (/[?&]stories\b/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(function () { open('portfolio'); }, 400); }
-  requestAnimationFrame(function () { paintAll(); parallax(); board(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
+  requestAnimationFrame(function () { paintAll(); parallax(); board(); zpStart(); rnStart(); paperEdges(); topo(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
+  (function () { var c = $('#hm-col'), on = false, chk = function () { var e = c.scrollTop + c.clientHeight >= c.scrollHeight - 80; if (e !== on) { on = e; H.classList.toggle('hm-end', e); } };
+    c.addEventListener('scroll', chk, { passive: true }); addEventListener('resize', chk); })();
   window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J, buoy: function (k) { RS.scrap = !!k; RS.drawn = false; } };
 })();

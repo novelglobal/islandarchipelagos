@@ -22,6 +22,7 @@ html.hm-away #hm > :not(#hm-top) { display: none; }
 #hm-top { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--hm-top) + env(safe-area-inset-top)); z-index: 4; overflow: hidden; color: #F4F1E8;
   background: var(--grain), var(--sea); background-size: 180px, auto; pointer-events: auto; cursor: pointer; transition: height .7s cubic-bezier(.2, .8, .2, 1), background-color .5s; touch-action: manipulation; }
 #hm.reef #hm-top { height: calc(var(--hm-top) + env(safe-area-inset-top) + min(68vh, 640px)); cursor: default; touch-action: none; box-shadow: 0 30px 60px rgba(0, 0, 0, .3); }
+#hm-top::before { content: ''; position: absolute; inset: 0; background: rgba(70, 92, 48, var(--murk, 0)); pointer-events: none; transition: background-color 1s; }
 #hm-top canvas { position: absolute; left: 0; top: 0; width: 100%; display: block; }
 #hm-jf { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; pointer-events: none; }
 html.hm-away #hm-jf, html.hm-sheet.hm-nosea #hm-jf { visibility: hidden; }
@@ -543,7 +544,7 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 /* the radio on air, out of sight: alive, tiny, never in the way */
 #hm-x iframe.hm-air { position: absolute; left: 0; bottom: 0; flex: none; width: 2px; height: 2px; opacity: .01 !important; pointer-events: none; visibility: visible; }
 /* parked while the sheet is down: just inside the screen's bottom edge, so the browser keeps its clock at full speed and it never stutters */
-#hm-x:not(.on) iframe.hm-air { bottom: 100%; }
+#hm-x:not(.on) iframe.hm-air { bottom: auto; top: -100%; }
 
 /* card keys: light on dark, dark on light, whatever is under them (never ink on ink) */
 #hm .hm-card .hm-keys { mix-blend-mode: difference; }
@@ -633,18 +634,18 @@ html.hm-sheet:not(.hm-nosea) #hm-x > header { height: 0; z-index: 2; }
 html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14px); left: calc(env(safe-area-inset-left) + 12px); width: 52px; height: 28px; border-radius: 14px; transform: none; background: #0B0B0B; box-shadow: none; }
 /* the stories card: the tap in the frame, whole; its shelf ticket; the mark in the middle; tape and stickers pressed on */
 .rc-tap { left: 6.3%; top: 7%; width: 87.6%; height: 61.5%; object-fit: contain; background: #0E2240; }
-.hm-rc.kept .rc-tap, .hm-rc.kept .rc-ad { display: none; }
+.hm-rc.kept .rc-tap, .hm-rc.kept .rc-tp { display: none; }
 .rc-hide { right: 4.4%; top: 3.1%; width: 13.4%; height: 2.6%; background: #163F73; }
-.rc-ad { left: 6.3%; width: 87.6%; top: 55.2%; height: 13.3%; display: grid; grid-template-columns: 30% 1fr; grid-template-rows: 1fr auto; background: #0D5257; color: #FFFFFF; text-decoration: none; pointer-events: auto; z-index: 2; box-shadow: 0 -1.4cqw 3cqw -1cqw rgba(0, 0, 0, .45); outline: .5cqw dashed rgba(255, 255, 255, .55); outline-offset: -1.6cqw; }
-.rc-ad .ad-p { grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #DA291C; font: 700 8px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .08em; }
-.rc-ad .ad-p b { font: 700 30px/.9 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.02em; }
-.rc-ad .ad-p sup { font-size: .5em; vertical-align: .62em; }
-.rc-ad .ad-t { grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: flex-start; gap: 3px; padding: 7px 10px 0; min-width: 0; color: #FFFFFF; }
-.rc-ad .ad-t i { display: block; font: 500 7px/1 'Departure Mono', ui-monospace, monospace; font-style: normal; letter-spacing: .04em; opacity: .8; color: #FFFFFF; }
-.rc-ad .ad-t b { display: block; font: 700 12px/1.05 'Archivo Narrow', Arial, sans-serif; color: #FFFFFF; }
-.rc-ad .ad-t em { display: block; font: 500 7px/1 'Departure Mono', ui-monospace, monospace; font-style: normal; opacity: .75; color: #FFFFFF; }
-.rc-ad .ad-go { position: absolute; right: 8px; bottom: 6px; width: auto; height: auto; padding: 3px 8px; border-radius: 99px; background: #FFFFFF; color: #0D5257; font: 700 9px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .06em; white-space: nowrap; }
-.rc-ad:hover .ad-go, .rc-ad:focus-visible .ad-go { background: #FFD200; color: #111111; }
+.rc-tp { left: 6.3%; width: 87.6%; top: 55.2%; height: 13.3%; display: grid; grid-template-columns: 30% 1fr; grid-template-rows: 1fr auto; background: #0D5257; color: #FFFFFF; text-decoration: none; pointer-events: auto; z-index: 2; box-shadow: 0 -1.4cqw 3cqw -1cqw rgba(0, 0, 0, .45); outline: .5cqw dashed rgba(255, 255, 255, .55); outline-offset: -1.6cqw; }
+.rc-tp .tp-pr { grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #DA291C; font: 700 8px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .08em; }
+.rc-tp .tp-pr b { font: 700 30px/.9 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.02em; }
+.rc-tp .tp-pr sup { font-size: .5em; vertical-align: .62em; }
+.rc-tp .tp-tx { grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: flex-start; gap: 3px; padding: 7px 10px 0; min-width: 0; color: #FFFFFF; }
+.rc-tp .tp-tx i { display: block; font: 500 7px/1 'Departure Mono', ui-monospace, monospace; font-style: normal; letter-spacing: .04em; opacity: .8; color: #FFFFFF; }
+.rc-tp .tp-tx b { display: block; font: 700 12px/1.05 'Archivo Narrow', Arial, sans-serif; color: #FFFFFF; }
+.rc-tp .tp-tx em { display: block; font: 500 7px/1 'Departure Mono', ui-monospace, monospace; font-style: normal; opacity: .75; color: #FFFFFF; }
+.rc-tp .tp-go { position: absolute; right: 8px; bottom: 6px; width: auto; height: auto; padding: 3px 8px; border-radius: 99px; background: #FFFFFF; color: #0D5257; font: 700 9px/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .06em; white-space: nowrap; }
+.rc-tp:hover .tp-go, .rc-tp:focus-visible .tp-go { background: #FFD200; color: #111111; }
 .rc-ng { left: 50%; top: 76.4%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 2.4cqw; color: #F4F1E8; font: 600 8.6cqw/1 'Poppins', Arial, sans-serif; letter-spacing: -.02em; white-space: nowrap; }
 .rc-ng .ng-mark { width: 13cqw; height: auto; }
 .rc-work { left: 31%; top: 81.6%; transform: rotate(2.2deg); }
@@ -691,3 +692,158 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14p
 .rc-888 { animation: rc-888 60s linear infinite; }
 @keyframes rc-888 { 0% { opacity: 0; } 1%, 16% { opacity: 1; } 17%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .rc-888 { animation: none; opacity: 0; } }
+/* the talk shut to anyone without a code from a print: the rooms hidden, a key, a field for the code */
+#hm-talk.locked .tk-rooms { display: none; }
+#hm-talk.locked .tk-l { display: grid; place-items: center; }
+#hm-talk.locked .tk-l li.lock svg { width: 44px; height: 44px; opacity: .7; }
+#hm-talk.locked .tk-f input { text-transform: uppercase; letter-spacing: .3em; text-align: center; font-family: 'IBM Plex Mono', monospace; }
+/* DESIGN PRINT: the wall photograph whole, in full colour (the painter and LOVE YOURSELF in view), and a big street poster pasting itself up on the white wall */
+.sk-zine .hm-bgimg { top: 0; bottom: 0; aspect-ratio: auto; background-size: cover; background-position: 84% 50%; -webkit-mask-image: none; mask-image: none; filter: none; }
+.sk-zine .zp { position: absolute; z-index: 1; left: 3%; top: 6%; width: 70%; height: auto; overflow: visible; mix-blend-mode: multiply; transform: rotate(-.6deg); pointer-events: none; }
+@container (min-aspect-ratio: 4/5) { .sk-zine .zp { width: auto; height: 74%; left: 6%; } }
+.zp .zp-p { transform-box: fill-box; transform-origin: 50% 0; transform: scaleY(0) skewX(4deg); opacity: 0; transition: transform .55s cubic-bezier(.3, .9, .3, 1), opacity .08s; }
+.zp .zp-p.on { transform: none; opacity: 1; }
+.zp .zp-ty.on, .zp .zp-gl.on { animation: zp-in .5s steps(4) both; }
+@keyframes zp-in { 0% { transform: translateX(-6px); opacity: .2; } 50% { transform: translateX(3px); opacity: 1; } 75% { transform: translateX(-1px); } 100% { transform: none; } }
+.zp .zp-sp { transform-box: view-box; transform-origin: 44px 103px; animation: zp-spin 18s linear infinite; }
+@keyframes zp-spin { to { transform: rotate(360deg); } }
+.zp .zp-sl { opacity: 0; }
+.zp.gl .zp-sl { opacity: 1; animation: zp-sl .32s steps(3) both; }
+.zp.gl .zp-gl { transform: translateX(3px); }
+.zp.gl .zp-ty { transform: translateX(-1.5px); }
+@keyframes zp-sl { 0% { transform: translate(-8px, 0); } 50% { transform: translate(6px, -12px); } 100% { transform: translate(-3px, 9px); } }
+.zp .zp-cr { mix-blend-mode: multiply; opacity: .55; }
+.zp .zp-tx { mix-blend-mode: multiply; opacity: .22; }
+.zp.wipe .zp-p { transition: transform .5s cubic-bezier(.6, 0, .9, .4), opacity .4s .25s; transform-origin: 50% 100%; transform: scaleY(0); opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .zp .zp-p { transform: none; opacity: 1; transition: none; } .zp .zp-sp { animation: none; } .zp.gl .zp-sl { opacity: 0; } }
+/* ISLAND: the name in a plain black grotesk, big, and the line across it in a fuzzy yellow hand, as if lit; on crumpled receipt paper */
+#hm .sk-kit .hm-t { color: #141414; -webkit-text-stroke: 0; text-shadow: none; font: 400 27cqw/.82 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: -.05em; margin-left: -1cqw; white-space: nowrap; }
+#hm .sk-kit .kt-fz { position: relative; z-index: 1; margin: -3.5cqw 0 2cqw 1cqw; white-space: nowrap; font: 700 7.6cqw/1 'Snell Roundhand', 'Segoe Script', 'Brush Script MT', 'Apple Chancery', cursive; letter-spacing: -.02em; color: #E5262B; transform: rotate(-3deg); transform-origin: 0 50%; filter: blur(.05cqw); text-shadow: 0 0 .5cqw rgba(255, 70, 60, .7), 0 0 2cqw rgba(255, 60, 50, .4), 0 0 4.5cqw rgba(255, 60, 50, .22); pointer-events: none; }
+@media (prefers-contrast: more) { #hm .sk-kit .kt-fz { filter: none; } }
+/* RESEARCH BOARD: runes written by hand between the photographs and the name, rubbed out, written again */
+.sk-research .hm-rune { position: absolute; z-index: 2; left: 5cqw; width: 90cqw; height: auto; top: 58%; overflow: visible; fill: none; stroke: #0B0B0B; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.hm-rune .rn-p { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .8s cubic-bezier(.5, .1, .4, 1); }
+.hm-rune .rn-p.on { stroke-dashoffset: 0; }
+.hm-rune .rn-w > g { transition: opacity .35s, filter .35s; }
+.hm-rune .rn-w > g.gone { opacity: .07; filter: blur(.6px); }
+.hm-rune .rn-w > g.lit .rn-p { stroke: #8FA81C; animation: rn-lit 1.6s ease-out both; }
+@keyframes rn-lit { 0% { stroke-width: 3.2; } 100% { stroke-width: 1.5; } }
+.hm-rune .rn-er { fill: #F2EFE6; stroke: #0B0B0B; stroke-width: 1; opacity: 0; transform: translateX(0); }
+.hm-rune .rn-er.go { opacity: 1; transform: translateX(200px); transition: transform 2s cubic-bezier(.4, .1, .6, .9), opacity .2s; }
+.hm-rune .rn-sp { stroke: #D9F24A; stroke-width: 1.2; animation: rn-sp 1.1s ease-out both; }
+@keyframes rn-sp { 0% { translate: 0 0; opacity: 0; scale: .3; } 20% { opacity: 1; scale: 1.2; } 100% { translate: var(--x) var(--y); opacity: 0; scale: .6; } }
+@media (prefers-reduced-motion: reduce) { .hm-rune .rn-p { transition: none; } .hm-rune .rn-sp, .hm-rune .rn-er { display: none; } }
+/* the ad's words kept white on every phone (an iPhone can recolour numbers it takes for a phone number) */
+.rc-tp .tp-tx, .rc-tp .tp-tx *, .rc-tp .tp-pr, .rc-tp .tp-pr * { -webkit-text-fill-color: currentColor; text-decoration: none; }
+.rc-tp .tp-tx a, .rc-tp .tp-pr a { color: inherit; }
+
+/* the page's edges in hand-cut patterns: a maze strip under the banner; at the foot a sheet of pattern tiles, a word pill, the mark */
+#hm-top .hm-tear { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 3; pointer-events: none; border-top: 1px solid #0B0B0B; }
+#hm-top .hm-tear canvas { display: block; width: 100%; height: 100%; }
+#hm.reef #hm-top .hm-tear, html.hm-away #hm-top .hm-tear { display: none; }
+.hm-foot { position: relative; margin: 22px 0 calc(96px + env(safe-area-inset-bottom)); padding: 14px; background: #F1EEE6; color: #0B0B0B; border-radius: 6px; }
+.hf-grid { display: grid; grid-template-columns: 26px repeat(4, 1fr); grid-auto-rows: 64px; gap: 8px; }
+.hf-grid canvas { display: block; width: 100%; height: 100%; }
+.hf-grid .t0 { grid-column: 2 / 4; } .hf-grid .t2 { border-radius: 50%; } .hf-grid .t3 { border-radius: 50%; } .hf-grid .t4 { grid-row: span 2; } .hf-grid .t7 { grid-column: 2 / 4; }
+.hf-pill { grid-column: 1; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 8px 0; border-radius: 13px; background: #0B0B0B; color: #F1EEE6; font: 500 10px/1 'Departure Mono', ui-monospace, monospace; }
+.hf-pill i { font-style: normal; }
+.hm-foot .hf-m { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; font: 700 14px/1 'Poppins', Arial, sans-serif; letter-spacing: -.01em; }
+.hm-foot .hf-m .ng-mark { width: 26px; height: auto; }
+
+/* DIRECT ACTION RADIO: the contour layer, from sea to land, fading out by halfway */
+/* below the sea's painted edge only: the water and sky stay as they were */
+.sk-radio .rd-topo { position: absolute; left: 0; top: calc(var(--rs) * 1.06); width: 100%; height: calc(52% - var(--rs) * 1.06); pointer-events: none; opacity: .5; -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 55%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 55%, transparent); }
+
+/* CIRCULAR STRATEGY: the field-study layer, quiet over the photographs */
+.sk-wish .st-hud { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: .85; mix-blend-mode: screen; -webkit-mask-image: linear-gradient(transparent 2%, #000 22%, #000 58%, transparent 76%); mask-image: linear-gradient(transparent 2%, #000 22%, #000 58%, transparent 76%); }
+@media (prefers-reduced-motion: reduce) { .sk-wish .st-hud { display: none; } }
+
+/* SOUNDS: the small key in the banner and its panel of grey tiles in the pixel face */
+#hm-snd { position: relative; }
+#hm-snd .led { position: absolute; right: 6px; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0; transition: opacity .3s; }
+#hm-snd.on .led { opacity: 1; background: #FF5A3C; box-shadow: 0 0 6px #FF5A3C; }
+#hm-sounds { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 46px); z-index: 9; width: min(304px, calc(100vw - 16px)); padding: 8px; border-radius: 10px; background: #EFEEE9; color: #111; box-shadow: 0 14px 40px rgba(0, 0, 0, .28); font: 400 11px/1.1 'Departure Mono', ui-monospace, Menlo, monospace; letter-spacing: .02em; }
+#hm-sounds[hidden] { display: none; }
+#hm-sounds button { font: inherit; color: inherit; }
+#hm-sounds svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; }
+#hm-sounds svg .f { fill: currentColor; stroke: none; }
+#hm-sounds .sn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+#hm-sounds .sn-t { aspect-ratio: 1; border-radius: 6px; background: #E2E1DB; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7px 2px 6px; }
+#hm-sounds .sn-t[hidden] { display: none; }
+#hm-sounds .sn-t span { font-size: 10px; }
+#hm-sounds .sn-t small { font-size: 9px; padding: 1px 4px; border-radius: 2px; }
+#hm-sounds .sn-t.on small { background: #111; color: #EFEEE9; }
+#hm-sounds .sn-air.on svg { color: #FF5A3C; }
+#hm-sounds .sn-id { background: #111; color: #EFEEE9; font: 400 17px/1 'Departure Mono', ui-monospace, monospace; justify-content: center; text-align: center; }
+#hm-sounds .sn-tp { display: flex; align-items: center; gap: 4px; margin-top: 6px; padding: 6px 6px 6px 8px; border-radius: 6px; background: #E2E1DB; }
+#hm-sounds .sn-tp button { width: 28px; height: 26px; border-radius: 4px; font-size: 12px !important; }
+#hm-sounds .sn-tp button:hover, #hm-sounds .sn-t:hover { background: #D6D5CE; }
+#hm-sounds .sn-tp [data-sn="go"] { background: #111; color: #EFEEE9 !important; }
+#hm-sounds .sn-ttl { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 400; }
+#hm-sounds .sn-vu { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+#hm-sounds .sn-vu i { width: 2px; height: 3px; background: #111; }
+#hm-sounds.playing .sn-vu i { animation: snVu .5s steps(4) infinite alternate; }
+#hm-sounds.playing .sn-vu i:nth-child(2) { animation-delay: -.2s; } #hm-sounds.playing .sn-vu i:nth-child(3) { animation-delay: -.35s; } #hm-sounds.playing .sn-vu i:nth-child(4) { animation-delay: -.1s; } #hm-sounds.playing .sn-vu i:nth-child(5) { animation-delay: -.45s; }
+@keyframes snVu { from { height: 2px; } to { height: 14px; } }
+#hm-sounds .sn-pl { list-style: none; margin: 6px 0 0; padding: 0; max-height: 40vh; overflow: auto; }
+#hm-sounds .sn-pl li { display: flex; border-bottom: 1px dotted #9C9B95; }
+#hm-sounds .sn-pl li > button:first-child { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: center; padding: 8px 4px; text-align: left; }
+#hm-sounds .sn-pl b { font-weight: 400; width: 16px; } #hm-sounds .sn-pl span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } #hm-sounds .sn-pl i { font-style: normal; opacity: .6; }
+#hm-sounds .sn-pl li.on > button:first-child { background: #111; color: #EFEEE9; }
+#hm-sounds .sn-pl li.tp b::after { content: ''; }
+#hm-sounds .sn-pl .x { width: 28px; opacity: .55; } #hm-sounds .sn-pl .x:hover { opacity: 1; }
+#hm-sounds .sn-pl li.none span { opacity: .7; }
+#hm-sounds .sn-keep { display: flex; gap: 6px; margin-top: 6px; }
+#hm-sounds .sn-keep[hidden] { display: none; }
+#hm-sounds .sn-nm { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border: 0; border-radius: 4px; background: #E2E1DB; font: inherit; text-transform: uppercase; color: #111; }
+#hm-sounds .sn-keep button { padding: 0 10px; border-radius: 4px; background: #111; color: #EFEEE9 !important; }
+#hm-sounds .sn-keep button:disabled { opacity: .35; }
+html.hm-away #hm-sounds { display: none; }
+@media (prefers-reduced-motion: reduce) { #hm-sounds.playing .sn-vu i { animation: none; height: 9px; } }
+
+/* the reef open: the banner keeps only the way back up and night or day */
+#hm.reef #hm-snd, #hm.reef #hm-sounds, #hm.reef #hm-talk, #hm.reef #hm-tk { display: none !important; }
+
+/* DESIGN PRINT: its name in a modern blackletter, acid lime on the street, after a night poster: a sparkle rule over it in lime and slate,
+   small suns at its ends, and a swatch bar at the edge */
+@font-face { font-family: 'UnifrakturMaguntia'; src: url('vendor/fonts/unifrakturmaguntia-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+#hm .sk-zine .hm-t.zt { position: absolute; z-index: 2; left: 5.5cqw; bottom: 11cqw; margin: 0; font: 400 21cqw/.74 'UnifrakturMaguntia', 'Old English Text MT', serif; letter-spacing: -.01em; color: #DCFF1F; text-shadow: 0 0 1px rgba(20, 24, 10, .5), 0 .8cqw 3cqw rgba(0, 0, 0, .3); pointer-events: none; }
+#hm .sk-zine .hm-t.zt span { display: block; text-transform: lowercase; } #hm .sk-zine .hm-t.zt span::first-letter { text-transform: uppercase; } #hm .sk-zine .hm-t.zt span + span { margin-left: 9cqw; }
+#hm .sk-zine .zt-rl { position: absolute; z-index: 2; left: 61cqw; bottom: 15cqw; display: flex; align-items: center; gap: 1.4cqw; color: #DCFF1F; font: 400 3.2cqw/1 Georgia, serif; letter-spacing: .25em; pointer-events: none; }
+#hm .sk-zine .zt-rl::before, #hm .sk-zine .zt-rl::after { content: '\273A'; font-size: 3.6cqw; letter-spacing: 0; }
+#hm .sk-zine .zt-rl i { width: 6cqw; height: .8cqw; background: linear-gradient(90deg, #DCFF1F 0 30%, transparent 30% 36%, #5D7FA6 36% 66%, transparent 66% 72%, #9DB7BE 72%); }
+#hm .sk-zine .zt-sw { position: absolute; z-index: 2; right: 4cqw; top: 30%; display: flex; flex-direction: column; width: 2.4cqw; pointer-events: none; }
+#hm .sk-zine .zt-sw b { height: 6cqw; } #hm .sk-zine .zt-sw b:nth-child(1) { background: #3A3F42; } #hm .sk-zine .zt-sw b:nth-child(2) { background: #9DB7BE; } #hm .sk-zine .zt-sw b:nth-child(3) { background: #DCFF1F; } #hm .sk-zine .zt-sw b:nth-child(4) { background: #A8532A; } #hm .sk-zine .zt-sw b:nth-child(5) { background: #7C9A3A; }
+
+/* the end of the page: the foot is a stop of its own, and reaching it the switchboard tucks away so nothing is hidden behind it */
+.hm-foot { scroll-snap-align: end; margin-bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
+html.hm-end #hm-sb { transform: translateY(115%); pointer-events: none; }
+
+/* DESIGN PRINT's hero: Design over the poster, in depth, slammed on last, jumping with the glitches, torn down with the paper */
+.sk-zine .zp-hero { position: absolute; z-index: 2; left: 3%; top: 6%; width: 70%; height: auto; overflow: visible; transform: rotate(-.6deg); pointer-events: none; filter: drop-shadow(0 1.2cqw 1.6cqw rgba(0, 0, 0, .35)); }
+@container (min-aspect-ratio: 4/5) { .sk-zine .zp-hero { width: auto; height: 74%; left: 6%; } }
+.zp-hero .zh-g { transform-box: fill-box; transform-origin: 30% 60%; opacity: 0; transform: scale(1.35) rotate(-4deg); }
+.zp-hero.on .zh-g { opacity: 1; transform: none; animation: zh-in .42s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes zh-in { 0% { opacity: 0; transform: scale(1.35) rotate(-4deg); } 55% { opacity: 1; transform: scale(.96) rotate(.6deg); } 100% { opacity: 1; transform: none; } }
+.zp-hero.gl .zh-g { animation: zh-gl .32s steps(3) both; }
+@keyframes zh-gl { 0% { translate: 2.5px 0; filter: drop-shadow(-1.5px 0 0 #FF2E63) drop-shadow(1.5px 0 0 #2EE6FF); } 50% { translate: -2px 1px; filter: drop-shadow(1.5px 0 0 #FF2E63) drop-shadow(-1.5px 0 0 #2EE6FF); } 100% { translate: 0 0; filter: none; } }
+.zp-hero.wipe .zh-g { transition: opacity .35s, transform .45s cubic-bezier(.6, 0, .9, .4); opacity: 0; transform: translateY(6%) scaleY(.2); animation: none; }
+@media (prefers-reduced-motion: reduce) { .zp-hero .zh-g { opacity: 1; transform: none; animation: none !important; } }
+
+/* the page's foot: only the brand's mark; the hand-cut patterns stay as art to draw on elsewhere */
+.hm-foot { background: none; padding: 18px 14px 6px; }
+.hm-foot .hf-grid { display: none; }
+.hm-foot .hf-m { justify-content: center; margin-top: 0; color: var(--hm-ink); }
+/* the reef's tools: a word or two in white pixels under each, only while hovered, gone again quickly */
+#hm-care .ct { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap; font: 400 13px/1 'VT323', 'Departure Mono', monospace; letter-spacing: .04em; color: #FFFFFF; text-shadow: 0 1px 0 rgba(0, 0, 0, .55); opacity: 0; pointer-events: none; transition: opacity .12s; }
+#hm-care button:hover .ct { animation: ct-say 1.6s steps(1, end) forwards; }
+@keyframes ct-say { 0% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@media (hover: none) { #hm-care .ct { display: none; } }
+
+/* PORTFOLIO, set straight: the ad's words in one even column, SHOP NOW in a row of its own under them; the mark smaller, so the band
+   between the ad and the stickers is open */
+#hm .rc-tp .tp-tx { grid-row: 1; grid-column: 2; justify-content: center; gap: 4px; padding: 6px 10px 2px; }
+#hm .rc-tp .tp-tx b { font-size: 11.5px; line-height: 1.08; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#hm .rc-tp .tp-go { position: static; grid-row: 2; grid-column: 2; justify-self: end; align-self: end; margin: 0 8px 6px; }
+#hm .rc-ng { top: 74.6%; gap: 1.6cqw; font-size: 6cqw; }
+#hm .rc-ng .ng-mark { width: 9cqw; }

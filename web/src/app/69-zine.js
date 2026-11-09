@@ -40,7 +40,7 @@ function zineTools() {
   if (AURA_ONLY === 2) { const nav = document.createElement('nav'); nav.className = 'zn-tabs'; nav.setAttribute('aria-label', 'Designs');
     nav.innerHTML = [0, 1, 2].map(i => `<button type="button" data-zslot="${i}" aria-pressed="${PRESS.slot === i}">${i + 1}</button>`).join('') + '<span></span><button type="button" data-znew>NEW</button><button type="button" data-zsave>SAVE</button><button type="button" data-zopen>OPEN</button><input type="file" id="zine-json" accept=".json,application/json" hidden>';
     t.parentNode.insertBefore(nav, t); $('#zine').dataset.slot = PRESS.slot; }
-  t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + (AURA_ONLY === 2 ? [['wild', 'dice', 'Roll the dice: three marks at random (words, cut-outs, shapes, stamps, tape, stickers) in loud inks, thrown onto the part of the page you can see'], ...ZTOOLS.filter(z => !['add', 'zoom', 'undo', 'delete'].includes(z[0]))] : ZTOOLS).map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
+  t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + (AURA_ONLY === 2 ? [['wild', 'dice', 'Roll the dice: three marks at random (words, cut-outs, shapes, stamps, tape, stickers) in loud inks, thrown onto the part of the page you can see'], ...ZTOOLS.filter(z => !['add', 'zoom', 'undo', 'delete'].includes(z[0])), ...ZTOOLS.filter(z => ['undo', 'delete'].includes(z[0]))] : ZTOOLS).map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
     + `<span class="swatches" role="group" aria-label="Ink">${(AURA_ONLY === 2 ? WILDINK : SWATCH).map(c => `<button type="button" class="sw${c === ZCOL ? ' on' : ''}" data-ink="${c}" style="--c:${c}" aria-label="Ink ${c}"></button>`).join('')}<label class="sw pick" aria-label="Any ink" data-tip="Any ink"><input type="color" id="zine-col" value="${ZCOL}"></label></span>`
     + `<button type="button" class="bt zt zlong" data-zlong aria-pressed="${PRESS.fmt === 'long'}" data-tip="Long strip">LONG</button>` + '<input type="file" id="zine-file" accept="image/*" hidden>';
   $('#zine-label').textContent = 'PRINT SHOP · MODEL DA-04 · THERMAL 80 MM / 58 MM · A5 · RUNS ON WHAT IS LEFT OVER · HEAT-SENSITIVE PAPER: KEEP FROM SUN · PRINT WHAT YOU WILL DO';
@@ -338,7 +338,7 @@ async function zineTool(k) {
     const at = again ? { left: sel.left, top: sel.top, angle: sel.angle, w: sel.getScaledWidth() } : { left: x, top: y, angle: rnd(-8, 8), w: Math.min(150, W * 0.45) }; if (again) c.remove(sel);
     await new Promise(res => f.Image.fromURL(bandana(300, RAGINV).toDataURL('image/png'), im => { im.set({ left: at.left, top: at.top, angle: at.angle, daKind: 'rag' }); im.scaleToWidth(at.w); c.add(im); c.setActiveObject(im); res(); }));
   }
-  if (k === 'delete') { for (const o of c.getActiveObjects()) if (!ZFIXED.includes(o.daKind)) c.remove(o); c.discardActiveObject(); }
+  if (k === 'delete') { const ds = c.getActiveObjects().filter(o => !ZFIXED.includes(o.daKind)); if (!ds.length) { tick(600); return; } for (const o of ds) c.remove(o); c.discardActiveObject(); snd.tear(); }
   if (k === 'shape') { const n = (zineTool.n = ((zineTool.n || 0) + 1) % 4); let o;
     if (n === 1) o = new f.Circle({ left: x, top: y, radius: 30, fill: ZCOL, daKind: 'shape' });
     if (n === 2) { const pts = []; for (let i = 0; i < 24; i++) { const r = i % 2 ? 20 : 40; const a = i / 24 * Math.PI * 2; pts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r }); } o = new f.Polygon(pts, { left: x, top: y, fill: ZCOL, daKind: 'shape' }); }
@@ -795,4 +795,12 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', async e => {
   if (e.target.id !== 'zine-json') return; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
   try { const d = JSON.parse(await file.text()); if (!d || d.format !== 'design/1' || !d.json) throw 0; store.set(zKey(), { json: d.json, h: d.h }); zFmt = null; await showZine(true); toast('OPENED'); } catch (er) { toast('NOT A DESIGN FILE'); }
+});
+
+/* on a keyboard too: Delete or Backspace takes off what is chosen, Ctrl or Cmd + Z undoes (never while words are being typed) */
+addEventListener('keydown', e => {
+  if (!zc || !$('#zine') || !$('#zine').getClientRects().length) return; const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  const a = zc.getActiveObject(); if (a && a.isEditing) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && zc.getActiveObjects().some(o => !ZFIXED.includes(o.daKind))) { e.preventDefault(); zineTool('delete'); return; }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); zineTool('undo'); }
 });

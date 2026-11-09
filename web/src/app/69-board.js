@@ -266,7 +266,30 @@ function sendSpecies(o) {
   if (!simple()) { const c = jSelConn(); if (c) { jrFold = false; JR.sel = c; JR.acts = (JR.acts || []).filter(k => jActs().some(a => a.k === k)); saveJR(); } }
   const sp = keepSpecies(spOf(o)); const g = sp.g;
   markTweak(); flyToTab(1, $('#r-fig')); snd.knot({ g }, F0 * partialOf(g), 0, 0.7, 0); buzz([8, 30, 8]);
+  spToBoard(sp);
   return sp;
+}
+/* the species card laid on a board for real, and a small key on the button that sent it, to go and see it there: under the
+   novel.global cards it goes on the research board (the radio only holds the map); anywhere else on the W.I.S.H. board */
+const homeOf = () => { try { return IN_AURA && window.parent.HOME ? window.parent.HOME : null; } catch (e) { return null; } };
+async function spToBoard(sp) {
+  const from = heroBtn.hidden ? altBtn : heroBtn;
+  if (homeOf()) {
+    let q = []; try { q = JSON.parse(localStorage.getItem('da.rb.in') || '[]'); } catch (e) { q = []; }
+    q = q.filter(x => x.id !== sp.id); q.push({ id: sp.id, n: sp.n, latin: sp.latin, place: sp.place, ph: sp.ph, st: sp.st }); try { localStorage.setItem('da.rb.in', JSON.stringify(q.slice(-12))); } catch (e) { /* full */ }
+    sentPop(from, () => { try { window.parent.postMessage({ hm: 'go', id: 'research' }, location.origin); } catch (e) { /* alone */ } });
+    return;
+  }
+  try { if (!boardPicks().has('l:' + sp.id)) await addToBoard(await speciesSticker(sp), 'cell', 200, 'l:' + sp.id); } catch (e) { /* the list still holds it */ }
+  sentPop(from, () => goDev(1));
+}
+let sentT = 0;
+function sentPop(btn, go) {
+  document.querySelectorAll('.sent-pop').forEach(n => n.remove()); clearTimeout(sentT); if (!btn) return;
+  const r = btn.getBoundingClientRect(), el = document.createElement('button'); el.type = 'button'; el.className = 'sent-pop'; el.setAttribute('aria-label', 'Go to the board'); el.dataset.tip = 'Go to the board';
+  el.innerHTML = `<span class="mono">BOARD</span>${icon('out', 'sm')}`; el.style.left = `${Math.round(Math.min(innerWidth - 90, Math.max(8, r.right - 70)))}px`; el.style.top = `${Math.round(Math.max(8, r.top - 30))}px`;
+  el.addEventListener('click', e => { e.stopPropagation(); el.remove(); snd.tick(1500); go(); });
+  document.body.appendChild(el); sentT = setTimeout(() => el.remove(), 6000);
 }
 /* a small copy of the card flies to its tab on the rail */
 function flyToTab(i, from) { flyToEl($(`#rail .tab[data-i="${i}"]`), from); }

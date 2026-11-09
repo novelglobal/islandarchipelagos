@@ -544,8 +544,12 @@ const life = (() => {
     if (S.mode === 'place' && S.place && !still) { const q = map.project([S.place.lng, S.place.lat]); const k = (now / 1400) % 1; ctx.save(); ctx.globalAlpha = 1 - k; ctx.beginPath(); ctx.arc(q.x, q.y, 14 + k * 26, 0, TAU); ctx.strokeStyle = C.white; ctx.lineWidth = 1.8; ctx.stroke(); ctx.restore(); }
     if (ghost) { const q = map.project([ghost.lng, ghost.lat]); const k = still ? 1 : back((now - ghost.t) / 300); M.badge(ctx, { tone: 'need', i: 'plus', d: Math.round(28 * k) || 1 }, q.x, q.y); }
   }
+  /* kept on air under the novel.global cards the radio sits in a frame two dots wide, and a phone may stop drawing it: the hand
+     goes on turning from a timer then, so its sound never stops while the map is not drawn */
+  let lastFrame = 0;
+  if (IN_AURA) setInterval(() => { const now = performance.now(); if (document.hidden || !bx || now - lastFrame < 160) return; sweep(now); }, 100);
   function frame(now) {
-    raf = requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame); lastFrame = now;
     if (document.hidden || !bx) { lastSweep = 0; return; }
     if (dirty) { dirty = false; project(); drawBase(); fxDirty = true; }
     sweep(now);
