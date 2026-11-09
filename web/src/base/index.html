@@ -24,6 +24,8 @@ try { var t = localStorage.getItem('da.base.theme'); if (t) document.documentEle
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="aura.css">
 <link rel="stylesheet" href="home.css">
+<style>html.hm-boot:not(.hm-on) body { visibility: hidden; }</style>
+<script>(function () { var H = document.documentElement; if (/[?&](aura|base)\b/.test(location.search)) return; H.classList.add('hm-boot'); var off = function () { H.classList.remove('hm-boot'); }; addEventListener('load', off); setTimeout(off, 2500); })();</script>
 </head>
 <body>
 <!-- the glyphs: drawn once, used everywhere. Sticks, beads, dotted threads; no words -->
