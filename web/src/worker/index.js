@@ -432,10 +432,11 @@ async function learnKinds(db, env, req) {
 /* lowRes: keep only the print-sized photograph, never the full-size one (off: full size in R2) */
 /* madeShow: what people make (stories, posters, packs, their photographs and talk) shown to visitors; off, every one of them stays a
    draft, decided on here and seen by no one else. exampleShow: the example poster and BOARD 00 shown to visitors */
+/* buoyScrap: the radio card's buoy built from found things, drawn by hand; off, the clean one */
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: false };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);

@@ -4,7 +4,7 @@
 @font-face { font-family: 'Poppins'; src: url('vendor/fonts/poppins-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
 @font-face { font-family: 'Poppins'; src: url('vendor/fonts/poppins-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 /* home: the sea, a column of cards, the switchboard */
-html.hm-on { --hm-top: 52px; --hm-sbh: 84px; --hm-peek: 22px; --title: 1.6;
+html.hm-on { --hm-top: 52px; --hm-sbh: 84px; --hm-peek: 8px; --title: 1.6;
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .25 -.06'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 #hm { --hm-bg: #E8E7E3; --hm-ink: #111214; --hm-dim: rgba(17, 18, 20, .5); --hm-line: rgba(17, 18, 20, .18); --hm-sb: #0C0D0E; --sea: #17457F; }
 #hm.night { --hm-bg: #0D0E0F; --hm-ink: #F4F1E8; --hm-dim: rgba(244, 241, 232, .5); --hm-line: rgba(244, 241, 232, .18); --sea: #06152A; }
@@ -585,3 +585,34 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 /* DIRECT ACTION RADIO: the reef's water painted on down into its top, the beacon riding it */
 .hm-card.sk-radio { --rs: min(30cqh, 54cqw); }
 .rd-sea { position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--rs) * 1.4); display: block; pointer-events: none; }
+
+/* El Niño: its switch is on the buoy's float */
+.rd-nino { position: absolute; z-index: 2; left: calc(36% + var(--rs) * .11); top: calc(var(--rs) * .745); width: 36px; height: 36px; transform: translate(-50%, -50%); border-radius: 50%; }
+.rd-nino:focus-visible { outline: 1.5px dashed #FF6B1A; outline-offset: 2px; }
+/* the cables let out onto the cards, and their switch on the board */
+#hm-cx { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; pointer-events: none; display: none; }
+#hm.cx #hm-cx { display: block; }
+html.hm-away #hm-cx, html.hm-sheet #hm-cx { visibility: hidden; }
+#hm-sb .ex { position: absolute; right: 10px; top: 3px; z-index: 2; width: 40px; height: 22px; display: grid; place-items: center; }
+#hm-sb .ex i { position: relative; width: 24px; height: 8px; border-radius: 4px; background: #050506; box-shadow: inset 0 0 0 1px rgba(244, 241, 232, .28); transition: background-color .25s; }
+#hm-sb .ex i::before { content: ''; position: absolute; left: -9px; top: 1px; width: 6px; height: 6px; border-radius: 50%; background: #2A2C2E; transition: background-color .25s, box-shadow .25s; }
+#hm-sb .ex i::after { content: ''; position: absolute; left: 1px; top: -4px; width: 7px; height: 16px; border-radius: 2px; background: linear-gradient(90deg, #77756F, #F4F1E8 45%, #6B6964); box-shadow: 0 2px 3px rgba(0, 0, 0, .6); transition: left .3s cubic-bezier(.3, 1.6, .5, 1); }
+#hm-sb .ex[aria-pressed="true"] i { background: #B08A3E; }
+#hm-sb .ex[aria-pressed="true"] i::before { background: #FF6B1A; box-shadow: 0 0 6px #FF6B1A; }
+#hm-sb .ex[aria-pressed="true"] i::after { left: 16px; }
+#hm-sb.big .rs { right: 54px; }
+@media (prefers-reduced-motion: reduce) { #hm-sb .ex i::after { transition: none; } }
+
+/* the jack key: faint until the card takes a cable */
+#hm .hm-card .hm-pg { opacity: .55; }
+#hm .hm-card.wired .hm-pg { opacity: 1; }
+/* the ghost jack: once, a hint that the board is there */
+.hm-ghost { position: absolute; z-index: 7; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 18px); width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; display: grid; place-items: center; color: #F4F1E8; background: rgba(12, 13, 14, .82); box-shadow: 0 0 0 0 rgba(255, 107, 26, .55); animation: hm-ghost 2.4s ease-out infinite, hm-ghost-in .6s cubic-bezier(.2, .8, .2, 1); transition: opacity .45s, transform .45s; }
+.hm-ghost svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.hm-ghost .f { fill: currentColor; stroke: none; }
+.hm-ghost::after { content: ''; position: absolute; left: 50%; top: 100%; height: 18px; border-left: 1.5px dotted rgba(244, 241, 232, .6); }
+.hm-ghost.out { opacity: 0; transform: translateY(16px); }
+html.hm-away .hm-ghost, html.hm-sheet .hm-ghost { display: none; }
+@keyframes hm-ghost { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 26, .5); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 107, 26, 0); } }
+@keyframes hm-ghost-in { from { opacity: 0; transform: translateY(24px); } }
+@media (prefers-reduced-motion: reduce) { .hm-ghost { animation: none; } }

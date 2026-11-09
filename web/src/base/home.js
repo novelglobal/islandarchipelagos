@@ -31,6 +31,7 @@
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
+  var JACKED = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space'];
   var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
   function colHTML() { var out = '', run = [];
@@ -171,6 +172,71 @@
     g.globalCompositeOperation = 'source-over'; flaws(g, w, h, 304, 0.22);
     return c;
   }
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); }, true);
+  /* the buoy as found things: a jerrycan for its float, a bent pole, a cracked panel tied on, a jar for its lamp, a coat hanger for an aerial; drawn by hand, nothing quite straight */
+  function hand(g, P, seed, n) { var r = rnd(seed); for (var p = 0; p < (n || 2); p++) { g.beginPath(); P.forEach(function (q, i) { var x = q[0] + (r() - 0.5) * 1.3, y = q[1] + (r() - 0.5) * 1.3; if (i) g.lineTo(x, y); else g.moveTo(x, y); }); g.globalAlpha = p ? 0.4 : 1; g.stroke(); } g.globalAlpha = 1; }
+  function specks(g, x, y, w, h, n, cols, seed, rs) { var r = rnd(seed); for (var i = 0; i < n; i++) { g.fillStyle = cols[i % cols.length]; g.globalAlpha = 0.35 + r() * 0.5; g.beginPath(); g.arc(x + r() * w, y + r() * h, (0.3 + r() * 0.8) * rs, 0, 7); g.fill(); } g.globalAlpha = 1; }
+  function scrapBuoy(g, u, t, sw, heat) {
+    var RU = '#8C4A26', RL = '#C77A48', VG = '#6FA595', RP = '#B9A47A', TP = '#CDBD8C', PL = '#DCD6C4';
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    /* a rope down to a brick */
+    g.strokeStyle = RP; g.lineWidth = 0.9 * u; hand(g, [[0, 8 * u], [-1.2 * u, 15 * u], [-0.6 * u, 22 * u]], 401);
+    g.fillStyle = '#8E4A32'; g.save(); g.translate(-0.6 * u, 24 * u); g.rotate(0.08); g.fillRect(-4.5 * u, -2 * u, 9 * u, 4 * u); g.strokeStyle = 'rgba(230,220,200,.5)'; g.lineWidth = 0.4 * u; g.beginPath(); g.moveTo(-4.5 * u, 0); g.lineTo(4.5 * u, 0); g.moveTo(0, -2 * u); g.lineTo(0, 0); g.stroke(); g.restore();
+    /* a driftwood strut, the bent pole, rust and verdigris on it */
+    g.strokeStyle = '#A08058'; g.lineWidth = 1.5 * u; hand(g, [[-15 * u, -6 * u], [-8 * u, -18 * u], [-1 * u, -31 * u]], 402);
+    var pole = [[0, -6 * u], [0.5 * u, -24 * u], [1.8 * u, -38 * u], [1.2 * u, -52 * u], [1.6 * u, -66 * u]];
+    g.strokeStyle = RU; g.lineWidth = 2.4 * u; hand(g, pole, 403, 1); g.strokeStyle = RL; g.lineWidth = 0.7 * u; hand(g, pole.map(function (q) { return [q[0] - 0.7 * u, q[1]]; }), 404, 1);
+    specks(g, -1 * u, -64 * u, 3.4 * u, 58 * u, 26, [VG, '#5A2E18', RL], 405, u);
+    g.fillStyle = RU; g.globalAlpha = 0.7; g.beginPath(); g.moveTo(1.4 * u, -38 * u); g.quadraticCurveTo(2.4 * u, -34 * u, 1.9 * u, -32 * u); g.quadraticCurveTo(1.2 * u, -34 * u, 1.4 * u, -38 * u); g.fill(); g.globalAlpha = 1;
+    /* the panel: salvaged, one cell gone, a crack across another, cable-tied to a bent bar */
+    g.strokeStyle = '#6B5A4A'; g.lineWidth = 1 * u; hand(g, [[1.5 * u, -64 * u], [-4 * u, -68 * u], [-9 * u, -73 * u]], 406);
+    g.save(); g.translate(-12 * u, -76 * u); g.rotate(-0.38 + sw * 0.012); g.transform(1, 0.04, -0.06, 1, 0, 0); var pw = 36 * u, ph = 14 * u;
+    g.fillStyle = '#7A4A2E'; g.fillRect(-pw / 2 - 1.3 * u, -ph / 2 - 1.3 * u, pw + 2.6 * u, ph + 2.6 * u);
+    var pg = g.createLinearGradient(0, -ph / 2, 0, ph / 2); pg.addColorStop(0, '#22345C'); pg.addColorStop(1, '#0D1428'); g.fillStyle = pg; g.fillRect(-pw / 2, -ph / 2, pw, ph);
+    var cw = pw / 6; g.fillStyle = '#2A2622'; g.fillRect(-pw / 2 + cw * 4, -ph / 2, cw, ph / 2);
+    g.strokeStyle = 'rgba(140,175,230,.45)'; g.lineWidth = Math.max(0.5, 0.35 * u); g.beginPath(); for (var c = 1; c < 6; c++) { g.moveTo(-pw / 2 + cw * c, -ph / 2); g.lineTo(-pw / 2 + cw * c, ph / 2); } g.moveTo(-pw / 2, 0); g.lineTo(pw / 2, 0); g.stroke();
+    g.strokeStyle = 'rgba(240,235,220,.7)'; g.lineWidth = 0.4 * u; g.beginPath(); g.moveTo(-pw / 2 + cw * 1.2, -ph / 2); g.lineTo(-pw / 2 + cw * 1.6, -ph * 0.1); g.lineTo(-pw / 2 + cw * 1.3, ph * 0.2); g.lineTo(-pw / 2 + cw * 1.9, ph / 2); g.stroke();
+    g.save(); g.beginPath(); g.rect(-pw / 2, -ph / 2, pw, ph); g.clip(); var gl = ((t * 0.09) % 1.8 - 0.4) * pw * 1.4 - pw / 2; g.fillStyle = 'rgba(255,250,235,.22)'; g.beginPath(); g.moveTo(gl, -ph / 2); g.lineTo(gl + 5 * u, -ph / 2); g.lineTo(gl - 2 * u, ph / 2); g.lineTo(gl - 7 * u, ph / 2); g.closePath(); g.fill(); g.restore();
+    specks(g, -pw / 2 - 1.3 * u, -ph / 2 - 1.3 * u, pw + 2.6 * u, 2 * u, 10, [VG, RL], 407, u);
+    g.restore();
+    /* the wires: odd ones, one taped where it was mended */
+    var wire = function (col, a, b, c2, lw) { g.strokeStyle = col; g.lineWidth = lw * u; g.beginPath(); g.moveTo(a[0] * u, a[1] * u); g.quadraticCurveTo(c2[0] * u, (c2[1] + sw * 1.4) * u, b[0] * u, b[1] * u); g.stroke(); };
+    wire('#B23A2E', [-4, -71], [12, -50], [6, -58], 0.8); wire('#2B2B2B', [7, -39], [-9, -29], [4, -30], 0.8); wire('#D8A23A', [-17, -22], [-12, -7], [-28, -12], 0.9); wire('#4C6E9E', [14, -39], [9, -7], [20, -18], 0.7);
+    g.fillStyle = TP; g.save(); g.translate(4.6 * u, (-58.6 + sw * 0.7) * u); g.rotate(0.9); g.fillRect(-1.8 * u, -1 * u, 3.6 * u, 2 * u); g.restore();
+    /* the float: an old jerrycan lying on its side, grimed below, a tape patch, roped round */
+    var can = function () { rrect(g, -20 * u, -7 * u, 40 * u, 16 * u, 3.2 * u); };
+    var cg2 = g.createLinearGradient(-20 * u, 0, 20 * u, 0); cg2.addColorStop(0, '#A9A393'); cg2.addColorStop(0.35, PL); cg2.addColorStop(0.55, '#ECE7D8'); cg2.addColorStop(1, '#9A9483'); g.fillStyle = cg2; can(); g.fill();
+    g.save(); can(); g.clip(); var gr2 = g.createLinearGradient(0, 2 * u, 0, 9 * u); gr2.addColorStop(0, 'rgba(110,90,50,0)'); gr2.addColorStop(1, 'rgba(96,78,40,.55)'); g.fillStyle = gr2; g.fillRect(-21 * u, 2 * u, 42 * u, 8 * u);
+    g.strokeStyle = 'rgba(0,0,0,.13)'; g.lineWidth = 0.8 * u; [-6, 2, 10].forEach(function (x) { g.beginPath(); g.moveTo(x * u, -7 * u); g.quadraticCurveTo((x + 1) * u, 1 * u, x * u, 9 * u); g.stroke(); });
+    specks(g, -20 * u, -2 * u, 40 * u, 11 * u, 22, ['#6F6A55', '#4F6B48', '#8A7A55'], 408, u); g.restore();
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 0.6 * u; can(); g.stroke();
+    g.strokeStyle = PL; g.lineWidth = 1.6 * u; g.beginPath(); g.moveTo(-13 * u, -7 * u); g.quadraticCurveTo(-9 * u, -12 * u, -4 * u, -7 * u); g.stroke();
+    g.fillStyle = '#3B5E8C'; g.fillRect(16.5 * u, -9.5 * u, 3.4 * u, 3 * u);
+    g.save(); g.translate(6 * u, 2.4 * u); g.rotate(-0.12); g.fillStyle = TP; g.globalAlpha = 0.92; g.fillRect(-4.5 * u, -1.6 * u, 9 * u, 3.2 * u); g.globalAlpha = 1; g.restore();
+    g.strokeStyle = RP; g.lineWidth = 0.8 * u; [-12, 11].forEach(function (x, k) { hand(g, [[x * u, -7.5 * u], [(x + 0.6) * u, 1 * u], [x * u, 9.4 * u]], 409 + k); for (var q = -6; q < 9; q += 2.4) { g.beginPath(); g.moveTo((x - 0.6) * u, q * u); g.lineTo((x + 0.8) * u, (q + 1) * u); g.stroke(); } });
+    /* the El Niño switch: an old light switch screwed onto the can */
+    g.fillStyle = '#E7E1CF'; rrect(g, 9 * u, -12.4 * u, 8 * u, 5.4 * u, 0.8 * u); g.fill(); g.fillStyle = '#8A8170'; [[10.2, -11.2], [15.8, -8.2]].forEach(function (s2) { g.beginPath(); g.arc(s2[0] * u, s2[1] * u, 0.45 * u, 0, 7); g.fill(); });
+    var lv = RS.nino ? 1 : -1; g.strokeStyle = '#3A3630'; g.lineWidth = 1.1 * u; g.beginPath(); g.moveTo(13 * u, -9.6 * u); g.lineTo((13 + lv * 2.4) * u, -14.4 * u); g.stroke(); g.fillStyle = RS.nino ? '#FF2E1F' : '#3A3630'; g.beginPath(); g.arc((13 + lv * 2.4) * u, -14.4 * u, 1.2 * u, 0, 7); g.fill();
+    g.fillStyle = '#F1F0EC'; g.font = '600 ' + Math.max(7, 4.2 * u).toFixed(1) + 'px "Departure Mono", ui-monospace, monospace'; g.fillText('EL NIÑO', 20 * u, -8.5 * u);
+    /* the little radio, roped on; the other in a cut-down tub, its board showing */
+    var gx = -20 * u, gy = -33 * u; g.fillStyle = '#3B3A36'; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + 10.5 * u, gy); g.lineTo(gx + 12 * u, gy + 1.6 * u); g.lineTo(gx + 12 * u, gy + 10 * u); g.lineTo(gx, gy + 10 * u); g.closePath(); g.fill();
+    g.fillStyle = '#B23A2E'; g.beginPath(); g.arc(gx + 8.4 * u, gy + 5.6 * u, 2 * u, 0, 7); g.fill(); g.strokeStyle = '#F1F0EC'; g.lineWidth = 0.5 * u; g.beginPath(); g.moveTo(gx + 8.4 * u, gy + 5.6 * u); g.lineTo(gx + 8.4 * u + Math.cos(t * 0.3) * 1.6 * u, gy + 5.6 * u + Math.sin(t * 0.3) * 1.6 * u); g.stroke();
+    g.fillStyle = 'rgba(241,240,236,.35)'; for (var gi = 0; gi < 3; gi++) for (var gj = 0; gj < 3; gj++) { g.beginPath(); g.arc(gx + (2.2 + gi * 1.5) * u, gy + (4.6 + gj * 1.5) * u, 0.42 * u, 0, 7); g.fill(); }
+    g.strokeStyle = RP; g.lineWidth = 0.7 * u; hand(g, [[gx + 12 * u, gy + 3 * u], [-1 * u, gy + 2.6 * u]], 411); hand(g, [[gx + 12 * u, gy + 7.5 * u], [-0.6 * u, gy + 7.8 * u]], 412);
+    var cx = 5 * u, cy = -50 * u, cw2 = 13 * u, ch = 11 * u; g.fillStyle = '#1F5C3B'; g.fillRect(cx + 1.2 * u, cy + 1.4 * u, cw2 - 2.4 * u, ch - 2.6 * u); g.fillStyle = '#0B0B0B'; g.fillRect(cx + 2.4 * u, cy + 2.8 * u, 3.6 * u, 2.4 * u); g.strokeStyle = '#C98A4A'; g.lineWidth = 0.6 * u; g.beginPath(); g.arc(cx + 9.4 * u, cy + 4 * u, 1.4 * u, 0, 7); g.stroke();
+    g.fillStyle = 'rgba(236,231,214,.42)'; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + cw2, cy); g.lineTo(cx + cw2 - 1 * u, cy + ch); g.lineTo(cx + 1 * u, cy + ch); g.closePath(); g.fill(); g.strokeStyle = 'rgba(236,231,214,.85)'; g.lineWidth = 0.6 * u; g.stroke();
+    g.fillStyle = 'rgba(236,231,214,.7)'; g.beginPath(); g.moveTo(cx + cw2, cy - 0.4 * u); g.lineTo(cx + cw2 + 4.2 * u, cy - 3 * u + sw * 0.4 * u); g.lineTo(cx + cw2 + 4.8 * u, cy - 1.6 * u + sw * 0.4 * u); g.lineTo(cx + cw2 + 0.4 * u, cy + 0.8 * u); g.closePath(); g.fill();
+    g.strokeStyle = RP; g.lineWidth = 0.7 * u; hand(g, [[cx, cy + 3 * u], [2 * u, cy + 3.2 * u]], 413);
+    /* the lamp: a jar, its lid rusted, an aerial bent from a coat hanger */
+    var per = heat > 0.5 ? 0.45 : AIR.on ? 1.4 : 3.2, pp = (t % per) / per, fl = Math.max(0, 1 - pp * 3.2), lx = 2 * u, ly = -82 * u;
+    g.strokeStyle = RU; g.lineWidth = 1.4 * u; hand(g, [[1.6 * u, -66 * u], [lx, ly + 4 * u]], 414);
+    var gw2 = (NIGHT ? 24 : 16) * u, lg = g.createRadialGradient(lx, ly, 0, lx, ly, gw2); lg.addColorStop(0, 'rgba(255,190,110,' + (0.15 + fl * 0.6 + (NIGHT ? 0.15 : 0)).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(255,140,50,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lx, ly, gw2, 0, 7); g.fill();
+    g.fillStyle = fl > 0.15 ? 'rgba(255,226,170,.95)' : 'rgba(255,255,255,.2)'; rrect(g, lx - 3.2 * u, ly - 3.4 * u, 6.4 * u, 7.6 * u, 1.6 * u); g.fill(); g.strokeStyle = 'rgba(241,240,236,.85)'; g.lineWidth = 0.6 * u; g.stroke();
+    g.fillStyle = '#7A4A2E'; g.fillRect(lx - 3.4 * u, ly - 5 * u, 6.8 * u, 1.8 * u); specks(g, lx - 3.4 * u, ly - 5 * u, 6.8 * u, 1.8 * u, 5, [RL, VG], 415, u);
+    g.save(); g.translate(lx, ly - 5 * u); g.rotate(sw * 0.05); g.strokeStyle = '#B9B4A6'; g.lineWidth = 0.6 * u;
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -3 * u); g.lineTo(-7 * u, -3.4 * u); g.lineTo(0.6 * u, -9 * u); g.lineTo(8 * u, -3.2 * u); g.lineTo(0, -3 * u); g.moveTo(0.6 * u, -9 * u); g.lineTo(0.6 * u, -11 * u); g.arc(1.8 * u, -11 * u, 1.2 * u, Math.PI, Math.PI * 2.2); g.stroke(); g.restore();
+    g.strokeStyle = '#F1F0EC'; [pp, (pp + 0.5) % 1].forEach(function (p2) { var R = (6 + p2 * 44) * u; g.globalAlpha = (1 - p2) * 0.45; g.lineWidth = 1; g.beginPath(); g.arc(lx, ly, R, -0.75, 0.75); g.stroke(); g.beginPath(); g.arc(lx, ly, R, Math.PI - 0.75, Math.PI + 0.75); g.stroke(); }); g.globalAlpha = 1;
+  }
   function rdSea(t, dt) {
     var cv = RS.cv;
     if (!cv || !cv.isConnected) { cv = RS.cv = col.querySelector('.sk-radio .rd-sea'); RS.w = 0; if (RS.io) RS.io.disconnect(); if (!cv) return;
@@ -190,13 +256,23 @@
     for (var x = 0; x <= w; x += 6) { var yy = Fy + Math.sin(x * 0.035 + t * 0.8) * 1.6 + Math.sin(x * 0.011 - t * 0.5) * 1.2; if (x) g.lineTo(x, yy); else g.moveTo(x, yy); } g.stroke(); g.setLineDash([]);
     g.globalCompositeOperation = 'source-over';
     /* the beacon: it bobs and leans on a slow swell */
-    var u = E / 118, bx = w * 0.36, by = Fy + (Math.sin(t * 0.85) * 2.2 + Math.sin(t * 0.37) * 1.2) * u, roll = Math.sin(t * 0.6 + 0.8) * 0.055 + Math.sin(t * 0.23) * 0.03, sw = Math.sin(t * 1.1);
+    var heat = RS.heat = (RS.heat || 0) + ((RS.nino ? 1 : 0) - (RS.heat || 0)) * Math.min(1, (dt || 1) * 0.6);
+    var u = E / 118, bx = w * 0.36, by = Fy + (Math.sin(t * 0.85) * 2.2 + Math.sin(t * 0.37) * 1.2 + Math.sin(t * 23) * heat * 0.9) * u, roll = (Math.sin(t * 0.6 + 0.8) * 0.055 + Math.sin(t * 0.23) * 0.03) * (1 + heat * 2.6), sw = Math.sin(t * 1.1);
+    var cr = cv.getBoundingClientRect(); RS.sx = cr.left + bx; RS.sy = cr.top + by - 36 * u; RS.su = u;
+    if (heat > 0.01) { if (!RS.boil) { RS.boil = []; RS.puff = []; } g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = 'rgba(255,110,24,' + (0.46 * heat).toFixed(3) + ')'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(92,80,28,' + (0.34 * heat).toFixed(3) + ')'; g.fillRect(0, Fy, w, h);
+      if (Math.random() < heat * (dt || 0) * 36) RS.boil.push({ x: Math.random() * w, y: E * 1.08, r: 1 + Math.random() * 3, v: 20 + Math.random() * 40 });
+      g.strokeStyle = 'rgba(255,240,220,.8)'; g.lineWidth = 1; RS.boil = RS.boil.filter(function (b) { b.y -= b.v * dt; b.x += Math.sin(t * 6 + b.r * 9) * 0.4; if (b.y < Fy) { if (RS.puff.length < 14 && Math.random() < 0.5) RS.puff.push({ x: b.x, y: Fy - 2, r: 2, a: 0.7 }); return false; } g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.stroke(); return true; });
+      g.fillStyle = 'rgba(244,241,232,1)'; RS.puff = RS.puff.filter(function (q) { q.y -= 9 * dt; q.r += 5 * dt; q.a -= 0.35 * dt; if (q.a <= 0) return false; g.globalAlpha = q.a * heat; g.beginPath(); g.arc(q.x + Math.sin(t * 3 + q.r) * 2, q.y, q.r, 0, 7); g.fill(); return true; }); g.globalAlpha = 1;
+      for (var lt = 0; lt < 6; lt++) { if (lt / 6 > heat) break; g.save(); g.translate(w * (0.08 + lt * 0.16) + Math.sin(t * 0.6 + lt) * 6, Fy + 1 + Math.sin(t * 1.3 + lt * 2) * 1.5); g.rotate(Math.sin(t + lt) * 0.4); g.fillStyle = ['#8A8F86', '#6E5B3E', '#C9C1A8'][lt % 3]; g.fillRect(-3.5, -1.5, 7, 3); g.restore(); }
+      g.globalCompositeOperation = 'source-over'; }
     if ((RS.rt -= dt) < 0) { RS.rt = 2.6 + Math.random() * 1.4; RS.rip.push({ r: 0, a: 0.5 }); }
     g.strokeStyle = ink; g.lineWidth = 1; RS.rip = RS.rip.filter(function (p) { p.r += dt * 9 * u; p.a -= dt * 0.16; if (p.a <= 0) return false; var R = 24 * u + p.r; g.globalAlpha = p.a; g.beginPath(); g.ellipse(bx, Fy + 1, R, R * 0.14, 0, 0, 7); g.stroke(); return true; }); g.globalAlpha = 1;
     /* its mooring, dropping out of the paint */
     var kx = bx - Math.sin(roll) * 24 * u, ky = by + Math.cos(roll) * 24 * u, mg = g.createLinearGradient(0, ky, 0, h); mg.addColorStop(0, 'rgba(244,241,232,.55)'); mg.addColorStop(1, 'rgba(244,241,232,0)');
     g.strokeStyle = mg; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(kx, ky); g.quadraticCurveTo(kx + (10 + Math.sin(t * 0.5) * 3) * u, ky + (h - ky) * 0.5, kx + 4 * u, h); g.stroke(); g.setLineDash([]);
     g.save(); g.translate(bx, by); g.rotate(roll); g.lineCap = 'round'; g.lineJoin = 'round';
+    if (RS.scrap) { scrapBuoy(g, u, t, sw, heat); g.restore(); } else {
     /* keel and its weight */
     g.strokeStyle = '#1A1B1E'; g.lineWidth = 2.2 * u; g.beginPath(); g.moveTo(0, 9 * u); g.lineTo(0, 23 * u); g.stroke(); g.fillStyle = '#1A1B1E'; g.beginPath(); g.ellipse(0, 24 * u, 6 * u, 2 * u, 0, 0, 7); g.fill();
     /* the solar panel, out on an arm, tilted to the light */
@@ -223,6 +299,9 @@
     g.fillStyle = fg; hull(); g.fill(); g.save(); hull(); g.clip(); g.fillStyle = 'rgba(244,241,232,.92)'; g.fillRect(-25 * u, 0.5 * u, 50 * u, 2.6 * u); g.fillStyle = 'rgba(11,11,11,.5)'; for (var tk = -20; tk < 22; tk += 7) g.fillRect(tk * u, 0.5 * u, 1.2 * u, 2.6 * u); g.restore();
     g.fillStyle = shade(O, 0.22); g.beginPath(); g.ellipse(0, -5 * u, 22 * u, 4.4 * u, 0, 0, 7); g.fill(); g.fillStyle = shade(O, -0.18); g.beginPath(); g.ellipse(0, -5.3 * u, 13 * u, 2.4 * u, 0, 0, 7); g.fill();
     g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.1 * u; g.beginPath(); g.moveTo(-16 * u, -1.5 * u); g.quadraticCurveTo(-18 * u, 4 * u, -13 * u, 8 * u); g.stroke();
+    g.fillStyle = '#1A1B1E'; rrect(g, 9 * u, -12 * u, 8 * u, 5 * u, 1 * u); g.fill(); var lv = RS.nino ? 1 : -1; g.strokeStyle = '#F1F0EC'; g.lineWidth = 1 * u; g.beginPath(); g.moveTo(13 * u, -9.5 * u); g.lineTo((13 + lv * 2.6) * u, -14.5 * u); g.stroke();
+    g.fillStyle = RS.nino ? '#FF2E1F' : '#F1F0EC'; g.beginPath(); g.arc((13 + lv * 2.6) * u, -14.5 * u, 1.3 * u, 0, 7); g.fill();
+    g.fillStyle = ink; g.font = '600 ' + Math.max(7, 4.2 * u).toFixed(1) + 'px "Departure Mono", ui-monospace, monospace'; g.fillText('EL NIÑO', 20 * u, -8.5 * u);
     /* the simple radio: a smoked matte box, one dial, one lamp */
     var gx = -20 * u, gy = -33 * u, gw = 12 * u, gh = 10 * u, sg = g.createLinearGradient(0, gy, 0, gy + gh); sg.addColorStop(0, '#3C3E43'); sg.addColorStop(1, '#141518');
     g.fillStyle = sg; rrect(g, gx, gy, gw, gh, 1.3 * u); g.fill(); g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(gx + 1.2 * u, gy + 0.8 * u, gw - 2.4 * u, 0.6 * u);
@@ -238,16 +317,28 @@
     g.fillStyle = '#2A2C30'; g.beginPath(); g.moveTo(cx + cw, cy + 0.6 * u); g.lineTo(cx + cw + 4.4 * u, cy - 1.6 * u + sw * 0.4 * u); g.lineTo(cx + cw + 4.4 * u, cy + ch - 3 * u + sw * 0.4 * u); g.lineTo(cx + cw, cy + ch - 0.6 * u); g.closePath(); g.fill();
     g.strokeStyle = ink; g.lineWidth = 0.6 * u; g.beginPath(); g.moveTo(cx, cy + 2.5 * u); g.lineTo(rail(1, 0.7)[0], cy + 2.5 * u); g.moveTo(cx, cy + ch - 2.5 * u); g.lineTo(rail(1, 0.66)[0], cy + ch - 2.5 * u); g.stroke();
     /* the lamp on its post, calling out on a slow beat, quicker while the radio plays; an aerial whipping above */
-    var per = AIR.on ? 1.4 : 3.2, pp = (t % per) / per, fl = Math.max(0, 1 - pp * 3.2), lx = 2 * u, ly = -84 * u;
+    var per = heat > 0.5 ? 0.45 : AIR.on ? 1.4 : 3.2, pp = (t % per) / per, fl = Math.max(0, 1 - pp * 3.2), lx = 2 * u, ly = -84 * u;
     g.strokeStyle = ink; g.lineWidth = Math.max(1, 0.9 * u); g.beginPath(); g.moveTo(0, -66 * u); g.lineTo(lx, ly + 3 * u); g.moveTo(lx, ly - 3 * u); g.quadraticCurveTo(lx + 2 * u, -90 * u, lx + (6 + sw * 1.6) * u, -97 * u); g.stroke();
     g.fillStyle = ink; g.beginPath(); g.arc(lx + (6 + sw * 1.6) * u, -97 * u, 1 * u, 0, 7); g.fill();
     var gw2 = (NIGHT ? 24 : 16) * u, lg = g.createRadialGradient(lx, ly, 0, lx, ly, gw2); lg.addColorStop(0, 'rgba(255,170,90,' + (0.15 + fl * 0.6 + (NIGHT ? 0.15 : 0)).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lx, ly, gw2, 0, 7); g.fill();
     g.fillStyle = fl > 0.15 ? '#FFE2B0' : shade(O, NIGHT ? 0.1 : -0.1); g.beginPath(); g.arc(lx, ly, 3 * u, Math.PI, 0); g.lineTo(lx + 3 * u, ly + 2 * u); g.lineTo(lx - 3 * u, ly + 2 * u); g.closePath(); g.fill();
     g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(lx - 1.2 * u, ly - 1.2 * u, 0.9 * u, 0.4 * u, -0.7, 0, 7); g.fill();
     g.strokeStyle = ink; [pp, (pp + 0.5) % 1].forEach(function (p2) { var R = (6 + p2 * 44) * u; g.globalAlpha = (1 - p2) * 0.5; g.lineWidth = 1; g.beginPath(); g.arc(lx, ly, R, -0.75, 0.75); g.stroke(); g.beginPath(); g.arc(lx, ly, R, Math.PI - 0.75, Math.PI + 0.75); g.stroke(); }); g.globalAlpha = 1;
+    g.restore(); }
+    /* its lights: two small LEDs blinking out of step; after dark a torch on the lamp turns, its beam sweeping the water, a flash as it faces out */
+    g.save(); g.translate(bx, by); g.rotate(roll); var bl = Math.floor(t * 1.6) % 2;
+    [[-18.2, -31.2, '#FF3B2E', bl], [6.6, -48.6, '#5CE07A', 1 - bl]].forEach(function (L) { g.fillStyle = L[3] ? L[2] : 'rgba(30,30,30,.8)'; if (L[3]) { g.shadowColor = L[2]; g.shadowBlur = NIGHT ? 9 : 4; } g.beginPath(); g.arc(L[0] * u, L[1] * u, 0.8 * u, 0, 7); g.fill(); g.shadowBlur = 0; });
+    if (NIGHT) { var ly2 = (RS.scrap ? -82 : -84) * u, an = t * 0.85, cs = Math.cos(an), BL = 150 * u * Math.abs(cs) + 8 * u, sp = 8 * u * (0.4 + 0.6 * Math.abs(Math.sin(an))), dr = cs > 0 ? 1 : -1;
+      var bg = g.createLinearGradient(2 * u, ly2, 2 * u + dr * BL, ly2 + BL * 0.1); bg.addColorStop(0, 'rgba(255,228,160,.5)'); bg.addColorStop(1, 'rgba(255,228,160,0)'); g.globalCompositeOperation = 'lighter'; g.fillStyle = bg;
+      g.beginPath(); g.moveTo(2 * u, ly2 - 1.2 * u); g.lineTo(2 * u + dr * BL, ly2 - sp); g.lineTo(2 * u + dr * BL, ly2 + sp + BL * 0.2); g.lineTo(2 * u, ly2 + 1.2 * u); g.closePath(); g.fill();
+      var fa = Math.max(0, 1 - Math.abs(cs) / 0.22); if (fa > 0) { var fg2 = g.createRadialGradient(2 * u, ly2, 0, 2 * u, ly2, 30 * u); fg2.addColorStop(0, 'rgba(255,240,200,' + (0.7 * fa).toFixed(2) + ')'); fg2.addColorStop(1, 'rgba(255,240,200,0)'); g.fillStyle = fg2; g.beginPath(); g.arc(2 * u, ly2, 30 * u, 0, 7); g.fill(); }
+      g.globalCompositeOperation = 'source-over'; }
     g.restore();
     /* below the surface the water holds it a little dimmer */
     g.save(); g.beginPath(); g.rect(0, Fy + 2, w, h); g.clip(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = NIGHT ? 'rgba(6,21,42,.45)' : 'rgba(23,69,127,.42)'; g.fillRect(0, Fy, w, h); g.restore();
+    /* hot water, lo-fi: the whole picture read back in big pixels */
+    if (heat > 0.04) { var f = Math.round(1 + heat * 4), pw2 = Math.ceil(cv.width / f), ph2 = Math.ceil(cv.height / f), pc = RS.px || (RS.px = D.createElement('canvas')); if (pc.width !== pw2 || pc.height !== ph2) { pc.width = pw2; pc.height = ph2; }
+      var px = pc.getContext('2d'); px.clearRect(0, 0, pw2, ph2); px.drawImage(cv, 0, 0, pw2, ph2); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.imageSmoothingEnabled = false; g.drawImage(pc, 0, 0, cv.width, cv.height); g.imageSmoothingEnabled = true; }
   }
   var ART = {
     /* CIRCULAR STRATEGY: photographs above, turning; under them a dark patchy green with nothing on it; the band across both */
@@ -309,11 +400,11 @@
     col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax();
   }
   var CARDS_TXT = null;
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); }).catch(function () { /* the cards as they started */ });
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = !!j.buoyScrap; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
 
   function cardHTML(c, i) {
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
-    var keys = (c.ph ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (c.ph ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
+    var keys = (JACKED.indexOf(c.id) < 0 ? '' : '<button class="hm-rk hm-pg" data-plug="' + c.id + '" aria-label="Cables" title="Cables"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><circle cx="12" cy="9" r="1.6" class="f"/><path d="M12 14v3.5c0 1.8 1.5 3 3.5 3"/></svg></button>') + (c.ph ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (c.ph ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-kept" alt="" hidden><b class="rc-code">DA-YZ07</b><div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-lbl" aria-hidden="true">' + 'stories'.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b><canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
@@ -332,7 +423,7 @@
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
-      '<div class="hm-keys">' + keys + '</div><div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
+      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
   }
   /* each card painted to its own size; again when the size changes */
   function paint(el) {
@@ -476,6 +567,7 @@
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
     var r = e.target.closest('[data-radar]'); if (r) { beacon(r.dataset.radar, r); return; }
+    var pg = e.target.closest('[data-plug]'); if (pg) { e.preventDefault(); e.stopPropagation(); plugOut(pg.dataset.plug); return; }
     var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); e.stopPropagation(); cardTalk(tb.dataset.talk); beep(620, 0.04); return; }
   });
 
@@ -1122,7 +1214,7 @@
   function mix(a, b, t) { var A = toLab(a), B = toLab(b), k = t == null ? 0.5 : t; return fromLab([0, 1, 2].map(function (i) { return A[i] + (B[i] - A[i]) * k; })); }
 
   /* wires: four */
-  var START = [['radio', 'wish'], ['wish', 'research'], ['wish', 'zine'], ['zine', 'space'], ['kit', 'space'], ['portfolio', 'research']], MAXW = 6;
+  var START = [['radio', 'wish'], ['wish', 'research'], ['wish', 'zine'], ['kit', 'space']], MAXW = 4;
   var WIRES = store.get('da.sb.v2', null);
   if (!WIRES) { var old = store.get('da.sb.v1', null); WIRES = old ? old.map(function (w) { return w.map(function (x) { x = String(x).split('.')[0]; return x === 'iruk' ? 'eye' : x; }); }).filter(function (w) { return w[0] !== w[1]; }) : START.slice(); }
   WIRES = WIRES.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW);
@@ -1151,6 +1243,55 @@
     cg.globalAlpha = A0 * 0.35; cg.lineWidth = 0.7; trace(cg, pts.map(function (p) { return [p[0] + 1.6, p[1] - 1]; })); cg.stroke();
     cg.fillStyle = gr; for (var e = 1; e < N * 0.2; e++) [e, N - e].forEach(function (i, side) { cg.globalAlpha = A0 * (0.45 + 0.35 * Math.sin(t * 1.4 - e * 0.5 + side + seed)); cg.beginPath(); cg.arc(pts[i][0], pts[i][1], e % 3 === 0 ? 1.7 : 1.15, 0, 7); cg.fill(); });
     cg.globalAlpha = A0; [[a, ca], [b, cb]].forEach(function (p) { cg.fillStyle = p[1]; cg.beginPath(); cg.arc(p[0][0], p[0][1], 4, 0, 7); cg.fill(); }); cg.globalAlpha = 1;
+  }
+  /* the cables let out onto the cards: a switch on the board, then each cable down its own path, plugged into the cards it joins, hanging and swinging as they move */
+  var CX = { on: !!store.get('da.sb.out', false), cv: null, g: null, rope: {}, k: 1 };
+  (function () { var cv = D.createElement('canvas'); cv.id = 'hm-cx'; cv.setAttribute('aria-hidden', 'true'); root.insertBefore(cv, $('#hm-jf')); CX.cv = cv; CX.g = cv.getContext('2d');
+    var b = D.createElement('button'); b.className = 'ex'; b.title = 'Cables out on the cards'; b.setAttribute('aria-label', 'Cables out on the cards'); b.setAttribute('aria-pressed', String(CX.on)); b.innerHTML = '<i></i>'; sb.insertBefore(b, sb.querySelector('.rs'));
+    b.addEventListener('click', function (e) { e.stopPropagation(); CX.on = !CX.on; store.set('da.sb.out', CX.on); b.setAttribute('aria-pressed', String(CX.on)); root.classList.toggle('cx', CX.on); CX.rope = {}; beep(CX.on ? 523 : 262, 0.05); if (!CX.on) CX.g.clearRect(0, 0, CX.cv.width, CX.cv.height); });
+    root.classList.toggle('cx', CX.on); })();
+  function chaikin(P, n) { for (var it = 0; it < n; it++) { var o = [P[0]]; for (var i = 0; i < P.length - 1; i++) { var a = P[i], b = P[i + 1]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } o.push(P[P.length - 1]); P = o; } return P; }
+  function resample(P, N) { var L = [0]; for (var i = 1; i < P.length; i++) L.push(L[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); var tot = L[L.length - 1] || 1, out = [], j = 0;
+    for (var k = 0; k < N; k++) { var d = tot * k / (N - 1); while (j < L.length - 2 && L[j + 1] < d) j++; var f = (d - L[j]) / ((L[j + 1] - L[j]) || 1); out.push([P[j][0] + (P[j + 1][0] - P[j][0]) * f, P[j][1] + (P[j + 1][1] - P[j][1]) * f]); } return out; }
+  /* where a cable meets a thing: the card's edge (a small card from its top), the reef from under the sea, anything else down in the board */
+  function cxEnd(id, lane, lx, ref) { var el = col.querySelector('.hm-card[data-id="' + id + '"]'), left = lane % 2 === 0;
+    if (el) { var r = el.getBoundingClientRect(); if (!r.width) return null; var small = r.width < ref.width * 0.8, fy = [0.34, 0.47, 0.6, 0.73][lane % 4] + (lane >= 4 ? 0.05 : 0);
+      if (small) { var px = r.left + r.width * (0.3 + 0.13 * (lane % 4)), gy = r.top - 7; return { p: [px, r.top + 9], path: [[px, gy], [lx, gy]], y: gy }; }
+      var ex = left ? r.left + 9 : r.right - 9, ey = r.top + r.height * fy; return { p: [ex, ey], path: [[lx, ey]], y: ey }; }
+    if (id === 'reef') { var t = $('#hm-top').getBoundingClientRect(); return { p: [lx, t.bottom - 6], path: [], y: t.bottom - 6, hid: 1 }; }
+    var s = sb.getBoundingClientRect(); return { p: [lx, s.top + 24], path: [], y: s.top + 24, hid: 1 }; }
+  function cxPlug(g, p, q, c) { var a = Math.atan2(p[1] - q[1], p[0] - q[0]); g.save(); g.translate(p[0], p[1]); g.rotate(a);
+    g.fillStyle = '#C9C6BE'; g.fillRect(-1, -1.2, 6, 2.4); g.fillStyle = '#B08A3E'; g.fillRect(-4, -3.2, 3, 6.4);
+    g.fillStyle = '#16171A'; rrect(g, -15, -3.6, 11.5, 7.2, 2); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(-14, -2.8, 9.5, 1.2); g.fillStyle = c; g.fillRect(-11, -3.6, 1.6, 7.2); g.restore(); }
+  function cxDraw(t, dt) {
+    var cv = CX.cv, g = CX.g, rr = root.getBoundingClientRect(), k = Math.min(2, devicePixelRatio || 1), W = rr.width, H = rr.height;
+    if (cv.width !== Math.round(W * k) || cv.height !== Math.round(H * k)) { cv.width = Math.round(W * k); cv.height = Math.round(H * k); }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); if (xv.classList.contains('on')) return; g.setTransform(k, 0, 0, k, -rr.left * k, -rr.top * k);
+    var refEl = col.querySelector('.hm-card.full'); if (!refEl) return; var ref = refEl.getBoundingClientRect(), seen = {};
+    WIRES.forEach(function (w, i) {
+      var lane = i, left = lane % 2 === 0, kk = Math.floor(lane / 2) % 2, xo = lane >= 4 ? 3 : 0;
+      var lx = left ? Math.max(4 + kk * 7 + xo, ref.left - 10 - kk * 13 - xo * 2) : Math.min(W - 4 - kk * 7 - xo, ref.right + 10 + kk * 13 + xo * 2);
+      var A = cxEnd(w[0], lane, lx, ref), B = cxEnd(w[1], lane, lx, ref); if (!A || !B) return;
+      if ((A.y < -60 && B.y < -60) || (A.y > H + 60 && B.y > H + 60)) return;
+      /* the route: out of the plug, to its path, along it, back in; the short runs across sag a little */
+      var C = [A.p].concat(A.path, B.path.slice().reverse(), [B.p]), R = [C[0]];
+      for (var c = 1; c < C.length; c++) { var a = C[c - 1], b = C[c], hz = Math.abs(b[0] - a[0]) > 24 && Math.abs(b[1] - a[1]) < 8; if (hz) R.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + Math.abs(b[0] - a[0]) * 0.09]); R.push(b); }
+      var T = resample(chaikin(R, 3), 54), key = w.join('-') + i, rope = CX.rope[key];
+      if (!rope || rope.p.length !== T.length) rope = CX.rope[key] = { p: T.map(function (q) { return q.slice(); }), v: T.map(function () { return [0, 0]; }) }; seen[key] = 1;
+      var P = rope.p, V = rope.v, n = T.length, sd = i * 1.7 + 0.4;
+      for (var j = 0; j < n; j++) { var e = Math.sin(j / (n - 1) * Math.PI), tx = T[j][0] + (RM.matches ? 0 : Math.sin(t * 1.1 + j * 0.31 + sd) * 1.4 * e), ty = T[j][1] + (RM.matches ? 0 : Math.cos(t * 0.8 + j * 0.23 + sd) * 1.1 * e);
+        if (j === 0 || j === n - 1 || RM.matches || !dt) { P[j][0] = tx; P[j][1] = ty; V[j][0] = V[j][1] = 0; continue; }
+        var K = 34 + 50 * (1 - e); V[j][0] += ((tx - P[j][0]) * K - V[j][0] * 7) * dt; V[j][1] += ((ty - P[j][1]) * K - V[j][1] * 7 + 40 * e) * dt; P[j][0] += V[j][0] * dt; P[j][1] += V[j][1] * dt; }
+      var ca = SC[w[0]] || INK, cb = SC[w[1]] || INK, gr = g.createLinearGradient(P[0][0], P[0][1], P[n - 1][0] + 0.01, P[n - 1][1] + 0.01); [0, 0.25, 0.5, 0.75, 1].forEach(function (q) { gr.addColorStop(q, q === 0 ? ca : q === 1 ? cb : mix(ca, cb, q)); });
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      g.save(); g.shadowColor = 'rgba(0,0,0,.38)'; g.shadowBlur = 5; g.shadowOffsetX = 2; g.shadowOffsetY = 4; g.strokeStyle = gr; g.lineWidth = 3.4; trace(g, P); g.stroke(); g.restore();
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 0.8; trace(g, P.map(function (q) { return [q[0] - 0.8, q[1] - 0.9]; })); g.stroke();
+      g.fillStyle = gr; for (var s = 2; s < 9; s++) [s, n - 1 - s].forEach(function (ix, side) { g.globalAlpha = 0.5 + 0.35 * Math.sin(t * 1.4 - s * 0.5 + side + sd); g.beginPath(); g.arc(P[ix][0], P[ix][1], s % 3 === 0 ? 2.1 : 1.4, 0, 7); g.fill(); }); g.globalAlpha = 1;
+      /* what it carries, a bead of the mixed colour running along it */
+      if (!RM.matches) { var mc = mix(ca, cb), ph = ((t * 0.16 + i * 0.27) % 1), ix2 = Math.floor(ph * (n - 1)), q2 = P[ix2]; g.fillStyle = mc; g.shadowColor = mc; g.shadowBlur = 10; g.beginPath(); g.arc(q2[0], q2[1], 2.6, 0, 7); g.fill(); g.shadowBlur = 0; }
+      if (!A.hid) cxPlug(g, P[0], P[3], ca); if (!B.hid) cxPlug(g, P[n - 1], P[n - 4], cb);
+    });
+    Object.keys(CX.rope).forEach(function (q) { if (!seen[q]) delete CX.rope[q]; });
   }
   var LOOSE = null;
   function drawCables(t) {
@@ -1188,7 +1329,8 @@
   /* a preview of what a cable would do, while it is held over a jack */
   var pv = D.createElement('p'); pv.className = 'pv'; pv.hidden = true; pv.setAttribute('aria-live', 'polite'); sb.appendChild(pv);
   function preview(from, to) { if (!from) { pv.hidden = true; return; } var lines = [];
-    if (to && to !== from) { carry(from, to).forEach(function (e) { lines.push(nameOf(to) + ' GETS ' + PORTS[to].ins[e]); }); carry(to, from).forEach(function (e) { lines.push(nameOf(from) + ' GETS ' + PORTS[from].ins[e]); }); if (!lines.length) lines.push(nameOf(from) + ' AND ' + nameOf(to) + ' DO NOT JOIN'); else if (wired(from, to)) lines.push('JOINED ALREADY'); }
+    if (to && to !== from && WIRES.length >= MAXW && !wired(from, to) && fits(from, to)) lines.push('FOUR CABLES IN · TAP A LIT JACK TO LIFT ONE');
+    else if (to && to !== from) { carry(from, to).forEach(function (e) { lines.push(nameOf(to) + ' GETS ' + PORTS[to].ins[e]); }); carry(to, from).forEach(function (e) { lines.push(nameOf(from) + ' GETS ' + PORTS[from].ins[e]); }); if (!lines.length) lines.push(nameOf(from) + ' AND ' + nameOf(to) + ' DO NOT JOIN'); else if (wired(from, to)) lines.push('JOINED ALREADY'); }
     else { var P0 = PORTS[from] || { outs: [], ins: {} }; lines.push(nameOf(from) + ' GIVES ' + P0.outs.map(function (e) { return GETS[e]; }).join(', ')); }
     pv.style.setProperty('--mx', to ? mix(SC[from], SC[to] || INK) : SC[from]); pv.innerHTML = lines.map(esc).join('<br>'); pv.hidden = false; }
   jk.addEventListener('pointerover', function (e) { if (drag || e.pointerType !== 'mouse' || sb.classList.contains('low')) return; var sl = e.target.closest('.sl'); preview(sl ? sl.dataset.s : null); });
@@ -1214,6 +1356,18 @@
   function say(id) { var sl = jk.querySelector('[data-s="' + id + '"]'); if (!sl) return; $$('.sl.say', jk).forEach(function (q) { if (q !== sl) q.classList.remove('say'); }); sl.classList.add('say'); clearTimeout(sl.__t); sl.__t = setTimeout(function () { sl.classList.remove('say'); }, 1800); beep(440, 0.04); }
   /* idle: low */
   var idleT = 0;
+  /* a card's jack key: the board comes up, what this card can join lights, and the most useful pair not yet made is read out */
+  var plugT = 0;
+  function plugOut(id) { ghostGone(); clearTimeout(plugT); rise(); idleSoon(9000); fitsShow(id); var best = null;
+    $$('.sl', jk).forEach(function (q) { var o = q.dataset.s; if (!best && o !== id && fits(id, o) && !wired(id, o)) best = o; q.classList.toggle('say', o === best); });
+    preview(id, best); beep(392, 0.05); plugT = setTimeout(function () { fitsShow(null); preview(null); $$('.sl.say', jk).forEach(function (q) { q.classList.remove('say'); }); }, 5200); }
+  /* once, as a hint: a ghost jack rises from the sunk board on the second card; a touch brings the board up */
+  var ghost = null;
+  function ghostGone() { if (!ghost) return; var g0 = ghost; ghost = null; g0.classList.add('out'); setTimeout(function () { g0.remove(); }, 500); }
+  function ghostOnce() { if (ghost || store.get('da.sb.ghost', 0) || !sb.classList.contains('low') || xv.classList.contains('on') || away) return; store.set('da.sb.ghost', 1);
+    ghost = D.createElement('button'); ghost.className = 'hm-ghost'; ghost.setAttribute('aria-label', 'Cables'); ghost.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><circle cx="12" cy="9" r="1.6" class="f"/><path d="M12 14v3.5c0 1.8 1.5 3 3.5 3"/></svg>';
+    ghost.addEventListener('click', function () { var id = CUR && JACKED.indexOf(CUR) >= 0 ? CUR : 'radio'; plugOut(id); }); root.appendChild(ghost); setTimeout(ghostGone, 9000); }
+  col.addEventListener('scroll', function () { if (CUR && CUR !== 'radio' && !ghost) setTimeout(ghostOnce, 1200); }, { passive: true });
   function rise() { clearTimeout(idleT); if (sb.classList.contains('low')) { sb.classList.remove('low'); beep(392, 0.04); } }
   function idleSoon(ms) { clearTimeout(idleT); idleT = setTimeout(function () { if (!drag && !sb.classList.contains('big')) sb.classList.add('low'); }, ms || 3600); }
   sb.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') rise(); });
@@ -1233,10 +1387,13 @@
     if (Math.round((top.clientWidth || innerWidth) * dpr) !== tcv.width || Math.abs(TOPH + reefH() - CH) > 1) seaSize();
     var open = root.classList.contains('reef') && !away, t = now / 1000;
     var jr = tcv.getBoundingClientRect(), rr = root.getBoundingClientRect();
-    if (CUR === 'portfolio' && !open && !away && !xv.classList.contains('on')) { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect();
-      if (lr && lr.width) { var ox = lr.left + lr.width / 2 - jr.left, oy = lr.top + lr.height / 2 - jr.top; if (!J.orbit) { J.th = Math.atan2(J.y - oy, J.x - ox) + 0.5; J.back = false; } J.orbit = { x: ox, y: oy, rx: lr.width * 0.34, ry: lr.height * 0.26 }; } }
+    var orb = null;
+    if (!open && !away && !xv.classList.contains('on')) {
+      if (CUR === 'portfolio') { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect(); if (lr && lr.width) orb = { x: lr.left + lr.width / 2 - jr.left, y: lr.top + lr.height / 2 - jr.top, rx: lr.width * 0.34, ry: lr.height * 0.26 }; }
+      else if (CUR === 'radio' && RS.on && RS.sx != null) orb = { x: RS.sx - jr.left, y: RS.sy - jr.top, rx: RS.su * 62, ry: RS.su * 34, slow: 1 }; }
+    if (orb) { if (!J.orbit) { J.th = Math.atan2(J.y - orb.y, J.x - orb.x) + 0.5; J.back = false; } J.orbit = orb; }
     else if (J.orbit) { J.orbit = null; J.back = true; }
-    if (!RM.matches) swim(dt * (J.orbit ? 3.5 : J.back ? 5.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
+    if (!RM.matches) swim(dt * (J.orbit ? (J.orbit.slow ? 1.4 : 3.5) : J.back ? 5.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
@@ -1247,10 +1404,11 @@
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
+    if (CX.on && !away) cxDraw(t, RM.matches ? 0 : dt);
   }
   seaSize(); requestAnimationFrame(frame);
   receipt(); lastPrint();
   if (/[?&]stories\b/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(function () { open('portfolio'); }, 400); }
   requestAnimationFrame(function () { paintAll(); parallax(); board(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
-  window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J };
+  window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J, buoy: function (k) { RS.scrap = !!k; RS.drawn = false; } };
 })();

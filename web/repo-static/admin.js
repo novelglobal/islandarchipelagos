@@ -334,6 +334,10 @@
     /* THE MOON: tonight's beside SOUND in the dark, and each thing's own in the corner of every print and piece kept */
     const mo = el('section', { class: 'printer' }); mo.append(el('h3', { text: 'THE MOON' }), el('div', { class: 'note', text: st.moonShow ? 'SHOWN: TONIGHT\'S MOON BESIDE SOUND IN THE DARK, AND THE MOON EACH THING WAS MADE UNDER IN THE CORNER OF EVERY PRINT AND PIECE KEPT.' : 'OFF: NO MOON BESIDE SOUND, AND NONE ON PRINTS OR PIECES.' }),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: st.moonShow ? 'on' : '', text: st.moonShow ? 'MOON ON' : 'MOON OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ moonShow: !st.moonShow }) }); show('stations'); } })));
+    /* THE BUOY: on the radio card, clean or built from found things */
+    const bu = el('section', { class: 'printer' }); bu.append(el('h3', { text: 'THE BUOY' }), el('div', { class: 'note', text: st.buoyScrap ? 'FOUND THINGS: A JERRYCAN, A BENT POLE, A CRACKED PANEL, A JAR.' : 'CLEAN: THE ORANGE FLOAT AND LATTICE MAST.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.buoyScrap ? '' : 'on', text: 'CLEAN', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ buoyScrap: false }) }); show('stations'); } }),
+        el('button', { type: 'button', class: st.buoyScrap ? 'on' : '', text: 'FOUND', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ buoyScrap: true }) }); show('stations'); } })));
     /* BOARD 00, the example: as everyone sees it, or open to rewriting in the W.I.S.H. tab and sending here */
     const setK = o => async () => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('stations'); };
     const ex = el('section', { class: 'printer' }); ex.append(el('h3', { text: 'THE EXAMPLE · ITS POSTER AND BOARD 00' }),
@@ -348,7 +352,7 @@
       el('div', { class: 'note', text: `EVERY NEW VISITOR'S FIRST BOARD: A BOX FOR EACH OF W, I, S AND H, AND A NOTE ON EACH TOOL. A BLANK LINE BETWEEN NOTES; A NOTE'S FIRST LINE IS ITS TITLE, AND ITS TITLE HOLDS ITS KEY (W, I, S, H, HOW, NOTE, SECT, LINK, IMG, ZOOM, LOCK, OUT). ${st.template ? 'REWRITTEN HERE.' : "THE SITE'S OWN WORDS."}` }), ta,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ template: ta.value.trim() === own.trim() ? '' : ta.value }) }); show('stations'); } }),
         el('button', { type: 'button', text: "THE SITE'S OWN WORDS", onclick: async () => { if (!confirm("Go back to the site's own words for the template?")) return; await api('settings', { method: 'POST', body: JSON.stringify({ template: '' }) }); show('stations'); } })));
-    main.replaceChildren(...head('Words and boards'), card, lr, mo, ex, tp, wordsCard(st), citiesCard(st), cardsCard(st), picsCard());
+    main.replaceChildren(...head('Words and boards'), card, lr, mo, bu, ex, tp, wordsCard(st), citiesCard(st), cardsCard(st), picsCard());
   }
   /* ───────── places (stage 5): the listed places beyond the ones written into the site. Suggestions from visitors wait here, to show
      or refuse; places shown can be changed or deleted; a new one can be added, shown at once ───────── */
