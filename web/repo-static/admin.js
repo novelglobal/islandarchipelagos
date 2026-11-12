@@ -726,6 +726,14 @@
     lkLoad();
     const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-quick', st.quickTap !== false, 'QUICK TAP'), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('QUICK TAP: one tap on a deep card (novel.global: a quick photo print) opens it full screen with its quick print; a double tap or a long press opens the whole card. The nine small cards always open at once. EVERY CARD: the big cards stand three to a screen too.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ quickTap: $('#ct-quick').checked, cartridges: $('#ct-all').checked }) })));
+    const popLink = () => location.origin + '/pickles?k=' + encodeURIComponent($('#pop-key').value.trim());
+    const pop = el('section', { class: 'ed' }, el('h3', { text: 'POP-UP' }), chk('pop-on', !!st.popOn, 'OPEN'),
+      el('label', { class: 'check' }, 'KEY ', (() => { const i = el('input', { id: 'pop-key', maxlength: '40', autocomplete: 'off', spellcheck: 'false' }); i.value = st.popKey || ''; i.addEventListener('input', () => { $('#pop-link').textContent = popLink(); }); return i; })()),
+      el('p', { id: 'pop-link', class: 'hint', text: st.popKey ? location.origin + '/pickles?k=' + encodeURIComponent(st.popKey) : '' }),
+      hint('The Pickles card. Only the link above (put it on the poster as a QR) or a pass printed there opens it; everyone else sees it closed. NEW makes a fresh key, so old posters stop working.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'NEW', onclick: () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); $('#pop-key').value = [...r].map(n => A[n % A.length]).join(''); $('#pop-link').textContent = popLink(); } }),
+        el('button', { type: 'button', text: 'COPY', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(popLink()); } }),
+        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ popOn: $('#pop-on').checked, popKey: $('#pop-key').value.trim() }) })));
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
     const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
@@ -733,7 +741,7 @@
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, crt, isl, jel, notice, country, motion, cur, sources, reset);
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, crt, pop, isl, jel, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

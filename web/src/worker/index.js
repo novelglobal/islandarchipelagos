@@ -361,6 +361,7 @@ async function send(db, env, req) {
   const refuse = async (code, why) => { if (typeof b.dest === 'string' && b.dest && b.dest !== 'mesh') { try { await db.prepare('UPDATE printers SET refused = ? WHERE id = ?').bind(JSON.stringify({ why, at: now() }), b.dest).run(); } catch (e) { /* no such printer */ } } return fail(code, why); };
   if (await tooMany(db, env, req, 'send', LIMIT.sends, 10 * 60e3)) return refuse(429, 'too many sends from one place in ten minutes');
   const kind = ['record', 'cells', 'example', 'message'].includes(b.kind) ? b.kind : 'story';
+  if (b.from === 'pop' && !(await popOk(db, env, b.pop))) return fail(403, 'closed');
   if (!CODE.test(b.code || '')) return fail(400, 'code');
   /* a message to novel.global (the portfolio's send message) is a story kept private: printed once approved, never listed */
   if ((kind === 'story' || kind === 'message') && !(typeof b.body === 'string' && /^[A-Za-z0-9_-]{20,}$/.test(b.body) && b.body.length <= LIMIT.sig)) return fail(400, 'story');
@@ -440,7 +441,7 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: false, jellyStamp: false, sandbox: true, quickTap: true, cartridges: false };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: false, jellyStamp: false, sandbox: true, quickTap: true, cartridges: false, popOn: false };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -454,7 +455,9 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, photos: 3000, events: 3000 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, photos: 3000, events: 3000, popKey: 40 };
+/* texts the public settings never show: the pop-up's private link */
+const HIDDEN_TEXTS = ['popKey'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
@@ -1166,6 +1169,12 @@ async function cartFor(env, url) { const id = url.searchParams.get('for') || '';
 async function passMake(env, island, n) { const day = melDay(), out = [];
   for (let i = 0; i < n; i++) { const a = crypto.getRandomValues(new Uint8Array(3)), nn = letters(a, 3); out.push(nn + '-' + await passMac(env, island, day, nn)); }
   return { day, mark: await markOf(env, island, day), passes: out }; }
+/* the pop-up (a card for one place and one weekend): open only by its private link on the poster there, or a pass that place's printer printed */
+async function popOk(db, env, k) { const s = await settingsOf(db); if (!s.popOn || typeof k !== 'string' || !k) return false;
+  if (s.popKey && k.length === s.popKey.length && await same(k, s.popKey)) return true;
+  const ps = k.toUpperCase().replace(/\s+/g, ''); if (PASS.test(ps) && codeKey(env)) { const f = await passFind(db, env, ps); return !!f; } return false; }
+async function popGet(db, env, req, url) { if (await tooMany(db, env, req, 'pop', 40, 10 * 60e3)) return fail(429, 'too many');
+  return (await popOk(db, env, url.searchParams.get('k') || '')) ? json({ ok: true }) : fail(404, 'closed'); }
 async function passFind(db, env, code) { const c = code.replace('-', ''), day = melDay(), n = c.slice(0, 3), m = c.slice(3);
   const { results } = await db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'").all();
   for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };
@@ -1249,7 +1258,8 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'posts' && !p[1] && m === 'GET') return listPosts(db);
   if (p[0] === 'posts' && p[1] && p[2] === 'cover' && m === 'GET') return postCover(db, env, p[1], false);
   if (p[0] === 'posts' && p[1] && !p[2] && m === 'GET') return onePost(db, p[1], false);
-  if (p[0] === 'settings' && m === 'GET') return json({ ...(await settingsOf(db)), cfsite: env.TURNSTILE_SITE || '', media: !!env.MEDIA, calm: levelOf() });
+  if (p[0] === 'settings' && m === 'GET') { const s = await settingsOf(db); HIDDEN_TEXTS.forEach(k => { delete s[k]; }); return json({ ...s, cfsite: env.TURNSTILE_SITE || '', media: !!env.MEDIA, calm: levelOf() }); }
+  if (p[0] === 'pop' && !p[1] && m === 'GET') return popGet(db, env, req, url);
   if (p[0] === 'example' && m === 'GET') return exampleBoard(db);
   if (p[0] === 'species' && !p[1] && m === 'POST') return learnKinds(db, env, req);
   if (p[0] === 'posters' && !p[1] && m === 'GET') return posters(db);

@@ -1093,3 +1093,11 @@ html.hm-night #hm-x .hm-qv .qv-go { background: #F4F1E8; color: #0B0B0B; }
 #hm .hm-card.sk-wx.g-deck[data-id="tarot"] .hm-keys .hm-rk:not(.on), #hm .hm-card.sk-wx.g-deck[data-id^="pl-"] .hm-keys .hm-rk:not(.on) { color: #F4F1E8 !important; }
 #hm .g-week .wx-s { color: inherit; }
 #hm .g-week .wx-s:empty { visibility: hidden; }
+
+/* W.I.S.H. on the circular strategy's four points, clockwise from the top: drawn in slowly, held, let go again */
+.st-orb .st-nd text { font: 700 8.6px/1 'Poppins', Arial, sans-serif; fill: #10223A; stroke: none; text-anchor: middle; dominant-baseline: central; letter-spacing: 0; }
+.st-orb .nd-in { animation: st-wish 18s cubic-bezier(.45, 0, .25, 1) infinite; animation-delay: calc(var(--k) * .5s); }
+@keyframes st-wish { 0%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } 22%, 72% { transform: none; opacity: 1; } 90% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .st-orb .nd-in { animation: none; } }
+/* the word stands alone on its four points: the small orbiting photos step aside (the centre photo still turns through them) */
+.sk-wish .st-th { display: none; }
