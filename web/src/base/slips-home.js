@@ -7,10 +7,10 @@
 
   /* the list, in order: AN ISLAND (the keys as in aura.js ISLE, so a tick on the phone prints as done), then the parts from
      build-a-solar-printer.txt, each with its own key. A 0 is a gap */
-  S.ISLE = [['pi', 'Raspberry Pi 3'], ['printer', 'Epson TM-T88V'], ['card', 'microSD card, 8 GB'], 0,
+  S.ISLE = [['pi', 'Raspberry Pi 3'], ['printer', 'Epson TM-T88V, USB, or compatible'], ['card', 'microSD card, 8 GB'], 0,
     ['imager', 'Raspberry Pi Imager'], ['image', 'Island card'], ['write', 'Imager › card › Use custom › island card'], ['on', 'Printer on the Pi’s USB, power on'], ['scan', 'Scan the slip it prints']];
   S.PARTS = [
-    ['CORE', [['c-prn', 'Epson TM-T88V receipt printer, USB'], ['c-psu', 'Epson PS-180 power supply, 24 V'], ['c-paper', '80 mm thermal paper rolls'], ['c-pi', 'Raspberry Pi 3 Model A+'],
+    ['CORE', [['c-prn', 'Epson TM-T88V receipt printer, USB, or a compatible model'], ['c-psu', 'Epson PS-180 power supply, 24 V'], ['c-paper', '80 mm thermal paper rolls'], ['c-pi', 'Raspberry Pi 3 Model A+'],
       ['c-sd', '32 GB microSD card'], ['c-os', 'Raspberry Pi OS Lite, 64-bit'], ['c-usb', 'USB-A to USB-B cable'], ['c-sun', '100 W 12 V solar panel'], ['c-mppt', '10 A MPPT charge controller'],
       ['c-bat', '12.8 V 50 Ah LiFePO4 battery'], ['c-boost', '12 V to 24 V DC boost converter, 5 A'], ['c-buck', '12 V to 5 V USB buck converter, 3 A'], ['c-fuse', 'Inline fuse holders, blade fuses'],
       ['c-cable', '2.5 mm2 cable, MC4 connectors'], ['c-wifi', 'Wi-Fi or a phone hotspot']]],

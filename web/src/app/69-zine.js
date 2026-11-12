@@ -38,8 +38,8 @@ const TAPES = ['tape', 'rag', 'barb']; let ZTAPE = 0; let RAGINV = false;
 function zineTools() {
   const t = $('#zine-tools'); if (t.childElementCount) return;
   if (AURA_ONLY === 2) { const nav = document.createElement('nav'); nav.className = 'zn-tabs'; nav.setAttribute('aria-label', 'Designs');
-    nav.innerHTML = [0, 1, 2].map(i => `<button type="button" data-zslot="${i}" aria-pressed="${PRESS.slot === i}">${i + 1}</button>`).join('') + '<span></span><button type="button" data-znew>NEW</button><button type="button" data-zsave>SAVE</button><button type="button" data-zopen>OPEN</button><input type="file" id="zine-json" accept=".json,application/json" hidden>';
-    t.parentNode.insertBefore(nav, t); $('#zine').dataset.slot = PRESS.slot; }
+    nav.innerHTML = [0, 1, 2].map(i => `<button type="button" data-zslot="${i}" aria-pressed="${PRESS.slot === i}">${i + 1}</button>`).join('') + '<span></span><button type="button" data-zbg aria-pressed="' + !store.get('da.press.still', false) + '" title="Moving backgrounds">BG</button><button type="button" data-znew>NEW</button><button type="button" data-zsave>SAVE</button><button type="button" data-zopen>OPEN</button><input type="file" id="zine-json" accept=".json,application/json" hidden>';
+    t.parentNode.insertBefore(nav, t); $('#zine').dataset.slot = PRESS.slot; $('#zine').classList.toggle('still', !!store.get('da.press.still', false)); }
   t.innerHTML = `<input type="text" id="zine-words" maxlength="80" aria-label="Words" data-tip="Words for the page">` + (AURA_ONLY === 2 ? [['wild', 'dice', 'Roll the dice: three marks at random (words, cut-outs, shapes, stamps, tape, stickers) in loud inks, thrown onto the part of the page you can see'], ...ZTOOLS.filter(z => !['add', 'zoom', 'undo', 'delete'].includes(z[0])), ...ZTOOLS.filter(z => ['undo', 'delete'].includes(z[0]))] : ZTOOLS).map(([k, ic, w]) => `<button type="button" class="bt zt" data-zt="${k}" aria-label="${w}" data-tip="${w}">${keyFace(k) || icon(ic)}</button>`).join('')
     + `<span class="swatches" role="group" aria-label="Ink">${(AURA_ONLY === 2 ? WILDINK : SWATCH).map(c => `<button type="button" class="sw${c === ZCOL ? ' on' : ''}" data-ink="${c}" style="--c:${c}" aria-label="Ink ${c}"></button>`).join('')}<label class="sw pick" aria-label="Any ink" data-tip="Any ink"><input type="color" id="zine-col" value="${ZCOL}"></label></span>`
     + `<button type="button" class="bt zt zlong" data-zlong aria-pressed="${PRESS.fmt === 'long'}" data-tip="Long strip">LONG</button>` + '<input type="file" id="zine-file" accept="image/*" hidden>';
@@ -581,7 +581,8 @@ async function openCard(card) {
   const el = document.createElement('div'); el.className = 'card-view'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', card.name || 'A card');
   const c = await cardArt(card, card.n, 4); c.className = 'tv-card'; const { fig, poster } = cardKin(card); const WITH = { poster: !!poster, song: !!fig };
   /* to the W.I.S.H. board first, then to the print shop */
-  const acts = [['board', 'base', 'to the W.I.S.H. board', ''], ['strip', 'receipt', 'to the print shop', ''], ...(poster ? [['png', 'download', 'keep the poster', '']] : []), ['x', 'close', 'close', '']];
+  const toRB = !!homeOf();
+  const acts = [['board', 'base', toRB ? 'to the research board' : 'to the W.I.S.H. board', ''], ['strip', 'receipt', 'to the print shop', ''], ...(poster ? [['png', 'download', 'keep the poster', '']] : []), ['x', 'close', 'close', '']];
   el.innerHTML = `<div class="tv-in"><div class="tv-spread">`
     + (poster ? `<figure class="tv-side tv-poster"><img src="${poster.img}" alt=""><figcaption class="mono">poster</figcaption></figure>` : '')
     + `<div class="tv-mid"></div>`
@@ -592,6 +593,12 @@ async function openCard(card) {
   el.addEventListener('click', async e => { const wb = e.target.closest('[data-with]'); if (wb) { WITH[wb.dataset.with] = !WITH[wb.dataset.with]; wb.setAttribute('aria-pressed', String(WITH[wb.dataset.with])); tick(WITH[wb.dataset.with] ? 1600 : 1000); return; }
     const b = e.target.closest('[data-tv]');
     if (b && b.dataset.tv === 'strip') { close(); setView(2); setTimeout(async () => { await placeOnPage(await mountArt(await cardURL(card, 3)), 'art', 200); if (WITH.poster && poster) await placeOnPage(poster.img, 'poster', 300); if (WITH.song && fig) await placeOnPage(figChart(fig), 'chart', 120); }, 500); return; }
+    if (b && b.dataset.tv === 'board' && toRB) { const items = [{ id: 'cd:' + card.id, img: await thumbOf(await cardURL(card, 3), 300), n: card.name || '' }];
+      if (WITH.poster && poster) items.push({ id: 'cd:' + card.id + ':p', img: await thumbOf(poster.img, 340) });
+      if (WITH.song && fig) items.push({ id: 'cd:' + card.id + ':s', img: await thumbOf(figArt(fig, '#DCE7EA'), 220) });
+      let q = []; try { q = JSON.parse(localStorage.getItem('da.rb.in') || '[]'); } catch (er) { q = []; }
+      q = q.filter(x => !items.some(it => it.id === x.id)).concat(items); try { localStorage.setItem('da.rb.in', JSON.stringify(q.slice(-12))); } catch (er) { /* full */ }
+      close(); buzz([8, 30, 8]); try { window.parent.postMessage({ hm: 'go', id: 'research' }, location.origin); } catch (er) { /* alone */ } return; }
     if (b && b.dataset.tv === 'board') { const u = await thumbOf(await cardURL(card, 3), 260); await addToBoard(u, 'card', 160); toBoardFace(); if (WITH.poster && poster) await addToBoard(await thumbOf(poster.img, 300), 'poster', 180); if (WITH.song && fig) await addToBoard(figArt(fig, '#DCE7EA'), 'chart', 140); close(); flyToTab(1, el); snd.printer(500); buzz([8, 30, 8]); return; }
     if (e.target.closest('.tv-card, .tv-side img')) { const t = e.target.closest('.tv-card, .tv-side img'); zoomArt(t.tagName === 'CANVAS' ? t.toDataURL('image/png') : t.src); return; }
     if (b && b.dataset.tv === 'png' && poster) { const a = document.createElement('a'); a.href = poster.img; a.download = `poster-${isoDay(new Date(poster.at || Date.now()))}.jpg`; a.click(); tick(1800); return; }
@@ -784,6 +791,7 @@ $('#view').addEventListener('change', async e => { if (e.target.id === 'proof-in
 /* Design and print's tabs: three designs kept apart; NEW wipes the one open (asked once), SAVE keeps it as a file, OPEN brings a file back */
 document.addEventListener('click', async e => {
   const b = e.target.closest('.zn-tabs button'); if (!b) return; const nav = b.parentNode;
+  if (b.dataset.zbg != null) { const still = !$('#zine').classList.contains('still'); $('#zine').classList.toggle('still', still); store.set('da.press.still', still); b.setAttribute('aria-pressed', String(!still)); return; }
   if (b.dataset.zslot != null) { const i = +b.dataset.zslot; if (i === PRESS.slot) return; if (zc) { saveZine.flush ? saveZine.flush() : null; store.set(zKey(), { json: zc.toJSON(ZINE_PROPS), h: zc.getHeight() }); }
     PRESS.slot = i; store.set('da.press.slot', i); $('#zine').dataset.slot = i; nav.querySelectorAll('[data-zslot]').forEach(q => q.setAttribute('aria-pressed', String(q === b))); await showZine(true); snd.tick(1300); return; }
   if (b.hasAttribute('data-znew')) { if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'SURE?'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'NEW'; }, 2600); return; }

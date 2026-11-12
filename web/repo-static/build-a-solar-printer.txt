@@ -14,7 +14,7 @@
  CORE
 ================================================================================
 
-  [ ]  Epson TM-T88V receipt printer, USB
+  [ ]  Epson TM-T88V receipt printer, USB, or a compatible model
   [ ]  Epson PS-180 power supply, 24 V
   [ ]  80 mm thermal paper rolls
   [ ]  Raspberry Pi 3 Model A+

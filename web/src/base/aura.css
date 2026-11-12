@@ -1118,3 +1118,7 @@ html.aura-dark .au-talkp { background: rgba(20, 21, 24, .96); }
 .au-stf select option { color: #111; }
 .au-stf input[type=color] { width: 34px; height: 22px; padding: 0; border: 0; background: none; }
 #aura .au-stf .au-stx { justify-self: start; font-size: 18px; color: var(--ink); }
+
+/* da-v215: the print bar on a phone: the printer's name rides above its key, where it goes stays under its own, so the two never meet */
+#aura #au-wpress .au-to .au-mw { top: auto; bottom: calc(100% + 3px); }
+@media (max-width: 560px) { #aura #au-wpress .au-mode .au-mw { font-size: 8px; letter-spacing: .02em; max-width: 64px; overflow: hidden; text-overflow: ellipsis; } }

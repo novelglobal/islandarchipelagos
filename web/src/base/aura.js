@@ -1294,8 +1294,9 @@
   /* a device's own call: a deep fog horn, felt more than heard. Two reeds a hair apart over a sub an octave down, through a low
      filter that opens as it swells, sagging a little as it dies. Each device its own: the radio low and long on a fifth, the
      research board a minor third, the print shop lowest of all, short, on the octave */
+  var SFX = false;   // sound effects off: only the songs and the radio sound
   var HORNS = [[41.2, 1.5, 2.2], [36.7, 1.19, 1.8], [30.9, 2, 1.4]];
-  function horn(i) { if (mute || !AC0()) return; var h = HORNS[i] || HORNS[0], c = NG.ac(), t = c.currentTime + 0.02, out = NG.bus(c), f = c.createBiquadFilter(), g = c.createGain(), dur = h[2];
+  function horn(i) { window.__auraHorn = i; if (!SFX || mute || !AC0()) return; var h = HORNS[i] || HORNS[0], c = NG.ac(), t = c.currentTime + 0.02, out = NG.bus(c), f = c.createBiquadFilter(), g = c.createGain(), dur = h[2];
     f.type = 'lowpass'; f.Q.value = 3; f.frequency.setValueAtTime(70, t); f.frequency.linearRampToValueAtTime(260, t + 0.35); f.frequency.exponentialRampToValueAtTime(60, t + dur);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.3); g.gain.setValueAtTime(0.5, t + dur * 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); f.connect(g); g.connect(out);
     [[h[0], 'sawtooth', 0.32, -6], [h[0], 'sawtooth', 0.32, 7], [h[0] * h[1], 'sawtooth', 0.14, 0], [h[0] / 2, 'sine', 0.9, 0]].forEach(function (v) { var o = c.createOscillator(), og = c.createGain(); o.type = v[1]; o.frequency.setValueAtTime(v[0], t); o.frequency.linearRampToValueAtTime(v[0] * 0.94, t + dur); o.detune.value = v[3]; og.gain.value = v[2]; o.connect(og); og.connect(f); o.start(t); o.stop(t + dur + 0.1); });
@@ -1303,7 +1304,7 @@
   /* a touch's sound: not a bell but a low textured rumble, quieter. A bamboo jegog struck low (after the gamelan of Kaneda's theme in
      Akira), a sub under it that swells and sags, and a breath of dust and crackle (after Burial's Untrue). Made each time, nothing recorded */
   var DUST = null;
-  function bell(i, vol) { if (mute || !AC0()) return; var c = NG.ac(), out = NG.bus(c), t = c.currentTime + 0.02, v = (vol || 0.28) * 0.55, f = 55 * Math.pow(2, DEG[i % DEG.length] / 12);
+  function bell(i, vol) { if (!SFX || mute || !AC0()) return; var c = NG.ac(), out = NG.bus(c), t = c.currentTime + 0.02, v = (vol || 0.28) * 0.55, f = 55 * Math.pow(2, DEG[i % DEG.length] / 12);
     try { NG.INS.jegog.fn(c, out, t, f * 2, 0.8, v); } catch (e) { /* a voice missing */ }
     var o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.94, t + 2.4); lp.type = 'lowpass'; lp.frequency.value = 170;
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v * 0.8, t + 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6); o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + 2.7);
@@ -1311,9 +1312,9 @@
     var s = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); s.buffer = DUST; bp.type = 'bandpass'; bp.frequency.value = 700 + (i % 7) * 140; bp.Q.value = 0.7;
     ng.gain.setValueAtTime(v * 0.35, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.1); s.connect(bp); bp.connect(ng); ng.connect(out); s.start(t, Math.random() * 0.1); s.stop(t + 1.2); }
   /* a run of rumbles, one after another, low and slow: what a finished thing sounds like */
-  function harp(seq) { if (mute || !AC0()) return; seq.forEach(function (d, i) { setTimeout(function () { bell(d, 0.22); }, i * 260); }); }
+  function harp(seq) { if (!SFX || mute || !AC0()) return; seq.forEach(function (d, i) { setTimeout(function () { bell(d, 0.22); }, i * 260); }); }
   function boom() {
-    if (mute) return; var c = NG.ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(41, t + 2.4);
+    if (!SFX || mute) return; var c = NG.ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(41, t + 2.4);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2); o.connect(g); g.connect(NG.bus(c)); o.start(t); o.stop(t + 3.3);
     var len = c.sampleRate * 2, nb = c.createBuffer(1, len, c.sampleRate), d = nb.getChannelData(0); for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
     var s = c.createBufferSource(), f = c.createBiquadFilter(), g2 = c.createGain(); s.buffer = nb; f.type = 'lowpass'; f.frequency.setValueAtTime(2400, t); f.frequency.exponentialRampToValueAtTime(180, t + 1.8); g2.gain.value = 0.05;
@@ -1324,7 +1325,7 @@
   var toneAt = 0;
   function deepTone(f0) {
     window.__auraTone = f0;
-    if (mute || !AC0()) return; var c = NG.ac(), t = c.currentTime; if (t - toneAt < 0.7) return; toneAt = t;
+    if (!SFX || mute || !AC0()) return; var c = NG.ac(), t = c.currentTime; if (t - toneAt < 0.7) return; toneAt = t;
     [f0, f0 * 1.5].forEach(function (f, i) { var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(i ? 0.025 : 0.06, t + 0.09); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6); o.connect(g); g.connect(NG.bus(c)); o.start(t); o.stop(t + 1.7); });
   }
 
@@ -1673,7 +1674,7 @@
   /* either side of the rings wound tight: to the left, making an island (second-hand parts, a card, a printer); to the right, the network
      of islands. The rings themselves are novel.global's own island, as they always were */
   /* making an island, in order: the parts (second-hand only), then the card, then the printer. Each a tick kept on this phone */
-  var ISLE = [['pi', 'Raspberry Pi 3'], ['printer', 'Epson TM-T88V'], ['card', 'microSD card, 8 GB'], 0,
+  var ISLE = [['pi', 'Raspberry Pi 3'], ['printer', 'Epson TM-T88V, USB, or compatible'], ['card', 'microSD card, 8 GB'], 0,
     ['imager', 'Raspberry Pi Imager', 'https://www.raspberrypi.com/software/'], ['image', 'Island card', 'https://github.com/novelglobal/islandarchipelagos/releases/latest'],
     ['write', 'Imager › card › Use custom › island card'], ['on', 'Printer on the Pi’s USB, power on'], ['scan', 'Scan the slip it prints']];
   api.isle = function () { return ISLE; };
@@ -1683,7 +1684,7 @@
     el.querySelector('.au-wx').addEventListener('click', function () { el.remove(); bell(1, 0.08); }); bell(3, 0.1); return el; }
   var SIDEK = document.createElement('nav'); SIDEK.className = 'au-sidek'; SIDEK.innerHTML = '<button id="au-islk" aria-label="Make an island">' + svgI('fist') + '</button><button id="au-netk" aria-label="The network">' + svgI('net') + '</button>'; root.appendChild(SIDEK);
   $('#au-islk').addEventListener('click', function (e) { e.stopPropagation(); beat('island'); var got = store.get('da.isle.v1', []) || [];
-    var el = sideOpen('au-isle', 'AN ISLAND', '<p class="au-warn">Second-hand only. Newer models will not work.</p><ol class="au-chk">' + ISLE.map(function (s) { if (!s) return '<li class="gap" aria-hidden="true"></li>';
+    var el = sideOpen('au-isle', 'AN ISLAND', '<p class="au-warn">Second-hand is fine. The USB Epson TM-T88V, or a compatible model.</p><ol class="au-chk">' + ISLE.map(function (s) { if (!s) return '<li class="gap" aria-hidden="true"></li>';
       return '<li role="checkbox" tabindex="0" data-k="' + s[0] + '" aria-checked="' + (got.indexOf(s[0]) >= 0) + '"><i></i><span>' + (s[2] ? '<a href="' + s[2] + '" rel="noopener">' + esc(s[1]) + ' ↗</a>' : esc(s[1])) + '</span></li>'; }).join('') + '</ol>');
     if (el) [].forEach.call(el.querySelectorAll('[data-k]'), function (b) { var flip = function () { var on = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', String(on)); store.set('da.isle.v1', [].map.call(el.querySelectorAll('[aria-checked="true"]'), function (q) { return q.dataset.k; })); bell(on ? 4 : 2, 0.08); };
       b.addEventListener('click', function (ev) { if (!ev.target.closest('a')) flip(); }); b.addEventListener('keydown', function (ev) { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); flip(); } }); }); });
@@ -2653,10 +2654,10 @@
     'Turn off outside lights at night. They draw moths and bats off course.', 'Found an injured or heat-stressed animal? Call Wildlife Victoria: 03 8400 7300.',
     'A flying-fox on the ground needs a vaccinated carer. Call Wildlife Victoria and keep your hands off.', 'In an emergency, call 000.'];
   /* the new parts sound from below: a few bubbles rising, or a low swell */
-  function bubbles(n) { if (mute || !AC0()) return; var c = NG.ac(), t = c.currentTime; for (var i = 0; i < (n || 4); i++) { var o = c.createOscillator(), g = c.createGain(), t0 = t + i * 0.06 + Math.random() * 0.04, f0 = 260 + Math.random() * 380;
+  function bubbles(n) { if (!SFX || mute || !AC0()) return; var c = NG.ac(), t = c.currentTime; for (var i = 0; i < (n || 4); i++) { var o = c.createOscillator(), g = c.createGain(), t0 = t + i * 0.06 + Math.random() * 0.04, f0 = 260 + Math.random() * 380;
       o.type = 'sine'; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f0 * 2.2, t0 + 0.09); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.035, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
       o.connect(g); g.connect(NG.bus(c)); o.start(t0); o.stop(t0 + 0.14); } }
-  function subSwell() { if (mute || !AC0()) return; var c = NG.ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(48, t); o.frequency.exponentialRampToValueAtTime(36, t + 1.4);
+  function subSwell() { if (!SFX || mute || !AC0()) return; var c = NG.ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(48, t); o.frequency.exponentialRampToValueAtTime(36, t + 1.4);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6); o.connect(g); g.connect(NG.bus(c)); o.start(t); o.stop(t + 1.7); }
   function closeDeep() { S.deep = false; deep.hidden = true; deep.innerHTML = ''; cls(); paint(); }
   var ping = function (on) { bell(on ? 6 : 1, 0.18); changed(); fillDots(); };

@@ -43,9 +43,9 @@
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-1', size: 'small', title: 'OPEN ISLAND', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
@@ -195,9 +195,9 @@
   function rrect(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
   function rsBase(w, h, E) {
     var c = D.createElement('canvas'), k = RS.k; c.width = Math.round(w * k); c.height = Math.round(h * k); var g = c.getContext('2d'), r = rnd(301), sea = NIGHT ? '#06152A' : '#17457F', lit = NIGHT ? '#0E2B52' : '#1E58A8', bw = E * 0.34;
-    g.scale(k, k); g.fillStyle = sea; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, 0); for (var fx = w; fx >= 0; fx -= 8) g.lineTo(fx, E - bw * 0.2 + Math.sin(fx * 0.0042 + 1.3) * bw * 0.22); g.closePath(); g.fill(); g.lineCap = 'round';
+    g.scale(k, k); g.fillStyle = sea; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, 0); for (var fx = w + 8; fx >= -8; fx -= 8) g.lineTo(fx, E - bw * 0.2 + Math.sin(fx * 0.0042 + 1.3) * bw * 0.22); g.closePath(); g.fill(); g.lineCap = 'round';
     /* one wide stroke of paint along its foot: full bristles above, dry and broken below */
-    for (var b = 0; b < 72; b++) { var q = b / 71, y = E - bw * 0.5 + q * bw * 0.95, dry = q > 0.6, x0 = -8 + r() * 6, xe = w + 8 - (dry ? r() * w * 0.45 : r() * 10), pen = false;
+    for (var b = 0; b < 72; b++) { var q = b / 71, y = E - bw * 0.5 + q * bw * 0.95, dry = q > 0.6, x0 = -14 + r() * 4, xe = w + 8 - (dry ? r() * w * 0.45 : r() * 10), pen = false;
       g.strokeStyle = r() < 0.2 ? lit : sea; g.lineWidth = 1.2 + r() * 2.4; g.globalAlpha = dry ? 0.4 + r() * 0.55 : 1; g.beginPath();
       for (var x = x0; x <= xe; x += 9) { var yy = y + Math.sin(x * 0.011 + b * 0.07) * 2.4 + Math.sin(x * 0.0042 + 1.3) * bw * 0.22;
         if (dry && r() < 0.07) { pen = false; continue; } if (pen) g.lineTo(x, yy); else { g.moveTo(x, yy); pen = true; } }
@@ -471,9 +471,13 @@
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); idleWatch(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
+  /* a card out of sight holds its animations still, so scrolling and opening stay smooth */
+  var IDLE = null;
+  function idleWatch() { if (!('IntersectionObserver' in window)) return; if (IDLE) IDLE.disconnect(); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); }); }
+  idleWatch();
   fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = j.buoyScrap !== false; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -485,9 +489,9 @@
     var t = esc(c.title), inner;
     if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async"><img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-YZ07</b>' +
       '<div class="rc-tp"><span class="tp-pr"><small>ONLY</small><b>$15<sup>.90</sup></b></span><span class="tp-tx"><i>AD · bunnings.com.au</i><b>Brasshards Vandal Proof Tap 4 Way &amp; Belt Clip</b><em>I/N 0524216</em></span><a class="tp-go" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener">SHOP NOW ↗</a></div>' +
-      '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') + STICK888 +
+      '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + STICK888 + '<div class="rc-low"><img class="rc-art rc-art2" alt="" src="/cards/portfolio.webp" decoding="async">' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') +
       '<a class="rc-eco" href="https://en.wikipedia.org/wiki/Deep_ecology" target="_blank" rel="noopener" aria-label="Deep ecology"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="rc-eco-r" d="M50 50m-37 0a37 37 0 1 1 74 0a37 37 0 1 1 -74 0"/></defs><circle cx="50" cy="50" r="48" class="bg"/><circle cx="50" cy="50" r="28" class="in"/><text><textPath href="#rc-eco-r">DEEP ECOLOGY · DEEP ECOLOGY ·</textPath></text><path class="lf" d="M50 70C38 60 38 42 50 30C62 42 62 60 50 70ZM50 74V40M50 52l-6-6M50 60l7-7"/></svg></a>' +
-      '<canvas class="rc-qr" aria-hidden="true"></canvas></div><span class="hm-lamps"></span>';
+      '<canvas class="rc-qr" aria-hidden="true"></canvas></div></div><span class="hm-lamps"></span>';
     else if (sk === 'radio') { var ks = [1]; for (var q = 0; q < 13; q++) ks.push(+(0.84 * Math.pow(0.885, q)).toFixed(3));
       inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-lamps"></span>'; }
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
@@ -517,7 +521,7 @@
     both('add', 'wipe'); ZP.t = setTimeout(function () { ps.forEach(function (p) { p.classList.remove('on'); }); both('remove', 'wipe'); ZP.k = 0; ZP.t = setTimeout(zpTick, 1400); }, 900); }
   function zpStart() { var el = col.querySelector('.sk-zine'); if (!el) return; /* first seen already up on the wall; then torn down and pasted again */ var ps0 = $$('.sk-zine .zp .zp-p, .sk-zine .zp-hero', col); ps0.forEach(function (p) { p.classList.add('on'); }); ZP.k = ps0.length; if ('IntersectionObserver' in window) { if (ZP.io) ZP.io.disconnect(); ZP.io = new IntersectionObserver(function (es) { ZP.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.25 }); ZP.io.observe(el); } else ZP.seen = true; zpTick(); }
   /* RESEARCH BOARD: a hand writing runes and made-up symbols between the photographs and the name, one after another, then rubbing them out
-     and starting again. Every thirty seconds or so a rune finished calls the Irukandji down off the banner; it circles the rune and swims back up */
+     and starting again. Now and then a rune finished lights up */
   var RUNES = ['M10 2V26M10 8L17 3M10 14L17 9', 'M6 2V26M6 8L14 14L6 20', 'M4 2V26M16 2V26M4 10L16 18', 'M10 2V26M3 8L10 14L17 8', 'M4 2L16 26M16 2L4 26', 'M10 2V26M4 20L10 14L16 20',
     'M3 26L10 2L17 26', 'M10 2L17 9L10 16L3 9ZM10 16V26', 'M10 14m-1 0a1 1 0 1 1 2 0a3 3 0 1 1-5 0a5 5 0 1 1 9 0a7 7 0 1 1-12 1', 'M2 14Q10 4 18 14Q10 24 2 14ZM7.5 14a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0',
     'M10 2L12.5 11L20 14L12.5 17L10 26L7.5 17L0 14L7.5 11Z', 'M13 3A11 11 0 1 0 13 25A8 8 0 1 1 13 3Z', 'M2 6H18M10 6V26M5 14H15', 'M4 4L16 24M4 24L10 14M16 4L12 11',
@@ -543,7 +547,7 @@
   function rnMagic(sv, g) { if (!g.isConnected) return; var fx = sv.querySelector('.rn-fx'), bb = g.getBBox(), cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2, m = g.getCTM && g.getCTM();
     if (m) { cx = m.a * cx + m.c * cy + m.e; cy = m.b * (bb.x + bb.width / 2) + m.d * cy + m.f; }
     for (var i = 0; i < 7; i++) { var a = i / 7 * 6.28 + Math.random() * 0.5, r = 10 + Math.random() * 8, s = D.createElementNS(SVGNS, 'path'); s.setAttribute('class', 'rn-sp'); s.setAttribute('d', 'M0 -2.4V2.4M-2.4 0H2.4'); s.setAttribute('style', '--x:' + (Math.cos(a) * r).toFixed(1) + 'px;--y:' + (Math.sin(a) * r).toFixed(1) + 'px;animation-delay:' + (i * 0.04) + 's'); s.setAttribute('transform', 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')'); fx.appendChild(s); }
-    g.classList.add('lit'); var r0 = g.getBoundingClientRect(); RN.call = { x: r0.left + r0.width / 2, y: r0.top + r0.height / 2, until: performance.now() + 5200 }; beep(1320, 0.05); setTimeout(function () { beep(1760, 0.04); }, 90); }
+    g.classList.add('lit'); }
   function rnStart() { var el = col.querySelector('.sk-research'); if (!el) return; RN.n = 0; var w = el.querySelector('.rn-w'); if (w) w.innerHTML = '';
     if ('IntersectionObserver' in window) { if (RN.io) RN.io.disconnect(); RN.io = new IntersectionObserver(function (es) { RN.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.3 }); RN.io.observe(el); } else RN.seen = true; rnTick(); }
   /* receipt paper at the top and foot of the page: crumpled, torn, the mark set on the foot */
@@ -703,7 +707,7 @@
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'portfolio') { return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
-    if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe');
+    if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
     if (c.opens === 'kit') return sheet(c.title, kitIn);
@@ -713,7 +717,12 @@
     if (c.opens === 'play') return sheet(c.title, inFrame('play.html?c=' + encodeURIComponent(c.play) + '#p'));
   }
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
-  function inFrame(src) { return function (b) { b.hidden = true; var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'); fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
+  var WARM = [];
+  function warmDrop() { if (!WARM) return; WARM.forEach(function (f) { f.remove(); }); WARM = []; }
+  function warmable(f) { return !!(f && f.dataset.src && f.dataset.ld && !/only=radio|wish=1/.test(f.dataset.src)); }
+  function inFrame(src) { return function (b) { b.hidden = true; var url = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'), w = WARM.filter(function (f) { return f.dataset.src === url && f.isConnected; })[0];
+    if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label'); return; }
+    var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = url; fr.dataset.src = url; fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
   /* the radio on air: once playing, it keeps playing under the home and every other card until stopped, and waits under any other sound */
   var AIR = { fr: null, on: false, kept: false, held: {} };
   function airTell() { if (!AIR.fr || !AIR.fr.contentWindow) return; var h = Object.keys(AIR.held).some(function (k) { return AIR.held[k]; }); try { AIR.fr.contentWindow.postMessage({ ng: 'hush', on: h }, location.origin); } catch (e) { /* gone */ } }
@@ -729,15 +738,17 @@
     clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
     xv.setAttribute('aria-label', title); var body = xv.querySelector('.hm-body');
     if (AIR.fr && !AIR.kept) { if (AIR.on) { AIR.kept = true; AIR.fr.classList.add('hm-air'); } else { AIR.fr = null; AIR.on = false; } }
-    [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME' && n !== AIR.fr) n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
-    fill(body); var fr = xv.querySelector('iframe:not(.hm-air)'), done = false;
+    [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME' && n !== AIR.fr && WARM.indexOf(n) < 0) n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
+    fill(body); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'), done = false;
     var go = function () { if (done) return; done = true; clearTimeout(SH.up); H.classList.add('hm-sheet'); xv.classList.add('on'); SH.top = setTimeout(function () { H.classList.add('hm-up'); intro(); }, 470); };
     if (fr && fr.dataset.ld) go(); else if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
     history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
   function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
-    var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME'; });
+    var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME' && WARM.indexOf(n) < 0; });
     if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
+    old = old.filter(function (n) { if (n === AIR.fr || !warmable(n)) return true; WARM.push(n); setTimeout(function () { if (WARM.indexOf(n) >= 0) n.classList.add('hm-warm'); }, 460); return false; });
+    while (WARM.length > 2) WARM.shift().remove();
     SH.gone = SH.gone.concat(old);
     setTimeout(function () { old.forEach(function (n) { n.remove(); }); SH.gone = SH.gone.filter(function (n) { return old.indexOf(n) < 0; }); }, 460); if (!fromPop) history.back(); }
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'panel' && xv.classList.contains('on')) { shut(true); setTimeout(function () { sheet('ISLAND ARCHIPELAGOS', panelIn); }, 480); } });
@@ -824,7 +835,7 @@
   };
   var IN = { id: null, k: 0, t: 0, el: null, eat: 0, hit: null, cur: null };
   function introStore() { var s = store.get('da.hm.intro', null) || {}; s.seen = s.seen || {}; return s; }
-  function introDoc() { if (IN.id === 'wish' || IN.id === 'kit') return D; var f = xv.querySelector('iframe'); try { return f && f.contentDocument && f.contentDocument.readyState !== 'loading' ? f.contentDocument : null; } catch (e) { return null; } }
+  function introDoc() { if (IN.id === 'wish' || IN.id === 'kit') return D; var f = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); try { return f && f.contentDocument && f.contentDocument.readyState !== 'loading' ? f.contentDocument : null; } catch (e) { return null; } }
   function intro(on) {
     clearTimeout(IN.t); if (IN.el) { IN.el.remove(); IN.el = null; } IN.hit = null;
     if (on === false || !IN.id || !INTRO[IN.id] || IN.quiet) return;
@@ -954,7 +965,7 @@
   function kitIn(body) {
     var a = AU(), list = (a && a.isle ? a.isle() : []) || [], got = store.get('da.isle.v1', []) || [];
     var GH = 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit';
-    var spec = [['PAPER', '80 MM ROLL'], ['PRINTER', 'EPSON TM-T88V'], ['COMPUTER', 'RASPBERRY PI'], ['POWER', '24 V OR SOLAR'], ['WORKS', 'OFFLINE']];
+    var spec = [['PAPER', '80 MM ROLL'], ['PRINTER', 'EPSON TM-T88V (USB) OR COMPATIBLE'], ['COMPUTER', 'RASPBERRY PI'], ['POWER', '24 V OR SOLAR'], ['WORKS', 'OFFLINE']];
     body.classList.add('kt');
     body.innerHTML = '<div class="kt-bar"><b>ISLAND</b><a href="' + GH + '" target="_blank" rel="noopener">INSTALL</a></div>' +
       '<img class="kt-hero" alt="" decoding="async" src="/printer-top.jpg">' +
@@ -1074,9 +1085,10 @@
 
   /* ───────── sound: only what a touch causes ───────── */
   var AC = null, ACZ = 0; function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (AC.state === 'suspended') AC.resume(); clearTimeout(ACZ); ACZ = setTimeout(function () { try { if (AC && AC.state === 'running') AC.suspend(); } catch (e) { /* gone */ } }, 4000); return AC; }
-  function beep(f, len) { var c = ac(); if (!c) return; var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08); o.connect(g).connect(c.destination); o.start(t); o.stop(t + len + 0.1); }
+  var SFX = false;   // sound effects off: only the songs, the radio and the mixtapes sound
+  function beep(f, len) { if (!SFX) return; var c = ac(); if (!c) return; var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08); o.connect(g).connect(c.destination); o.start(t); o.stop(t + len + 0.1); }
   /* the fog horn: two low reeds a little apart and a sub under them, through a closing filter */
-  function horn(len) { var c = ac(); if (!c) return; var t = c.currentTime, L = len || 2.2, out = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(180, t); lp.frequency.linearRampToValueAtTime(520, t + 0.3); lp.frequency.linearRampToValueAtTime(240, t + L); lp.Q.value = 3;
+  function horn(len) { if (!SFX) return; var c = ac(); if (!c) return; var t = c.currentTime, L = len || 2.2, out = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(180, t); lp.frequency.linearRampToValueAtTime(520, t + 0.3); lp.frequency.linearRampToValueAtTime(240, t + L); lp.Q.value = 3;
     out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.22, t + 0.25); out.gain.setValueAtTime(0.22, t + L - 0.5); out.gain.exponentialRampToValueAtTime(0.0001, t + L + 0.6); lp.connect(out).connect(c.destination);
     [[73.4, 'sawtooth'], [73.9, 'sawtooth'], [36.7, 'sine']].forEach(function (v) { var o = c.createOscillator(); o.type = v[1]; o.frequency.value = v[0]; o.frequency.setValueAtTime(v[0] * 0.97, t); o.frequency.linearRampToValueAtTime(v[0], t + 0.4); o.connect(lp); o.start(t); o.stop(t + L + 0.7); }); }
 
@@ -1084,7 +1096,7 @@
   /* ───────── the sea: the banner is its surface; pressed, the sea opens down into the reef, one water with no line between ───────── */
   var top = $('#hm-top'), tcv = top.querySelector('canvas'), tx = tcv.getContext('2d'), dpr = 1, TOPH = 52, CH = 52, VW = 360;
   var NIGHT = store.get('da.hm.night', null); if (NIGHT == null) { var a0 = AU(); NIGHT = !!(a0 && a0.dark && a0.dark()); }
-  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) beep(NIGHT ? 392 : 523, 0.05); }
+  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); D.documentElement.classList.toggle('hm-night', NIGHT); var tm = D.querySelector('meta[name="theme-color"]'); if (tm) tm.content = NIGHT ? '#06152A' : '#17457F'; warmDrop(); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) beep(NIGHT ? 392 : 523, 0.05); }
   setNight(NIGHT, true);
   function reefH() { return Math.round(Math.min(innerHeight * 0.68, 640)); }
   function seaSize() {
@@ -1106,7 +1118,7 @@
     else if (open && J.goal && t - J.goal.t < 30 && Math.hypot(J.goal.x - J.x, J.goal.y - J.y) > 26) { J.tx = J.goal.x; J.ty = J.goal.y; }
     else if (open) { J.goal = null; if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
     else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; }
-    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)); J.a += d * Math.min(1, dt * (far ? 2.4 : open ? (J.goal ? 0.26 : 0.7) : 0.3));
+    var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)), near = Math.min(1, Math.hypot(J.tx - J.x, J.ty - J.y) / 70), turn = d * Math.min(1, dt * (far ? 0.9 : open ? (J.goal ? 0.22 : 0.4) : 0.3)) * (0.25 + 0.75 * near), cap = dt * (far ? 0.5 : 0.32); J.a += Math.max(-cap, Math.min(cap, turn));
     if (c < 0.28) { var th = (far ? 40 : open ? (J.goal ? 13 : 22) : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
     J.vx *= Math.pow(0.5, dt); J.vy *= Math.pow(0.5, dt); J.vy += 0.5 * dt;
     J.x += J.vx * dt; J.y += J.vy * dt;
@@ -1669,7 +1681,7 @@
     if (RN.call) { if (now > RN.call.until || away || xv.classList.contains('on')) RN.call = null; else { var rr0 = col.querySelector('.sk-research .hm-rune'), rb0 = rr0 && rr0.getBoundingClientRect(); if (rb0 && rb0.bottom > 0 && rb0.top < innerHeight) orb = { x: RN.call.x - jr.left, y: RN.call.y - jr.top, rx: 34, ry: 18, slow: 1 }; } }
     if (orb) { if (!J.orbit) { J.th = Math.atan2(J.y - orb.y, J.x - orb.x) + 0.5; J.back = false; } J.orbit = orb; }
     else if (J.orbit) { J.orbit = null; J.back = true; }
-    if (!RM.matches) swim(dt * (J.orbit ? (J.orbit.slow ? 1.4 : 3.5) : J.back ? 5.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
+    if (!RM.matches) swim(dt * (J.orbit ? (J.orbit.slow ? 1.4 : 2.6) : J.back ? 3.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));

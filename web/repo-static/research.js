@@ -222,7 +222,8 @@
   /* species cards sent from the radio wait in this browser and are laid here as the board opens: the name as a note, its photograph tied on */
   function inbox() { var q = []; try { q = JSON.parse(localStorage.getItem('da.rb.in') || '[]'); localStorage.removeItem('da.rb.in'); } catch (e) { return 0; } if (!q.length) return 0;
     var p = mid(), lastN = null;
-    q.forEach(function (sp, i) { if (!sp || !sp.n || byId('sp:' + sp.id)) return; var x = p.x - 120 + i * 36, y = p.y - 60 + i * 36;
+    q.forEach(function (sp, i) { if (sp && sp.img && !byId(sp.id)) { pic(sp.img, p.x - 160 + i * 40, p.y - 120 + i * 40).then(function (im) { if (im) { im.set({ daId: sp.id }); cv.requestRenderAll(); } }); return; }
+      if (!sp || !sp.n || byId('sp:' + sp.id)) return; var x = p.x - 120 + i * 36, y = p.y - 60 + i * 36;
       var n = note([String(sp.n).toUpperCase(), sp.latin || '', sp.place || ''].filter(Boolean).join('\n'), x, y); n.set({ daId: 'sp:' + sp.id, daC: 3, backgroundColor: NOTES[3][0], fill: NOTES[3][1], fontSize: 22 }); lastN = n;
       if (sp.ph) pic(sp.ph, x + 250, y).then(function (im) { if (im) { join(n, im); cv.setActiveObject(n); look(n); cv.requestRenderAll(); } }); });
     if (lastN) { cv.setActiveObject(lastN); look(lastN); cv.requestRenderAll(); } return q.length; }

@@ -181,6 +181,7 @@ const buzz = ms => { try {
 /* an old phone or tablet: the aura's own reading when inside it, else the same test (few cores, little memory, no audio worklets) */
 const LITE = (() => { try { const ng = IN_AURA && window.parent.NG; if (ng && typeof ng.lite === 'boolean') return ng.lite; return (navigator.hardwareConcurrency || 2) <= 4 || (navigator.deviceMemory || 4) <= 2 || !window.AudioWorkletNode; } catch (e) { return false; } })();
 const snd = (() => {
+  const SFX = false;   // sound effects off: the songs, the knots and the radio still sound
   let FQB = null;
   let ctx = null, bus = null, wet = null, hall = null, lastBlip = 0, hasLadder = false, mixLP = null, heatWS = null, drive = null, mon = null, stabLad = null, tap = null;
   const active = () => !navigator.userActivation || navigator.userActivation.hasBeenActive;
@@ -620,7 +621,7 @@ const snd = (() => {
     __sicken() { sick = true; },
     /* a dry click for a press: at once, but on a note of the key, so a knob turned climbs the scale */
     tick(f = 1700) {
-      buzz(8); if (!ready()) return;
+      buzz(8); if (!SFX || !ready()) return;
       /* low and round, a fingertip on wood: never above the E an octave over middle A */
       const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); let q = qn(f); while (q > 660) q /= 2;
       o.type = 'sine'; o.frequency.setValueAtTime(q, t); o.frequency.exponentialRampToValueAtTime(q * 0.6, t + 0.04);
@@ -656,7 +657,7 @@ const snd = (() => {
     /* a thermal head stepping: filtered noise in short strokes (the square swings the level from nothing to full, 38 a second),
        faded out at the end instead of cut */
     printer(ms = 1200) {
-      buzz([18, 36, 18, 36, 18, 36, 40]); if (!ready()) return;
+      buzz([18, 36, 18, 36, 18, 36, 40]); if (!SFX || !ready()) return;
       const t = ctx.currentTime, d = ms / 1000; const s = ctx.createBufferSource(); s.buffer = noise(d);
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 1.1;
       const g = ctx.createGain(); g.gain.value = 0.04; const lfo = ctx.createOscillator(); lfo.type = 'square'; lfo.frequency.value = 38; const lg = ctx.createGain(); lg.gain.value = 0.04;
@@ -664,23 +665,23 @@ const snd = (() => {
       lfo.connect(lg); lg.connect(g.gain); s.connect(bp); bp.connect(g); g.connect(f); f.connect(bus); s.start(t); lfo.start(t); s.stop(t + d); lfo.stop(t + d);
     },
     /* a poster put up: the low A as a dub stab, and the sub falling under it */
-    horn() { buzz([40, 60, 120]); if (!ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); depthV(55, t, 0.05, 0); withFx('hall', () => choirV(220, t + SIX * 2, 0.05, 0)); },
+    horn() { buzz([40, 60, 120]); if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); depthV(55, t, 0.05, 0); withFx('hall', () => choirV(220, t + SIX * 2, 0.05, 0)); },
     /* the muse: one soft chord of the dub stab, high in the key */
-    jelly(pan = 0) { if (!ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); withFx('hall', () => choirV(220, t, 0.03, pan)); },
+    jelly(pan = 0) { if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); withFx('hall', () => choirV(220, t, 0.03, pan)); },
     /* the muse tapped: the low A and its fifth, swelling slowly and away */
-    ship() { buzz([60, 80, 200]); if (!ready()) return; const t = onGrid(ctx.currentTime + 0.03); room(t, true); for (const [f, g] of [[55, 1], [82.41, 0.5], [110, 0.22]]) { const o = osc('sine', f, t, t + 3.4); const e = ctx.createGain(); o.connect(e); env(e, t, 0.7, 0.13 * g, 1.2, 1.4); out(e, 0, 0.6); } },
+    ship() { buzz([60, 80, 200]); if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.03); room(t, true); for (const [f, g] of [[55, 1], [82.41, 0.5], [110, 0.22]]) { const o = osc('sine', f, t, t + 3.4); const e = ctx.createGain(); o.connect(e); env(e, t, 0.7, 0.13 * g, 1.2, 1.4); out(e, 0, 0.6); } },
     /* the radar set down: two notes of the dub stab, the A and the E above it */
-    toot() { buzz([20, 40, 20]); if (!ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); withFx('mist', () => { dubV(110, t, 0.05, -0.2, false, false, 2); choirV(164.81, t + SIX * 3, 0.035, 0.2); }); },
+    toot() { buzz([20, 40, 20]); if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.02); room(t, true); withFx('mist', () => { dubV(110, t, 0.05, -0.2, false, false, 2); choirV(164.81, t + SIX * 3, 0.035, 0.2); }); },
     /* a step met: the dub stab rising, a note more the further along, in the same key as everything; never glass */
     reward(n = 1) {
-      buzz([10, 30, 10, 30, 40]); if (!ready()) return; const t = onGrid(ctx.currentTime + 0.03); room(t, true); const F = [110, 130.81, 146.83, 164.81, 196, 220]; const k = Math.min(F.length, 1 + n);
+      buzz([10, 30, 10, 30, 40]); if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.03); room(t, true); const F = [110, 130.81, 146.83, 164.81, 196, 220]; const k = Math.min(F.length, 1 + n);
       withFx('mist', () => { for (let i = 0; i < k; i++) dubV(F[i], t + i * SIX * 2, 0.05, (i - (k - 1) / 2) * 0.3, true, false, i === k - 1 ? 0 : 2); });
     },
     /* a gate passed on a first visit: one more note of a rising figure in A minor, the dub stab into its echo (the veil one,
        the radar two, W.I.S.H. three, PRINT four); everything open, the figure run through on the sixteenths to the high A,
        its home chord, and the sub falling under it */
     gate(n = 1) {
-      buzz(n >= 5 ? [12, 40, 12, 40, 60] : [8, 30, 8]); if (!ready()) return; const t = onGrid(ctx.currentTime + 0.04); room(t, true); const F = [110, 130.81, 164.81, 196, 220];
+      buzz(n >= 5 ? [12, 40, 12, 40, 60] : [8, 30, 8]); if (!SFX || !ready()) return; const t = onGrid(ctx.currentTime + 0.04); room(t, true); const F = [110, 130.81, 164.81, 196, 220];
       const k = Math.min(n, 5), step = n >= 5 ? SIX : SIX * 2;
       withFx('hall', () => { for (let i = 0; i < k; i++) dubV(F[i], t + i * step, 0.06, (i - (k - 1) / 2) * 0.3, true, false, i === k - 1 ? 0 : 2); });
       /* everything open: the choir comes in under the last note, and the depth charge falls under it */
@@ -688,7 +689,7 @@ const snd = (() => {
     },
     /* paper torn off */
     tear() {
-      buzz(12); if (!ready()) return; const t = ctx.currentTime; const s = ctx.createBufferSource(); s.buffer = noise(0.22);
+      buzz(12); if (!SFX || !ready()) return; const t = ctx.currentTime; const s = ctx.createBufferSource(); s.buffer = noise(0.22);
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(4200, t); bp.frequency.exponentialRampToValueAtTime(900, t + 0.2);
       const g = ctx.createGain(); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22); s.connect(bp); bp.connect(g); g.connect(bus); s.start(t);
     },

@@ -12,7 +12,7 @@
   var mq = /[?&]m=(slip|page|game|live|card|set)/.exec(location.search); if (mq) P.m = mq[1];
 
   /* a little sound for each thing done */
-  var AC = null; function beep(f, d, type) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + (d || 0.06)); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + (d || 0.06) + 0.02); } catch (e) { /* silent */ } }
+  var AC = null, SFX = false; function beep(f, d, type) { if (!SFX) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + (d || 0.06)); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + (d || 0.06) + 0.02); } catch (e) { /* silent */ } }
 
   /* the posters' palettes, for pages, games and cards alike */
   var THEMES = {
@@ -29,7 +29,7 @@
   var MODES = [['slip', 'SLIP', 'Design a receipt, part by part, and print it', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6M9 11h6M9 14h3"/>')],
     ['page', 'PAGE', 'Design a phone page that links to your receipt', I('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4M9 7h6M9 10h6M9 13h4"/>')],
     ['game', 'GAME', 'Make a game that plays on paper, and test it here', I('<rect x="3" y="7" width="18" height="11" rx="3"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11.5" r="1" class="f"/><circle cx="17.8" cy="13.8" r="1" class="f"/>')],
-    ['live', 'LIVE', 'Write it, or ask an AI, and it runs here', I('<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>')],
+    ['live', 'LIVE', 'Write it, or paste past code, and it runs here', I('<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>')],
     ['card', 'CARD', 'Send what you made to the front page as a card', I('<path d="M5 3h14v18H5z"/><path d="M12 7l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 14l-2.8 1.6.6-3.1-2.3-2.2 3.1-.4z"/>')],
     ['set', 'SET', 'Choose what joins what on the front page, and its frames', I('<circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 6h8M6 8v8M8 7.5l8.5 9"/>')]];
   var MI = function (k) { return MODES.filter(function (m) { return m[0] === k; })[0][3]; };
@@ -284,14 +284,14 @@
   D.addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) { var cd = P.card; cd.what = P.m === 'page' ? 'page' : P.m === 'game' ? 'game' : cd.what; mode(g.dataset.go); } });
 
 
-  /* ───────── LIVE: write it (or paste what an AI wrote) and it runs beside its paper; then it goes up as a small card ───────── */
+  /* ───────── LIVE: write it (or paste past code) and it runs beside its paper; then it goes up as a small card ───────── */
   var LV = null;
   function liveState() { if (!P.live) P.live = { src: '', th: 'print', n: '', keep: {} }; return P.live; }
   function live() { var ls = liveState(), el = $('#lv');
     if (!el.dataset.on) { el.dataset.on = 1;
       var B = function (id, tip, path, cls) { return '<button type="button" id="' + id + '" title="' + tip + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + I(path) + '</button>'; };
       el.innerHTML = '<div class="lv-ed"><div class="lv-bar">' +
-        B('lv-ai', 'Copy a brief for any AI', '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>', 'ai') +
+        B('lv-ai', 'Copy the brief', '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>', 'ai') +
         B('lv-paste', 'Paste code', '<path d="M8 4h8v3H8z"/><path d="M6 5.5H4.5v15h15v-15H18"/>') +
         B('lv-run', 'Run again', '<path d="M8 5l11 7-11 7z" class="f"/>') +
         B('lv-clr', 'Clear', '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>') +
@@ -352,7 +352,7 @@
   }
 
   /* one tip for each bench's main thing, the first time it is opened here, and never again */
-  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-ai', 'ask any AI, paste its code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
+  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-ai', 'copy the brief, paste code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
   function coach(m) { var seen = {}; try { seen = JSON.parse(localStorage.getItem('da.bench.tips') || '{}') || {}; } catch (e) { seen = {}; } if (seen[m] || !COACH[m] || navigator.webdriver) return;
     setTimeout(function () { if (P.m !== m) return; var t = $(COACH[m][0]); if (!t || !t.getBoundingClientRect().width) return; seen[m] = 1; try { localStorage.setItem('da.bench.tips', JSON.stringify(seen)); } catch (e) { /* this visit */ }
       var r = t.getBoundingClientRect(), c = D.createElement('div'); c.className = 'coach'; c.setAttribute('role', 'status'); c.textContent = COACH[m][1]; D.body.appendChild(c);

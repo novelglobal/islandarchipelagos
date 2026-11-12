@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 503 801" width="503" height="801">
+<style>
+.p{fill:rgba(0,224,255,.07);stroke:rgba(0,224,255,.35);stroke-width:1}
+.w{fill:none;stroke:rgba(0,224,255,.55);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.c{fill:none;stroke:rgba(0,224,255,.45);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.r{fill:none;stroke:rgba(255,90,31,.85);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s{fill:none;stroke:rgba(255,90,31,.45);stroke-width:1.2;stroke-linecap:round}
+.g{fill:none;stroke:rgba(255,90,31,.6);stroke-width:1.1}
+.t{fill:none;stroke:rgba(244,241,232,.35);stroke-width:1.2;stroke-dasharray:6 5}
+.n{font:600 13px 'IBM Plex Mono',monospace;letter-spacing:.2em;fill:rgba(244,241,232,.75)}
+.m{font:500 8.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;fill:rgba(255,90,31,.8)}
+.q{font:500 8.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;fill:rgba(0,224,255,.7)}
+</style>
+<rect width="503" height="801" fill="#0C0E0E"/>
+<polygon class="p" points="79.4,311.4 198.5,311.4 201.1,489.3 132.3,517.1 79.4,422.6"/>
+<polygon class="p" points="220.5,300.2 266.4,300.2 269.9,444.8 224.0,444.8"/>
+<polyline class="w" points="0.0,796.2 88.2,802.9 158.8,791.7 238.1,761.7 299.9,750.6 348.4,742.8 396.9,772.8 449.8,811.8 502.7,825.1"/>
+<polyline class="c" points="441.0,0.0 425.1,89.0 456.9,177.9 437.5,266.9 465.7,367.0 489.5,444.8"/>
+<polyline class="t" points="216.1,0.0 211.7,311.4 163.2,478.2 136.7,600.5 149.9,733.9"/>
+<polyline class="g" points="158.8,767.3 339.6,706.1"/>
+<polyline class="g" points="151.0,745.0 331.9,683.9"/>
+<polyline class="g" points="143.3,722.8 324.1,661.6"/>
+<polyline class="g" points="135.6,700.6 316.4,639.4"/>
+<polyline class="g" points="127.9,678.3 308.7,617.2"/>
+<polyline class="g" points="158.8,767.3 127.9,678.3"/>
+<polyline class="g" points="181.4,759.6 150.5,670.7"/>
+<polyline class="g" points="204.0,752.0 173.1,663.0"/>
+<polyline class="g" points="226.6,744.3 195.7,655.4"/>
+<polyline class="g" points="249.2,736.7 218.3,647.7"/>
+<polyline class="g" points="271.8,729.1 240.9,640.1"/>
+<polyline class="g" points="294.4,721.4 263.5,632.4"/>
+<polyline class="g" points="317.0,713.8 286.1,624.8"/>
+<polyline class="g" points="339.6,706.1 308.7,617.2"/>
+<polyline class="r" points="255.8,0.0 242.6,155.7 231.1,283.6 213.4,511.5 198.5,583.8 218.7,648.3"/>
+<polyline class="r" points="339.6,0.0 321.9,283.6 299.9,455.9 282.2,606.0"/>
+<polyline class="r" points="396.9,0.0 383.7,283.6 361.6,478.2 339.6,636.1"/>
+<polyline class="r" points="240.8,640.5 245.2,489.3"/>
+<polyline class="s" points="79.4,283.6 441.0,275.8"/>
+<polyline class="s" points="132.3,350.3 218.7,350.3"/>
+<polyline class="s" points="79.4,189.0 467.5,182.4"/>
+<polyline class="s" points="79.4,44.5 467.5,35.6"/>
+<polyline class="s" points="273.4,467.0 502.7,472.6"/>
+<polyline class="s" points="132.3,606.0 502.7,613.8"/>
+<polyline class="s" points="207.3,572.7 44.1,400.3"/>
+<text class="n" x="83.8" y="133.4">BRUNSWICK</text>
+<text class="n" x="44.1" y="455.9">PARKVILLE</text>
+<text class="n" x="291.1" y="556.0">CARLTON</text>
+<text class="n" x="174.6" y="756.2" transform="rotate(-15 174.6 756.2)">MELBOURNE</text>
+<text class="m" x="269.0" y="44.5" transform="rotate(85 269.0 44.5)">SYDNEY RD</text>
+<text class="m" x="352.8" y="44.5" transform="rotate(85 352.8 44.5)">LYGON ST</text>
+<text class="m" x="410.1" y="44.5" transform="rotate(85 410.1 44.5)">NICHOLSON ST</text>
+<text class="q" x="90.0" y="367.0">ROYAL PARK</text>
+<text class="q" x="476.3" y="200.2" transform="rotate(80 476.3 200.2)">MERRI CREEK</text>
+<text class="q" x="308.7" y="787.3">YARRA</text>
+<polyline class="s" points="458.6,711.7 458.6,622.7"/><text class="m" x="451.6" y="589.4">N</text>
+<polyline class="s" points="35.3,733.9 134.9,733.9"/><text class="m" x="35.3" y="717.2">1 KM</text>
+</svg>

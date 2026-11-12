@@ -3425,7 +3425,9 @@ html.only-portfolio body[data-view="portfolio"] #view>.sec img{filter:none!impor
 html.only-print #zine-tools{top:30px}
 html.only-print #zine .desk{top:82px;background-color:#E6F84A;background-image:radial-gradient(#0C0E0E 1.4px,transparent 1.6px);background-size:14px 14px;animation:zn-drift 18s linear infinite}
 html.only-print #zine[data-slot="1"] .desk{background-color:#FF2BD6;background-image:repeating-linear-gradient(-45deg,rgba(12,14,14,.9) 0 6px,transparent 6px 22px);background-size:62px 62px}
-html.only-print #zine[data-slot="2"] .desk{background-color:#0C0E0E;background-image:repeating-linear-gradient(0deg,rgba(255,90,31,.55) 0 1px,transparent 1px 5px),radial-gradient(circle at 30% 20%,rgba(0,224,255,.25),transparent 60%);background-size:100% 5px,100% 100%}
+html.only-print #zine[data-slot="2"] .desk{background-color:#0C0E0E;background-image:url(cards/bk-map.svg);background-size:cover;background-position:50% 50%;animation:none}
+html.only-print #zine.still .desk{animation:none!important;background-image:none!important;background-color:#E9E8E4!important}
+.zn-tabs button[data-zbg][aria-pressed="false"]{opacity:.55}
 @keyframes zn-drift{to{background-position:140px 280px}}
 html.only-print #zine.shake .desk .canvas-container{animation:zn-shake .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes zn-shake{20%{transform:rotate(-2deg) scale(1.02)}45%{transform:rotate(1.6deg)}70%{transform:rotate(-.8deg)}}
