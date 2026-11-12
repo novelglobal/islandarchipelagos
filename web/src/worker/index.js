@@ -361,7 +361,9 @@ async function send(db, env, req) {
   const refuse = async (code, why) => { if (typeof b.dest === 'string' && b.dest && b.dest !== 'mesh') { try { await db.prepare('UPDATE printers SET refused = ? WHERE id = ?').bind(JSON.stringify({ why, at: now() }), b.dest).run(); } catch (e) { /* no such printer */ } } return fail(code, why); };
   if (await tooMany(db, env, req, 'send', LIMIT.sends, 10 * 60e3)) return refuse(429, 'too many sends from one place in ten minutes');
   const kind = ['record', 'cells', 'example', 'message'].includes(b.kind) ? b.kind : 'story';
-  if (b.from === 'pop' && !(await popOk(db, env, b.pop, b.popId))) return fail(403, 'closed');
+  /* a pop-up's own link: open only while the pop-up is, and its prints go straight out on its printer (or novel.global's) unless it asks for approval */
+  const popP = b.from === 'pop' ? await popFind(db, env, b.pop, b.popId) : null; if (b.from === 'pop' && !popP) return fail(403, 'closed');
+  const popAuto = !!(popP && popP.auto !== false && typeof b.dest === 'string' && (b.dest === (popP.to || '') || b.dest === popP.id || b.dest === 'novelglobal'));
   if (!CODE.test(b.code || '')) return fail(400, 'code');
   /* a message to novel.global (the portfolio's send message) is a story kept private: printed once approved, never listed */
   if ((kind === 'story' || kind === 'message') && !(typeof b.body === 'string' && /^[A-Za-z0-9_-]{20,}$/.test(b.body) && b.body.length <= LIMIT.sig)) return fail(400, 'story');
@@ -392,7 +394,7 @@ async function send(db, env, req) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
     const screenGone = P.touch && (!P.touch_seen || t - P.touch_seen > 150e3);
-    job = { id: rid(), status: P.auto || screenGone || passed ? 'queued' : 'held' };
+    job = { id: rid(), status: P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
   }
@@ -410,7 +412,7 @@ async function send(db, env, req) {
   const lowRes = (await settingsOf(db)).lowRes, full = env.MEDIA && b.full && !lowRes ? dataFile(b.full, LIMIT.full) : null, art = env.MEDIA && b.art ? dataURL(b.art, LIMIT.full) : null;
   if (art && (await r2Bytes(db)) + art.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(`art/${id}`, art, { httpMetadata: { contentType: 'image/jpeg' } }); await db.prepare('UPDATE stories SET art = ? WHERE id = ?').bind(art.length, id).run(); } catch (e) { /* kept without it */ } }
   if (full && (await r2Bytes(db)) + full.bytes.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(mediaKey(id), full.bytes, { httpMetadata: { contentType: full.type } }); await db.prepare('UPDATE stories SET full = ? WHERE id = ?').bind(full.bytes.length, id).run(); } catch (e) { /* the story is kept without it */ } }
-  return json({ id, status: st0, job, ...(passed ? { passed: true } : {}) }, 201);
+  return json({ id, status: st0, job, ...(passed ? { passed: true } : {}), ...(popAuto && job && job.status === 'queued' ? { straight: true } : {}) }, 201);
 }
 /* the sender's receipt: where their story is, and where its print is in the queue */
 async function receipt(db, id) {

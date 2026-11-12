@@ -20,7 +20,7 @@
   .hd { border: 2.5px solid var(--ink); border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
   header { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0 18px; }
   header img { height: 92px; width: auto; display: block; border-radius: 10px; }
-  header img:first-child { transform: rotate(-3deg); } header img:last-child { transform: rotate(2.5deg); }
+  header > :first-child { transform: rotate(-3deg); } header > :last-child { transform: rotate(2.5deg); }
   header span { font: 700 26px/1 Poppins, sans-serif; color: var(--tom); transform: rotate(8deg); }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
   button, .bt { font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 999px; min-height: 40px; padding: 0 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
@@ -42,7 +42,7 @@
   #pen[data-c="k"] { background: var(--ink); } #pen[data-c="k"] svg { stroke: #fff; }
   #pen[data-c="w"] { background: #fff; box-shadow: 0 0 0 3px var(--sun), 2px 2px 0 3px var(--ink); }
   #stage.pen { cursor: crosshair; }
-  .three { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; margin: 24px 4px 0; }
+  .three { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; margin: 24px 4px 0; }
   .three button { min-height: 56px; }
   #tip { width: 56px; padding: 0; border-radius: 50%; transform: rotate(-4deg); }
   #tip svg { width: 34px; height: 34px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -73,6 +73,10 @@
   .give { margin-top: 26px; padding: 20px 16px; background: var(--foe); color: #fff; box-shadow: 6px 7px 0 var(--ink); transform: rotate(.6deg); }
   .give .bt { background: var(--sun); min-height: 52px; font-size: 15px; padding: 0 24px; }
   .give small { display: block; margin-top: 10px; word-break: break-all; }
+  .pass { display: block; margin-top: 26px; padding: 18px 18px 20px; background: #fff; color: var(--ink); text-decoration: none; text-align: left; box-shadow: 6px 7px 0 var(--ink); transform: rotate(-.5deg); }
+  .pass b { display: block; margin-bottom: 6px; font: 700 24px/1.1 Poppins, sans-serif; letter-spacing: -.02em; }
+  .pass span { display: block; font: 500 15px/1.45 Poppins, sans-serif; }
+  header a { display: block; }
   .ngl { display: inline-flex; align-items: center; gap: 10px; margin: 34px auto 6px; text-decoration: none; font: 700 20px/1 Poppins, sans-serif; letter-spacing: -.02em; }
   .ngl img { height: 30px; width: auto; display: block; }
   #gate { text-align: center; padding-top: 18vh; }
@@ -91,7 +95,7 @@
 </section>
 
 <section id="card" hidden>
-  <header aria-label="Pickles Milk Bar and Friends of the Earth Melbourne"><img id="lg-p" src="pop/pickles.png" alt="Pickles Milk Bar" crossorigin="anonymous"><span aria-hidden="true">×</span><img id="lg-f" src="pop/foe.png" alt="Friends of the Earth Melbourne" crossorigin="anonymous"></header>
+  <header aria-label="Pickles Milk Bar and Friends of the Earth Melbourne"><img id="lg-p" src="pop/pickles.png" alt="Pickles Milk Bar" crossorigin="anonymous"><span aria-hidden="true">×</span><a href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener"><img id="lg-f" src="pop/foe.png" alt="Friends of the Earth Melbourne" crossorigin="anonymous"></a></header>
 
   <div id="make">
     <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
@@ -100,7 +104,6 @@
       <div class="pens"><button type="button" id="pen" aria-pressed="false" aria-label="Pencil" title="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L15.6 5a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8 4 20z"/><path d="M13.8 6.8l3.4 3.4"/></svg></button><button type="button" id="un" hidden aria-label="Undo" title="Undo the last line">↶</button></div>
     </div>
     <div class="three">
-      <button type="button" id="tip" aria-label="El Niño" title="El Niño: getting ready, for every species"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7"/><path d="M20 3.5v2.6M8.6 8.4l1.8 1.8M31.4 8.4l-1.8 1.8M5 15h2.6M35 15h-2.6"/><path d="M4 29c3.2-3 6.4-3 9.6 0s6.4 3 9.6 0 6.4-3 9.6 0"/><path d="M8 35.5c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0 5.2-2.2 7.8 0"/></svg></button>
       <button type="button" id="ph" title="Take or choose a photo of your face">PHOTO</button>
       <button type="button" id="an" title="Another animal">ANIMAL</button>
     </div>
@@ -113,6 +116,7 @@
     <div class="rcpt"><img id="out" alt="Your print"></div>
     <button type="button" id="sv" title="Keep the colour print">SAVE</button>
     <div class="give hd"><a class="bt" id="donate" href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener" title="For Act On Climate and the 2027 Adaptation Fair, with Friends of the Earth Melbourne">DONATE $10</a><small id="dn-u">melbournefoe.org.au/climatedonate</small></div>
+    <a class="pass hd" href="/" title="novel.global"><b>Print Pass</b><span>Ask at the counter for today's pass, then print photos, stories, news, weather and tarot, or make your own.</span></a>
     <a class="ngl" href="/" title="Every card on novel.global"><img src="mark.svg" alt="">novel.global</a>
   </section>
 </section>
