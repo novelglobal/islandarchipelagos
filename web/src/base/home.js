@@ -474,7 +474,7 @@
     col.innerHTML = colHTML(); cards = $$('.hm-card', col); idleWatch(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
-  /* a card out of sight holds its animations still, so scrolling and opening stay smooth */
+  /* idle cards */
   var IDLE = null;
   function idleWatch() { if (!('IntersectionObserver' in window)) return; if (IDLE) IDLE.disconnect(); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); }); }
   idleWatch();
@@ -1085,7 +1085,7 @@
 
   /* ───────── sound: only what a touch causes ───────── */
   var AC = null, ACZ = 0; function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (AC.state === 'suspended') AC.resume(); clearTimeout(ACZ); ACZ = setTimeout(function () { try { if (AC && AC.state === 'running') AC.suspend(); } catch (e) { /* gone */ } }, 4000); return AC; }
-  var SFX = false;   // sound effects off: only the songs, the radio and the mixtapes sound
+  var SFX = false;
   function beep(f, len) { if (!SFX) return; var c = ac(); if (!c) return; var o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08); o.connect(g).connect(c.destination); o.start(t); o.stop(t + len + 0.1); }
   /* the fog horn: two low reeds a little apart and a sub under them, through a closing filter */
   function horn(len) { if (!SFX) return; var c = ac(); if (!c) return; var t = c.currentTime, L = len || 2.2, out = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(180, t); lp.frequency.linearRampToValueAtTime(520, t + 0.3); lp.frequency.linearRampToValueAtTime(240, t + L); lp.Q.value = 3;

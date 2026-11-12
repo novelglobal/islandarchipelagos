@@ -1294,7 +1294,7 @@
   /* a device's own call: a deep fog horn, felt more than heard. Two reeds a hair apart over a sub an octave down, through a low
      filter that opens as it swells, sagging a little as it dies. Each device its own: the radio low and long on a fifth, the
      research board a minor third, the print shop lowest of all, short, on the octave */
-  var SFX = false;   // sound effects off: only the songs and the radio sound
+  var SFX = false;
   var HORNS = [[41.2, 1.5, 2.2], [36.7, 1.19, 1.8], [30.9, 2, 1.4]];
   function horn(i) { window.__auraHorn = i; if (!SFX || mute || !AC0()) return; var h = HORNS[i] || HORNS[0], c = NG.ac(), t = c.currentTime + 0.02, out = NG.bus(c), f = c.createBiquadFilter(), g = c.createGain(), dur = h[2];
     f.type = 'lowpass'; f.Q.value = 3; f.frequency.setValueAtTime(70, t); f.frequency.linearRampToValueAtTime(260, t + 0.35); f.frequency.exponentialRampToValueAtTime(60, t + dur);

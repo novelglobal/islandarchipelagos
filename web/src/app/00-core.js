@@ -181,7 +181,7 @@ const buzz = ms => { try {
 /* an old phone or tablet: the aura's own reading when inside it, else the same test (few cores, little memory, no audio worklets) */
 const LITE = (() => { try { const ng = IN_AURA && window.parent.NG; if (ng && typeof ng.lite === 'boolean') return ng.lite; return (navigator.hardwareConcurrency || 2) <= 4 || (navigator.deviceMemory || 4) <= 2 || !window.AudioWorkletNode; } catch (e) { return false; } })();
 const snd = (() => {
-  const SFX = false;   // sound effects off: the songs, the knots and the radio still sound
+  const SFX = false;
   let FQB = null;
   let ctx = null, bus = null, wet = null, hall = null, lastBlip = 0, hasLadder = false, mixLP = null, heatWS = null, drive = null, mon = null, stabLad = null, tap = null;
   const active = () => !navigator.userActivation || navigator.userActivation.hasBeenActive;

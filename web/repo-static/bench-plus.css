@@ -7,7 +7,7 @@ header { flex-wrap: wrap; row-gap: 10px; }
 #modes button:hover { color: #F4F1E8; } #modes button[aria-pressed="true"]:hover { color: #0C2546; }
 #modes .mb-ink { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 0; border-radius: 11px; background: #F4F1E8; transition: left .35s cubic-bezier(.3, 1.4, .5, 1), width .35s; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 @media (min-width: 760px) { #modes { order: 0; flex-basis: 600px; margin: 0 auto; } header > #mark, header > #starts { flex: 1 1 0; } #starts { justify-content: flex-end; } }
-/* the bar stands in one place on every tab: the start keys keep their room when hidden, and the scrollbar its gutter */
+/* steady bar */
 html { scrollbar-gutter: stable; }
 html[data-m]:not([data-m="slip"]) #starts { visibility: hidden; pointer-events: none; }
 @media (max-width: 420px) { #modes button { gap: 4px; font-size: 9.5px; letter-spacing: .1em; } #modes button:not([aria-pressed="true"]) span { display: none; } #modes button svg.i { width: 15px; height: 15px; } }

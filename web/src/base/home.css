@@ -849,7 +849,7 @@ html.hm-end #hm-sb { transform: translateY(115%); pointer-events: none; }
 #hm .rc-ng .ng-mark { width: 9cqw; }
 
 /* ───────── da-v215 ───────── */
-/* the novel.global card: the ad a thin banner along the top of the photograph, the photograph taller, the foot lower and smaller */
+/* novel.global card */
 #hm .hm-rc::before { content: ''; position: absolute; left: 0; right: 0; top: 80%; bottom: 0; background: #153E71; }
 #hm .hm-rc > .rc-art:not(.rc-art2) { clip-path: inset(0 0 20% 0); }
 #hm .rc-tap, #hm .rc-kept { top: 7%; height: 65%; box-shadow: 0 0 0 .45cqw #143D71, 0 0 0 .8cqw rgba(190, 205, 225, .55); }
@@ -867,30 +867,30 @@ html.hm-end #hm-sb { transform: translateY(115%); pointer-events: none; }
 #hm .rc-low .rc-art2 { inset: 0; width: 100%; height: 100%; clip-path: inset(82.4% 0 0 0); -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(#000 92%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(#000 92%, transparent); mask-composite: intersect; }
 #hm .rc-low .rc-eco { pointer-events: auto; }
 
-/* every card: a little more room around it and inside it, a softer shadow */
+/* cards */
 #hm-col { gap: 16px; padding-left: 14px; padding-right: 14px; }
 .hm-card { border-radius: 8px; box-shadow: 0 1px 0 rgba(0, 0, 0, .05), 0 22px 44px -30px rgba(0, 0, 0, .42); }
 .hm-keys { right: 14px; top: 14px; gap: 8px; }
-/* the radio card's sea runs to both edges */
+/* radio sea */
 .sk-radio .rd-sea { left: -1px; width: calc(100% + 2px); }
 
-/* DESIGN PRINT: the zine whiter, on a layer of its own; the photograph whole, under a band of wall */
+/* zine card */
 #hm .sk-zine .hm-bgimg { background-size: 100% auto; background-position: 50% 100%; background-color: #D0D1D0; }
 #hm .sk-zine .hm-bgimg::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: max(0px, calc(100% - 133.3cqw + 18cqw)); background: var(--grain), linear-gradient(#DADBD9, #D0D1D0 calc(100% - 18cqw), rgba(208, 209, 208, 0)); background-size: 180px, auto; }
 #hm .sk-zine .zp { mix-blend-mode: normal; filter: brightness(1.12) saturate(1.04) drop-shadow(0 1.4cqw 2cqw rgba(0, 0, 0, .3)); transform: rotate(-.6deg) translateY(-.5cqw); }
 #hm .sk-zine .zp .zp-tx { opacity: .1; }
 
-/* the talk key and the back key: the same small round icon, on the banner's middle line */
+/* talk and back keys */
 #hm #hm-tk { right: calc(env(safe-area-inset-right) + 12px); top: calc(env(safe-area-inset-top) + var(--hm-top) / 2 - 14px); width: 28px; height: 28px; padding: 0; justify-content: center; border-radius: 50%; }
 #hm #hm-tk b { display: none; }
 #hm #hm-tk i { position: absolute; right: -4px; top: -4px; }
 #hm #hm-tk:hover { transform: none; }
 html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(244, 241, 232, .14); }
 
-/* an experience left open behind the cards waits out of sight; the cards hold still under an open one and when out of view */
+/* warm and idle */
 #hm-x iframe.hm-warm { display: none !important; }
 #hm .hm-card.hm-idle, #hm .hm-card.hm-idle *, html.hm-sheet #hm-col, html.hm-sheet #hm-col * { animation-play-state: paused !important; }
 
-/* a phone's bars, top and bottom, in the page's own colour */
+/* phone bars */
 html.hm-on:not(.hm-away), html.hm-on:not(.hm-away) body { background-color: #E8E7E3; }
 html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { background-color: #0D0E0F; }

@@ -284,7 +284,7 @@
   D.addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) { var cd = P.card; cd.what = P.m === 'page' ? 'page' : P.m === 'game' ? 'game' : cd.what; mode(g.dataset.go); } });
 
 
-  /* ───────── LIVE: write it (or paste past code) and it runs beside its paper; then it goes up as a small card ───────── */
+  /* ───────── LIVE ───────── */
   var LV = null;
   function liveState() { if (!P.live) P.live = { src: '', th: 'print', n: '', keep: {} }; return P.live; }
   function live() { var ls = liveState(), el = $('#lv');
