@@ -88,7 +88,9 @@
   }
   /* remix: the piece carried into the zine maker, here, over the art; ← brings it back */
   function remix() {
-    var x = S.list[S.at]; if (!x) return; var f = document.createElement('iframe'); f.title = 'Remix'; f.src = 'x.html?in=1';
+    var x = S.list[S.at]; if (!x) return;
+    if (IN && window.parent !== window) { try { window.parent.postMessage({ hm: 'remix', img: new URL(x.u, location.href).pathname }, location.origin); return; } catch (e) { /* alone */ } }
+    var f = document.createElement('iframe'); f.title = 'Remix'; f.src = 'x.html?in=1';
     f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:5;background:var(--bg)';
     var b = document.createElement('button'); b.type = 'button'; b.textContent = '←'; b.title = 'Back to the art';
     b.style.cssText = 'position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:6;min-width:34px;min-height:34px;border-radius:999px;border:1px solid currentColor;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer';

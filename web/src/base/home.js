@@ -522,7 +522,7 @@
     if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = ''; return set(ROMAN[i], '', ARCANA[i]); }
     if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
       $('.wx-k span', el).textContent = ''; var sv = $('.wx-ic svg', el); if (sv) sv.innerHTML = SUITS[s]; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
-    if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) set(d.news[0], '', 'WIKIPEDIA · IN THE NEWS', true); };
+    if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) { set(d.news[0], '', '', true); el.title = 'From Wikipedia, in the news'; } };
       if (NWD) return putN(NWD); return fetch('/api/news').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { NWD = d; putN(d); }).catch(function () {}); }
     var put = function (d) { var D = d && d.daily; if (!D || !D.time) return; var c = D.weather_code[0], sky = c === 0 ? 'CLEAR' : c <= 2 ? 'SOME CLOUD' : c === 3 ? 'CLOUD' : c <= 48 ? 'FOG' : c <= 57 ? 'DRIZZLE' : c <= 67 ? 'RAIN' : c <= 77 ? 'SNOW' : c <= 82 ? 'SHOWERS' : c <= 86 ? 'SNOW' : 'STORM';
       set(Math.round(D.temperature_2m_max[0]) + '°', Math.round(D.temperature_2m_min[0]) + '°', sky + ' · RAIN ' + D.precipitation_probability_max[0] + '%'); el.classList.toggle('wx-wet', D.precipitation_probability_max[0] >= 60); };
@@ -777,7 +777,12 @@
   /* the sheet: an experience in the column's own place, the back key to the card it came from */
   var WARM = [];
   function warmDrop() { if (!WARM) return; WARM.forEach(function (f) { f.remove(); }); WARM = []; }
-  function warmable(f) { return !!(f && f.dataset.src && f.dataset.ld && !/only=radio|wish=1/.test(f.dataset.src)); }
+  function warmable(f) { return !!(f && f.dataset.src && f.dataset.ld && !/only=radio|wish=1|remix=1/.test(f.dataset.src)); }
+  function remixIn(img) { var c = byId('zine'); if (!c || !/^\/[^/]/.test(img)) return; careEarn('zine'); beep(660, 0.06); intro(false); IN.id = null; TKH.card = 'zine'; tkCount();
+    sheet(c.title, inFrame('studio?from=aura&only=print&fmt=long&remix=1#print')); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); if (!fr) return;
+    var tell = function () { try { fr.contentWindow.postMessage({ ng: 'remix', img: img }, location.origin); } catch (e) { /* gone */ } };
+    fr.addEventListener('load', function () { [600, 1800, 3600].forEach(function (t) { setTimeout(tell, t); }); }); }
+  addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'remix' && typeof e.data.img === 'string') { SH.swap = true; remixIn(e.data.img); } });
   function inFrame(src) { return function (b) { b.hidden = true; var url = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'), w = WARM.filter(function (f) { return f.dataset.src === url && f.isConnected; })[0];
     if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label'); return; }
     var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = url; fr.dataset.src = url; fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
@@ -876,11 +881,12 @@
   /* ───────── cartridges: one tap, the card full screen with its quick print; two taps or a long press, the whole card ───────── */
   var FULL = xv.querySelector('.hm-full'), TAP = { t: 0, id: '', lp: 0, ate: false, x: 0, y: 0 };
   function quickOf(c) { if (!c || c.ph) return null;
+    if (c.id === 'portfolio') return { photo: 1 };
     if (/^stack:/.test(c.opens || '') && c.cart) return { src: 'cart.html?in=1&quick=1#' + c.opens.slice(6) };
     if (c.opens === 'play' && c.play) return { src: 'play.html?c=' + encodeURIComponent(c.play) + '&quick=1#p' };
     if (c.art === 'photos') return { photo: 1 };
     return null; }
-  function tappable(c) { return !!(OPT.quick && c && sizeOf(c) === 'small' && quickOf(c)); }
+  function tappable(c) { return !!(OPT.quick && c && sizeOf(c) !== 'small' && quickOf(c)); }
   function quickOpen(id) { var c = byId(id), q = quickOf(c); if (!q) return open(id); careEarn(id); beep(720, 0.05); intro(false); IN.id = null; tkHide(); TKH.card = id; tkCount();
     sheet(c.title, q.photo ? function (b) { b.classList.add('hm-qv'); b.innerHTML = '<p class="qv-t">' + esc(c.title) + '</p><button type="button" class="qv-go" title="Take a photo and print it here">PHOTO</button>'; b.querySelector('.qv-go').onclick = quickPrint; } : inFrame(q.src));
     FULL.hidden = false; FULL.dataset.id = id; }

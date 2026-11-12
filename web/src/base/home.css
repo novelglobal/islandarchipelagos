@@ -1055,3 +1055,41 @@ html.hm-night #hm-x .hm-qv .qv-go { background: #F4F1E8; color: #0B0B0B; }
 .st-alert { background: transparent; border-color: rgba(244, 241, 232, .55); }
 .st-alert i { box-shadow: none; background: #C9654E; }
 .sk-wish .st-grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--grain); background-size: 180px; opacity: .3; mix-blend-mode: soft-light; }
+
+/* the nine, round 9: the group word gone from every face (READ, CARDS, This week); the sources in hover */
+.sk-wx .wx-g { display: none !important; }
+/* THIS WEEK: a broadsheet. Title alone over a full rule, each day's paper its own ink */
+#hm .g-week .wx-f .wx-k { margin-right: 0; padding-top: 2.6cqh; border-top: 2px solid currentColor; }
+.g-week .wx-k b { font-size: clamp(20px, 8.4cqw, 32px); letter-spacing: -.035em; }
+.g-week .wx-s { border-top: 1px solid currentColor !important; padding-top: 1.6cqh !important; opacity: .85; }
+.hm-card.sk-wx.g-week[data-id="news"] .wx-f { color: #1F4D3A; }
+.hm-card.sk-wx.g-week[data-id="news"] .wx-k b { color: #1F4D3A; }
+.hm-card.sk-wx.g-week[data-id="news"] .wx-v { color: #10261C; border-color: #1F4D3A; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: clamp(15px, min(5.4cqw, 8cqh), 20px); }
+.hm-card.sk-wx.g-week[data-id="news"] .wx-ic svg { stroke: #1F4D3A; }
+.hm-card.sk-wx.g-week[data-id="events"] .wx-f { color: #7A2E1C; }
+.hm-card.sk-wx.g-week[data-id="events"] .wx-k b { color: #7A2E1C; }
+.hm-card.sk-wx.g-week[data-id="events"] .wx-v { color: #7A2E1C; border-color: #7A2E1C; letter-spacing: .06em; }
+.hm-card.sk-wx.g-week[data-id="events"] .wx-ic svg { stroke: #7A2E1C; }
+/* READ: covers. The shelf as a small catalogue mark, the title the poster, room where READ stood */
+.g-read .wx-f { padding-right: 6cqw !important; }
+.g-read .wx-k b { font: 600 clamp(9px, 2.8cqw, 11px)/1 'IBM Plex Mono', monospace; letter-spacing: .18em; }
+.r-how .wx-f::after { clip-path: polygon(0 0, 3.2% 0, 3.2% 100%, 0 100%); }
+.r-how .wx-f { padding-left: 8cqw; }
+.r-fic .wx-f::after { clip-path: polygon(0 82%, 100% 82%, 100% 86%, 0 86%); }
+/* CARDS: one frame, three tables. Playing on its yellow, tarot at night in gold, SESAME in its own print blue and pink */
+.g-deck .wx-f { box-shadow: inset 0 0 0 1px currentColor; }
+.sk-wx.g-deck .wx-v { border-radius: 2px; background: #F4F1E8; }
+.g-deck .wx-s { padding-right: 0; }
+.hm-card.sk-wx.g-deck[data-id="tarot"] { --c-bg: #1C1B3A; }
+.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-f { color: #E7C873; }
+.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-v { background: #26254C; box-shadow: inset 0 0 0 1px rgba(231, 200, 115, .5); }
+.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-ic svg { stroke: #E7C873; }
+.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-h { font-family: Georgia, serif; font-weight: 400; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] { --c-bg: #17457F; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-f { color: #F4F1E8; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-v { background: #123866; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-ic svg { stroke: #F4F1E8; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-s { color: #F2B6C6; font-family: Georgia, serif; }
+#hm .hm-card.sk-wx.g-deck[data-id="tarot"] .hm-keys .hm-rk:not(.on), #hm .hm-card.sk-wx.g-deck[data-id^="pl-"] .hm-keys .hm-rk:not(.on) { color: #F4F1E8 !important; }
+#hm .g-week .wx-s { color: inherit; }
+#hm .g-week .wx-s:empty { visibility: hidden; }

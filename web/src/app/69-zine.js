@@ -20,7 +20,10 @@ const ZHIST = []; let zLast = '';
 /* what stays on the strip whatever is taken off it: the story at its head; on a first visit, its words and its code too */
 const ZFIXED = ['base', 'words', 'code', 'ink'];
 PRESS.slot = AURA_ONLY === 2 ? Math.max(0, Math.min(2, +store.get('da.press.slot', 0) || 0)) : 0;
-const zKey = () => 'da.press.' + PRESS.fmt + (PRESS.slot ? '.' + PRESS.slot : '');
+/* a remix from the novel.global art: the piece on the long strip as it is. No other length, no undo, nothing moved; only print */
+const ZREMIX = /[?&]remix=1\b/.test(location.search);
+if (ZREMIX) { document.documentElement.classList.add('zremix'); const st = document.createElement('style'); st.textContent = 'html.zremix #zine-tools,html.zremix .zn-tabs,html.zremix [data-pfmt],html.zremix [data-zlong]{display:none!important}'; document.head.appendChild(st); }
+const zKey = () => ZREMIX ? 'da.press.remix' : 'da.press.' + PRESS.fmt + (PRESS.slot ? '.' + PRESS.slot : '');
 const saveZine = debounce(() => { if (!zc) return; const json = zc.toJSON(ZINE_PROPS); const str = JSON.stringify(json); if (zLast && str !== zLast) { ZHIST.push(zLast); if (ZHIST.length > 12) ZHIST.shift(); } zLast = str; if (!store.set(zKey(), { json, h: zc.getHeight() })) saveFull(); }, 300);
 /* the tools: words, a headline, cut-out letters, a photocopy, a pen, shapes, a stamp, tape, ink, undo, remove. Icons only;
    their names come on a long hover */
@@ -296,6 +299,7 @@ function addPack(files) {
     .then(urls => { for (const u of urls.filter(Boolean)) PACKS.unshift(u); PACKS.splice(48); while (!store.set('da.stk.v1', PACKS) && PACKS.length) PACKS.pop(); });
 }
 async function zineTool(k) {
+  if (ZREMIX) return;
   if (k === 'add') { openPick('strip'); return; }
   /* start again: everything placed on the receipt taken off, its own words emptied; undo brings it back */
   if (k === 'reset') { if (!zc) return; const extra = zc.getObjects().filter(o => !ZFIXED.includes(o.daKind)); const w = zc.getObjects().find(o => o.daKind === 'words'); if (!extra.length && !(w && w.text)) { tick(600); return; }
@@ -434,7 +438,7 @@ async function pieceOn(kind, id) {
   if (kind === 'S') { const x = S.signals.find(v => v.key === id); if (x) { const cvs = await slipCanvas(x, 384, 2, isTty(), isConn()); placeOnPage(cvs.toDataURL('image/png'), 'story', 220); } }
   if (kind === 'q') { const x = S.signals.find(v => v.key === id); const t = x ? qrText(x) : CONFIG.PORTAL_URL; const u = qrImage(t); if (u) placeOnPage(u, 'qr', 120); }
 }
-function setFormat(k) { if (!FORMATS[k]) return; PRESS.fmt = k; $$('#view [data-pfmt]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pfmt === k))); showZine(true); tick(1500); }
+function setFormat(k) { if (!FORMATS[k] || (ZREMIX && k !== 'long')) return; PRESS.fmt = k; $$('#view [data-pfmt]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pfmt === k))); showZine(true); tick(1500); }
 /* a print sent: a small clear printer, hand-drawn, the paper feeding out, then torn; no words */
 function feedAnim(url) {
   /* the head steps whether or not the paper is seen to move */
@@ -692,11 +696,15 @@ async function pressOut(k, given) {
 $('#zine').addEventListener('click', e => { const lg = e.target.closest('[data-zlong]'); if (lg) { setFormat(PRESS.fmt === 'long' ? 'r80' : 'long'); lg.setAttribute('aria-pressed', String(PRESS.fmt === 'long')); if (PRESS.fmt === 'long') { toast('A WIDE PHOTO RUNS DOWN THE STRIP'); const f = $('#zine-file'); if (f) f.click(); } return; } const b = e.target.closest('[data-zt]'); if (b) { zineTool(b.dataset.zt); return; } const ink = e.target.closest('[data-ink]'); if (ink) { setInk(ink.dataset.ink); snd.tick(1300); } });
 $('#zine').addEventListener('change', e => {
   const fl = e.target.files && e.target.files[0]; if (!fl || e.target.id !== 'zine-file') return;
-  const rd = new FileReader(); rd.onload = () => { const im = new Image(); im.onload = async () => { const LG = FORMATS[PRESS.fmt].long, turn = LG && im.width > im.height, k = Math.min(1, (LG ? 2400 : 1200) / Math.max(im.width, im.height)); const t = document.createElement('canvas'), iw = Math.round(im.width * k), ih = Math.round(im.height * k); t.width = turn ? ih : iw; t.height = turn ? iw : ih; const tx = t.getContext('2d'); if (turn) { tx.translate(ih, 0); tx.rotate(Math.PI / 2); } tx.drawImage(im, 0, 0, iw, ih);
-    const c = await showZine(true); const src = t.toDataURL('image/jpeg', 0.85); const F = FORMATS[PRESS.fmt]; const w = c.getWidth() * (LG ? 1 : 0.8); const at = viewSpot();
-    window.fabric.Image.fromURL(await inkPhoto(src, w * (F.dots || F.w * 2) / F.w), img => { img.set({ left: LG ? 0 : 10, top: LG ? 0 : Math.max(20, at.y - 60), angle: LG ? 0 : rnd(-3, 3), daKind: 'image', daSrc: src }); img.scaleToWidth(w); if (LG && img.getScaledHeight() > c.getHeight()) c.setHeight(Math.min(capH(), Math.ceil(img.getScaledHeight()))); c.add(img); c.setActiveObject(img); c.renderAll(); saveZine(); }); }; im.src = rd.result; };
-  rd.readAsDataURL(fl); e.target.value = '';
+  const rd = new FileReader(); rd.onload = () => zPhotoIn(rd.result); rd.readAsDataURL(fl); e.target.value = '';
 });
+function zPhotoIn(url, lock) { const im = new Image(); im.onload = async () => { const LG = FORMATS[PRESS.fmt].long, turn = LG && im.width > im.height, k = Math.min(1, (LG ? 2400 : 1200) / Math.max(im.width, im.height)); const t = document.createElement('canvas'), iw = Math.round(im.width * k), ih = Math.round(im.height * k); t.width = turn ? ih : iw; t.height = turn ? iw : ih; const tx = t.getContext('2d'); if (turn) { tx.translate(ih, 0); tx.rotate(Math.PI / 2); } tx.drawImage(im, 0, 0, iw, ih);
+    const c = await showZine(true); const src = t.toDataURL('image/jpeg', 0.85); const F = FORMATS[PRESS.fmt]; const w = c.getWidth() * (LG ? 1 : 0.8); const at = viewSpot();
+    window.fabric.Image.fromURL(await inkPhoto(src, w * (F.dots || F.w * 2) / F.w), img => { img.set({ left: LG ? 0 : 10, top: LG ? 0 : Math.max(20, at.y - 60), angle: LG ? 0 : rnd(-3, 3), daKind: 'image', daSrc: src }); if (lock) img.set({ selectable: false, evented: false, hasControls: false }); img.scaleToWidth(w); if (LG && img.getScaledHeight() > c.getHeight()) c.setHeight(Math.min(capH(), Math.ceil(img.getScaledHeight()))); c.add(img); if (!lock) c.setActiveObject(img); c.renderAll(); saveZine(); }); }; im.src = url; }
+let ZR = '';
+if (ZREMIX) addEventListener('message', async e => { const d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'remix' || typeof d.img !== 'string' || !/^\/[^/]/.test(d.img) || d.img === ZR) return; ZR = d.img;
+  PRESS.fmt = 'long'; const c = await showZine(true); if (!c) { ZR = ''; return; } c.getObjects().filter(o => !ZFIXED.includes(o.daKind)).forEach(o => c.remove(o)); ZHIST.length = 0; c.discardActiveObject();
+  try { const b = await (await fetch(d.img)).blob(); const u = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); zPhotoIn(u, true); } catch (er) { ZR = ''; } });
 /* each reading's small strip, drawn from the story itself */
 const THUMBS = new Map();
 async function fillThumbs() {
