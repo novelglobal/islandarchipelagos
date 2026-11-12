@@ -34,7 +34,7 @@
   async function show(t) {
     tab = t; document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
-    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
+    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
   }
 
   /* ───────── species: every kind of life the devices have met, learned from their pulls. In the field list, a kind has its months,
@@ -469,6 +469,74 @@
   async function joinCard() { const st = await (await api('settings')).json(); const c = el('section', { class: 'printer' });
     c.append(el('h3', { text: 'OPEN JOINING' }), el('div', { class: 'note', text: st.openJoin ? 'ON: A NEW ISLAND JOINS BY ITSELF (UP TO 160), WITHOUT APPROVAL HERE. IT PRINTS ONLY ON ITS OWN PRINTER UNTIL IT IS MADE TWO-WAY.' : 'OFF: EACH NEW ISLAND WAITS FOR ITS CODE TO BE APPROVED BELOW.' }),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: st.openJoin ? 'on' : '', text: st.openJoin ? 'OPEN JOINING ON' : 'OPEN JOINING OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ openJoin: !st.openJoin }) }); show('printers'); } }))); return c; }
+  /* ───────── pop-ups: a card for one place and one weekend. Build one (from a template), open it, print its QR for the poster,
+     close it after; keep any as a template for the next. All of it is the pops setting: {pops:[…], tpl:[…]} ───────── */
+  const POP_ANIMALS = [['frill', 'FRILLED LIZARD'], ['roo', 'KANGAROO'], ['dingo', 'DINGO'], ['emu', 'EMU'], ['quokka', 'QUOKKA'], ['wombat', 'WOMBAT'], ['echidna', 'ECHIDNA']];
+  const POP_BASE = { kind: 'faces', name: 'Animal faces', to: '', logos: ['pop/pickles.png', 'pop/foe.png'], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' },
+    tips: { title: 'El Niño', lines: ['El Niño often brings south-east Australia a hotter, drier summer: more fire danger, less rain.', 'Put a shallow bowl of water in the shade, with a stick or stones so bees, birds and lizards can climb out.', 'On hot days, check on neighbours, elders and pets. Cats inside keeps them and wildlife safer.', 'Plant local natives: shade and food for birds, insects and people, on very little water.', 'Found heat-stressed wildlife? Call Wildlife Victoria on 03 8400 7300.', 'Know your fire danger rating, and make a plan with everyone you live with, animals too.'] },
+    animals: POP_ANIMALS.map(a => a[0]) };
+  const popMint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
+  const popUrl = p => 'https://novel.global/' + (p.id === 'pickles' ? 'pickles' : 'popup') + '?k=' + encodeURIComponent(p.key || '');
+  const popClone = o => JSON.parse(JSON.stringify(o));
+  const popTpl = p => { const t = popClone(p); delete t.id; delete t.on; delete t.key; return t; };
+  function popQr(url, box) { const draw = () => { const q = window.qrcode(0, 'M'); q.addData(url); q.make(); const n = q.getModuleCount(), m = 4, px = 12, c = document.createElement('canvas'); c.width = c.height = (n + m * 2) * px; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect((x + m) * px, (y + m) * px, px, px); c.style.cssText = 'width:180px;height:180px;image-rendering:pixelated;display:block;'; box.replaceChildren(c); };
+    if (window.qrcode) draw(); else { const sc = document.createElement('script'); sc.src = '/vendor/qrcode.js'; sc.onload = draw; document.head.appendChild(sc); } }
+  function popLogo(file) { return new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { const k = Math.min(1, 360 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/png')); }; im.onerror = rej; im.src = u; }); }
+  async function popups() {
+    const [st, pr] = await Promise.all([(await api('settings')).json(), api('printers').then(r => r.json()).catch(() => ({ printers: [] }))]);
+    let doc = {}; try { doc = st.pops ? JSON.parse(st.pops) : {}; } catch (e) { doc = {}; }
+    doc.pops = Array.isArray(doc.pops) ? doc.pops : []; doc.tpl = Array.isArray(doc.tpl) ? doc.tpl : [];
+    /* the first pop-up was Pickles, set in SETTINGS: it moves here with its key, so its posters keep working */
+    if (st.popKey && !doc.pops.some(p => p.id === 'pickles')) doc.pops.unshift(Object.assign(popClone(POP_BASE), { id: 'pickles', name: 'Pickles', on: !!st.popOn, key: st.popKey }));
+    const put = async () => { await api('settings', { method: 'POST', body: JSON.stringify({ pops: JSON.stringify(doc) }) }); show('popups'); };
+    const printers = (pr.printers || []).map(p => [p.id, (p.name || p.id).toUpperCase()]);
+    const tpls = [['', POP_BASE.name.toUpperCase() + ' (BUILT IN)'], ...doc.tpl.map((t, i) => [String(i), (t.name || 'TEMPLATE').toUpperCase()])];
+    const tpick = el('select', {}, ...tpls.map(([v, t]) => el('option', { value: v, text: t })));
+    const nm = el('input', { placeholder: 'Name, e.g. the place', maxlength: '40' });
+    const make = el('section', { class: 'ed' }, el('h3', { text: 'NEW POP-UP' }), el('div', { class: 'two' }, el('label', {}, 'FROM', tpick), el('label', {}, 'NAME', nm)),
+      el('small', { class: 'hint', text: 'Starts closed. Set it up below, tick OPEN, SAVE, then print its QR on the poster.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'MAKE', onclick: () => { const base = tpick.value === '' ? POP_BASE : doc.tpl[+tpick.value]; const n = nm.value.trim() || 'Pop-up';
+        let id = n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'pop'; while (doc.pops.some(p => p.id === id)) id += '-2';
+        doc.pops.unshift(Object.assign(popClone(base), { id, name: n, on: false, key: popMint() })); put(); } })));
+    const card = (p, i) => {
+      const live = !!(p.on && p.key), q = el('div', { style: 'margin:6px 0' });
+      const f = { on: (() => { const c = el('input', { type: 'checkbox' }); c.checked = !!p.on; return c; })(), name: el('input', { maxlength: '40' }), to: el('select', {}, el('option', { value: '', text: 'THE PLACE\'S OWN, ELSE NOVEL.GLOBAL' }), ...printers.map(([v, t]) => el('option', { value: v, text: t }))),
+        durl: el('input', { placeholder: 'https://…' }), dlab: el('input', { maxlength: '24' }), ttl: el('input', { maxlength: '24' }), tips: el('textarea', { rows: '6' }) };
+      f.name.value = p.name || ''; f.to.value = p.to || ''; f.durl.value = (p.donate && p.donate.url) || ''; f.dlab.value = (p.donate && p.donate.label) || ''; f.ttl.value = (p.tips && p.tips.title) || ''; f.tips.value = ((p.tips && p.tips.lines) || []).join('\n');
+      const an = POP_ANIMALS.map(([v, t]) => { const c = el('input', { type: 'checkbox', value: v }); c.checked = !p.animals || p.animals.includes(v); return el('label', { class: 'check' }, c, t); });
+      const logos = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' });
+      const drawLogos = () => logos.replaceChildren(...(p.logos || []).map((src, j) => el('span', { style: 'display:inline-flex;align-items:center;gap:4px' }, el('img', { src: /^data:/.test(src) ? src : '/' + src, alt: '', style: 'height:44px;width:auto;border:1px solid #ccd;border-radius:4px' }),
+          el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { p.logos.splice(j, 1); drawLogos(); } }))),
+        el('button', { type: 'button', text: 'ADD LOGO', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = async () => { if (!fi.files[0]) return; p.logos = p.logos || []; p.logos.push(await popLogo(fi.files[0])); drawLogos(); }; fi.click(); } }));
+      drawLogos();
+      const read = () => { p.on = f.on.checked; p.name = f.name.value.trim() || p.name; p.to = f.to.value; p.donate = f.durl.value.trim() ? { url: f.durl.value.trim(), label: f.dlab.value.trim() || 'DONATE' } : null;
+        const L = f.tips.value.split('\n').map(x => x.trim()).filter(Boolean); p.tips = L.length ? { title: f.ttl.value.trim(), lines: L } : null;
+        const A = an.map(l => l.querySelector('input')).filter(c => c.checked).map(c => c.value); p.animals = A.length ? A : POP_ANIMALS.map(a => a[0]); if (!p.key) p.key = popMint(); };
+      if (live) popQr(popUrl(p), q);
+      return el('section', { class: 'ed' }, el('h3', { text: (p.name || p.id).toUpperCase() }),
+        el('p', { class: 'note', text: live ? 'OPEN · THE LINK AND QR WORK NOW' : 'CLOSED · TICK OPEN, THEN SAVE' }),
+        live ? el('p', { class: 'hint', text: popUrl(p) }) : '', live ? q : '',
+        live ? el('div', { class: 'acts' }, el('button', { type: 'button', text: 'COPY LINK', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(popUrl(p)); } }),
+          el('button', { type: 'button', text: 'DOWNLOAD QR', onclick: () => { const c = q.querySelector('canvas'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = (p.id || 'pop') + '-qr.png'; a.click(); } }),
+          el('button', { type: 'button', text: 'TRY IT', onclick: () => window.open(popUrl(p).replace('https://novel.global', location.origin), '_blank', 'noopener') })) : '',
+        el('label', { class: 'check' }, f.on, 'OPEN'),
+        el('div', { class: 'two' }, el('label', {}, 'NAME', f.name), el('label', {}, 'PRINTER', f.to)),
+        el('label', {}, 'LOGOS (TOP OF THE PAGE AND FOOT OF THE KEEPSAKE)', logos),
+        el('div', { class: 'two' }, el('label', {}, 'DONATE LINK (EMPTY: NONE)', f.durl), el('label', {}, 'DONATE BUTTON', f.dlab)),
+        el('label', {}, 'TIPS TITLE', f.ttl), el('label', {}, 'TIPS, ONE PER LINE (EMPTY: NO TIPS BUTTON)', f.tips),
+        el('label', {}, 'ANIMALS', el('div', { style: 'display:flex;gap:4px 14px;flex-wrap:wrap' }, ...an)),
+        el('div', { class: 'acts' },
+          el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { read(); put(); } }),
+          el('button', { type: 'button', text: 'SAVE AS TEMPLATE', onclick: () => { read(); const t = popTpl(p); t.name = prompt('Template name', p.name || '') || p.name; doc.tpl.push(t); put(); } }),
+          el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link and QR. Posters with the old QR stop working.')) { read(); p.key = popMint(); put(); } } }),
+          el('button', { type: 'button', text: 'DELETE', onclick: () => { if (confirm('Delete ' + (p.name || p.id) + '? Its link stops working.')) { doc.pops.splice(i, 1); put(); } } })));
+    };
+    const tcards = doc.tpl.length ? el('section', { class: 'ed' }, el('h3', { text: 'TEMPLATES' }), ...doc.tpl.map((t, i) => el('div', { class: 'acts' }, el('span', { text: (t.name || 'TEMPLATE').toUpperCase(), style: 'min-width:160px' }),
+      el('button', { type: 'button', text: 'DELETE', onclick: () => { if (confirm('Delete the template ' + (t.name || '') + '? Pop-ups made from it stay.')) { doc.tpl.splice(i, 1); put(); } } })))) : '';
+    main.replaceChildren(...head('Pop-ups'), make, ...doc.pops.map(card), tcards);
+  }
+
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }
 
   /* ───────── the portfolio: posts written here, kept as drafts until published; a cover, a category, links ───────── */
@@ -726,23 +794,6 @@
     lkLoad();
     const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('EVERY CARD: the big cards stand three to a screen too.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#ct-all').checked }) })));
-    /* the pop-up: tick OPEN and SAVE, and a link is made if there is none; the QR for the poster shows here, ready to download */
-    const popMint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
-    const popUrl = 'https://novel.global/pickles' + (st.popKey ? '?k=' + encodeURIComponent(st.popKey) : '');
-    const popLive = !!(st.popOn && st.popKey);
-    const popQr = el('div', { id: 'pop-qr', style: 'margin:10px 0;' });
-    const pop = el('section', { class: 'ed' }, el('h3', { text: 'POP-UP' }), chk('pop-on', !!st.popOn, 'OPEN'),
-      el('p', { class: 'note', text: popLive ? 'OPEN · THIS LINK AND QR WORK NOW' : st.popOn ? 'SAVE TO MAKE THE LINK' : 'CLOSED · TICK OPEN, THEN SAVE' }),
-      popLive ? el('p', { class: 'hint', text: popUrl }) : '', popLive ? popQr : '',
-      hint('Tick OPEN and press SAVE: the link and its QR appear here. Print the QR on the poster. The same link works until you press NEW LINK. Untick OPEN after the weekend to close it.'),
-      el('div', { class: 'acts' },
-        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const on = $('#pop-on').checked; save({ popOn: on, popKey: st.popKey || (on ? popMint() : '') }); } }),
-        popLive ? el('button', { type: 'button', text: 'COPY', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(popUrl); } }) : '',
-        popLive ? el('button', { type: 'button', text: 'DOWNLOAD QR', onclick: () => { const c = $('#pop-qr canvas'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'pickles-qr.png'; a.click(); } }) : '',
-        st.popKey ? el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link and QR. Posters with the old QR stop working.')) save({ popOn: $('#pop-on').checked, popKey: popMint() }); } }) : ''));
-    if (popLive) { const draw = () => { const q = window.qrcode(0, 'M'); q.addData(popUrl); q.make(); const n = q.getModuleCount(), m = 4, px = 10, c = document.createElement('canvas'); c.width = c.height = (n + m * 2) * px; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
-        for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect((x + m) * px, (y + m) * px, px, px); c.style.cssText = 'width:200px;height:200px;image-rendering:pixelated;display:block;'; popQr.replaceChildren(c); };
-      if (window.qrcode) draw(); else { const sc = document.createElement('script'); sc.src = '/vendor/qrcode.js'; sc.onload = draw; document.head.appendChild(sc); } }
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
     const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
@@ -750,7 +801,7 @@
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, crt, pop, isl, jel, notice, country, motion, cur, sources, reset);
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, crt, isl, jel, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

@@ -28,31 +28,46 @@
   button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
   button:active { transform: translateY(1px) rotate(0); }
   button:disabled { opacity: .45; }
+  :root { --pk: #F85024; --foe: #00A84A; }
   .stg { position: relative; padding: 8px; background: #fff; transform: rotate(-.6deg); box-shadow: 6px 7px 0 rgba(22, 20, 18, .9); }
   #stage { display: block; width: 100%; aspect-ratio: 512 / 640; touch-action: none; cursor: grab; border-radius: 3px; background: var(--paper); }
   #stage:active { cursor: grabbing; }
   .tape { position: absolute; top: -12px; left: 50%; width: 92px; height: 24px; transform: translateX(-50%) rotate(-3deg); background: rgba(246, 196, 69, .75); border: 1.5px solid rgba(22, 20, 18, .5); z-index: 1; }
-  #nm { position: absolute; left: 14px; bottom: 14px; margin: 0; padding: 5px 11px 6px; background: var(--pink); border: 2px solid var(--ink); border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px; font: 700 15px/1 Poppins, sans-serif; letter-spacing: -.01em; pointer-events: none; }
-  .vw { position: absolute; right: 12px; top: 12px; display: flex; gap: 0; }
-  .vw button { min-height: 30px; padding: 0 10px; font-size: 10px; border-radius: 0; transform: none; }
-  .vw button:first-child { border-radius: 999px 0 0 999px; border-right: 0; } .vw button:last-child { border-radius: 0 999px 999px 0; }
-  .two { margin: 22px 0 0; gap: 12px; }
-  .two button { min-height: 52px; padding: 0 22px; font-size: 14px; }
-  #ph { background: var(--tom); color: #fff; }
-  #adj { margin: 14px 0 0; gap: 6px; }
-  #adj button { width: 44px; min-height: 44px; padding: 0; font-size: 18px; letter-spacing: 0; }
-  #adj #fit { width: auto; padding: 0 12px; font-size: 11px; letter-spacing: .12em; }
-  #go { width: 100%; margin-top: 22px; min-height: 62px; font-size: 17px; letter-spacing: .2em; background: var(--ink); color: var(--paper); border-radius: 18px 255px 18px 225px / 225px 18px 255px 18px; transform: rotate(.4deg); }
+  #nm { position: absolute; left: 14px; bottom: 14px; margin: 0; padding: 5px 11px 6px; background: var(--pink); border: 2px solid var(--ink); border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px; font: 700 15px/1 Poppins, sans-serif; letter-spacing: -.01em; pointer-events: none; transition: transform .25s; }
+  #rm { position: absolute; right: 14px; top: 14px; width: 38px; min-height: 38px; padding: 0; font: 600 20px/1 Poppins, sans-serif; letter-spacing: 0; border-radius: 50%; box-shadow: 2px 2px 0 var(--ink); transform: rotate(4deg); }
+  .three { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; margin: 24px 4px 0; }
+  .three button { min-height: 56px; }
+  #tip { width: 56px; padding: 0; border-radius: 50%; transform: rotate(-4deg); }
+  #tip svg { width: 34px; height: 34px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  #ph { background: var(--pk); color: #fff; font-size: 15px; letter-spacing: .16em; border-radius: 22px 255px 22px 225px / 225px 22px 255px 22px; transform: rotate(-.8deg); box-shadow: 3px 4px 0 var(--ink); }
+  #an { background: var(--foe); color: #fff; min-height: 44px; font-size: 11px; padding: 0 14px; transform: rotate(2deg); }
+  #go { width: 100%; margin-top: 18px; min-height: 62px; font-size: 17px; letter-spacing: .2em; background: var(--ink); color: var(--paper); border-radius: 18px 255px 18px 225px / 225px 18px 255px 18px; transform: rotate(.4deg); transition: opacity .2s; }
   .gor { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; min-height: 22px; }
   #led { width: 9px; height: 9px; border-radius: 50%; background: #B9B2A2; border: 1.5px solid var(--ink); flex: none; }
   #led.on { background: #2FBF55; }
   #st { margin: 0; font-weight: 600; letter-spacing: .14em; }
-  #after { margin-top: 30px; text-align: center; }
-  #code { display: inline-block; font: 700 40px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; padding: 8px 14px 8px 20px; border: 3px solid var(--ink); border-radius: 8px; background: #fff; transform: rotate(-1.5deg); margin-bottom: 14px; }
-  .give { margin-top: 26px; padding: 18px 16px; background: var(--leaf); color: var(--paper); box-shadow: 6px 7px 0 var(--ink); transform: rotate(.6deg); }
+  /* El Nino: one tip at a time, tap for the next */
+  #tips { position: fixed; inset: 0; z-index: 9; display: flex; align-items: flex-end; justify-content: center; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); background: rgba(22, 20, 18, .35); animation: fade .2s; }
+  #tips .sh { position: relative; width: 100%; max-width: 430px; padding: 22px 20px 18px; background: var(--sun); box-shadow: 6px 7px 0 var(--ink); transform: rotate(-.8deg); animation: up .28s cubic-bezier(.2, .9, .3, 1.2); cursor: pointer; }
+  #tips h2 { margin: 0 0 10px; font: 700 30px/1 Poppins, sans-serif; letter-spacing: -.02em; }
+  #tips p { margin: 0; min-height: 4.2em; font: 600 18px/1.35 Poppins, sans-serif; letter-spacing: -.005em; }
+  #tips .ft { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  #tips .ft span { letter-spacing: .14em; }
+  #tips .x { position: absolute; right: 12px; top: 12px; width: 38px; min-height: 38px; padding: 0; font: 600 20px/1 Poppins, sans-serif; border-radius: 50%; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes up { from { transform: translateY(40px) rotate(-.8deg); opacity: 0; } }
+  /* after the print: the print in colour, keep it, give */
+  #after { text-align: center; animation: fade .4s; }
+  #after .st2 { margin: 0 0 14px; font-weight: 600; letter-spacing: .16em; }
+  .rcpt { position: relative; margin: 0 auto; width: 86%; transform: rotate(1.2deg); filter: drop-shadow(5px 6px 0 rgba(22, 20, 18, .85)); animation: feed 1s cubic-bezier(.2, .8, .2, 1); }
+  .rcpt img { display: block; width: 100%; }
+  @keyframes feed { from { transform: translateY(-24px) rotate(1.2deg); opacity: 0; clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  #sv { margin-top: 22px; min-height: 48px; padding: 0 26px; font-size: 13px; transform: rotate(-1.5deg); }
+  .give { margin-top: 26px; padding: 20px 16px; background: var(--foe); color: #fff; box-shadow: 6px 7px 0 var(--ink); transform: rotate(.6deg); }
   .give .bt { background: var(--sun); min-height: 52px; font-size: 15px; padding: 0 24px; }
   .give small { display: block; margin-top: 10px; word-break: break-all; }
-  .more { margin-top: 24px; }
+  .ngl { display: inline-flex; align-items: center; gap: 10px; margin: 34px auto 6px; text-decoration: none; font: 700 20px/1 Poppins, sans-serif; letter-spacing: -.02em; }
+  .ngl img { height: 30px; width: auto; display: block; }
   #gate { text-align: center; padding-top: 18vh; }
   #gate h1 { margin: 6px 0 18px; font: 700 clamp(46px, 15vw, 66px)/.9 Poppins, sans-serif; letter-spacing: -.04em; }
   #gate form { display: flex; gap: 8px; justify-content: center; margin-top: 18px; }
@@ -71,22 +86,26 @@
 <section id="card" hidden>
   <header aria-label="Pickles Milk Bar and Friends of the Earth Melbourne"><img id="lg-p" src="pop/pickles.png" alt="Pickles Milk Bar" crossorigin="anonymous"><span aria-hidden="true">×</span><img id="lg-f" src="pop/foe.png" alt="Friends of the Earth Melbourne" crossorigin="anonymous"></header>
 
-  <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
-    <p id="nm" aria-live="polite"></p>
-    <div class="vw" role="group" aria-label="View"><button type="button" id="vc" aria-pressed="true" title="The colour picture you keep">COLOUR</button><button type="button" id="vp" aria-pressed="false" title="Exactly what the printer makes">PRINT</button></div>
+  <div id="make">
+    <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
+      <p id="nm" aria-live="polite"></p>
+      <button type="button" id="rm" hidden aria-label="Remove the photo" title="Remove the photo">×</button>
+    </div>
+    <div class="three">
+      <button type="button" id="tip" aria-label="El Niño" title="El Niño: getting ready, for every species"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7"/><path d="M20 3.5v2.6M8.6 8.4l1.8 1.8M31.4 8.4l-1.8 1.8M5 15h2.6M35 15h-2.6"/><path d="M4 29c3.2-3 6.4-3 9.6 0s6.4 3 9.6 0 6.4-3 9.6 0"/><path d="M8 35.5c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0 5.2-2.2 7.8 0"/></svg></button>
+      <button type="button" id="ph" title="Take or choose a photo of your face">PHOTO</button>
+      <button type="button" id="an" title="Another animal">ANIMAL</button>
+    </div>
+    <button type="button" id="go" disabled title="Print it here, on the café printer">PRINT</button>
+    <div class="gor"><i id="led" aria-hidden="true"></i><p id="st" aria-live="polite"></p></div>
   </div>
-  <div class="row" id="adj" hidden><button type="button" id="zo" aria-label="Smaller" title="Smaller">−</button><button type="button" id="zi" aria-label="Bigger" title="Bigger">+</button><button type="button" id="tl" aria-label="Turn left" title="Turn left">↺</button><button type="button" id="tr" aria-label="Turn right" title="Turn right">↻</button><button type="button" id="fit" title="Back into the hole">FIT</button></div>
-
-  <div class="row two"><button type="button" id="an" title="Another animal">ANIMAL</button><button type="button" id="ph" title="Take or choose a photo of your face">PHOTO</button></div>
-
-  <button type="button" id="go" disabled title="Print it here, on the café's printer">PRINT</button>
-  <div class="gor"><i id="led" aria-hidden="true"></i><p id="st" aria-live="polite"></p></div>
 
   <section id="after" hidden>
-    <b id="code" title="Your code is on the print: it opens novel.global"></b>
-    <div class="row"><button type="button" id="sv" title="Keep the colour picture">SAVE</button><a class="bt" href="/" title="Every card on novel.global, opened by your code">OPEN</a></div>
-    <div class="give hd"><a class="bt" id="donate" href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener" title="For Act On Climate and the 2027 Adaptation Fair, with Friends of the Earth Melbourne">DONATE $10</a><small>melbournefoe.org.au/climatedonate</small></div>
-    <p class="more"><a class="bt hd" href="/" title="Every card on novel.global">MORE CARDS</a></p>
+    <p class="st2" id="st2" aria-live="polite"></p>
+    <div class="rcpt"><img id="out" alt="Your print"></div>
+    <button type="button" id="sv" title="Keep the colour print">SAVE</button>
+    <div class="give hd"><a class="bt" id="donate" href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener" title="For Act On Climate and the 2027 Adaptation Fair, with Friends of the Earth Melbourne">DONATE $10</a><small id="dn-u">melbournefoe.org.au/climatedonate</small></div>
+    <a class="ngl" href="/" title="Every card on novel.global"><img src="mark.svg" alt="">novel.global</a>
   </section>
 </section>
 <script src="pickles.js"></script>
