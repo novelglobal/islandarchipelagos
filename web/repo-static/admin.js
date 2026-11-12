@@ -726,14 +726,23 @@
     lkLoad();
     const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('EVERY CARD: the big cards stand three to a screen too.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#ct-all').checked }) })));
-    const popLink = () => location.origin + '/pickles?k=' + encodeURIComponent($('#pop-key').value.trim());
+    /* the pop-up: tick OPEN and SAVE, and a link is made if there is none; the QR for the poster shows here, ready to download */
+    const popMint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
+    const popUrl = 'https://novel.global/pickles' + (st.popKey ? '?k=' + encodeURIComponent(st.popKey) : '');
+    const popLive = !!(st.popOn && st.popKey);
+    const popQr = el('div', { id: 'pop-qr', style: 'margin:10px 0;' });
     const pop = el('section', { class: 'ed' }, el('h3', { text: 'POP-UP' }), chk('pop-on', !!st.popOn, 'OPEN'),
-      el('label', { class: 'check' }, 'KEY ', (() => { const i = el('input', { id: 'pop-key', maxlength: '40', autocomplete: 'off', spellcheck: 'false' }); i.value = st.popKey || ''; i.addEventListener('input', () => { $('#pop-link').textContent = popLink(); }); return i; })()),
-      el('p', { id: 'pop-link', class: 'hint', text: st.popKey ? location.origin + '/pickles?k=' + encodeURIComponent(st.popKey) : '' }),
-      hint('The Pickles card. Only the link above (put it on the poster as a QR) or a pass printed there opens it; everyone else sees it closed. NEW makes a fresh key, so old posters stop working.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'NEW', onclick: () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); $('#pop-key').value = [...r].map(n => A[n % A.length]).join(''); $('#pop-link').textContent = popLink(); } }),
-        el('button', { type: 'button', text: 'COPY', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(popLink()); } }),
-        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ popOn: $('#pop-on').checked, popKey: $('#pop-key').value.trim() }) })));
+      el('p', { class: 'note', text: popLive ? 'OPEN · THIS LINK AND QR WORK NOW' : st.popOn ? 'SAVE TO MAKE THE LINK' : 'CLOSED · TICK OPEN, THEN SAVE' }),
+      popLive ? el('p', { class: 'hint', text: popUrl }) : '', popLive ? popQr : '',
+      hint('Tick OPEN and press SAVE: the link and its QR appear here. Print the QR on the poster. The same link works until you press NEW LINK. Untick OPEN after the weekend to close it.'),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const on = $('#pop-on').checked; save({ popOn: on, popKey: st.popKey || (on ? popMint() : '') }); } }),
+        popLive ? el('button', { type: 'button', text: 'COPY', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(popUrl); } }) : '',
+        popLive ? el('button', { type: 'button', text: 'DOWNLOAD QR', onclick: () => { const c = $('#pop-qr canvas'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'pickles-qr.png'; a.click(); } }) : '',
+        st.popKey ? el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link and QR. Posters with the old QR stop working.')) save({ popOn: $('#pop-on').checked, popKey: popMint() }); } }) : ''));
+    if (popLive) { const draw = () => { const q = window.qrcode(0, 'M'); q.addData(popUrl); q.make(); const n = q.getModuleCount(), m = 4, px = 10, c = document.createElement('canvas'); c.width = c.height = (n + m * 2) * px; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
+        for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect((x + m) * px, (y + m) * px, px, px); c.style.cssText = 'width:200px;height:200px;image-rendering:pixelated;display:block;'; popQr.replaceChildren(c); };
+      if (window.qrcode) draw(); else { const sc = document.createElement('script'); sc.src = '/vendor/qrcode.js'; sc.onload = draw; document.head.appendChild(sc); } }
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
     const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
