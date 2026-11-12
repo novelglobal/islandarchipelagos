@@ -429,7 +429,7 @@ html.hm-on .au-sidek { display: none !important; } /* the island kit and the net
 .st-orb .lp { stroke-width: .5; opacity: .3; }
 .st-orb .lp2 { stroke-width: 1.1; stroke-dasharray: 3 7.47; animation: st-flow 6s linear infinite; opacity: .9; }
 @keyframes st-flow { to { stroke-dashoffset: -41.88; } }
-.st-orb .cv { stroke-width: .9; opacity: .8; }
+.st-orb .cv { stroke-width: .9; opacity: .56; }
 .st-orb .st-nd circle { stroke: none; transition: transform .35s cubic-bezier(.3, 1.8, .5, 1); }
 .st-orb .st-nd path { stroke: #0B2342; stroke-width: 2.2; }
 .st-orb .n0 circle { fill: #E25C40; } .st-orb .n1 circle { fill: #F4C542; } .st-orb .n2 circle { fill: #1EA0E0; } .st-orb .n3 circle { fill: #C9C1F7; }
@@ -1031,9 +1031,9 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 
 /* the circular strategy, by hand: a pen's wobble, a pencil loop, inks off register, a mounted print, paper grain */
 .st-orb .lp, .st-orb .pn, .st-orb .lp2, .st-orb .st-nd { filter: url(#st-ink); }
-.st-orb .lp { stroke-width: .35; opacity: .45; }
-.st-orb .pn { stroke-width: .3; opacity: .35; }
-.st-orb .lp2 { stroke-width: .9; stroke-dasharray: 2.6 6.2 3.8 8.344; opacity: .8; }
+.st-orb .lp { stroke-width: .35; opacity: .315; }
+.st-orb .pn { stroke-width: .3; opacity: .245; }
+.st-orb .lp2 { stroke-width: .9; stroke-dasharray: 2.6 6.2 3.8 8.344; opacity: .56; }
 .st-orb .st-nd circle { stroke: rgba(244, 241, 232, .8); stroke-width: .45; transition: transform .4s ease; }
 .st-orb .n0 circle { fill: #C9654E; } .st-orb .n1 circle { fill: #DDB95E; } .st-orb .n2 circle { fill: #5A98C2; } .st-orb .n3 circle { fill: #B4ADD6; }
 .st-orb .st-nd path { stroke: #10223A; stroke-width: 1.9; }
@@ -1092,4 +1092,6 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 @keyframes st-wish { 0%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } 22%, 72% { transform: none; opacity: 1; } 90% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .st-orb .nd-in { animation: none; } }
 /* the word stands alone on its four points: the small orbiting photos step aside (the centre photo still turns through them) */
-.sk-wish .st-th { display: none; }
+/* the ten chairs turn on the loop again, under the letters: the ring and W I S H sit on top */
+.st-orb svg { z-index: 2; pointer-events: none; }
+.st-orb .st-th { z-index: 1; }
