@@ -317,6 +317,7 @@
         !(p.paired && /\bwifi\b/.test(p.can || '')) ? el('button', { type: 'button', disabled: true, text: p.paired ? 'CHANGE WI-FI ONCE HEARD' : 'CHANGE WI-FI ONCE PAIRED' }) : null,
         p.paired && /\bwifi\b/.test(p.can || '') ? el('button', { type: 'button', text: fresh(p.wifi) ? 'OPENING ITS WI-FI SETUP' : 'CHANGE WI-FI', onclick: async () => { if (!confirm('Open this printer\'s Wi-Fi setup? It leaves its Wi-Fi, prints its setup slip with a code to scan, and waits ten minutes for a phone to choose another.')) return; await setP(p.id, { action: 'wifi' }); show('printers'); } }) : null,
         p.paired ? el('button', { type: 'button', text: 'TEST PRINT', onclick: async () => { await setP(p.id, { action: 'test' }); show('printers'); } }) : null,
+        p.paired ? el('button', { type: 'button', text: 'PASSES', onclick: () => { location.href = '/cart?p=' + encodeURIComponent(p.id) + '#pass'; } }) : null,
         !canOff ? el('button', { type: 'button', disabled: true, text: p.paired ? 'TURN OFF ONCE HEARD' : 'TURN OFF ONCE PAIRED' }) : null,
         canOff && !listening ? el('button', { type: 'button', disabled: true, text: 'OFF OR OUT OF WI-FI' }) : null,
         canOff && listening ? el('button', { type: 'button', class: 'no', text: fresh(p.off) ? 'TURNING OFF' : 'TURN OFF', onclick: async () => { if (!confirm('Turn this printer off? It prints a slip, then shuts down. Unplug it once its green light stops.')) return; await setP(p.id, { action: 'off' }); show('printers'); } }) : null),

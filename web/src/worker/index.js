@@ -376,6 +376,7 @@ async function send(db, env, req) {
   if (P && P.id !== 'novelglobal' && b.stage !== 'stack' && !linksOf(P.links).includes('wish')) return refuse(403, 'this island has not switched on W.I.S.H.');
   if (toMesh && !(typeof b.mesh === 'string' && b.mesh)) return fail(400, 'mesh');
   if (dest && b.escpos != null && !b64ok(b.escpos, LIMIT.escpos)) return refuse(400, 'the print is too long');
+  let passed = false; if (P && (b.escpos || b.mesh) && typeof b.pass === 'string' && PASS.test(b.pass) && codeKey(env)) { const c = b.pass.replace('-', ''), day = melDay(); if (await passMac(env, P.id, day, c.slice(0, 3)) === c.slice(3)) passed = await passUse(db, c.slice(0, 3) + '-' + c.slice(3), day, P.id); }
   if (b.mesh != null && (typeof b.mesh !== 'string' || enc.encode(b.mesh).length > LIMIT.mesh)) return fail(400, 'mesh');
   const { n } = await db.prepare("SELECT count(*) AS n FROM stories WHERE status = 'waiting'").first(); if (n >= LIMIT.waiting) return refuse(503, 'too many stories waiting for approval');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
@@ -389,7 +390,7 @@ async function send(db, env, req) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
     const screenGone = P.touch && (!P.touch_seen || t - P.touch_seen > 150e3);
-    job = { id: rid(), status: P.auto || screenGone ? 'queued' : 'held' };
+    job = { id: rid(), status: P.auto || screenGone || passed ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
   }
@@ -407,7 +408,7 @@ async function send(db, env, req) {
   const lowRes = (await settingsOf(db)).lowRes, full = env.MEDIA && b.full && !lowRes ? dataFile(b.full, LIMIT.full) : null, art = env.MEDIA && b.art ? dataURL(b.art, LIMIT.full) : null;
   if (art && (await r2Bytes(db)) + art.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(`art/${id}`, art, { httpMetadata: { contentType: 'image/jpeg' } }); await db.prepare('UPDATE stories SET art = ? WHERE id = ?').bind(art.length, id).run(); } catch (e) { /* kept without it */ } }
   if (full && (await r2Bytes(db)) + full.bytes.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(mediaKey(id), full.bytes, { httpMetadata: { contentType: full.type } }); await db.prepare('UPDATE stories SET full = ? WHERE id = ?').bind(full.bytes.length, id).run(); } catch (e) { /* the story is kept without it */ } }
-  return json({ id, status: st0, job }, 201);
+  return json({ id, status: st0, job, ...(passed ? { passed: true } : {}) }, 201);
 }
 /* the sender's receipt: where their story is, and where its print is in the queue */
 async function receipt(db, id) {
@@ -511,12 +512,12 @@ async function touchAuth(db, req, id) {
   if (!p.touch_seen || now() - p.touch_seen > 60e3) await db.prepare('UPDATE printers SET touch_seen = ? WHERE id = ?').bind(now(), id).run(); return p;
 }
 const netOf = url => { const n = (url.searchParams.get('net') || '').slice(0, 40), r = +url.searchParams.get('rssi'), ip = url.searchParams.get('ip') || ''; return n ? JSON.stringify({ n, rssi: Number.isFinite(r) ? Math.max(-120, Math.min(0, Math.round(r))) : null, ...(/^\d{1,3}(\.\d{1,3}){3}$/.test(ip) ? { ip } : {}), ...(/^[\w .·:-]{1,24}$/.test(url.searchParams.get('v') || '') ? { v: url.searchParams.get('v') } : {}), at: now() }) : null; };
-async function touchList(db, req, id) {
+async function touchList(db, req, id, env) {
   const p0 = await touchAuth(db, req, id); if (!p0) return fail(401, 'token');
   { const tn = netOf(new URL(req.url)); if (tn) { const o = JSON.parse(tn), was = (() => { try { return JSON.parse(p0.touch_net || 'null'); } catch (e) { return null; } })(); if (!was || was.n !== o.n || Math.abs((was.rssi || 0) - (o.rssi || 0)) > 6 || o.at - was.at > 60e3) await db.prepare('UPDATE printers SET touch_net = ? WHERE id = ?').bind(tn, id).run(); } }
   const { results } = await db.prepare(`SELECT j.id, j.code, j.created, j.escpos IS NOT NULL AS paper, j.thumb, s.body FROM jobs j LEFT JOIN stories s ON s.id = j.story WHERE j.printer = ? AND j.status = 'held' ORDER BY j.created LIMIT 5`).bind(id).all();
   const c = await db.prepare("SELECT sum(status = 'held') AS w, sum(status IN ('queued', 'printing')) AS q FROM jobs WHERE printer = ?").bind(id).first();
-  return json({ wait: waitOf(p0, !!(c && (c.w || c.q))), waiting: (c && c.w) || 0, printing: (c && c.q) || 0, held: results.map((r, i) => { let b = {}; try { b = JSON.parse(r.body || '{}'); } catch (e) { /* none */ }
+  return json({ mark: codeKey(env) ? await markOf(env, id) : null, wait: waitOf(p0, !!(c && (c.w || c.q))), waiting: (c && c.w) || 0, printing: (c && c.q) || 0, held: results.map((r, i) => { let b = {}; try { b = JSON.parse(r.body || '{}'); } catch (e) { /* none */ }
     return { job: r.id, code: r.code || '', at: r.created, say: String(b.text || '').slice(0, 140), wish: (Array.isArray(b.wish) ? b.wish : []).map(w => String(w).slice(0, 90)).slice(0, 4), life: b.tx && b.tx.cn ? String(b.tx.cn).slice(0, 40) : '', paper: !!r.paper, ...(i === 0 && r.thumb ? { img: r.thumb } : {}) }; }) });
 }
 async function touchAct(db, req, id, job) {
@@ -622,11 +623,19 @@ async function keeper(db, env, req) {
   const k = bearer(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
   const p = await db.prepare('SELECT id, name, paper, number, two, links, seen, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN (\'queued\', \'held\')) AS queued, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = \'printed\') AS printed FROM printers WHERE owner = ?').bind(await sha256(k)).first();
   if (!p || p.id === 'novelglobal') return fail(401, 'key');
-  if (req.method === 'POST') { const b = await body(req, 2048), name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
+  if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096); if (b.action) return passDo(db, env, p, b); const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
     if (b.speed != null) await cardSet(db, p.id, { speed: b.speed });
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); } }
   const cps = (await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, cst = (await db.prepare('SELECT speed FROM cardset WHERE card = ?').bind(p.id).first()) || {};
-  return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
+  return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
+}
+/* passes made for one island, and its own slips sent straight to it */
+async function passDo(db, env, p, b) {
+  if (b.action === 'passes') { if (!codeKey(env)) return fail(503, 'passes'); return json({ island: p.id, name: p.name || p.id, ...(await passMake(env, p.id, Math.max(1, Math.min(10, Math.round(+b.n || 1))))) }); }
+  if (b.action === 'print') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'print');
+    const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(p.id).first(); if (q >= LIMIT.perPrinter) return fail(503, 'its queue is full');
+    await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), p.id, b.escpos, now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), p.id)]); return json({ ok: true }); }
+  return fail(400, 'action');
 }
 /* the approval page: a code looked up (from the island's slip, scanned), then approved for a printer here or a new one by the island's name */
 async function adminPair(db, req, code) {
@@ -753,6 +762,7 @@ async function admin(db, env, req, parts) {
     if (b.action === 'name') { const n = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!n) return fail(400, 'name'); await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(n, id).run(); return json({ ok: true, name: n }); }
     if (b.action === 'paper' && ['58', '80'].includes(String(b.paper))) { await db.prepare('UPDATE printers SET paper = ? WHERE id = ?').bind(String(b.paper), id).run(); return json({ ok: true }); }
     /* the calibration strip, drawn on the approval page as the printer's own dots */
+    if (b.action === 'passes' || b.action === 'print') return passDo(db, env, { id, name: (await db.prepare('SELECT name FROM printers WHERE id = ?').bind(id).first() || {}).name }, b);
     if (b.action === 'strip') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'strip'); await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-STRIP', ?, 'queued', ?)").bind(rid(), id, b.escpos, now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     if (b.action === 'test') { await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, mesh, status, created) VALUES (?, ?, 'DA-TEST', ?, 'queued', ?)").bind(rid(), id, 'DIRECT ACTION - test print', now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     return fail(400, 'action');
@@ -977,7 +987,7 @@ const JOURNEY = /^(lv[1-6]|disc-[0-2]|eye|step-[0-3]|dev-[0-3]|booth-(open|print
 function trafficKey(url, m) {
   const p = url.pathname.replace(/^\/api\//, '').split('/')[0];
   if (p === 'beat') { const k = url.searchParams.get('k'); return BEATS.includes(k) || JOURNEY.test(k || '') ? k : null; }
-  if (['inat', 'osm', 'img', 'wx', 'news', 'book', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
+  if (['inat', 'osm', 'img', 'wx', 'news', 'book', 'c', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
   return null;
 }
 function tally(url, m) { USE.req++; const k = trafficKey(url, m); if (k) USE.keys[k] = (USE.keys[k] || 0) + 1; }
@@ -1040,6 +1050,47 @@ async function playOne(db, c) {
   const r = await db.prepare("SELECT body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
   return json(JSON.parse(r.body));
 }
+/* ───────── codes: one reader for every family; carts keep a 3-letter code a moon quarter; passes last a day at one island ───────── */
+const ABC = 'ABCDEFGHJKMNPQRSTVWXYZ';
+const MARKS = [['🌊', 'WAVE'], ['🐚', 'SHELL'], ['🦀', 'CRAB'], ['🐙', 'OCTOPUS'], ['🌙', 'MOON'], ['☀️', 'SUN'], ['🌿', 'FERN'], ['🍄', 'MUSHROOM'],
+  ['🐝', 'BEE'], ['🦋', 'BUTTERFLY'], ['🌵', 'CACTUS'], ['🌻', 'SUNFLOWER'], ['🐟', 'FISH'], ['🦉', 'OWL'], ['🐢', 'TURTLE'], ['⭐', 'STAR']];
+const melDay = (t = now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date(t));
+const quarterOf = (t = now()) => Math.floor((t / 864e5 - Date.UTC(2000, 0, 6, 18, 14) / 864e5) / (29.530588853 / 4));
+const codeKey = env => env.PASS_KEY || env.ADMIN_KEY || '';
+async function mac(key, s) { const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(s))); }
+const letters = (b, n) => [...b.slice(0, n)].map(x => ABC[x % 22]).join('');
+const cartCode = async (env, id, q = quarterOf()) => letters(await mac(codeKey(env), `cart:${q}:${id}`), 3);
+async function markOf(env, island, day = melDay()) { const m = MARKS[(await mac(codeKey(env), `mark:${island}:${day}`))[0] % MARKS.length]; return { e: m[0], w: m[1] }; }
+const passMac = async (env, island, day, n) => letters(await mac(codeKey(env), `pass:${island}:${day}:${n}`), 3);
+const PASS = /^[A-HJKMNP-TV-Z]{3}-?[A-HJKMNP-TV-Z]{3}$/;
+const passesReady = new WeakMap();
+const passTable = db => { if (!passesReady.has(db)) passesReady.set(db, db.prepare('CREATE TABLE IF NOT EXISTS passes (code TEXT NOT NULL, day TEXT NOT NULL, island TEXT NOT NULL, used INTEGER NOT NULL, PRIMARY KEY (code, day))').run().catch(e => { passesReady.delete(db); throw e; })); return passesReady.get(db); };
+async function cartIds(env) { try { const r = await env.ASSETS.fetch(new Request('https://x/stacks/index.json')); if (!r.ok) return []; const j = await r.json(); return (Array.isArray(j) ? j : j.stacks || []).map(s => typeof s === 'string' ? s : s && s.id).filter(s => /^[a-z0-9-]{1,40}$/.test(String(s))); } catch (e) { return []; } }
+async function cartFor(env, url) { const id = url.searchParams.get('for') || ''; if (!/^[a-z0-9-]{1,40}$/.test(id) || !codeKey(env)) return fail(400, 'for'); return json({ code: await cartCode(env, id) }); }
+async function passMake(env, island, n) { const day = melDay(), out = [];
+  for (let i = 0; i < n; i++) { const a = crypto.getRandomValues(new Uint8Array(3)), nn = letters(a, 3); out.push(nn + '-' + await passMac(env, island, day, nn)); }
+  return { day, mark: await markOf(env, island, day), passes: out }; }
+async function passFind(db, env, code) { const c = code.replace('-', ''), day = melDay(), n = c.slice(0, 3), m = c.slice(3);
+  const { results } = await db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'").all();
+  for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };
+  return null; }
+async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
+async function codeRead(db, env, req, raw) {
+  if (await tooMany(db, env, req, 'code', 40, 10 * 60e3)) return fail(429, 'too many');
+  const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12);
+  if (/^DA-?[0-9A-HJKMNP-TV-Z]{4}$/.test(c)) { const code = 'DA-' + c.replace(/^DA-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE code = ? AND status = 'shown' AND gone IS NULL").bind(code).first();
+    return r ? json({ kind: 'wish', code, go: '/#n=' + code }) : fail(404, 'not found'); }
+  if (/^PL-?[A-Z2-9]{4}$/.test(c)) { const code = 'PL-' + c.replace(/^PL-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(code).first();
+    return r ? json({ kind: 'play', code, go: '/play.html?c=' + code }) : fail(404, 'not found'); }
+  if (PASS.test(c) && codeKey(env)) { const f = await passFind(db, env, c); if (!f) return fail(404, 'not found'); await passTable(db);
+    const u = await db.prepare('SELECT used FROM passes WHERE code = ? AND day = ?').bind(f.code, f.day).first();
+    return json({ kind: 'pass', code: f.code, island: f.p.id, name: f.p.name || f.p.id, number: f.p.number || null, used: !!u, mark: await markOf(env, f.p.id, f.day) }); }
+  if (/^[A-HJKMNP-TV-Z]{3}$/.test(c) && codeKey(env)) { const q = quarterOf();
+    for (const id of await cartIds(env)) if (await cartCode(env, id, q) === c) return json({ kind: 'cart', code: c, id, go: '/x#' + id });
+    return fail(404, 'not found'); }
+  if (/^\d{3}$/.test(c)) return fail(404, 'type it on the island');
+  return fail(404, 'not found');
+}
 async function api(req, env, url, ctx) {
   tally(url, req.method); settle(env, ctx);
   if (url.pathname === '/api/beat') return new Response(null, { status: 204, headers: TEXT_H });
@@ -1048,6 +1099,7 @@ async function api(req, env, url, ctx) {
   if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
   if (url.pathname === '/api/news' && req.method === 'GET') return newsThrough();
   if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url);
+  if (url.pathname === '/api/c' && req.method === 'GET') return cartFor(env, url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);
   const p = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean).map(decodeURIComponent); const m = req.method;
@@ -1055,6 +1107,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'stories' && !p[1] && m === 'POST') return send(db, env, req);
   if (p[0] === 'stories' && p[1] && m === 'GET') return CODE.test(p[1]) ? oneStory(db, p[1]) : fail(400, 'code');
   if (p[0] === 'receipts' && p[1] && m === 'GET') return receipt(db, p[1]);
+  if (p[0] === 'c' && p[1] && !p[2] && m === 'GET') return codeRead(db, env, req, p[1]);
   if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db);
   if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
   if (p[0] === 'plays' && p[1] && m === 'GET') return playOne(db, p[1]);
@@ -1087,7 +1140,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'island' && p[1] === 'pics' && p[2] && !p[3] && (m === 'PUT' || m === 'DELETE')) return keeperPic(db, env, req, p[2]);
   if (p[0] === 'cards' && !p[1] && m === 'GET') return cardList(db);
   if (p[0] === 'cards' && p[1] && p[2] && !p[3] && m === 'GET') return cardPic(db, env, p[1], p[2]);
-  if (p[0] === 'touch' && p[1] && !p[2] && m === 'GET') return touchList(db, req, p[1]);
+  if (p[0] === 'touch' && p[1] && !p[2] && m === 'GET') return touchList(db, req, p[1], env);
   if (p[0] === 'touch' && p[1] && p[2] && m === 'POST') return touchAct(db, req, p[1], p[2]);
   if (p[0] === 'admin') return admin(db, env, req, p.slice(1));
   return fail(404, 'not found');

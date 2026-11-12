@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "id": "pass",
+  "name": "PASS",
+  "island": "island",
+  "page": "cart.html",
+  "kind": "pass",
+  "printer": {
+    "profile": "tm-t88v",
+    "dots": 512,
+    "dpi": 180
+  },
+  "blocks": [
+    {
+      "k": "print",
+      "to": [
+        "island"
+      ]
+    }
+  ]
+}

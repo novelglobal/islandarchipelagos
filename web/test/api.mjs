@@ -315,6 +315,16 @@ try {
     const on = await call('/api/island', { method: 'POST', token: K, body: { links: ['wish', 'nonsense'] } }), yes = await call('/api/stories', { method: 'POST', ip: '10.0.0.77', body: story('DA-4TPZ', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc }) });
     check('connections: a W.I.S.H. piece is refused by an island without W.I.S.H. on and printed once its keeper switches it on; its own stacks print either way; nothing but the six connections is kept',
       no.status === 403 && [200, 201].includes(own.status) && on.json.links.join() === 'wish' && [200, 201].includes(yes.status), JSON.stringify([no.status, own.status, on.json && on.json.links, yes.status]));
+    /* passes: the keeper prints today's, the reader knows one, it sends one print straight out, once */
+    const ps = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 3 } }), pc = (ps.json.passes || [])[0] || '';
+    const rd = await call('/api/c/' + pc), bad = await call('/api/c/' + (pc ? pc.slice(0, 4) + (pc[4] === 'A' ? 'B' : 'A') + pc.slice(5) : 'AAA-AAA'));
+    const p1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPA', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });
+    const p2 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPB', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });
+    const rd2 = await call('/api/c/' + pc.replace('-', '')), kp = await call('/api/island', { method: 'POST', token: K, body: { action: 'print', escpos: esc } }), ad = await call('/api/admin/printers/novelglobal', { method: 'POST', key: KEY, body: { action: 'passes' } });
+    check('passes: a keeper prints today\'s with its mark; the reader knows one; it sends one print straight out, once; a changed code is no pass',
+      ps.status === 200 && ps.json.passes.length === 3 && /^[A-Z]{3}-[A-Z]{3}$/.test(pc) && ps.json.mark && ps.json.mark.w && rd.status === 200 && rd.json.kind === 'pass' && rd.json.island === id && rd.json.used === false && bad.status === 404
+      && p1.json.passed === true && p1.json.job.status === 'queued' && !p2.json.passed && p2.json.job.status === 'held' && rd2.json.used === true && kp.status === 200 && ad.status === 200 && ad.json.passes.length === 1,
+      JSON.stringify([ps.status, pc, rd.json, bad.status, p1.json, p2.json, rd2.json, kp.status, ad.status]));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));
@@ -384,6 +394,10 @@ try {
     const l = (await call('/api/cards')).json.cards.wish || {}, pic = l.pics && l.pics[0] ? await call(l.pics[0]) : {};
     const del = (await call('/api/admin/cards/wish/3', { method: 'DELETE', key: KEY })).status, after = ((await call('/api/cards')).json.cards.wish || {}).pics || [];
     check('a card\'s pictures: only the approval page puts them up, only pictures, listed by slot with their speed, and taken down again', (no === 401 || no === 429) && bad === 415 && ok === 200 && /\/api\/cards\/wish\/3\?/.test(l.pics[0]) && l.speed === 8 && pic.status === 200 && del === 200 && after.length === 0, JSON.stringify({ no, bad, ok, l, p: pic.status, del, after })); }
+  /* one reader: a cart's code this moon quarter, a W.I.S.H. code, a keypad code */
+  { const cc = await call('/api/c?for=weather'), rc = cc.json && cc.json.code ? await call('/api/c/' + cc.json.code.toLowerCase()) : {}, no = await call('/api/c/DA-ZZZZ'), dg = await call('/api/c/123'), junk = await call('/api/c/hello');
+    check('one reader: a cart\'s three letters open it; an unknown code and a keypad code typed here say so', /^[A-HJKMNP-TV-Z]{3}$/.test(cc.json.code) && rc.status === 200 && rc.json.kind === 'cart' && rc.json.go === '/x#weather' && no.status === 404 && dg.status === 404 && /island/.test(dg.json.error) && junk.status === 404,
+      JSON.stringify([cc.json, rc.json, no.status, dg.json, junk.status])); }
   let last = 0; for (let i = 0; i < 21; i++) last = (await call('/api/stories', { method: 'POST', body: story('DA-2' + 'ABCDEFGHJKMNPQRSTVWXY'[i] + 'QR') })).status;
   check('a visitor sending too many in ten minutes is asked to wait', last === 429, String(last));
 } catch (e) { results.push(`FAIL  api: ${e.stack || e.message}`); }

@@ -44,7 +44,7 @@
       y += 18; var fx = M;
       if (window.qrcode && link) { var q = window.qrcode(0, 'M'); q.addData(link); q.make(); var qn = q.getModuleCount(), s = 4; g.fillStyle = '#000';
         for (var r = 0; r < qn; r++) for (var c = 0; c < qn; c++) if (q.isDark(r, c)) g.fillRect(M + c * s, y + r * s, s, s); fx = M + qn * s + 18; }
-      k.txt(l1 || 'PLAY ON CARD', fx, y + 26, '600 20px ' + MONO);
+      k.txt((l1 || 'PLAY ON CARD') + (k.code ? ' · ' + k.code : ''), fx, y + 26, '600 20px ' + MONO);
       k.txt('novel.global', fx, y + 64, '700 30px ' + SANS);
       if (l2) k.fit(l2, fx, y + 96, '500', 15, W - M - fx, MONO);
       y += 132; k.box(M, y, W - 2 * M, 1); y += 4; k.box(M, y, W - 2 * M, 5); return y + 14;
@@ -207,9 +207,44 @@
     }
   };
 
-  var KINDS = { week: week, news: news, book: book, tarot: tarot, cards: cards };
+  /* ───────── the pass: today's mark and a one-use code, left by the printer ───────── */
+  var EMO = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  function markDots(k, e, cx, cy, s) {
+    var c = document.createElement('canvas'); c.width = c.height = s; var g = c.getContext('2d', { willReadFrequently: true });
+    g.font = R(s * 0.82) + 'px ' + EMO; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e, s / 2, s * 0.54);
+    var p = g.getImageData(0, 0, s, s).data, B = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]; k.g.fillStyle = '#000';
+    for (var y = 0; y < s; y++) for (var x = 0; x < s; x++) { var i = (y * s + x) * 4, a = p[i + 3] / 255; if (a < 0.3) continue;
+      var l = (p[i] * 0.3 + p[i + 1] * 0.59 + p[i + 2] * 0.11) / 255; if (l * 15.5 < B[(y % 4) * 4 + (x % 4)] + 2) k.g.fillRect(cx - s / 2 + x, cy - s / 2 + y, 1, 1); }
+  };
+  var pass = {
+    opts: [['p1', 'ONE'], ['p5', 'FIVE']],
+    act: function (a, s, o) { o.n = a === 'p5' ? 5 : 1; return true; },
+    get: function (s, o) { var b = JSON.stringify({ action: 'passes', n: o.n || 1 }); return keeper(b); },
+    send: function (escpos) { return keeper(JSON.stringify({ action: 'print', escpos: escpos })); },
+    draw: function (k, d, s, o) {
+      var day = today(), m = d.mark || { e: '·', w: '' }, c = (d.passes || [])[o.at || 0] || '··· ···';
+      var y = k.head('PASS', d.name || 'ISLAND', phase(age(day)));
+      markDots(k, m.e, W / 2, y + 150, 240);
+      y += 310; k.fit(m.w, W / 2, y, '700', 40, W - 60, SANS, 'center');
+      y += 26; k.box(M, y, W - 2 * M, 2);
+      y += 118; k.fit(c, W / 2, y, '400', 132, W - 40, TTY, 'center');
+      y += 40; k.txt('ONE PRINT, STRAIGHT OUT', W / 2, y, '600 20px ' + MONO, 'center');
+      y += 26; k.box(M, y, W - 2 * M, 3);
+      return k.foot(y, 'https://novel.global/c#' + c.replace(/\W/g, ''), 'TODAY · ONE USE', 'TYPE IT AT novel.global/c');
+    }
+  };
+  function keeper(b) {
+    var q = new URLSearchParams(location.search), pr = (q.get('p') || '').replace(/[^\w-]/g, ''), adm = '', key = '';
+    try { adm = sessionStorage.getItem('da.admin') || ''; } catch (e) { /* none */ }
+    try { key = JSON.parse(localStorage.getItem('da.hm.key') || '""') || ''; } catch (e) { /* none */ }
+    var url = adm && pr ? '/api/admin/printers/' + pr : key ? '/api/island' : ''; if (!url) return Promise.reject(new Error('key'));
+    return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (adm && pr ? adm : key) }, body: b })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+  }
+
+  var KINDS = { week: week, news: news, book: book, tarot: tarot, cards: cards, pass: pass };
   function draw(cv, kind, data, stack, o) {
-    var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
+    var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     return oneBit(cv, Math.min(cv.height, K.draw(k, data || {}, stack, o || {})));
   }
   window.CARTS = { draw: draw, kinds: KINDS, today: today, seed: seed, major: MAJOR, bookPage: bookPage };
@@ -220,19 +255,21 @@
   var code = function () { var s = 'DA-', r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += CROCK[r[i] % 32]; return s; };
   var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); }); };
   var word = function (p) { return String(p.name || p.id).trim().split(/\s+/)[0].toUpperCase(); };
-  var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false }, cv = null, IN = /[?&]in=1/.test(location.search);
+  var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false, code: '' }, cv = null, IN = /[?&]in=1/.test(location.search);
   var FONTS = ['400 40px VT323', '700 40px Poppins', '600 40px Poppins', '400 40px Poppins', '600 20px "IBM Plex Mono"', '500 20px "IBM Plex Mono"'];
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
-  function paint() { draw(cv, S.stack.kind, S.data, S.stack, S.o); $('#paper').classList.add('has'); S.ready = true; $('#st').textContent = ''; keys(); }
+  function paint() { draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; $('#st').textContent = S.after || ''; S.after = ''; keys(); }
   function load() {
     var st = $('#st'); S.ready = false; keys(); st.textContent = '· · ·';
-    var got = S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
+    var got = S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
+    if (!S.K.get && !S.code) api('/c?for=' + S.stack.id).then(function (j) { S.code = j.code || ''; if (S.ready) paint(); }, function () {});
     var fonts = document.fonts && document.fonts.load ? Promise.all(FONTS.map(function (f) { return document.fonts.load(f); })) : Promise.resolve();
-    Promise.all([got, fonts.catch(function () {})]).then(function (r) { S.data = r[0]; paint(); }, function () { st.textContent = 'NOT REACHED · TRY AGAIN SOON'; });
+    Promise.all([got, fonts.catch(function () {})]).then(function (r) { S.data = r[0]; if (S.K.get) own(r[0]); paint(); }, function (e) { if (S.K.get) { S.data = {}; paint(); S.ready = false; keys(); } st.textContent = S.K.get && /key|401/.test(e.message) ? 'FOR ISLAND KEEPERS' : 'NOT REACHED · TRY AGAIN SOON'; });
   }
-  function printers() {
+  function own(d) { S.prns = [{ id: d.island, name: d.name }]; S.to = d.island; $('#to').innerHTML = ''; }
+  function printers() { if (S.K.get) return;
     return api('/partners').then(function (j) {
       var l = j.partners || [], to = ((S.stack.blocks || []).filter(function (b) { return b.k === 'print'; })[0] || {}).to || ['novelglobal'];
       S.prns = l.filter(function (p) { return to.indexOf(p.id) >= 0 || (to.indexOf('island') >= 0 && p.id === S.stack.island); }).filter(function (p) { return p.paired || p.id === 'novelglobal'; });
@@ -243,17 +280,21 @@
   }
   function print() {
     var go = $('#go'), st = $('#st'); if (!S.ready || !S.to) return; go.disabled = true;
-    var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] };
     st.textContent = '· · ·';
-    api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(cv, 0), from: S.stack.id, stage: 'stack' }) })
-      .then(function () { st.textContent = 'SENT · ' + c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'TRY AGAIN SOON' : 'NOT SENT'; }).then(function () { go.disabled = false; keys(); });
+    if (S.K.send) { var l = (S.data.passes || []).slice(), n = 0, one = function () { if (n >= l.length) return Promise.resolve();
+        S.o.at = n; paint(); var r = T.raster(cv, 0); n++; return S.K.send(r).then(one); };
+      return one().then(function () { S.after = 'SENT · ' + l.length + (l.length > 1 ? ' PASSES' : ' PASS'); S.o.at = 0; load(); }, function () { st.textContent = 'NOT SENT'; S.o.at = 0; go.disabled = false; keys(); }); }
+    var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
+    try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
+    api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(cv, 0), from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
+      .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } st.textContent = (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'TRY AGAIN SOON' : 'NOT SENT'; }).then(function () { go.disabled = false; keys(); });
   }
   function opts() {
     var el = $('#opts'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; });
     el.innerHTML = l.map(function (x) { return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.dataset.a;
       if (b.dataset.t) { S.o[a] = !S.o[a]; paint(); return; }
-      if (S.K.act && S.K.act(a, S.stack, S.o)) { if (S.K.feed && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
+      if (S.K.act && S.K.act(a, S.stack, S.o)) { if ((S.K.feed || S.K.get) && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
   }
   document.addEventListener('DOMContentLoaded', function () {
     if (!$('#cart')) return; if (IN) document.documentElement.className = 'in';
