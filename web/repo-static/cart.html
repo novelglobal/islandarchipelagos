@@ -39,6 +39,11 @@
   .in { --ink: #111; --paper: #f2f1ec; --line: #111; --dim: rgba(17, 17, 17, .45); --bg: transparent; }
   .in.dk { --ink: #ecebe6; --paper: #121417; --line: #ecebe6; --dim: rgba(236, 235, 230, .45); }
   .in body { background: transparent; } .in main { padding: 0; } .in .win { border: 0; background: transparent; } .in .win > header { display: none; }
+  /* the quick face: the paper, one more, print */
+  html.qk #pick, html.qk #to, html.qk #opts button:not([data-a="again"]), html.qk #opts select { display: none; }
+  @media (max-width: 760px) { html.qk .side { max-width: none; top: auto; } }
+  html.qk .side { position: sticky; bottom: 0; z-index: 3; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--paper); }
+  html.qk #go { min-height: 64px; font-size: 17px; letter-spacing: .14em; }
 </style>
 <script src="vendor/qrcode.js"></script>
 <script src="cart.js"></script></head>

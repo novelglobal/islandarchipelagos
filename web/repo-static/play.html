@@ -36,7 +36,7 @@
   if (q.get('night') === '1') document.documentElement.classList.add('night');
   try { store = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch (e) { store = {}; }
   var pr = document.getElementById('pr'), NG = null; try { NG = window.parent !== window ? window.parent.NG : null; } catch (e) { NG = null; }
-  var box = PK.mount(document.getElementById('p'), { keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
+  var box = PK.mount(document.getElementById('p'), { quick: q.get('quick') === '1', keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return;
   fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); if (j && j.by) document.getElementById('by').textContent = j.by; });
   document.getElementById('again').addEventListener('click', function () { pr.hidden = true; box.again(store); });

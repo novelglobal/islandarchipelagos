@@ -4,7 +4,8 @@
   var TH = { dots: ['#0B0B0B', '#F4F1E8', '#F4F1E8'], lilac: ['#C9C1F7', '#0B0B0B', '#0B0B0B'], cyan: ['#1EA0E0', '#0B0B0B', '#F4F1E8'], coral: ['#E9E4DC', '#0B0B0B', '#E5262B'], pink: ['#F2B6C6', '#1F5A33', '#1F7A3E'], print: ['#17457F', '#F4F1E8', '#F2B6C6'] };
 
   /* what a made thing can call; runs inside the sandbox */
-  function kit(STORE) {
+  function kit(STORE, QUICK) {
+    window.QUICK = !!QUICK;
     var D = document, q = function (o) { parent.postMessage({ pk: 1, o: o }, '*'); }, S = function (t) { return t == null ? '' : String(t); };
     window.print = function (t) { q({ t: 'text', s: S(t).slice(0, 2000) }); };
     window.big = function (t) { q({ t: 'big', s: S(t).slice(0, 200) }); };
@@ -30,7 +31,7 @@
   }
   var KIT = '(' + kit.toString() + ')';
 
-  function doc(src, th, store) { var t = TH[th] || TH.print;
+  function doc(src, th, store, quick) { var t = TH[th] || TH.print;
     var css = 'html,body{margin:0;height:100%}body{background:' + t[0] + ';color:' + t[1] + ';font:15px/1.45 ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}' +
       '#k{min-height:100%;box-sizing:border-box;padding:18px 16px 28px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}#k p{margin:0}' +
       'button{font:inherit;font-weight:600;letter-spacing:.06em;padding:9px 16px;border-radius:999px;border:1.5px solid ' + t[1] + ';background:transparent;color:inherit;cursor:pointer}button:active{background:' + t[2] + ';color:' + t[0] + '}' +
@@ -39,7 +40,7 @@
     var csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:";
     var body = String(src || '').replace(/<\/(script)/gi, '<\\/$1');
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="' + csp + '"><style>' + css + '</style></head><body><main id="k"></main>' +
-      '<script>' + KIT + '(' + JSON.stringify(store || {}).replace(/</g, '\\u003c') + ')<\/script><script>(async function () {\n' + body + '\n})().catch(function (e) { onerror(e && e.message || String(e)); });<\/script></body></html>';
+      '<script>' + KIT + '(' + JSON.stringify(store || {}).replace(/</g, '\\u003c') + ',' + (quick ? 'true' : 'false') + ')<\/script><script>(async function () {\n' + body + '\n})().catch(function (e) { onerror(e && e.message || String(e)); });<\/script></body></html>';
   }
 
   /* the paper: what was printed, drawn as a thermal slip 512 dots wide */
@@ -68,7 +69,7 @@
       if (o.t === 'keep') { if (opt.keep) opt.keep(o.k, o.v); return; }
       if (o.t === 'err') { if (opt.err) opt.err(String(o.s || '').slice(0, 160)); return; }
       if (ops.length > 400 || !/^(text|big|small|line|qr|moon|cut)$/.test(o.t)) return; ops.push({ t: o.t, s: String(o.s == null ? '' : o.s) }); paint(); if (opt.ink) opt.ink(o); });
-    function run(src, th, store) { last = { src: src, th: th }; ops = []; paint(); if (opt.err) opt.err(''); var nf = fr.cloneNode(); html = doc(src, th, store); nf.src = 'play-box.html'; fr.replaceWith(nf); fr = nf; var t = TH[th] || TH.print; scr.style.background = t[0]; }
+    function run(src, th, store) { last = { src: src, th: th }; ops = []; paint(); if (opt.err) opt.err(''); var nf = fr.cloneNode(); html = doc(src, th, store, opt.quick); nf.src = 'play-box.html'; fr.replaceWith(nf); fr = nf; var t = TH[th] || TH.print; scr.style.background = t[0]; }
     return { run: run, again: function (store) { run(last.src, last.th, store); }, paper: function () { return ops.length ? cv.toDataURL('image/png') : null; }, inked: function () { return ops.length; } };
   }
 
@@ -77,6 +78,7 @@
     'print(text) big(text) small(text) line() qr(text) moon() cut()  -> put things on the paper\n' +
     'say(text) show(html) button(label, fn) await ask(label) await choose([..])  -> the screen\n' +
     'pick(list) await wait(ms) every(seconds, fn) beep(freq) phase() (moon phase name) keep(key) / keep(key, value) (remembered)\n' +
+    'QUICK is true when it is opened for a quick print: put one thing on the paper at once\n' +
     'Keep it short and playful. Reply with only the code.\n\nWhat I want: ';
   window.PK = { mount: mount, doc: doc, draw: draw, TH: TH, BRIEF: BRIEF };
 })();

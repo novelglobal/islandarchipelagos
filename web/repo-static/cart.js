@@ -362,7 +362,7 @@
   var code = function () { var s = 'DA-', r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += CROCK[r[i] % 32]; return s; };
   var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); }); };
   var word = function (p) { return String(p.name || p.id).trim().split(/\s+/)[0].toUpperCase(); };
-  var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false, code: '' }, cv = null, IN = /[?&]in=1/.test(location.search);
+  var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false, code: '' }, cv = null, IN = /[?&]in=1/.test(location.search), QK = /[?&]quick=1/.test(location.search);
   var FONTS = ['400 40px VT323', '700 40px Poppins', '600 40px Poppins', '400 40px Poppins', '600 20px "IBM Plex Mono"', '500 20px "IBM Plex Mono"'];
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
@@ -410,7 +410,7 @@
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } return (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; });
   }
   function opts() {
-    var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o);
+    var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o); if (QK) S.o.deck = false;
     /* a select (the book picker) stands above the paper; keys beside it */
     if (pk) pk.innerHTML = l.filter(function (x) { return x[3] === 'select'; }).map(function (x) { return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; }).join('');
     el.innerHTML = l.map(function (x) { if (x[3] === 'select') return pk ? '' : '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
@@ -421,7 +421,7 @@
       if (S.K.act && S.K.act(a, S.stack, S.o)) { if (S.K.feed && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
   }
   document.addEventListener('DOMContentLoaded', function () {
-    if (!$('#cart')) return; if (IN) { var dk = false; try { dk = JSON.parse(localStorage.getItem('da.hm.night') || 'false') === true; } catch (e) { dk = false; } document.documentElement.className = 'in' + (dk ? ' dk' : ''); }
+    if (!$('#cart')) return; if (QK) document.documentElement.classList.add('qk'); if (IN) { var dk = false; try { dk = JSON.parse(localStorage.getItem('da.hm.night') || 'false') === true; } catch (e) { dk = false; } document.documentElement.className = 'in' + (dk ? ' dk' : '') + (QK ? ' qk' : ''); }
     cv = $('#paper canvas');
     var id = (location.hash.slice(1) || new URLSearchParams(location.search).get('c') || 'weather').replace(/[^a-z0-9-]/g, '');
     fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) {

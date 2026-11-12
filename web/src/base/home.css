@@ -1025,3 +1025,14 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 #hm .sk-portfolio.one .rc-tap { top: 7%; height: 14%; z-index: 6; object-position: center 40%; }
 #hm .sk-portfolio.one .rc-tp { top: calc(7% + 14%); height: 6.4%; }
 #hm .sk-portfolio.one .hm-rc.kept .rc-isl { display: none; }
+
+/* cartridges: the whole-card key beside back, and a photo card's quick view */
+#hm .hm-open { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#hm-x .hm-full { position: absolute; left: calc(env(safe-area-inset-left) + 74px); top: calc(env(safe-area-inset-top) + 10px); height: 28px; padding: 0 14px; border-radius: 14px; border: 0; background: #0B0B0B; color: #F4F1E8; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; cursor: pointer; z-index: 2; }
+#hm-x .hm-full::before { content: ''; position: absolute; inset: -12px -10px; }
+#hm-x .hm-full[hidden] { display: none; }
+html.hm-sheet:not(.hm-nosea) #hm-x .hm-full { top: calc(var(--hm-top) / -2 - 14px); }
+#hm-x .hm-body.hm-qv { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; min-height: 70vh; }
+#hm-x .hm-qv .qv-t { margin: 0; font: 700 clamp(28px, 9vw, 52px)/1 Poppins, sans-serif; letter-spacing: -.01em; text-align: center; }
+#hm-x .hm-qv .qv-go { min-width: 160px; height: 56px; border-radius: 28px; border: 0; background: #0B0B0B; color: #F4F1E8; font: 600 14px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; cursor: pointer; }
+html.hm-night #hm-x .hm-qv .qv-go { background: #F4F1E8; color: #0B0B0B; }

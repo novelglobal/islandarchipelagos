@@ -103,5 +103,5 @@ function view(i) {
   document.onkeydown = (e) => { if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); if (e.key === "Escape") cover(); };
 }
 
-cover();
+if (QUICK) { const i = Math.floor(Math.random() * N); view(i); big("SESAME"); line(); plate(i); foot(); } else cover();
 ` };
