@@ -328,6 +328,13 @@ try {
       lk.status === 200 && lk.json.mark && lk.json.mark.w && ps.status === 200 && ps.json.n === 2 && !/[A-Z]{3}-[A-Z]{3}/.test(seen) && /^[A-Z]{3}-[A-Z]{3}$/.test(pc) && rd.status === 200 && rd.json.kind === 'pass' && rd.json.island === id && rd.json.used === false && bad.status === 404
       && p1.json.passed === true && p1.json.job.status === 'queued' && !p2.json.passed && p2.json.job.status === 'held' && rd2.json.used === true && ad.status === 200 && a1.status === 200 && a2.status === 429 && a3.status === 404,
       JSON.stringify([lk.status, ps.json, pc, rd.json, bad.status, p1.json, p2.json, rd2.json, ad.status, a1.json, a2.json, a3.status]));
+    /* the second pass from that slip makes a phone's code a printed one: once; then it may leave a way back, seen only on the admin page */
+    const pc2 = await codeOf(), lk0 = await call('/api/link', { method: 'POST', ip: '10.0.0.81', body: { who: 'QX7', k: 'email', v: 'a@b.org' } });
+    const mk1 = await call('/api/maker', { method: 'POST', ip: '10.0.0.81', body: { who: 'QX7', pass: pc2 } }), mk2 = await call('/api/maker', { method: 'POST', ip: '10.0.0.81', body: { who: 'QX8', pass: pc2 } });
+    const lk1 = await call('/api/link', { method: 'POST', ip: '10.0.0.81', body: { who: 'QX7', k: 'email', v: 'a@b.org' } }), lk2 = await call('/api/link', { method: 'POST', ip: '10.0.0.81', body: { who: 'QX7', k: 'mobile', v: 'call me' } }), al = await call('/api/admin/links', { key: KEY });
+    check('a pass from a slip makes a code a printed one, once; only a printed code may link a way back, and only the admin page sees it',
+      /^[A-Z]{3}-[A-Z]{3}$/.test(pc2) && lk0.status === 401 && mk1.status === 201 && mk2.status === 409 && lk1.status === 201 && lk2.status === 400 && al.status === 200 && al.json.links.some(l => l.who === 'QX7' && l.v === 'a@b.org'),
+      JSON.stringify([pc2, lk0.status, mk1.status, mk2.status, lk1.status, lk2.status, al.json]));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));

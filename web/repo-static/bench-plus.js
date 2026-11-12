@@ -265,17 +265,44 @@
     $$('[data-what]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.what === cd.what)); }); $$('[data-cth]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cth === cd.th)); });
     k.style.setProperty('--a', t.bg); k.style.setProperty('--b', t.ink); k.style.setProperty('--p', t.pat); $('.cd-t', el).textContent = (cd.name || def).toUpperCase(); $('.cd-l', el).textContent = cd.line || '';
     var u = cd.what === 'slip' ? slipURL() : ''; $('.cd-art', el).innerHTML = u ? '<img alt="" src="' + u + '">' : cd.what === 'game' ? '<b class="cd-cart">' + (CARTS[(P.game || {}).cart || 'fortune'] || CARTS.fortune).n + '</b>' : '<i class="cd-ph"></i>'; }
+  /* ───────── the code a print gave: what puts a thing up. Asked for when the site wants it; a pass from a printer's slip makes this phone's code a printed one ───────── */
+  function whoNow() { try { if (NG && NG.me) return NG.me(); } catch (e) { /* away */ } try { var c = JSON.parse(localStorage.getItem('da.who') || '""'); return /^[A-HJ-NP-Z2-9]{3}$/.test(c) ? c : ''; } catch (e) { return ''; } }
+  function codeAsk(host, again) {
+    var box = host.querySelector('.ng-code'); if (!box) { box = D.createElement('div'); box.className = 'ng-code'; host.appendChild(box); }
+    box.hidden = false; box.innerHTML = '<b title="Put things up with a code from a print: the three on any slip, or a pass a printer left">CODE</b><input maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC or ABC-DEF" aria-label="The code from a print"><button type="button" title="Use it">OK</button><span aria-live="polite"></span>';
+    var inp = box.querySelector('input'), sp = box.querySelector('span'), done = function () { box.hidden = true; again(); };
+    var go = function () { var v = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (/^[A-HJKMNP-TV-Z]{6}$/.test(v)) { var w = whoNow(); if (!w) { sp.textContent = '×'; return; } sp.textContent = '···';
+        fetch('/api/maker', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w, pass: v.slice(0, 3) + '-' + v.slice(3) }) })
+          .then(function (r) { if (r.status === 201) done(); else { sp.textContent = r.status === 409 ? 'USED' : r.status === 404 ? 'UNKNOWN' : r.status === 429 ? 'WAIT' : '×'; sp.title = r.status === 409 ? 'This pass was used already' : r.status === 404 ? 'Not a pass from today' : ''; } }, function () { sp.textContent = 'OFFLINE'; }); return; }
+      if (/^[A-HJ-NP-Z2-9]{3}$/.test(v)) { sp.textContent = '···';
+        var p = NG && NG.useCode ? NG.useCode(v) : (function () { try { localStorage.setItem('da.who', JSON.stringify(v)); localStorage.setItem('da.who.at', JSON.stringify(Date.now())); } catch (e) { /* this visit */ } return Promise.resolve(true); })();
+        p.then(done, function () { sp.textContent = '×'; }); return; }
+      sp.textContent = '×'; sp.title = 'Three from a print, or six from a pass'; };
+    box.querySelector('button').onclick = go; inp.onkeydown = function (e) { if (e.key === 'Enter') go(); }; inp.focus(); }
+  /* after something goes up: a way back to its maker, if they like. Only the owner sees it */
+  var LINKS = [['mesh', 'MESH', 'A mesh node or name'], ['email', 'EMAIL', 'An email address'], ['mobile', 'MOBILE', 'A mobile number'], ['steam', 'STEAM', 'A Steam name or profile']];
+  function linkAsk(host) {
+    var cb = host.querySelector('.ng-code'); if (cb) cb.hidden = true;
+    var box = host.querySelector('.ng-link'); if (!box) { box = D.createElement('div'); box.className = 'ng-link'; host.appendChild(box); }
+    box.hidden = false; box.innerHTML = '<b title="Link your code to a way back to you, if you like. Only the owner sees it">LINK</b>' + LINKS.map(function (l) { return '<button type="button" data-lk="' + l[0] + '" title="' + l[2] + '">' + l[1] + '</button>'; }).join('') + '<input hidden maxlength="80" autocomplete="off" spellcheck="false"><button type="button" data-lok hidden title="Link it">OK</button><span aria-live="polite"></span>';
+    var inp = box.querySelector('input'), ok = box.querySelector('[data-lok]'), sp = box.querySelector('span'), k = '';
+    box.onclick = function (e) { var b = e.target.closest('[data-lk]'); if (b) { k = b.dataset.lk; $$('[data-lk]', box).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); inp.hidden = ok.hidden = false; inp.placeholder = b.title.toUpperCase(); inp.type = k === 'email' ? 'email' : k === 'mobile' ? 'tel' : 'text'; inp.value = ''; inp.focus(); sp.textContent = ''; return; }
+      if (!e.target.closest('[data-lok]') || !k) return; var w = whoNow(); sp.textContent = '···';
+      fetch('/api/link', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w, k: k, v: inp.value.trim() }) })
+        .then(function (r) { sp.textContent = r.status === 201 ? 'LINKED' : r.status === 400 ? 'CHECK IT' : r.status === 401 ? 'CODE' : '×'; }, function () { sp.textContent = 'OFFLINE'; }); };
+    inp.onkeydown = function (e) { if (e.key === 'Enter') ok.click(); }; }
   function cardClick(e) { var cd = P.card, b;
     if ((b = e.target.closest('[data-what]'))) { cd.what = b.dataset.what; save(); cardPaint(); beep(560, 0.04); return; }
     if ((b = e.target.closest('[data-cth]'))) { cd.th = b.dataset.cth; save(); cardPaint(); beep(660, 0.04); return; }
     if (!e.target.closest('#cd-send')) return; var say = $('#cd .cd-say'), btn = $('#cd-send'), name = (cd.name || '').trim().toUpperCase();
     if (!name) { say.textContent = 'GIVE IT A NAME FIRST'; $('#cd [data-cf="name"]').focus(); return; }
-    var who = ''; try { who = NG && NG.me ? NG.me() : ''; } catch (er) { who = ''; }
+    var who = whoNow();
     var at = ($('#to') && $('#to').value) || 'novelglobal', kind = cd.what === 'game' ? 'GAME ' + ((CARTS[(P.game || {}).cart] || {}).n || '') : cd.what.toUpperCase();
     var text = ('NEW CARD · ' + name + ' · ' + kind + ' · ' + (THEMES[cd.th] || {}).n + ' · FROM ' + at.toUpperCase() + (cd.line ? ' · ' + cd.line : '')).slice(0, 280);
-    if (!who) { say.textContent = 'OPEN THIS FROM NOVEL.GLOBAL TO SEND'; return; } btn.disabled = true; say.textContent = 'SENDING'; beep(700, 0.05);
+    if (!who) { say.textContent = 'CODE'; codeAsk($('#cd'), function () { $('#cd-send').click(); }); return; } btn.disabled = true; say.textContent = 'SENDING'; beep(700, 0.05);
     (NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: 'c.space.show', who: who, text: text, cf: cf }) }); })
-      .then(function (r) { btn.disabled = false; if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN A LITTLE' : r.status === 401 ? 'A CODE FROM A PRINT FIRST' : 'NOT SENT'; return; } say.textContent = 'SENT. IT GOES UP ONCE IT IS CHECKED'; confetti(); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
+      .then(function (r) { btn.disabled = false; if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN A LITTLE' : r.status === 401 ? 'CODE' : 'NOT SENT'; if (r.status === 401) codeAsk($('#cd'), function () { $('#cd-send').click(); }); return; } say.textContent = 'SENT'; say.title = 'It goes up once it is checked'; linkAsk($('#cd')); confetti(); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
       .catch(function () { btn.disabled = false; say.textContent = 'OFFLINE. TRY AGAIN SOON'; }); }
   /* sent: torn paper bits fly out of the card */
   function confetti() { var k = $('#cd .cd-card'), r = k.getBoundingClientRect(); for (var i = 0; i < 26; i++) { var s = D.createElement('i'); s.className = 'bit'; var a = Math.random() * Math.PI * 2, d = 80 + Math.random() * 180;
@@ -299,7 +326,7 @@
         B('lv-pr', 'Print its paper', '<path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/>') +
         B('lv-up', 'Make it a small card', '<path d="M5 3h14v18H5z"/><path d="M12 16V8M8.5 11.5L12 8l3.5 3.5"/>', 'up') + '</div>' +
         '<textarea id="lv-src" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code"></textarea><p class="lv-err" aria-live="polite"></p>' +
-        '<div class="lv-pub" hidden><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div>' + frameRow() + '<button type="button" id="lv-send" title="Send for approval">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
+        '<div class="lv-pub" hidden><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div>' + frameRow() + '<button type="button" id="lv-send" title="Put it up">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
         '<div class="lv-dev"><div id="lv-kit"></div></div>';
       LV = PK.mount($('#lv-kit'), { keep: function (k, v) { try { ls.keep[k] = JSON.parse(v); save(); } catch (e) { /* skipped */ } }, err: function (s) { $('#lv .lv-err').textContent = s; }, ink: function () { beep(1400 + Math.random() * 300, 0.012); } });
       var ta = $('#lv-src'), t0 = 0; ta.value = ls.src;
@@ -318,10 +345,11 @@
     if (e.target.closest('#lv-pr')) { var u = LV && LV.paper(); if (!u || !NG || !NG.printAgain) { flash('lv-pr', 0); return; } NG.printAgain(u, 'play').then(function () { flash('lv-pr', 1); beep(880, 0.06); }, function () { flash('lv-pr', 0); }); return; }
     if (e.target.closest('#lv-up')) { var pb = $('#lv .lv-pub'); pb.hidden = !pb.hidden; if (!pb.hidden) $('[data-ln]', pb).focus(); return; }
     if ((b = e.target.closest('[data-lth]'))) { ls.th = b.dataset.lth; save(); $$('[data-lth]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); liveRun(); beep(660, 0.04); return; }
-    if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = ''; try { who = NG && NG.me ? NG.me() : ''; } catch (er) { who = ''; }
-      if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'NOVEL.GLOBAL ONLY'; return; }
+    if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = whoNow(), pub = $('#lv .lv-pub'), again = function () { $('#lv-send').click(); };
+      if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'CODE'; codeAsk(pub, again); return; }
       say.textContent = '···'; fetch('/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src }) })
-        .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : 'NOT SENT'; flash('lv-send', 0); return; } say.textContent = 'SENT · WAITING FOR APPROVAL'; flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
+        .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : r.status === 401 ? 'CODE' : 'NOT SENT'; say.title = r.status === 401 ? 'A code from a print puts it up' : ''; if (r.status === 401) codeAsk(pub, again); flash('lv-send', 0); return; }
+          r.json().then(function (j) { say.textContent = j.shown ? 'UP · ' + j.code : 'WAITING · ' + j.code; say.title = j.shown ? 'On novel.global now, as a small card' : 'Waiting for approval'; }, function () { say.textContent = 'SENT'; }); linkAsk(pub); flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
         .catch(function () { say.textContent = 'OFFLINE'; flash('lv-send', 0); }); } }
 
   /* ───────── SET: the front page's set-up, switched in one press, and its card frames ───────── */

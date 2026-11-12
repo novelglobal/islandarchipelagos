@@ -440,7 +440,7 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: false, jellyStamp: false };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: false, jellyStamp: false, sandbox: true };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -664,6 +664,10 @@ async function adminAuth(db, env, req) {
 async function admin(db, env, req, parts) {
   const no = await adminAuth(db, env, req); if (no) return no;
   const [what, id] = parts;
+  /* the owner marks a code as printed (their own phone, or a maker they know) */
+  if (what === 'makers' && !id && req.method === 'POST') { const b = await body(req); if (typeof b.who !== 'string' || !WHO.test(b.who)) return fail(400, 'who'); await makerPrinted(db, b.who); return json({ ok: true }); }
+  if (what === 'links' && !id && req.method === 'GET') { await linkTable(db); const { results } = await db.prepare('SELECT who, k, v, at FROM links ORDER BY at DESC LIMIT 500').all(); return json({ links: results }); }
+  if (what === 'links' && id && parts[2] && req.method === 'DELETE') { await linkTable(db); await db.prepare('DELETE FROM links WHERE who = ? AND k = ?').bind(id, parts[2]).run(); return json({ ok: true }); }
   if (what === 'cards' && id && CARD_ID.test(id)) { if (parts[2] != null && !parts[3] && (req.method === 'PUT' || req.method === 'DELETE')) return cardPut(db, env, req, id, parts[2]); if (!parts[2] && req.method === 'POST') { const b = await body(req, 1024); return json(await cardSet(db, id, b)); } }
   if (what === 'stories' && !id && req.method === 'GET') {
     const st = ['waiting', 'shown', 'refused', 'deleted'].includes(new URL(req.url).searchParams.get('status')) ? new URL(req.url).searchParams.get('status') : 'waiting';
@@ -1096,10 +1100,40 @@ async function playSend(db, env, req) {
   const b = await body(req, 80e3); const n = typeof b.n === 'string' ? b.n.trim().toUpperCase().slice(0, 24) : '', src = typeof b.src === 'string' ? b.src : '';
   if (!n || !src.trim() || src.length > 40e3) return fail(400, 'play');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
-  const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (w >= 200) return fail(503, 'full');
+  /* only a code a print gave (proof a person stood at a printer), or the owner's own key; while the sandbox is on, it goes up at once */
+  const own = !!env.ADMIN_KEY && !!bearer(req) && await same(bearer(req), env.ADMIN_KEY);
+  if (!own && !(await coded(db, who))) return fail(401, 'code');
+  const up = own || !!(await settingsOf(db)).sandbox;
+  const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (!up && w >= 200) return fail(503, 'full');
   const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
-  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, who) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', 'waiting', JSON.stringify({ n, th, fr, src }), now(), who).run();
-  return json({ code }, 201);
+  const t = now();
+  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src }), t, up ? t : null, who).run();
+  return json({ code, shown: up }, 201);
+}
+/* a pass from a printer's slip makes this phone's code a printed one: one use, the day it was printed */
+async function makerPass(db, env, req) {
+  if (await tooMany(db, env, req, 'maker', 12, 10 * 60e3)) return fail(429, 'too many');
+  const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null, pass = typeof b.pass === 'string' ? b.pass.toUpperCase().replace(/\s+/g, '') : '';
+  if (!who || !PASS.test(pass) || !codeKey(env)) return fail(400, 'pass');
+  const f = await passFind(db, env, pass); if (!f) return fail(404, 'not found');
+  if (!(await passUse(db, f.code, f.day, f.p.id))) return fail(409, 'used');
+  await makerPrinted(db, who); return json({ ok: true, island: f.p.id }, 201);
+}
+async function makerPrinted(db, who) { const t = now();
+  await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
+  await db.prepare('UPDATE makers SET printed = COALESCE(printed, ?) WHERE who = ?').bind(t, who).run(); }
+/* a printed code, linked by its maker to a way back to them: mesh, email, mobile or Steam. Optional; seen only on the admin page */
+const LINK_K = { mesh: /^[!A-Za-z0-9 ._-]{2,40}$/, email: /^[^\s@<>"]{1,64}@[^\s@<>"]{1,120}\.[a-z]{2,24}$/i, mobile: /^\+?[0-9 ()-]{6,22}$/, steam: /^[A-Za-z0-9_:/.-]{2,80}$/ };
+const linksReady = new WeakMap();
+const linkTable = db => { if (!linksReady.has(db)) linksReady.set(db, db.prepare('CREATE TABLE IF NOT EXISTS links (who TEXT NOT NULL, k TEXT NOT NULL, v TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (who, k))').run().catch(e => { linksReady.delete(db); throw e; })); return linksReady.get(db); };
+async function linkSet(db, env, req) {
+  if (await tooMany(db, env, req, 'link', 10, 10 * 60e3)) return fail(429, 'too many');
+  const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null, k = typeof b.k === 'string' ? b.k : '', v = typeof b.v === 'string' ? b.v.trim() : '';
+  if (!who || !LINK_K[k] || (v && !LINK_K[k].test(v))) return fail(400, 'link');
+  if (!(await coded(db, who))) return fail(401, 'code'); await linkTable(db);
+  if (!v) await db.prepare('DELETE FROM links WHERE who = ? AND k = ?').bind(who, k).run();
+  else await db.prepare('INSERT INTO links (who, k, v, at) VALUES (?, ?, ?, ?) ON CONFLICT(who, k) DO UPDATE SET v = excluded.v, at = excluded.at').bind(who, k, v, now()).run();
+  return json({ ok: true }, 201);
 }
 async function playList(db) {
   const { results } = await db.prepare("SELECT code, body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL ORDER BY decided DESC LIMIT 24").all();
@@ -1198,6 +1232,8 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'c' && !p[1] && m === 'POST') return passAsk(db, env, req);
   if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db);
   if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
+  if (p[0] === 'maker' && !p[1] && m === 'POST') return makerPass(db, env, req);
+  if (p[0] === 'link' && !p[1] && m === 'POST') return linkSet(db, env, req);
   if (p[0] === 'plays' && p[1] && m === 'GET') return playOne(db, p[1]);
   if (p[0] === 'talk' && !p[1] && m === 'GET') return talkList(db, env, req, url);
   if (p[0] === 'talk' && !p[1] && m === 'POST') return talkSay(db, env, req);

@@ -541,7 +541,7 @@
     var keys = (noT ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (noF ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
-    if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async">' + (OPT.one ? '<div class="rc-isl">' + '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' + '</div>' : '') + '<img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-YZ07</b>' +
+    if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async">' + (OPT.one ? '<div class="rc-isl">' + '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' + '</div>' : '') + '<img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-ISL1</b>' +
       '<div class="rc-tp"><span class="tp-pr"><small>ONLY</small><b>$15<sup>.90</sup></b></span><span class="tp-tx"><i>AD · bunnings.com.au</i><b>Brasshards Vandal Proof Tap 4 Way &amp; Belt Clip</b><em>I/N 0524216</em></span><a class="tp-go" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener">SHOP NOW ↗</a></div>' +
       '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + STICK888 + '<div class="rc-low"><img class="rc-art rc-art2" alt="" src="/cards/portfolio.webp" decoding="async">' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') +
       '<a class="rc-eco" href="https://en.wikipedia.org/wiki/Deep_ecology" target="_blank" rel="noopener" aria-label="Deep ecology"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="rc-eco-r" d="M50 50m-37 0a37 37 0 1 1 74 0a37 37 0 1 1 -74 0"/></defs><circle cx="50" cy="50" r="48" class="bg"/><circle cx="50" cy="50" r="28" class="in"/><text><textPath href="#rc-eco-r">DEEP ECOLOGY · DEEP ECOLOGY ·</textPath></text><path class="lf" d="M50 70C38 60 38 42 50 30C62 42 62 60 50 70ZM50 74V40M50 52l-6-6M50 60l7-7"/></svg></a>' +
@@ -706,7 +706,7 @@
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
-    var st = store.get('da.hm.stories', 'tap'), k = el.querySelector('.rc-kept'), rc = el.querySelector('.hm-rc'); k.hidden = true; rc.classList.remove('kept'); el.querySelector('.rc-code').textContent = 'DA-YZ07';
+    var st = store.get('da.hm.stories', 'tap'), k = el.querySelector('.rc-kept'), rc = el.querySelector('.hm-rc'); k.hidden = true; rc.classList.remove('kept'); el.querySelector('.rc-code').textContent = 'DA-ISL1';
     var keep = function (u) { k.src = u; k.hidden = false; rc.classList.add('kept'); };
     if (/^data:image\//.test(st)) keep(st);
     else if (st === 'last') (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = l || []; var last = l[0];
@@ -1215,14 +1215,14 @@
     if (!JM) JM = { bell: new Path2D('M18.6 31.4C16.6 10.4 47.4 10.4 45.4 31.4l1.9 5.6Q32 41 16.7 37z'), gut: new Path2D('M28.6 22.6q3.4-2.6 6.8 0l.6 9.6q-4 2.2-8 0z'), ridge: new Path2D('M23.4 21q-1.6 8 .2 16.6M40.6 21q1.6 8-.2 16.6'),
       eyes: [[22.8, 32.4], [41.2, 32.4]], fl: [[25.4, 19.6], [30, 16.8], [35.6, 17.6], [39.2, 22.6], [27.4, 27.4], [37, 28.4], [24.6, 25.6], [32, 34.6], [38.4, 34], [26.2, 34.2]],
       th: ['M17.6 37.4q-2.6 6.4-.2 10.2t-1.6 8.6q-1.4 3.6.4 6.6', 'M25 39.6q-1.2 7.6 1.4 12.2t-.6 10.8', 'M39 39.6q1.2 7.6-1.4 12.2t.6 10.8', 'M46.4 37.4q2.6 6.4.2 10.2t1.6 8.6q1.4 3.6-.4 6.6'].map(function (q) { return new Path2D(q); }) };
-    var m = RM.matches ? 0 : 1, a = (Q.p || 0) * m, s = 0.62, ink = 'rgba(221,246,242,.92)';
+    var m = RM.matches ? 0 : 1, a = (Q.p || 0) * m, s = 0.52, ink = 'rgba(178,222,246,.95)';
     g.save(); g.translate(Q.x, Q.y); g.rotate(Q.a + Math.PI / 2 + Math.sin(t * 0.5 + 1) * 0.12 * m); g.scale(s, s); g.translate(-32, -30); g.lineCap = 'round'; g.lineJoin = 'round';
     g.save(); g.translate(32, 30); g.scale(1 + a * 0.06, 1 - a * 0.08); g.translate(-32, -30);
-    g.fillStyle = 'rgba(169,240,236,.16)'; g.fill(JM.bell); g.strokeStyle = ink; g.lineWidth = 1.6; g.stroke(JM.bell);
+    g.fillStyle = 'rgba(178,222,246,.16)'; g.fill(JM.bell); g.strokeStyle = ink; g.lineWidth = 1.6; g.stroke(JM.bell);
     g.globalAlpha *= 0.6; g.lineWidth = 0.8; g.stroke(JM.gut); g.stroke(JM.ridge); g.globalAlpha /= 0.6;
     g.fillStyle = ink; JM.eyes.forEach(function (e) { g.beginPath(); g.arc(e[0], e[1], 1.5, 0, 7); g.fill(); });
     g.globalAlpha *= 0.55; JM.fl.forEach(function (e) { g.beginPath(); g.arc(e[0], e[1], 0.75, 0, 7); g.fill(); }); g.globalAlpha /= 0.55; g.restore();
-    g.save(); g.translate(32, 38); g.scale(1, 1 + a * 0.05); g.translate(-32, -38);
+    g.save(); g.translate(32, 38); g.scale(1, 1 + a * 0.05); g.translate(-32, -38); g.strokeStyle = ink;
     JM.th.forEach(function (q, i) { g.save(); g.translate(Math.sin(t * 1.2 + i * 1.7) * 0.9 * m, 0); g.lineWidth = 0.7; g.setLineDash([]); g.stroke(q); g.lineWidth = 2.1; g.setLineDash([0.01, 3.2]); g.stroke(q); g.restore(); });
     g.setLineDash([]); g.restore(); g.restore(); }
   function drawJelly2(g, t, Q) {

@@ -713,6 +713,17 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ blogShow: $('#bl-on').checked }) })));
     const keyz = el('section', { class: 'ed' }, el('h3', { text: 'SMALL CARDS' }), chk('sm-talk', !!st.smallTalk, 'TALK KEY'), chk('sm-find', !!st.smallFind, 'PRINTER KEY'), hint('The nine small cards: their talk and printer keys. Off: the cards stand clean. The big cards keep both.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ smallTalk: $('#sm-talk').checked, smallFind: $('#sm-find').checked }) })));
+    /* making: the sandbox, this browser's code, and the ways back makers linked */
+    let myWho = ''; try { myWho = JSON.parse(localStorage.getItem('da.who') || '""') || ''; } catch (e) { myWho = ''; }
+    const mkSay = el('p', { class: 'hint' });
+    const lkList = el('ol', { class: 'list' });
+    const lkLoad = async () => { try { const j = await (await api('links')).json(); lkList.replaceChildren(...(j.links || []).map(l => el('li', {}, el('span', { text: l.who + ' · ' + l.k.toUpperCase() + ' · ' + l.v + ' · ' + when(l.at) }), el('button', { type: 'button', text: 'REMOVE', onclick: async () => { await api('links/' + encodeURIComponent(l.who) + '/' + l.k, { method: 'DELETE' }); lkLoad(); } })))); if (!(j.links || []).length) lkList.replaceChildren(el('li', { text: 'NONE YET' })); } catch (e) { /* locked */ } };
+    const making = el('section', { class: 'ed' }, el('h3', { text: 'MAKING' }), chk('sb-on', st.sandbox !== false, 'SANDBOX'), hint('On, while testing: a game, block or card from the engine goes up at once when its maker has a code a printer printed. Off: each waits on the Approve page. Either way only a printed code (proof someone stood at a printer) can put things up.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sandbox: $('#sb-on').checked }) })),
+      hint('This browser’s code: ' + (myWho || 'none yet (open novel.global here first)') + '. MAKER marks it as printed, so you can put things up from this browser.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'MAKER', disabled: !myWho, onclick: async () => { try { await api('makers', { method: 'POST', body: JSON.stringify({ who: myWho }) }); mkSay.textContent = myWho + ' CAN PUT THINGS UP'; } catch (e) { mkSay.textContent = 'NOT DONE'; } } })), mkSay,
+      hint('Linked: the ways back makers chose to leave with their code (mesh, email, mobile, Steam). Seen only here.'), lkList);
+    lkLoad();
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
     const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
@@ -720,7 +731,7 @@
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, keyz, isl, jel, notice, country, motion, cur, sources, reset);
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, isl, jel, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

@@ -211,3 +211,14 @@ html.bf-print .cd-card, html.bf-print #lv .pk-scr { box-shadow: inset 0 0 0 6px 
 .coach.up { transform: translateY(-6px) scale(.96); }
 .coach.on { opacity: 1; transform: none; }
 .coached { outline: 2px solid #FF5436 !important; outline-offset: 4px; border-radius: 12px; transition: outline-offset .3s; }
+
+/* the code a print gave, asked for in place; and the link offered after */
+.ng-code, .ng-link { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+.ng-code[hidden], .ng-link[hidden], .ng-link [hidden] { display: none; }
+.ng-code b, .ng-link b { font-weight: 600; letter-spacing: .16em; margin-right: 4px; }
+.ng-code input, .ng-link input { flex: 1 1 120px; min-width: 0; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid currentColor; background: transparent; color: inherit; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+.ng-code input { text-transform: uppercase; }
+.ng-link input { text-transform: none; letter-spacing: .02em; }
+.ng-code button, .ng-link button { height: 34px; padding: 0 12px !important; border-radius: 17px !important; border: 1px solid currentColor !important; background: transparent !important; color: inherit !important; font: 600 11px/1 'IBM Plex Mono', monospace !important; letter-spacing: .12em; cursor: pointer; }
+.ng-link button[aria-pressed="true"] { border-width: 2px !important; text-decoration: underline; text-underline-offset: 3px; }
+.ng-code span, .ng-link span { opacity: .8; }
