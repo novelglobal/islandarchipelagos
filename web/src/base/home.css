@@ -984,3 +984,44 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
   .hm-trio .hm-card.small.sk-wx { height: auto; max-height: calc(100dvh - var(--hm-top) - var(--hm-peek) - 48px); aspect-ratio: 5 / 7; align-self: center; }
   .g-read .wx-f { padding-right: 14cqw; }
 }
+
+/* the back key keeps its size; a wider touch around it, so a near miss is not the reef */
+#hm-x .hm-back::before { content: ''; position: absolute; left: -16px; right: -16px; top: -12px; bottom: -12px; border-radius: 24px; }
+
+/* the printer finder: the card's own colours, a dial to the chosen printer, the printers listed, OPEN to print there */
+#hm .hm-bcn { grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; padding: 14px 16px 16px; font: 500 11px/1.2 'IBM Plex Mono', monospace; letter-spacing: .08em; }
+#hm .hm-bcn .bc-top { display: flex; align-items: center; gap: 10px; }
+#hm .hm-bcn .bc-top b { flex: 1; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; }
+#hm .hm-bcn .bc-bk { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; border: 1px solid currentColor !important; }
+#hm .hm-bcn .bc-bk svg { width: 16px; height: 16px; margin: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#hm .hm-bcn .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .3; flex: none; }
+#hm .hm-bcn .led.on { background: #3BD16F; opacity: 1; box-shadow: 0 0 6px #3BD16F; }
+#hm .hm-bcn .bc-dial { display: grid; justify-items: center; gap: 6px; }
+#hm .hm-bcn .bc-dial svg { width: min(56cqw, 34cqh, 220px); margin: 0; stroke-width: 1; }
+#hm .hm-bcn .bc-dial text { font: 600 11px 'IBM Plex Mono', monospace; fill: currentColor; stroke: none; }
+#hm .hm-bcn .bc-dial > svg > circle:last-child { fill: currentColor; stroke: none; }
+#hm .hm-bcn .bc-dial.lost .ndl { opacity: .25; }
+#hm .hm-bcn .bc-to { margin: 0; display: grid; justify-items: center; gap: 4px; text-align: center; }
+#hm .hm-bcn .bc-to b { font: 700 clamp(16px, 6cqw, 24px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.01em; }
+#hm .hm-bcn .bc-to span { opacity: .7; min-height: 1.2em; }
+#hm .hm-bcn .bc-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+#hm .hm-bcn .bc-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent) !important; text-align: left; }
+#hm .hm-bcn .bc-list button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#hm .hm-bcn .bc-list button em { font-style: normal; opacity: .65; }
+#hm .hm-bcn .bc-list button[aria-pressed="true"] span { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+#hm .hm-bcn .bc-go { min-height: 44px; border-radius: 22px; background: var(--c-ink) !important; color: var(--c-bg) !important; font: 600 12px/1 'IBM Plex Mono', monospace !important; letter-spacing: .16em !important; }
+#hm .hm-bcn .bc-go:disabled { opacity: .35; cursor: default; }
+
+/* the portfolio again shows the tap in its window */
+#hm .sk-portfolio .rc-tap { display: block; z-index: 5; object-fit: cover; background: #0E2240; }
+#hm .sk-portfolio .hm-rc.kept .rc-tap { display: none; }
+
+/* ONE ISLAND (Settings): the install key on ISLAND ARCHIPELAGOS */
+.sk-space .sp-inst { align-self: flex-start; display: inline-flex; align-items: center; gap: 1.6cqw; margin: 0; padding: 1.2cqw 2.2cqw !important; background: #0A0A0A !important; color: #EEEDEA !important; font: 600 3.4cqw/1 'Archivo Narrow', Arial, sans-serif !important; letter-spacing: .08em !important; position: relative; z-index: 3; pointer-events: auto; }
+.sk-space .sp-inst i { width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: #FFB000; box-shadow: 0 0 8px #FFB000; }
+/* ONE ISLAND: the novel.global card holds the printer, its receipt feeding down; the tap a small banner over the top */
+#hm .sk-portfolio.one .rc-isl { position: absolute; left: 6.3%; top: 7%; width: 87.6%; height: 65%; z-index: 5; overflow: hidden; background: #0E2240; container-type: size; }
+#hm .sk-portfolio.one .rc-isl .hm-prn { bottom: 10%; width: auto; height: 76%; }
+#hm .sk-portfolio.one .rc-tap { top: 7%; height: 14%; z-index: 6; object-position: center 40%; }
+#hm .sk-portfolio.one .rc-tp { top: calc(7% + 14%); height: 6.4%; }
+#hm .sk-portfolio.one .hm-rc.kept .rc-isl { display: none; }

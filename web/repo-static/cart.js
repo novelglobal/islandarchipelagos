@@ -162,7 +162,7 @@
     feed: function () { return '/settings'; },
     draw: function (k, d, s) {
       var y = k.head('EVENTS', s.place || '', phase(age(today()))) + 8, l = String(d.events || '').split('\n').map(function (x) { return x.split('|').map(function (q) { return q.trim(); }); }).filter(function (x) { return x[0] || x[1]; }).slice(0, 12);
-      if (!l.length) { y += 60; k.txt('QUIET', M, y, '700 44px ' + SANS); y += 30; }
+      if (!l.length) { y += 60; k.txt('COMING SOON', M, y, '700 44px ' + SANS); y += 30; }
       l.forEach(function (e, i) { k.box(M, y, W - 2 * M, i ? 1 : 3); y += 12;
         if (e[0]) { k.txt(e[0].toUpperCase(), M, y + 20, '700 20px ' + MONO); y += 28; }
         y += k.wrap(e[1] || '', M, y + 26, '700 28px ' + SANS, W - 2 * M, 33) + 6;
@@ -196,26 +196,37 @@
     k.fit(mj ? MAJOR[n][1] : TRANK[rk] + ' OF ' + TSUIT[st], x + w / 2, y + h - 18, '600', 13, w - 30, SANS, 'center');
   }
   var tarot = {
-    opts: [['again', 'AGAIN'], ['today', 'TODAY'], ['deck', 'DECK'], ['art', 'ART', false]],
+    opts: [['again', 'AGAIN'], ['today', 'TODAY'], ['keep', 'KEEP'], ['kept', 'KEPT'], ['deck', 'DECK'], ['art', 'ART', false]],
     pages: 4,
-    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; return true; } o.deck = false; if (a === 'today') o.i = null; else { var i; do { i = Math.floor(Math.random() * 22); } while (i === o.i); o.i = i; } return true; },
+    act: function (a, s, o) {
+      /* up to five drawn cards kept on this phone; a sixth asks to clear them first */
+      if (a === 'keep') { var l = tkept(), cur = o.i == null ? seed(today() + s.id, 22) : o.i; o.spread = false;
+        if (l.indexOf(cur) >= 0) { S.after = 'KEPT ' + l.length + '/5'; return true; }
+        if (l.length >= 5) { if (!confirm('Five are kept. Clear all five and start again?')) return false; l = []; }
+        l.push(cur); tkeep(l); S.after = 'KEPT ' + l.length + '/5'; return true; }
+      if (a === 'kept') { o.spread = !o.spread && tkept().length > 0; o.deck = false; S.after = o.spread ? tkept().length + '/5' : ''; return true; }
+      o.spread = false; if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; return true; } o.deck = false; if (a === 'today') o.i = null; else { var i; do { i = Math.floor(Math.random() * 22); } while (i === o.i); o.i = i; } return true; },
     draw: function (k, d, s, o) {
-      if (o.deck) { var pg = o.page || 0, r0 = TPAGE[pg], y0 = k.head('TAROT', 'DECK', (pg + 1) + '/4') + 14, cw = 156, ch = 252;
+      if (o.deck) { var pg = o.page || 0, r0 = TPAGE[pg], y0 = 8, cw = 156, ch = 252;
         for (var n = r0[0]; n < r0[1]; n++) { var j = n - r0[0]; tarotCard(k, n, 12 + (j % 3) * (cw + 10), y0 + Math.floor(j / 3) * (ch + 10), cw, ch); }
-        y0 += Math.ceil((r0[1] - r0[0]) / 3) * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, '', ''); }
-      var day = today(), i = o.i == null ? seed(day + s.id, 22) : o.i, c = MAJOR[i];
-      k.head('TAROT', o.i == null ? '' : 'DRAWN', phase(age(day)));
-      var x = 56, y = 124, w = W - 112, h = 560;
-      k.box(x, y, w, h); k.g.fillStyle = '#fff'; k.g.fillRect(x + 5, y + 5, w - 10, h - 10); k.box(x + 14, y + 14, w - 28, h - 28); k.g.fillStyle = '#fff'; k.g.fillRect(x + 16, y + 16, w - 32, h - 32);
-      if (!panel(k, 't' + i, ['maze', 'crack', 'spots', 'lines', 'worms', 'eyes'][i % 6], x + 30, y + 30, w - 60, 290, i + 5)) { disc(k.g, W / 2, y + 175, 112); k.fit(c[0], W / 2, y + 218, '700', 120, 190, SANS, 'center'); }
-      k.box(x + 40, y + 340, w - 80, 2);
-      k.fit(c[1], W / 2, y + 400, '700', 36, w - 60, SANS, 'center');
-      k.fit(c[2], W / 2, y + 450, '600', 19, w - 60, MONO, 'center');
-      k.txt('MAJOR ' + (i + 1) + ' / 22', W / 2, y + h - 36, '500 16px ' + MONO, 'center');
-      y += h + 20; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, '', '');
+        return y0 + Math.ceil((r0[1] - r0[0]) / 3) * (ch + 10) + 6; }
+      if (o.spread) { var yy = 8; tkept().forEach(function (n, j) { if (j) { for (var xx = M; xx < W - M; xx += 14) k.g.fillRect(xx, yy + 10, 7, 2); yy += 24; } yy = bigTarot(k, n, yy) - 8; }); return yy + 8; }
+      return bigTarot(k, o.i == null ? seed(today() + s.id, 22) : o.i, 8);
     }
   };
+  function tkept() { try { var l = JSON.parse(localStorage.getItem('da.tarot.kept') || '[]'); return Array.isArray(l) ? l.filter(function (n) { return n >= 0 && n < 22; }).slice(0, 5) : []; } catch (e) { return []; } }
+  function tkeep(l) { try { localStorage.setItem('da.tarot.kept', JSON.stringify(l)); } catch (e) { /* this visit */ } }
+  function bigTarot(k, i, y) { var c = MAJOR[i];
+      /* the card itself, the paper's full width: its art large, its name and words under it */
+      var x = 6, w = W - 12, h = 840;
+      k.box(x, y, w, h); k.g.fillStyle = '#fff'; k.g.fillRect(x + 5, y + 5, w - 10, h - 10); k.box(x + 14, y + 14, w - 28, h - 28); k.g.fillStyle = '#fff'; k.g.fillRect(x + 16, y + 16, w - 32, h - 32);
+      k.fit(c[0], W / 2, y + 62, '700', 34, w - 60, SANS, 'center');
+      if (!panel(k, 't' + i, ['maze', 'crack', 'spots', 'lines', 'worms', 'eyes'][i % 6], x + 28, y + 84, w - 56, 540, i + 5)) { disc(k.g, W / 2, y + 354, 140); k.fit(c[0], W / 2, y + 404, '700', 140, 220, SANS, 'center'); }
+      k.fit(c[1], W / 2, y + 690, '700', 40, w - 60, SANS, 'center');
+      k.fit(c[2], W / 2, y + 740, '600', 19, w - 60, MONO, 'center');
+      k.box(x + 60, y + 772, w - 120, 2);
+      return y + h + 8;
+  }
 
   /* ───────── card art: the hand-cut textures, or a person's own picture, dithered to dots ───────── */
   var rnd = function (sd) { var s = sd || 1; return function () { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
@@ -260,30 +271,36 @@
     g.restore();
     if (kind === 1 || kind === 2) { g.lineWidth = 3; g.strokeStyle = '#000'; g.stroke(); } else { g.fillStyle = '#000'; g.fill(); }
   }
-  function playCard(k, c, x, y, w, h) {
+  function playCard(k, c, x, y, w, h, full) {
     var g = k.g, r = RANK[c % 13], st = Math.floor(c / 13);
     k.box(x, y, w, h); g.fillStyle = '#fff'; g.fillRect(x + 3, y + 3, w - 6, h - 6);
     var px = R(w * 0.2); k.txt(r, x + 10, y + 10 + px, '700 ' + px + 'px ' + SANS); suit(g, st, x + 10 + px * 0.32, y + 30 + px * 1.25, px * 0.3);
     g.save(); g.translate(x + w, y + h); g.rotate(Math.PI); k.txt(r, 10, 10 + px, '700 ' + px + 'px ' + SANS); suit(g, st, 10 + px * 0.32, 30 + px * 1.25, px * 0.3); g.restore();
-    var pw = w * 0.62, ph = h * 0.56, own = panel(k, 'c' + c, ['maze', 'spots', 'crack', 'worms'][st], x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, c + 11);
+    var pw = w * (full ? 0.86 : 0.62), ph = h * (full ? 0.44 : 0.56), own = panel(k, 'c' + c, ['maze', 'spots', 'crack', 'worms'][st], x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, c + 11);
     if (!own) { disc(g, x + w / 2, y + h / 2, w * 0.2); suit(g, st, x + w / 2, y + h / 2, w * 0.12); }
   }
+  function bjSum(h) { var t = 0, a = 0; h.forEach(function (c) { var r = c % 13; if (r === 0) { a++; t += 11; } else t += r >= 10 ? 10 : r + 1; }); while (t > 21 && a) { t -= 10; a--; } return t; }
   var cards = {
-    opts: [['one', 'ONE'], ['five', 'FIVE'], ['deck', 'DECK'], ['again', 'AGAIN'], ['art', 'ART', false]],
-    pages: 4,
-    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; return true; } o.deck = false;
+    opts: [['deck', 'DECK'], ['one', 'ONE'], ['five', 'FIVE'], ['hit', '21'], ['again', 'AGAIN'], ['art', 'ART', false]],
+    pages: 4, init: function (o) { o.deck = true; o.page = 0; },
+    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; o.bj = null; return true; } o.deck = false;
+      /* 21: a card at a time, one hand, until it passes 21; then the next press starts again */
+      if (a === 'hit') { if (!o.bj || bjSum(o.bj.h) >= 21) { var sh = []; for (var q = 0; q < 52; q++) sh.splice(Math.floor(Math.random() * (q + 1)), 0, q); o.bj = { left: sh, h: [] }; } o.bj.h.push(o.bj.left.pop()); if (o.bj.h.length === 1) o.bj.h.push(o.bj.left.pop()); return true; }
+      o.bj = null;
       if (a === 'one') { o.n = 1; o.deal = null; } else if (a === 'five') { o.n = 5; o.deal = null; } else { var l = [], d = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < (o.n || 1); i++) d.push(l.splice(Math.floor(Math.random() * l.length), 1)[0]); o.deal = d; } return true; },
     draw: function (k, d, s, o) {
-      if (o.deck) { var pg = o.page || 0, y0 = k.head('CARDS', SUIT[pg], (pg + 1) + '/4') + 14, cw = 156, ch = 218;
+      if (o.deck) { var pg = o.page || 0, y0 = 8, cw = 156, ch = 218;
         for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
-        y0 += 5 * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, '', ''); }
+        return y0 + 5 * (ch + 10) + 6; }
+      if (o.bj) { var hh = o.bj.h, tw = 244, th = R(tw * 1.4), yb = 8; hh.forEach(function (c, i) { playCard(k, c, 8 + (i % 2) * (tw + 8), yb + Math.floor(i / 2) * (th + 8), tw, th, true); });
+        yb += Math.ceil(hh.length / 2) * (th + 8) + 10; var sm = bjSum(hh); k.fit(String(sm), W / 2, yb + 120, '700', 150, W - 40, SANS, 'center');
+        if (sm > 21) { k.g.save(); k.g.lineWidth = 14; k.g.lineCap = 'round'; k.g.beginPath(); k.g.moveTo(W / 2 - 130, yb + 140); k.g.lineTo(W / 2 + 130, yb + 10); k.g.stroke(); k.g.restore(); }
+        return yb + 160; }
       var day = today(), n = o.n || 1, hand = o.deal || (function () { var l = [], h = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < n; i++) h.push(l.splice(seed(day + s.id + i, l.length), 1)[0]); return h; })();
-      k.head('CARDS', o.deal ? 'DEALT' : '', phase(age(day)));
-      var y = 124;
-      if (n === 1) { playCard(k, hand[0], 96, y, 320, 448); y += 448 + 16; k.fit(RANK[hand[0] % 13].replace('A', 'ACE').replace('J', 'JACK').replace('Q', 'QUEEN').replace('K', 'KING') + ' OF ' + SUIT[Math.floor(hand[0] / 13)], W / 2, y + 30, '700', 28, W - 2 * M, SANS, 'center'); y += 50; }
-      else { hand.forEach(function (c, i) { var row = i < 3 ? 0 : 1, col = row ? i - 3 : i, cw = 150, ch = 210, x0 = row ? (W - 2 * cw - 16) / 2 : (W - 3 * cw - 32) / 2; playCard(k, c, R(x0 + col * (cw + 16)), y + row * (ch + 16), cw, ch); }); y += 2 * 226 + 4; }
-      k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, '', '');
+      /* each card the paper's full width, a cut line between them */
+      var y = 8, cw = W - 12, ch = R(cw * 1.4);
+      hand.forEach(function (c, i) { if (i) { for (var x = M; x < W - M; x += 14) k.g.fillRect(x, y + 10, 7, 2); y += 24; } playCard(k, c, 6, y, cw, ch, true); y += ch; });
+      return y + 8;
     }
   };
 
@@ -350,7 +367,7 @@
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
-  function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#opts select'), function (s) { if (!d.all || s.options.length === d.all.length) { if (d.b) s.value = String(d.b); return; } s.innerHTML = d.all.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s.value = String(d.b || 1); }); }
+  function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { if (!d.all || s.options.length === d.all.length) { if (d.b) s.value = String(d.b); return; } s.innerHTML = d.all.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s.value = String(d.b || 1); }); }
   function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); }
   function artTap(e) { if (!S.o.art) return; var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, y = (e.clientY - r.top) * cv.height / r.height;
     var h = HITS.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0]; if (!h) return;
@@ -371,7 +388,8 @@
     return api('/partners').then(function (j) {
       var l = j.partners || [], to = ((S.stack.blocks || []).filter(function (b) { return b.k === 'print'; })[0] || {}).to || ['novelglobal'];
       S.prns = l.filter(function (p) { return to.indexOf(p.id) >= 0 || (to.indexOf('island') >= 0 && p.id === S.stack.island); }).filter(function (p) { return p.paired || p.id === 'novelglobal'; });
-      S.to = S.prns.length ? S.prns[0].id : null; $('#led').classList.toggle('on', S.prns.some(function (p) { return p.ready; }));
+      var want = null; try { want = localStorage.getItem('da.to'); } catch (e) { want = null; }
+      S.to = S.prns.some(function (p) { return p.id === want; }) ? want : S.prns.length ? S.prns[0].id : null; $('#led').classList.toggle('on', S.prns.some(function (p) { return p.ready; }));
       $('#to').innerHTML = S.prns.length > 1 ? S.prns.map(function (p) { return '<button type="button" data-p="' + p.id + '"><i class="led' + (p.ready ? ' on' : '') + '"></i>' + word(p) + '</button>'; }).join('') : '';
       keys();
     }).catch(function () { S.prns = []; S.to = null; keys(); });
@@ -392,8 +410,11 @@
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } return (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; });
   }
   function opts() {
-    var el = $('#opts'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; });
-    el.innerHTML = l.map(function (x) { if (x[3] === 'select') return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
+    var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o);
+    /* a select (the book picker) stands above the paper; keys beside it */
+    if (pk) pk.innerHTML = l.filter(function (x) { return x[3] === 'select'; }).map(function (x) { return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; }).join('');
+    el.innerHTML = l.map(function (x) { if (x[3] === 'select') return pk ? '' : '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
+    if (pk) pk.addEventListener('change', function (e) { var s = e.target.closest('select'); if (!s) return; S.o.sel = s.value; if (S.K.act && S.K.act(s.dataset.a, S.stack, S.o)) load(); });
     el.addEventListener('change', function (e) { var s = e.target.closest('select'); if (!s) return; S.o.sel = s.value; if (S.K.act && S.K.act(s.dataset.a, S.stack, S.o)) load(); });
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.dataset.a;
       if (b.dataset.t) { S.o[a] = !S.o[a]; paint(); return; }

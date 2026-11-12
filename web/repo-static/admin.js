@@ -711,10 +711,16 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sendLive: $('#sd-live').checked }) })));
     const blog = el('section', { class: 'ed' }, el('h3', { text: 'BLOG' }), chk('bl-on', !!st.blogShow, 'SHOWN'), hint('Off: novel.global/blog.html sends visitors home.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ blogShow: $('#bl-on').checked }) })));
+    const keyz = el('section', { class: 'ed' }, el('h3', { text: 'SMALL CARDS' }), chk('sm-talk', !!st.smallTalk, 'TALK KEY'), chk('sm-find', !!st.smallFind, 'PRINTER KEY'), hint('The nine small cards: their talk and printer keys. Off: the cards stand clean. The big cards keep both.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ smallTalk: $('#sm-talk').checked, smallFind: $('#sm-find').checked }) })));
+    const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
+    const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ jellyStamp: $('#jl-st').checked }) })));
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, notice, country, motion, cur, sources, reset);
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, keyz, isl, jel, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

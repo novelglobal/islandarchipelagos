@@ -2,9 +2,10 @@
 (function () {
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
-  var IN = /[?&]in=1/.test(location.search), H = document.documentElement;
+  var IN = /[?&]in=1/.test(location.search), ONE = /[?&]one=1/.test(location.search), H = document.documentElement;
   var OWN = ['ref-moa.jpg'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return 'chair-' + n + '.jpg'; }),
     ['cooler', 'dog', 'grille', 'gutter', 'lora', 'pigeon', 'puddle', 'tap'].map(function (n) { return 'found-' + n + '.jpg'; })).map(function (f) { return { u: '/cards/' + f, k: 'ART' }; });
+  if (ONE) OWN = OWN.slice(0, 1);
   var COLS = ['', 'ink', 'blue', 'tomato', 'lime', 'night'];
   var S = { list: [], at: 0, col: 0, z: 1, x: 0, y: 0, busy: false };
 
@@ -104,7 +105,7 @@
       if (k === 'print') print(); else if (k === 'share') share(); else if (k === 'remix') remix(); else if (k === 'colour') colour(b); });
     touches();
     api('/posters').then(function (j) { return (j.posters || []).map(function (p) { return { u: '/api/posters/' + encodeURIComponent(p.id), k: 'WORK' }; }); }, function () { return []; })
-      .then(function (work) { var seen = {}; S.list = work.concat(OWN).filter(function (x) { if (seen[x.u]) return false; seen[x.u] = 1; return true; }); build(); });
+      .then(function (work) { var seen = {}; S.list = (ONE ? [] : work).concat(OWN).filter(function (x) { if (seen[x.u]) return false; seen[x.u] = 1; return true; }); build(); });
     addEventListener('resize', function () { var tr = $('#track'); unzoom(); tr.scrollLeft = S.at * tr.clientWidth; });
     fetch('/api/beat?k=open-art', { keepalive: true }).catch(function () {});
   });
