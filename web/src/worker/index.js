@@ -801,6 +801,34 @@ async function wxThrough(url) {
   if (WXC.size > 200) WXC.clear(); WXC.set(key, { t: Date.now(), s });
   return new Response(s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
 }
+/* news cart feed: Wikipedia's In the news and On this day, kept an hour */
+const NEWS = { t: 0, s: '' };
+const plain = h => String(h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+async function newsThrough() {
+  if (NEWS.s && Date.now() - NEWS.t < 3600e3) return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
+  let j = null; try { const r = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/featured/${day.replace(/-/g, '/')}`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) j = await r.json(); } catch (e) { /* none */ }
+  if (!j) return NEWS.s ? new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'no-store' } }) : fail(502, 'news');
+  NEWS.s = JSON.stringify({ day, news: (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean),
+    otd: (j.onthisday || []).slice(0, 3).map(o => ({ y: +o.year || 0, t: plain(o.text).slice(0, 240) })).filter(o => o.t) }); NEWS.t = Date.now();
+  return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
+}
+/* book cart feed: one public-domain book, a page at a time */
+const BOOK = { id: 4341, title: 'Mutual Aid', author: 'Peter Kropotkin · 1902', pages: null };
+async function bookThrough(url) {
+  if (!BOOK.pages) {
+    let t = ''; try { const r = await fetch(`https://www.gutenberg.org/cache/epub/${BOOK.id}/pg${BOOK.id}.txt`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 30 * 86400, '300-599': 0 } } }); if (r.ok) t = await r.text(); } catch (e) { /* none */ }
+    const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return fail(502, 'book');
+    const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
+    const paras = body.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').replace(/_/g, '').replace(/--/g, '—').trim()).filter(p => p && !/^\[Illustration/.test(p)); const intro = paras.indexOf('INTRODUCTION'); if (intro > 0) paras.splice(0, intro);
+    const pages = []; let cur = '';
+    const add = s => { if (cur && cur.length + s.length > 1200) { pages.push(cur); cur = ''; } cur = cur ? cur + '\n\n' + s : s; };
+    paras.forEach(p => { if (p.length <= 1200) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(s => { if (bit && bit.length + s.length > 1000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + s : s; }); if (bit) add(bit); });
+    if (cur) pages.push(cur); BOOK.pages = pages;
+  }
+  const n = BOOK.pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+url.searchParams.get('p') || 1))), p = ((p0 - 1) % n) + 1;
+  return json({ title: BOOK.title, author: BOOK.author, p, of: n, text: BOOK.pages[p - 1] });
+}
 /* the two things asked of OpenStreetMap: the places with a name (as the radar's knots), and the water. Built here from a box of
    whole tiles, so nothing else can be asked through novel.global */
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
@@ -949,7 +977,7 @@ const JOURNEY = /^(lv[1-6]|disc-[0-2]|eye|step-[0-3]|dev-[0-3]|booth-(open|print
 function trafficKey(url, m) {
   const p = url.pathname.replace(/^\/api\//, '').split('/')[0];
   if (p === 'beat') { const k = url.searchParams.get('k'); return BEATS.includes(k) || JOURNEY.test(k || '') ? k : null; }
-  if (['inat', 'osm', 'img', 'wx', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
+  if (['inat', 'osm', 'img', 'wx', 'news', 'book', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
   return null;
 }
 function tally(url, m) { USE.req++; const k = trafficKey(url, m); if (k) USE.keys[k] = (USE.keys[k] || 0) + 1; }
@@ -1018,6 +1046,8 @@ async function api(req, env, url, ctx) {
   if (url.pathname === '/api/img' && req.method === 'GET') return imgThrough(url);
   if (url.pathname.startsWith('/api/inat/') && req.method === 'GET') return inatThrough(url);
   if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
+  if (url.pathname === '/api/news' && req.method === 'GET') return newsThrough();
+  if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);
   const p = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean).map(decodeURIComponent); const m = req.method;

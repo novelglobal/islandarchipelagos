@@ -901,9 +901,10 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sk-wx .hm-art, .sk-wx .hm-fr { display: none; }
 .sk-wx .wx-f { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 5cqw 5cqw 4.5cqw; color: #111; pointer-events: none; }
 .sk-wx .wx-f p { margin: 0; }
-.sk-wx .wx-k { display: flex; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 3px solid #111; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; margin-right: 72px; }
+.sk-wx .wx-k { display: flex; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 3px solid #111; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; margin-right: 96px; }
 .sk-wx .wx-k span { font-weight: 500; opacity: .6; }
 .sk-wx .wx-v { display: flex; align-items: baseline; gap: .3em; font: 700 clamp(34px, min(30cqw, 34cqh), 96px)/.9 'Poppins', Arial, sans-serif; letter-spacing: -.04em; }
 .sk-wx .wx-l { font-weight: 600; font-size: .5em; letter-spacing: -.02em; }
 .sk-wx .wx-s { padding-top: 6px; border-top: 1px dashed #111; font: 600 11px/1.2 'IBM Plex Mono', monospace; letter-spacing: .08em; }
 .sk-wx.wx-wet .wx-s { align-self: flex-start; padding: 4px 6px; border: 0; background: #111; color: #F2F1EC; }
+.sk-wx.wx-txt .wx-v { display: block; font: 600 clamp(14px, min(6.4cqw, 9cqh), 22px)/1.22 'Poppins', Arial, sans-serif; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }

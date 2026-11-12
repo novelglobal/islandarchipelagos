@@ -129,7 +129,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     if (IN) document.documentElement.className = 'in';
     var id = (location.hash.slice(1) || 'tall').replace(/[^a-z0-9-]/g, '');
-    fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) { if (/^[a-z0-9-]+\.html$/.test(s.page || '')) return location.replace(s.page + location.search); S.stack = s; build(); })
+    fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) { if (/^[a-z0-9-]+\.html$/.test(s.page || '')) return location.replace(s.page + location.search + '#' + s.id); S.stack = s; build(); })
       .catch(function () { $('#nm').textContent = '—'; });
   });
   window.STACK = S;

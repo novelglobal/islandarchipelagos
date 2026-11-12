@@ -3,6 +3,7 @@
 <title>novel.global</title>
 <style>
   @font-face { font-family: 'VT323'; font-weight: 400; src: url(vendor/fonts/vt323-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Poppins'; font-weight: 400; src: url(vendor/fonts/poppins-latin-400-normal.woff2) format('woff2'); }
   @font-face { font-family: 'Poppins'; font-weight: 600; src: url(vendor/fonts/poppins-latin-600-normal.woff2) format('woff2'); }
   @font-face { font-family: 'Poppins'; font-weight: 700; src: url(vendor/fonts/poppins-latin-700-normal.woff2) format('woff2'); }
   @font-face { font-family: 'IBM Plex Mono'; font-weight: 500; src: url(vendor/fonts/ibm-plex-mono-latin-500-normal.woff2) format('woff2'); }
@@ -25,8 +26,9 @@
   button { font: inherit; letter-spacing: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 0; padding: 10px 12px; min-height: 40px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
   button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
   button:disabled { opacity: .35; cursor: default; }
-  #to { display: flex; gap: 8px; flex-wrap: wrap; }
-  #to:empty { display: none; }
+  #to, #opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  #opts button { flex: 1 1 auto; min-height: 36px; padding: 8px 10px; font-size: 11px; }
+  #to:empty, #opts:empty { display: none; }
   #go { min-height: 56px; font-size: 15px; font-weight: 600; background: var(--ink); color: var(--paper); }
   #st { min-height: 1.2em; margin: 0; color: var(--dim); text-align: center; }
   @media (max-width: 600px) { .side { max-width: none; position: static; } .desk { padding: 12px 0; } }
@@ -34,7 +36,7 @@
   .in body { background: transparent; } .in main { padding: 0; } .in .win { border: 0; background: transparent; } .in .win > header { display: none; }
 </style>
 <script src="vendor/qrcode.js"></script>
-<script src="wx.js"></script></head>
-<body><main><section class="win" id="wx" aria-live="polite"><header><i class="led" id="led"></i><b id="nm">·</b></header>
-<div class="desk"><div id="paper"><canvas aria-label="The week ahead"></canvas></div>
-<div class="side"><div id="to"></div><button type="button" id="go" disabled>PRINT</button><p id="st">· · ·</p></div></div></section></main></body></html>
+<script src="cart.js"></script></head>
+<body><main><section class="win" id="cart" aria-live="polite"><header><i class="led" id="led"></i><b id="nm">·</b></header>
+<div class="desk"><div id="paper"><canvas aria-label="The slip"></canvas></div>
+<div class="side"><div id="opts"></div><div id="to"></div><button type="button" id="go" disabled>PRINT</button><p id="st">· · ·</p></div></div></section></main></body></html>

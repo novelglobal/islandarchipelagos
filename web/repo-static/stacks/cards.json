@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "id": "cards",
+  "name": "CARDS",
+  "island": "novelglobal",
+  "page": "cart.html",
+  "kind": "cards",
+  "where": [-37.77, 144.96],
+  "printer": { "profile": "tm-t88v", "dots": 512, "dpi": 180 },
+  "blocks": [
+    { "k": "print", "to": ["island", "novelglobal"] }
+  ]
+}

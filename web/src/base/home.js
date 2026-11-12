@@ -46,7 +46,11 @@
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', skin: 'wx', cart: 'week', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'news', size: 'small', title: 'NEWS', opens: 'stack:news', skin: 'wx', cart: 'news', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'book', size: 'small', title: 'BOOK', opens: 'stack:book', skin: 'wx', cart: 'book', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'tarot', size: 'small', title: 'TAROT', opens: 'stack:tarot', skin: 'wx', cart: 'tarot', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'cards', size: 'small', title: 'CARDS', opens: 'stack:cards', skin: 'wx', cart: 'cards', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'slot-1', size: 'small', title: 'OPEN ISLAND', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
@@ -475,12 +479,24 @@
     col.innerHTML = colHTML(); cards = $$('.hm-card', col); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
-  /* weather card */
-  var WXD = null;
-  function wxCard() { var el = col.querySelector('.sk-wx'); if (!el) return;
+  /* cart cards: today on each */
+  var WXD = null, NWD = null;
+  var cartDay = function () { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }); } catch (e) { return new Date().toISOString().slice(0, 10); } };
+  var cartSeed = function (s, n) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) % n; };
+  var ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
+  var ARCANA = ['THE FOOL', 'THE MAGICIAN', 'THE HIGH PRIESTESS', 'THE EMPRESS', 'THE EMPEROR', 'THE HIEROPHANT', 'THE LOVERS', 'THE CHARIOT', 'STRENGTH', 'THE HERMIT', 'WHEEL OF FORTUNE', 'JUSTICE', 'THE HANGED MAN', 'DEATH', 'TEMPERANCE', 'THE DEVIL', 'THE TOWER', 'THE STAR', 'THE MOON', 'THE SUN', 'JUDGEMENT', 'THE WORLD'];
+  function wxCard() { $$('.sk-wx', col).forEach(function (el) { var c = CARDS.filter(function (x) { return x.id === el.dataset.id; })[0]; if (c) cartFace(el, c.cart || 'week'); }); }
+  function cartFace(el, k) {
+    var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; $('.wx-l', el).textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
+    var day = cartDay(), a = day.split('-').map(Number);
+    if (k === 'book') { var p = Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(2026, 10, 12)) / 864e5) + 1; $('.wx-k span', el).textContent = 'PAGE OF THE DAY'; return set('P.' + Math.max(1, p), '', 'MUTUAL AID · KROPOTKIN'); }
+    if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = 'CARD OF THE DAY'; return set(ROMAN[i], '', ARCANA[i]); }
+    if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
+      $('.wx-k span', el).textContent = 'CARD OF THE DAY'; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
+    if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) set(d.news[0], '', 'WIKIPEDIA · IN THE NEWS', true); };
+      if (NWD) return putN(NWD); return fetch('/api/news').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { NWD = d; putN(d); }).catch(function () {}); }
     var put = function (d) { var D = d && d.daily; if (!D || !D.time) return; var c = D.weather_code[0], sky = c === 0 ? 'CLEAR' : c <= 2 ? 'SOME CLOUD' : c === 3 ? 'CLOUD' : c <= 48 ? 'FOG' : c <= 57 ? 'DRIZZLE' : c <= 67 ? 'RAIN' : c <= 77 ? 'SNOW' : c <= 82 ? 'SHOWERS' : c <= 86 ? 'SNOW' : 'STORM';
-      $('.wx-h', el).textContent = Math.round(D.temperature_2m_max[0]) + '°'; $('.wx-l', el).textContent = Math.round(D.temperature_2m_min[0]) + '°';
-      $('.wx-s', el).textContent = sky + ' · RAIN ' + D.precipitation_probability_max[0] + '%'; el.classList.toggle('wx-wet', D.precipitation_probability_max[0] >= 60); };
+      set(Math.round(D.temperature_2m_max[0]) + '°', Math.round(D.temperature_2m_min[0]) + '°', sky + ' · RAIN ' + D.precipitation_probability_max[0] + '%'); el.classList.toggle('wx-wet', D.precipitation_probability_max[0] >= 60); };
     if (WXD) return put(WXD);
     fetch('/api/wx?at=-37.77,144.96&sea=-37.86,144.9').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { WXD = d; put(d); }).catch(function () {}); }
   /* idle cards */
@@ -508,7 +524,7 @@
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
-    else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k"><b>WEATHER</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span></p><p class="wx-s"></p></div>';
+    else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k"><b>' + t + '</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span></p><p class="wx-s"></p></div>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
