@@ -9,6 +9,7 @@
    salt that changes each day, and forgotten within the hour. A story not approved within 30 days is deleted; a print
    job waits a day at most, and once printed only its status is kept, for a week. A preview build has its own database. */
 import { BUILD, PREVIEW, PARTNERS } from './stamp.js';
+import { FIRST_PLAY } from './first-play.js';
 
 const JSON_H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 const TEXT_H = { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
@@ -1063,12 +1064,14 @@ async function playSend(db, env, req) {
 }
 async function playList(db) {
   const { results } = await db.prepare("SELECT code, body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL ORDER BY decided DESC LIMIT 24").all();
-  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '' }; } catch (e) { return null; } }).filter(Boolean) });
+  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '' }; } catch (e) { return null; } }).filter(r => r && r.c !== FIRST_PLAY.code);
+  return json({ plays: [{ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true }, ...l] });
 }
 async function playOne(db, c) {
-  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code');
-  const r = await db.prepare("SELECT body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
-  return json(JSON.parse(r.body));
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (c === FIRST_PLAY.code) return json({ n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, src: FIRST_PLAY.src, first: true, by: FIRST_PLAY.by });
+  const r = await db.prepare("SELECT body, created FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
+  const j = JSON.parse(r.body), nm = String(j.n || '').toLowerCase().replace(/(^|\s)\S/g, x => x.toUpperCase()), a = ((r.created / 864e5 - Date.UTC(2000, 0, 6, 18, 14) / 864e5) / 29.530588853 % 1 + 1) % 1, ph = a < 0.03 || a > 0.97 ? 'new moon' : a < 0.22 ? 'waxing crescent' : a < 0.28 ? 'first quarter' : a < 0.47 ? 'waxing gibbous' : a < 0.53 ? 'full moon' : a < 0.72 ? 'waning gibbous' : a < 0.78 ? 'last quarter' : 'waning crescent';
+  return json({ ...j, by: `${nm ? nm + '. ' : ''}${ph[0].toUpperCase() + ph.slice(1)}, ${new Date(r.created).toLocaleString('en-AU', { month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' })}.` });
 }
 /* ───────── codes: one reader for every family; carts keep a 3-letter code a moon quarter; passes last a day at one island ───────── */
 const ABC = 'ABCDEFGHJKMNPQRSTVWXYZ';
@@ -1126,7 +1129,7 @@ async function codeRead(db, env, req, raw) {
   if (/^DA-?[0-9A-HJKMNP-TV-Z]{4}$/.test(c)) { const code = 'DA-' + c.replace(/^DA-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE code = ? AND status = 'shown' AND gone IS NULL").bind(code).first();
     return r ? json({ kind: 'wish', code, go: '/#n=' + code }) : fail(404, 'not found'); }
   if (/^PL-?[A-Z2-9]{4}$/.test(c)) { const code = 'PL-' + c.replace(/^PL-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(code).first();
-    return r ? json({ kind: 'play', code, go: '/play.html?c=' + code }) : fail(404, 'not found'); }
+    return r || code === FIRST_PLAY.code ? json({ kind: 'play', code, go: '/play.html?c=' + code }) : fail(404, 'not found'); }
   if (PASS.test(c) && codeKey(env)) { const f = await passFind(db, env, c); if (!f) return fail(404, 'not found'); await passTable(db);
     const u = await db.prepare('SELECT used FROM passes WHERE code = ? AND day = ?').bind(f.code, f.day).first();
     return json({ kind: 'pass', code: f.code, island: f.p.id, name: f.p.name || f.p.id, number: f.p.number || null, used: !!u, mark: await markOf(env, f.p.id, f.day) }); }

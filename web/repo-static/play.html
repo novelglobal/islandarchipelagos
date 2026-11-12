@@ -18,11 +18,14 @@
   #pr.ok { background: #1F7A3E; } #pr.no { background: #E5262B; }
   #again { position: fixed; right: 70px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(11, 11, 11, .08); color: inherit; display: grid; place-items: center; cursor: pointer; }
   #again svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  #by { position: fixed; left: 14px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 2; margin: 0; max-width: calc(100% - 140px); font: 500 10px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; opacity: .55; }
+  #by:empty { display: none; } html.night #by { color: #F4F1E8; }
   html.night #again { background: rgba(244, 241, 232, .12); color: #F4F1E8; }
 </style>
 </head>
 <body>
 <main id="p"></main>
+<p id="by"></p>
 <button id="again" type="button" aria-label="Start again" title="Start again"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg></button>
 <button id="pr" type="button" aria-label="Print" title="Print" hidden><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg></button>
 <script src="vendor/qrcode.js"></script>
@@ -35,7 +38,7 @@
   var pr = document.getElementById('pr'), NG = null; try { NG = window.parent !== window ? window.parent.NG : null; } catch (e) { NG = null; }
   var box = PK.mount(document.getElementById('p'), { keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return;
-  fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); });
+  fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); if (j && j.by) document.getElementById('by').textContent = j.by; });
   document.getElementById('again').addEventListener('click', function () { pr.hidden = true; box.again(store); });
   pr.addEventListener('click', function () { var u = box.paper(); if (!u || !NG) return; pr.disabled = true;
     NG.printAgain(u, 'play').then(function () { pr.className = 'ok'; }).catch(function () { pr.className = 'no'; }).then(function () { setTimeout(function () { pr.className = ''; pr.disabled = false; }, 1600); }); });

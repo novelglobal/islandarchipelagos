@@ -43,7 +43,7 @@
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'kit', size: 'full', title: 'ISLAND', tag: 'INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', skin: 'wx', cart: 'week', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
@@ -522,7 +522,7 @@
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k"><b>' + t + '</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span></p><p class="wx-s"></p></div>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
@@ -809,7 +809,7 @@
     el.querySelector('.sn-air').classList.toggle('on', AIR.on); el.querySelector('.sn-air small').textContent = AIR.on ? 'ON AIR' : 'TUNE IN';
     el.querySelector('.sn-sea').classList.toggle('on', !!RS.nino); el.querySelector('.sn-sea').hidden = !nino || away; el.querySelector('.sn-sea small').textContent = RS.nino ? 'ON' : 'OFF';
     el.querySelector('.sn-mx').classList.toggle('on', SND.mix); el.querySelector('.sn-mx small').textContent = SND.mix ? Object.keys(SND.pick).filter(function (k) { return SND.pick[k]; }).length + ' IN' : 'TAPE';
-    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = on && r0 ? r0.n : SND.rows.length ? 'LISTEN' : 'NOTHING YET';
+    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = on && r0 ? r0.n : SND.rows.length ? 'LISTEN' : 'EMPTY';
     el.querySelector('[data-sn="go"]').textContent = on ? '■' : '▶';
     var ol = el.querySelector('.sn-pl'), rows = SND.mix ? SND.rows.filter(function (r) { return r.k === 'rec'; }) : SND.rows;
     ol.innerHTML = rows.length ? rows.map(function (r) { var i = SND.rows.indexOf(r), pk = !!SND.pick[r.id];
@@ -927,15 +927,15 @@
   /* an open slot: how a printer gets a card of its own here, in three moves */
   function unlockIn(body) { body.classList.add('ul');
     var GH = 'https://github.com/novelglobal/islandarchipelagos';
-    body.innerHTML = '<div class="ul-art" aria-hidden="true"><i></i><i></i><i></i></div><h2 class="ul-h">A CARD FOR YOUR PRINTER</h2><ol class="ul-st">' +
-      [['BUILD', 'From e-waste', 'kit', 'THE PARTS'], ['SWITCH ON', 'It joins by itself', '', ''], ['MAKE', 'Test it, send it', 'space', 'THE BENCH']].map(function (s, k) {
-        return '<li><b>0' + (k + 1) + '</b><span><em>' + s[0] + '</em>' + esc(s[1]) + '</span>' + (s[2] ? '<button type="button" data-go="' + s[2] + '" title="Open ' + s[3].toLowerCase() + '">' + s[3] + ' →</button>' : '<i class="ul-led"></i>') + '</li>'; }).join('') +
-      '</ol><a class="ul-gh" href="' + GH + '" target="_blank" rel="noopener" title="The code, open to build on">DEVELOP IT ↗</a>';
+    body.innerHTML = '<div class="ul-art" aria-hidden="true"><i></i><i></i><i></i></div><h2 class="ul-h" title="A card for your printer">JOIN</h2><ol class="ul-st">' +
+      [['BUILD', 'From e-waste', 'kit', 'PARTS'], ['ON', 'It joins by itself', '', ''], ['MAKE', 'Test it, send it', 'space', 'BENCH']].map(function (s, k) {
+        return '<li title="' + esc(s[1]) + '"><b>0' + (k + 1) + '</b><span><em>' + s[0] + '</em></span>' + (s[2] ? '<button type="button" data-go="' + s[2] + '" title="Open ' + s[3].toLowerCase() + '">' + s[3] + ' →</button>' : '<i class="ul-led"></i>') + '</li>'; }).join('') +
+      '</ol><a class="ul-gh" href="' + GH + '" target="_blank" rel="noopener" title="The code, open to build on">CODE ↗</a>';
     $$('[data-go]', body).forEach(function (b) { b.addEventListener('click', function () { var id = b.dataset.go; shut(true); setTimeout(function () { open(id, id === 'space' ? { mode: 'card' } : null); }, 480); }); }); }
   /* ───────── every card's talk: four rooms of its own, open to everyone (open talk, help, show and tell, make together); a piece's own talk too ───────── */
   var ROOMS = [['open', 'OPEN', 'Open talk, anything about this', '<path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/>'], ['help', 'HELP', 'Ask for help, or give it', '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.8" r=".6" class="f"/>'],
     ['show', 'SHOW', 'Show what you made with it', '<path d="M3.5 7.5h4l1.5-2h6l1.5 2h4v11h-17z"/><circle cx="12" cy="13" r="3.4"/>'], ['make', 'MAKE', 'Find people to make it with', '<circle cx="8.5" cy="9" r="2.6"/><circle cx="15.5" cy="9" r="2.6"/><path d="M3.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6M10.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6"/>']];
-  var TKH = { card: null, sec: null, re: null, n: {} }, TKWHY = { 400: 'NOT SENT', 429: 'SLOW DOWN A LITTLE', 503: 'RESTING, TRY LATER' };
+  var TKH = { card: null, sec: null, re: null, n: {} }, TKWHY = { 400: 'UNSENT', 429: 'WAIT', 503: 'RESTING' };
   var tkp = D.createElement('section'); tkp.id = 'hm-talk'; tkp.setAttribute('aria-label', 'Talk'); tkp.hidden = true;
   tkp.innerHTML = '<header><button type="button" class="tk-bk" aria-label="Back to the card"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M15 5l-7 7 7 7\"/></svg><span>BACK</span></button><b class="tk-t"></b><button class="x" aria-label="Close the talk" title="Close">' + '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>' +
     '<nav class="tk-rooms">' + ROOMS.map(function (r) { return '<button type="button" data-room="' + r[0] + '" title="' + r[2] + '"><svg viewBox="0 0 24 24">' + r[3] + '</svg><span>' + r[1] + '</span><i></i></button>'; }).join('') + '<button type="button" data-room="piece" title="This piece" hidden><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/></svg><span>THIS</span><i></i></button></nav>' +
@@ -1002,7 +1002,7 @@
     $$('[data-k]', body).forEach(function (li) { var flip = function () { var on = li.getAttribute('aria-checked') !== 'true'; li.setAttribute('aria-checked', String(on)); store.set('da.isle.v1', $$('[aria-checked="true"]', body).map(function (q) { return q.dataset.k; })); beep(on ? 880 : 440, 0.05); };
       li.addEventListener('click', function (e) { if (!e.target.closest('a')) flip(); }); li.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); } }); });
     $('#hm-kprint', body).addEventListener('click', function () { var say = $('.hm-say', body), ticks = store.get('da.isle.v1', []) || [];
-      var cv = window.SLIPS && SLIPS.checklist ? SLIPS.checklist(ticks, 512) : listSlip(list, ticks); say.textContent = '· · ·'; printCanvas(cv, 'kit').then(function (s) { say.textContent = s === 'held' ? 'WAITING FOR THE PRINTER’S YES' : s ? 'PRINTING' : '×'; }, function () { say.textContent = '× NO PRINTER ONLINE'; }); });
+      var cv = window.SLIPS && SLIPS.checklist ? SLIPS.checklist(ticks, 512) : listSlip(list, ticks); say.textContent = '· · ·'; printCanvas(cv, 'kit').then(function (s) { say.textContent = s === 'held' ? 'WAITING' : s ? 'PRINTING' : '×'; say.title = s === 'held' ? 'Waiting for the printer’s yes' : ''; }, function () { say.textContent = '× NO PRINTER ONLINE'; }); });
   }
   function listSlip(list, ticks) {
     var W = 512, rows = list.filter(Boolean), c = D.createElement('canvas'); c.width = W; c.height = 120 + rows.length * 58; var g = c.getContext('2d');

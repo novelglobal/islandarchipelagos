@@ -157,15 +157,35 @@
     ['XII', 'THE HANGED MAN', 'PAUSE · SURRENDER · NEW VIEW'], ['XIII', 'DEATH', 'ENDINGS · RELEASE · RENEWAL'], ['XIV', 'TEMPERANCE', 'BALANCE · MIXING · MODERATION'], ['XV', 'THE DEVIL', 'HABITS · TIES · DESIRE'],
     ['XVI', 'THE TOWER', 'UPHEAVAL · SUDDEN TRUTH · CLEARING'], ['XVII', 'THE STAR', 'HOPE · HEALING · CALM'], ['XVIII', 'THE MOON', 'DREAMS · THE UNKNOWN · INSTINCT'], ['XIX', 'THE SUN', 'JOY · CLARITY · WARMTH'],
     ['XX', 'JUDGEMENT', 'CALLING · RECKONING · REBIRTH'], ['XXI', 'THE WORLD', 'COMPLETION · WHOLENESS · ARRIVAL']];
+  var TSUIT = ['WANDS', 'CUPS', 'SWORDS', 'PENTACLES'], TRANK = ['ACE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'PAGE', 'KNIGHT', 'QUEEN', 'KING'];
+  var TPAGE = [[0, 20], [20, 40], [40, 59], [59, 78]];
+  function tsuit(g, st, cx, cy, r) { g.fillStyle = '#000'; g.strokeStyle = '#000'; g.lineWidth = Math.max(2, r * 0.12); g.beginPath();
+    if (st === 0) { g.fillRect(cx - r * 0.1, cy - r, r * 0.2, r * 2); g.ellipse(cx + r * 0.32, cy - r * 0.35, r * 0.28, r * 0.12, -0.6, 0, 7); g.fill(); }
+    if (st === 1) { g.moveTo(cx - r * 0.7, cy - r * 0.8); g.lineTo(cx + r * 0.7, cy - r * 0.8); g.quadraticCurveTo(cx + r * 0.7, cy + r * 0.15, cx, cy + r * 0.15); g.quadraticCurveTo(cx - r * 0.7, cy + r * 0.15, cx - r * 0.7, cy - r * 0.8); g.fill(); g.fillRect(cx - r * 0.08, cy + r * 0.1, r * 0.16, r * 0.6); g.fillRect(cx - r * 0.45, cy + r * 0.7, r * 0.9, r * 0.16); }
+    if (st === 2) { g.fillRect(cx - r * 0.08, cy - r, r * 0.16, r * 1.5); g.fillRect(cx - r * 0.5, cy + r * 0.45, r, r * 0.14); g.fillRect(cx - r * 0.1, cy + r * 0.55, r * 0.2, r * 0.35); g.arc(cx, cy + r * 0.95, r * 0.14, 0, 7); g.fill(); }
+    if (st === 3) { g.arc(cx, cy, r * 0.85, 0, 7); g.stroke(); g.beginPath(); for (var i = 0; i <= 5; i++) { var a = -Math.PI / 2 + i * 4 * Math.PI / 5; if (i) g.lineTo(cx + Math.cos(a) * r * 0.75, cy + Math.sin(a) * r * 0.75); else g.moveTo(cx + Math.cos(a) * r * 0.75, cy + Math.sin(a) * r * 0.75); } g.stroke(); }
+  }
+  function tarotCard(k, n, x, y, w, h) {
+    var g = k.g, mj = n < 22, st = mj ? -1 : Math.floor((n - 22) / 14), rk = mj ? 0 : (n - 22) % 14;
+    k.box(x, y, w, h); g.fillStyle = '#fff'; g.fillRect(x + 3, y + 3, w - 6, h - 6); k.box(x + 7, y + 7, w - 14, h - 14); g.fillStyle = '#fff'; g.fillRect(x + 8, y + 8, w - 16, h - 16);
+    k.fit(mj ? MAJOR[n][0] : (rk < 10 ? String(rk + 1).replace(/^1$/, 'A') : (rk === 11 ? 'KN' : TRANK[rk].slice(0, 1))), x + w / 2, y + 30, '700', 18, w - 24, SANS, 'center');
+    var pw = w - 28, ph = h * 0.6, own = panel(k, 't' + n, mj ? ['maze', 'crack', 'spots', 'lines', 'worms', 'eyes'][n % 6] : ['lines', 'spots', 'crack', 'eyes'][st], x + 14, y + 40, pw, ph, n + 5);
+    if (!own) { disc(g, x + w / 2, y + 40 + ph / 2, Math.min(pw, ph) * 0.24); if (mj) k.fit(MAJOR[n][0] === '0' ? '0' : MAJOR[n][0], x + w / 2, y + 40 + ph / 2 + 9, '700', 26, Math.min(pw, ph) * 0.4, SANS, 'center'); else tsuit(g, st, x + w / 2, y + 40 + ph / 2, Math.min(pw, ph) * 0.14); }
+    k.fit(mj ? MAJOR[n][1] : TRANK[rk] + ' OF ' + TSUIT[st], x + w / 2, y + h - 18, '600', 13, w - 30, SANS, 'center');
+  }
   var tarot = {
-    opts: [['again', 'DRAW AGAIN'], ['today', 'TODAY']],
-    act: function (a, s, o) { if (a === 'today') o.i = null; else { var i; do { i = Math.floor(Math.random() * 22); } while (i === o.i); o.i = i; } return true; },
+    opts: [['again', 'AGAIN'], ['today', 'TODAY'], ['deck', 'DECK'], ['art', 'ART', false]],
+    pages: 4,
+    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; return true; } o.deck = false; if (a === 'today') o.i = null; else { var i; do { i = Math.floor(Math.random() * 22); } while (i === o.i); o.i = i; } return true; },
     draw: function (k, d, s, o) {
+      if (o.deck) { var pg = o.page || 0, r0 = TPAGE[pg], y0 = k.head('TAROT', 'DECK', (pg + 1) + '/4') + 14, cw = 156, ch = 252;
+        for (var n = r0[0]; n < r0[1]; n++) { var j = n - r0[0]; tarotCard(k, n, 12 + (j % 3) * (cw + 10), y0 + Math.floor(j / 3) * (ch + 10), cw, ch); }
+        y0 += Math.ceil((r0[1] - r0[0]) / 3) * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', ''); }
       var day = today(), i = o.i == null ? seed(day + s.id, 22) : o.i, c = MAJOR[i];
       k.head('TAROT', o.i == null ? '' : 'DRAWN', phase(age(day)));
       var x = 56, y = 124, w = W - 112, h = 560;
       k.box(x, y, w, h); k.g.fillStyle = '#fff'; k.g.fillRect(x + 5, y + 5, w - 10, h - 10); k.box(x + 14, y + 14, w - 28, h - 28); k.g.fillStyle = '#fff'; k.g.fillRect(x + 16, y + 16, w - 32, h - 32);
-      k.fit(c[0], W / 2, y + 270, '700', 190, w - 70, SANS, 'center');
+      if (!panel(k, 't' + i, ['maze', 'crack', 'spots', 'lines', 'worms', 'eyes'][i % 6], x + 30, y + 30, w - 60, 290, i + 5)) { disc(k.g, W / 2, y + 175, 112); k.fit(c[0], W / 2, y + 218, '700', 120, 190, SANS, 'center'); }
       k.box(x + 40, y + 340, w - 80, 2);
       k.fit(c[1], W / 2, y + 400, '700', 36, w - 60, SANS, 'center');
       k.fit(c[2], W / 2, y + 450, '600', 19, w - 60, MONO, 'center');
@@ -174,6 +194,38 @@
       return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', '');
     }
   };
+
+  /* ───────── card art: the hand-cut textures, or a person's own picture, dithered to dots ───────── */
+  var rnd = function (sd) { var s = sd || 1; return function () { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+  function noise2(seed) { var r = rnd(seed), G = []; for (var i = 0; i < 64 * 64; i++) G.push(r());
+    var at = function (x, y) { return G[((y & 63) * 64) + (x & 63)]; }, sm = function (t) { return t * t * (3 - 2 * t); };
+    return function (x, y) { var xi = Math.floor(x), yi = Math.floor(y), fx = sm(x - xi), fy = sm(y - yi), a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1); return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy; }; }
+  function pattern(g, w, h, kind, fg, bg, seed) { var r = rnd(seed || 3); g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.strokeStyle = fg;
+    if (kind === 'maze' || kind === 'crack') { var S = 2, W = Math.ceil(w / S), H = Math.ceil(h / S);
+      if (kind === 'maze') { var n1 = noise2(seed), n2 = noise2(seed + 9); for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) { var v = n1(x / 9, y / 9) * 0.7 + n2(x / 4, y / 4) * 0.3, f = (v * 9) % 1; if (f < 0.13) g.fillRect(x * S, y * S, S, S); } return; }
+      var P = []; for (var k = 0; k < Math.round(w * h / 420); k++) P.push([r() * w, r() * h]);
+      for (var y2 = 0; y2 < H; y2++) for (var x2 = 0; x2 < W; x2++) { var px = x2 * S, py = y2 * S, d1 = 1e9, d2 = 1e9; for (var q = 0; q < P.length; q++) { var dx = P[q][0] - px, dy = P[q][1] - py, d = dx * dx + dy * dy; if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d; }
+        if (Math.sqrt(d2) - Math.sqrt(d1) > 2.6) g.fillRect(px, py, S, S); } return; }
+    if (kind === 'spots') { for (var i = 0; i < w * h / 90; i++) { g.beginPath(); g.ellipse(r() * w, r() * h, 1.5 + r() * 4, 1.2 + r() * 3.4, r() * 3, 0, 7); g.fill(); } return; }
+    if (kind === 'lines') { g.lineWidth = 1.6; for (var yy = 3; yy < h; yy += 5.2) { g.beginPath(); for (var xx = 0; xx <= w; xx += 4) { var yv = yy + Math.sin(xx * 0.03 + yy * 0.2) * 1.4; if (xx) g.lineTo(xx, yv); else g.moveTo(xx, yv); } g.stroke(); } return; }
+    if (kind === 'worms') { g.lineCap = 'round'; for (var j = 0; j < w * h / 520; j++) { var x0 = r() * w, y0 = r() * h, a = r() * 6.3, L = 8 + r() * 16; g.lineWidth = 4.6; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + Math.cos(a + 1) * L, y0 + Math.sin(a + 1) * L, x0 + Math.cos(a) * L * 1.6, y0 + Math.sin(a) * L * 1.6); g.stroke(); g.save(); g.strokeStyle = bg; g.lineWidth = 1.6; g.stroke(); g.restore(); } return; }
+    if (kind === 'eyes') { for (var e = 0; e < w * h / 700; e++) { var ex = 6 + r() * (w - 12), ey = 5 + r() * (h - 10), s = 3 + r() * 2.2; g.beginPath(); g.moveTo(ex - s, ey); g.quadraticCurveTo(ex, ey - s * 0.9, ex + s, ey); g.quadraticCurveTo(ex, ey + s * 0.9, ex - s, ey); g.fill(); g.save(); g.fillStyle = bg; g.beginPath(); g.arc(ex + (r() - 0.5) * s * 0.6, ey, s * 0.32, 0, 7); g.fill(); g.restore(); } } }
+  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5], ART = {}, ARTK = '', HITS = [];
+  function artLoad(id, done) { ARTK = 'da.art.' + id; ART = {}; var m = {}; try { m = JSON.parse(localStorage.getItem(ARTK) || '{}') || {}; } catch (e) { m = {}; }
+    Object.keys(m).forEach(function (key) { var im = new Image(); im.onload = function () { ART[key] = im; if (done) done(); }; im.src = m[key]; }); }
+  function artSave(key, url) { var m = {}; try { m = JSON.parse(localStorage.getItem(ARTK) || '{}') || {}; } catch (e) { m = {}; } if (url) m[key] = url; else delete m[key];
+    try { localStorage.setItem(ARTK, JSON.stringify(m)); return true; } catch (e) { return false; } }
+  function panel(k, key, kind, x, y, w, h, sd) {
+    var g = k.g; x = R(x); y = R(y); w = R(w); h = R(h); if (k.hits) k.hits.push({ key: key, x: x, y: y, w: w, h: h });
+    var im = ART[key];
+    if (im) { var c = document.createElement('canvas'); c.width = w; c.height = h; var q = c.getContext('2d', { willReadFrequently: true }), s = Math.max(w / im.width, h / im.height);
+      q.fillStyle = '#fff'; q.fillRect(0, 0, w, h); q.drawImage(im, (w - im.width * s) / 2, (h - im.height * s) / 2, im.width * s, im.height * s);
+      var p = q.getImageData(0, 0, w, h).data; g.fillStyle = '#fff'; g.fillRect(x, y, w, h); g.fillStyle = '#000';
+      for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var i = (yy * w + xx) * 4, l = (p[i] * 0.3 + p[i + 1] * 0.59 + p[i + 2] * 0.11) / 255; if (l * 16 < BAYER[(yy % 4) * 4 + (xx % 4)] + 0.5) g.fillRect(x + xx, y + yy, 1, 1); }
+      return true; }
+    g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.translate(x, y); pattern(g, w, h, kind, '#000', '#fff', sd || 3); g.restore(); return false;
+  }
+  function disc(g, cx, cy, r) { g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); g.strokeStyle = '#000'; g.lineWidth = 2; g.stroke(); }
 
   /* ───────── playing cards ───────── */
   var RANK = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], SUIT = ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'];
@@ -191,12 +243,18 @@
     k.box(x, y, w, h); g.fillStyle = '#fff'; g.fillRect(x + 3, y + 3, w - 6, h - 6);
     var px = R(w * 0.2); k.txt(r, x + 10, y + 10 + px, '700 ' + px + 'px ' + SANS); suit(g, st, x + 10 + px * 0.32, y + 30 + px * 1.25, px * 0.3);
     g.save(); g.translate(x + w, y + h); g.rotate(Math.PI); k.txt(r, 10, 10 + px, '700 ' + px + 'px ' + SANS); suit(g, st, 10 + px * 0.32, 30 + px * 1.25, px * 0.3); g.restore();
-    suit(g, st, x + w / 2, y + h / 2, w * 0.2);
+    var pw = w * 0.62, ph = h * 0.56, own = panel(k, 'c' + c, ['maze', 'spots', 'crack', 'worms'][st], x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, c + 11);
+    if (!own) { disc(g, x + w / 2, y + h / 2, w * 0.2); suit(g, st, x + w / 2, y + h / 2, w * 0.12); }
   }
   var cards = {
-    opts: [['one', 'ONE'], ['five', 'FIVE'], ['again', 'DEAL AGAIN']],
-    act: function (a, s, o) { if (a === 'one') { o.n = 1; o.deal = null; } else if (a === 'five') { o.n = 5; o.deal = null; } else { var l = [], d = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < (o.n || 1); i++) d.push(l.splice(Math.floor(Math.random() * l.length), 1)[0]); o.deal = d; } return true; },
+    opts: [['one', 'ONE'], ['five', 'FIVE'], ['deck', 'DECK'], ['again', 'AGAIN'], ['art', 'ART', false]],
+    pages: 4,
+    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; return true; } o.deck = false;
+      if (a === 'one') { o.n = 1; o.deal = null; } else if (a === 'five') { o.n = 5; o.deal = null; } else { var l = [], d = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < (o.n || 1); i++) d.push(l.splice(Math.floor(Math.random() * l.length), 1)[0]); o.deal = d; } return true; },
     draw: function (k, d, s, o) {
+      if (o.deck) { var pg = o.page || 0, y0 = k.head('CARDS', SUIT[pg], (pg + 1) + '/4') + 14, cw = 156, ch = 218;
+        for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
+        y0 += 5 * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', ''); }
       var day = today(), n = o.n || 1, hand = o.deal || (function () { var l = [], h = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < n; i++) h.push(l.splice(seed(day + s.id + i, l.length), 1)[0]); return h; })();
       k.head('CARDS', o.deal ? 'DEALT' : '', phase(age(day)));
       var y = 124;
@@ -244,7 +302,7 @@
 
   var KINDS = { week: week, news: news, book: book, tarot: tarot, cards: cards, pass: pass };
   function draw(cv, kind, data, stack, o) {
-    var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
+    var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     return oneBit(cv, Math.min(cv.height, K.draw(k, data || {}, stack, o || {})));
   }
   window.CARTS = { draw: draw, kinds: KINDS, today: today, seed: seed, major: MAJOR, bookPage: bookPage };
@@ -260,7 +318,14 @@
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
-  function paint() { draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; $('#st').textContent = S.after || ''; S.after = ''; keys(); }
+  function paint() { draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); }
+  function artTap(e) { if (!S.o.art) return; var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, y = (e.clientY - r.top) * cv.height / r.height;
+    var h = HITS.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0]; if (!h) return;
+    if (ART[h.key]) { if (confirm('Take this art off?')) { delete ART[h.key]; artSave(h.key, null); paint(); } return; }
+    var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*';
+    fi.addEventListener('change', function () { var f = fi.files && fi.files[0]; if (!f) return; var u = URL.createObjectURL(f), im = new Image();
+      im.onload = function () { var k = Math.min(1, 360 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = R(im.width * k); c.height = R(im.height * k); var q = c.getContext('2d'); q.fillStyle = '#fff'; q.fillRect(0, 0, c.width, c.height); q.filter = 'grayscale(1) contrast(1.15)'; q.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        var url = c.toDataURL('image/jpeg', 0.72), a = new Image(); a.onload = function () { ART[h.key] = a; if (!artSave(h.key, url)) S.after = 'FULL'; paint(); }; a.src = url; }; im.src = u; }); fi.click(); }
   function load() {
     var st = $('#st'); S.ready = false; keys(); st.textContent = '· · ·';
     var got = S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
@@ -283,10 +348,15 @@
     st.textContent = '· · ·';
     if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
       return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'FULL' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
+    if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, 0)).then(all); };
+      return all().then(function () { S.o.page = pg0; paint(); st.textContent = 'SENT · ' + S.K.pages; }, function (e) { S.o.page = pg0; paint(); st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
+    send(T.raster(cv, 0)).then(function (c) { st.textContent = c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
+  }
+  function send(escpos) {
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
     try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
-    api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(cv, 0), from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
-      .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } st.textContent = (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
+    return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: escpos, from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
+      .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } return (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; });
   }
   function opts() {
     var el = $('#opts'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; });
@@ -301,6 +371,7 @@
     var id = (location.hash.slice(1) || new URLSearchParams(location.search).get('c') || 'weather').replace(/[^a-z0-9-]/g, '');
     fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) {
       if (!KINDS[s.kind]) throw new Error('kind'); S.stack = s; S.K = KINDS[s.kind]; $('#nm').textContent = s.name || id;
+      artLoad(s.id, function () { if (S.ready) paint(); }); cv.addEventListener('click', artTap);
       opts(); load(); printers();
       $('#to').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { S.to = b.dataset.p; keys(); } });
       $('#go').addEventListener('click', print);
