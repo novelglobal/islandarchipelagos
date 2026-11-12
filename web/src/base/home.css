@@ -916,7 +916,7 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sk-wx.wx-txt .wx-v { display: block; font: 600 clamp(14px, min(6.4cqw, 9cqh), 22px)/1.22 'Poppins', Arial, sans-serif; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 /* the portfolio card, every size: a clear window, the kept print in it when there is one; the ad a slim banner along its foot */
 #hm .sk-portfolio .rc-tap, #hm .sk-portfolio .rc-888 { display: none; }
-#hm .sk-portfolio .hm-rc::before { content: ''; position: absolute; z-index: 5; left: 6.3%; top: 7%; width: 87.6%; height: 61.5%; background: #0E2240; box-shadow: inset 0 0 0 1px rgba(244, 241, 232, .35); }
+#hm .sk-portfolio .hm-rc::before { content: none; }
 #hm .sk-portfolio .rc-kept, #hm .sk-portfolio .rc-code { z-index: 6; }
 #hm .sk-portfolio .rc-tp { z-index: 7; top: calc(68.5% - 7.4%); height: 7.4%; box-shadow: none; grid-template-columns: 22% 1fr; }
 #hm .sk-portfolio .rc-tp .tp-pr b { font-size: 22px; }
@@ -936,9 +936,9 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .g-week .wx-g::first-letter, .g-week .wx-k b::first-letter { text-transform: uppercase; }
 .g-week .wx-k b { display: block; color: #E3261F; font: 700 clamp(15px, 6.4cqw, 24px)/1.05 'Poppins', Arial, sans-serif; letter-spacing: -.03em; text-transform: lowercase; }
 .g-week .wx-k span { display: none; }
-.sk-wx.g-week .wx-v { position: static; align-items: center; padding: 1.6cqh 22% 1.6cqh 0; border-top: 1px solid #E3261F; border-bottom: 1px solid #E3261F; color: #2342A8; font-size: clamp(30px, min(22cqw, 24cqh), 72px); }
+.sk-wx.g-week .wx-v { position: static; align-items: center; padding: 1.6cqh 26% 1.6cqh 0; border-top: 1px solid #E3261F; border-bottom: 1px solid #E3261F; color: #2342A8; font-size: clamp(28px, min(17cqw, 24cqh), 64px); }
 .sk-wx.g-week.wx-txt .wx-v { display: block; padding-right: 22%; color: #2342A8; font: 500 clamp(13px, min(4.6cqw, 7cqh), 17px)/1.25 'Poppins', Arial, sans-serif; letter-spacing: -.01em; -webkit-line-clamp: 4; }
-.g-week .wx-ic { position: absolute; right: 6cqw; top: 50%; height: 24cqh; aspect-ratio: 1; transform: translateY(-30%); }
+.g-week .wx-ic { position: absolute; right: 6cqw; top: 50%; width: min(20cqw, 24cqh); aspect-ratio: 1; transform: translateY(-30%); }
 .wx-ic svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
 .g-week .wx-ic svg { stroke: #2342A8; }
 .g-week .wx-s, .sk-wx.g-week.wx-wet .wx-s { align-self: stretch; padding: 1.4cqh 0 0; border: 0; background: none; color: #2342A8; font: 500 clamp(9px, 3cqw, 11px)/1.2 'Poppins', Arial, sans-serif; letter-spacing: .02em; }
@@ -973,8 +973,14 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sk-wx.g-deck .wx-v { position: relative; flex: 1; min-height: 0; display: block; background: #DCDAC0; }
 .g-deck .wx-h { position: absolute; left: 3cqw; top: 2.4cqh; font: 600 clamp(12px, 4.4cqw, 16px)/1 'Poppins', Arial, sans-serif; letter-spacing: 0; }
 .g-deck .wx-l { display: none; }
-.g-deck .wx-ic { position: absolute; left: 50%; top: 50%; height: 78%; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.g-deck .wx-ic { position: absolute; left: 50%; top: 50%; width: min(56cqw, 50cqh); aspect-ratio: 1; transform: translate(-50%, -50%); }
 .g-deck .wx-ic svg { stroke: #111; stroke-width: .7; }
 .g-deck .wx-s { padding: 0 24% 0 0; border: 0; font: italic 400 clamp(10px, 3.4cqw, 13px)/1.2 'Poppins', Arial, sans-serif; letter-spacing: 0; text-transform: lowercase; }
 .g-deck .wx-s::first-letter { text-transform: uppercase; }
 #hm .hm-card.sk-wx.g-read:not(.r-non) .hm-keys .hm-rk:not(.on) { color: #111 !important; }
+
+/* on a wide screen the small cards stand as cards, not strips: the same proportion as a phone's, centred in the page */
+@media (min-width: 900px) {
+  .hm-trio .hm-card.small.sk-wx { height: auto; max-height: calc(100dvh - var(--hm-top) - var(--hm-peek) - 48px); aspect-ratio: 5 / 7; align-self: center; }
+  .g-read .wx-f { padding-right: 14cqw; }
+}

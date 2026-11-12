@@ -43,7 +43,7 @@
     { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'kit', size: 'full', title: 'ISLAND', tag: 'INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     /* the small cards: three themes, three ways each. THIS WEEK, READ, CARDS */
@@ -547,7 +547,7 @@
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k">' + (c.tag ? '<i class="wx-g">' + esc(c.tag) + '</i>' : '') + '<b>' + t + '</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span>' + (WXART[c.cart] ? '<i class="wx-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + WXART[c.cart] + '</svg></i>' : '') + '</p><p class="wx-s"></p></div>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
@@ -1189,6 +1189,16 @@
     else { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min(CH - 40, J.y)); }
     var ws = (open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
   }
+  /* the other one, drawn as the Irukandji was first drawn: the round bell in lines, its four strings in dots, lighter and smaller */
+  var IRUK2 = null;
+  function drawJelly2(g, t, Q) {
+    if (!IRUK2) IRUK2 = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8',
+      'M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'].map(function (q) { return new Path2D(q); });
+    var m = RM.matches ? 0 : 1, s = 0.68 * (1 + 0.06 * Math.sin(t * 1.3 + Q.ph * 6) * m);
+    g.save(); g.translate(Q.x, Q.y); g.rotate(Q.a + Math.PI / 2 + Math.sin(t * 0.7) * 0.18 * m); g.scale(s, s); g.translate(-32, -28);
+    g.strokeStyle = 'rgba(244,241,232,.88)'; g.lineWidth = 2.4; g.lineCap = 'round'; g.lineJoin = 'round';
+    IRUK2.forEach(function (q, i) { if (i < 5) { g.stroke(q); return; } g.save(); g.setLineDash([0.2, 3.6]); g.translate(Math.sin(t * 1.8 + i) * 1.4 * m, 0); g.stroke(q); g.restore(); });
+    g.restore(); }
   function drawJelly(g, t) {
     var S = J.s, ink = function (a) { return 'rgba(244,241,232,' + a.toFixed(3) + ')'; };
     var line = function (pts, w, a) { g.strokeStyle = ink(a); g.lineWidth = w; trace(g, pts); g.stroke(); };
@@ -1751,7 +1761,7 @@
       if (LOVE.until) aim = { x: J.x, y: J.y, rx: 30, ry: 12 }; else if (seen) aim = J.orbit ? { x: J.x, y: J.y, rx: 26, ry: 18 } : { x: pr2.left + pr2.width * 0.66 - jr.left, y: pr2.top + pr2.height * 0.3 - jr.top, rx: 22, ry: 26, slow: 1 };
       if (aim) { if (!J2.on) { J2.on = true; J2.x = aim.x + (Math.random() - 0.5) * 120; J2.y = low; J2.a = -Math.PI / 2; } if (!J2.orbit) J2.th = Math.atan2(J2.y - aim.y, J2.x - aim.x); J2.orbit = aim; J2.al = Math.min(1, J2.al + dt * 0.8); }
       else if (J2.on) { J2.orbit = { x: J2.x, y: low + 40, rx: 1, ry: 1 }; if (J2.y > low - 30) J2.al = Math.max(0, J2.al - dt * 1.2); if (J2.al <= 0) { J2.on = false; J2.orbit = null; } }
-      if (J2.on) { var J0 = J; J = J2; swim(dt * (aim && aim.slow ? 1.4 : 2.4), t, false); J = J0; J2.blink = Math.max(0, J2.blink - dt); } }
+      if (J2.on) { var J0 = J; J = J2; swim(dt * (aim && aim.slow ? 1.1 : 1.7), t, false); J = J0; J2.x += Math.sin(t * 0.55 + 1.3) * 18 * dt; J2.y += Math.cos(t * 0.8) * 9 * dt; J2.blink = Math.max(0, J2.blink - dt); } }
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
@@ -1761,7 +1771,7 @@
     var jw = Math.round(rr.width * dpr), jh = Math.round(rr.height * dpr); if (jcv.width !== jw || jcv.height !== jh) { jcv.width = jw; jcv.height = jh; }
     var wide = J.orbit || J.back || J.wide || J2.on || J2.was; J.wide = !!(J.orbit || J.back); J2.was = J2.on; jx.setTransform(1, 0, 0, 1, 0, 0);
     if (wide) jx.clearRect(0, 0, jcv.width, jcv.height); else jx.clearRect(Math.floor((jr.left - rr.left) * dpr) - 1, Math.floor((jr.top - rr.top) * dpr) - 1, Math.ceil(jr.width * dpr) + 2, Math.ceil(jr.height * dpr) + 2);
-    if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back && !J2.on) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); if (J2.on) { var J1 = J; J = J2; jx.globalAlpha = J2.al; drawJelly(jx, t); jx.globalAlpha = 1; J = J1; } jx.restore(); }
+    if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back && !J2.on) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); if (J2.on) { jx.globalAlpha = J2.al; drawJelly2(jx, t, J2); jx.globalAlpha = 1; } jx.restore(); }
     if (sheet) return;
     /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself, and the radio on air takes over from it */
     if (RS.song && !away && !(AIR.kept && AIR.on) && !(SND && SND.a)) songTick();

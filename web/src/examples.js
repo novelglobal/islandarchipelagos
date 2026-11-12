@@ -8,10 +8,10 @@ window.DA_EXAMPLES = [
     code: 'DA-0RNG', at: '2026-10-06T10:00:00+11:00', brief: 'B43',
     pin: { lat: -37.7841, lng: 144.9515, n: 'Pongo abelii', cn: 'Sumatran Orangutan', ic: 'Mammalia', g: 'ape', place: 'PARKVILLE' },
     threat: 'El Niño fires burn Sumatra’s forests', when: 'DROUGHT · JAN–MAR', deg: 3,
-    lines: { w: 'Fires burned ~900,000 ha of Indonesia by Aug', i: 'Zoo orangutans nest in cloth from Sumatra', s: 'Plastic out. Forest fibre in.', h: 'Brunswick studio + Sumatran weavers: nest kit' },
+    lines: { w: 'Fires burned ~900,000 ha of Indonesia by Aug', i: 'Nests woven by the hands of the forest', s: 'Plastic out. Forest fibre in.', h: 'Loom 3056 + Ibu Rani: the nest kit' },
     nodes: [
-      { k: 'a', t: 'biz', n: 'A Brunswick studio', role: 'studio', b: 20, d: 420 },
-      { k: 'b', t: 'biz', n: 'A local label', role: 'label', b: 70, d: 380 },
+      { k: 'a', t: 'biz', n: 'Loom 3056', role: 'studio', b: 20, d: 420 },
+      { k: 'b', t: 'biz', n: 'Ibu Rani', role: 'weaver', b: 70, d: 380 },
       { k: 'c', t: 'group', n: 'Friends of Royal Park', b: 160, d: 300 },
     ],
     edges: [['pin', 'a'], ['a', 'b'], ['pin', 'c']],
@@ -51,6 +51,21 @@ window.DA_EXAMPLE_KIT = {
     { t: '#WHOMADEMYCLOTHES', by: 'Fashion Revolution · 2013', d: 'Begun after the Rana Plaza collapse: every garment can say who made it.', src: 'https://www.fashionrevolution.org/' },
     { t: 'RSPO', by: 'Roundtable on Sustainable Palm Oil · 2004', d: 'A certificate for palm oil grown without clearing forest.', src: 'https://rspo.org/' },
   ],
-  action: { t: 'NEST KIT', d: 'Forest fibre woven in Brunswick with Sumatran weavers: the orangutans\' nests at the zoo, and a market for the forest standing.' },
+  /* THE NEST: one story in three threads that meet at the wish. The names are the story's own: Api, Sela, Wren, Ibu Rani and Loom 3056
+     are characters, marked STORY; the places and every fact are real, each with its source */
+  story: {
+    t: 'THE NEST', at: 'ROYAL PARK · PARKVILLE',
+    song: { t: 'NEST SONG', d: 'The radio over Royal Park: choir, bubbles, glass.' },
+    threads: [
+      { k: 'forest', t: 'FOREST', col: '#2F9B4E', ink: '#F4F1E8', at: 'GUNUNG LEUSER · SUMATRA', line: 'Every night Sela builds a nest. This year the forest burns under it.',
+        cast: [['API', 'orangutan, born the dry year'], ['SELA', 'his mother'], ['THE ALAS', 'the river they cross']], to: ['RADIO', 'novel.global/#radio'] },
+      { k: 'park', t: 'PARK', col: '#A99CE2', ink: '#0C0E0E', at: 'ROYAL PARK · PARKVILLE', line: 'Far south, Wren reads the smoke maps at dawn and asks what a nest is made of.',
+        cast: [['WREN', 'keeper, the early shift'], ['THE MAP', 'smoke, drawn by satellite']], to: ['RESEARCH', 'novel.global/#research'] },
+      { k: 'loom', t: 'LOOM', col: '#F07A3E', ink: '#0C0E0E', at: 'BRUNSWICK · MEDAN', line: 'Ibu Rani spins the fibre, Loom 3056 weaves it: a nest that pays a forest to stand.',
+        cast: [['IBU RANI', 'weaver, Medan'], ['LOOM 3056', 'a studio, Brunswick']], to: ['ART', 'novel.global/art'] },
+    ],
+    art: '/cards/zine.jpg',
+  },
+  action: { t: 'NEST KIT', d: 'Fibre spun in Medan, woven in Brunswick: a nest for Api, and a market for the forest standing.' },
   intel: 'NIÑO3.4 +2.81 · 895,657 HA · 1,061,746 HOTSPOTS · LEUSER',
 };

@@ -414,6 +414,7 @@ if (run('portfolio')) try {
   const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'portfolio');
   const made = await admin('posts', { title: 'Fan night at Kines', cat: 'case study', summary: 'Twelve fans repaired before the first 35°.', body: 'We met at six.\n\n## What worked\n\nA queue, a bench, a list.', links: ['https://example.org/fans'], status: 'published' });
   await admin('posts', { title: 'A draft nobody sees', body: 'Not yet.' });
+  await admin('settings', { blogShow: true });
   await page.goto('https://oan.test/studio'); await ready(page); await tab(page, 3); await sleep(1200);
   const inApp = await page.evaluate(() => ({ view: window.__da.S.view, rows: [...document.querySelectorAll('#sec-work .sig-line')].map(a => ({ t: a.querySelector('.hl').textContent, href: a.getAttribute('href'), cat: a.querySelector('.code').textContent })) }));
   check('PORTFOLIO lists the work published, never a draft, each linking to its own page', inApp.view === 3 && inApp.rows.length === 1 && inApp.rows[0].t === 'Fan night at Kines' && inApp.rows[0].cat === 'CASE STUDY' && inApp.rows[0].href === `blog.html#${made.slug}`, JSON.stringify(inApp));
