@@ -631,10 +631,14 @@ async function keeper(db, env, req) {
 }
 /* passes made for one island, and its own slips sent straight to it */
 async function passDo(db, env, p, b) {
-  if (b.action === 'passes') { if (!codeKey(env)) return fail(503, 'passes'); return json({ island: p.id, name: p.name || p.id, ...(await passMake(env, p.id, Math.max(1, Math.min(10, Math.round(+b.n || 1))))) }); }
-  if (b.action === 'print') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'print');
-    const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(p.id).first(); if (q >= LIMIT.perPrinter) return fail(503, 'its queue is full');
-    await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), p.id, b.escpos, now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), p.id)]); return json({ ok: true }); }
+  if (!codeKey(env)) return fail(503, 'passes');
+  if (b.action === 'look') return json({ island: p.id, name: p.name || p.id, mark: await markOf(env, p.id) });
+  if (b.action === 'passes') { const n = Math.max(1, Math.min(10, Math.round(+b.n || 1)));
+    let head = null; if (b.escpos != null) { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'head'); const h = [...atob(b.escpos)].map(c => c.charCodeAt(0)); if (h[0] !== 0x1B || h[1] !== 0x40) return fail(400, 'head'); head = h.slice(-7).join() === '27,100,4,29,86,66,0' ? h.slice(0, -7) : h; }
+    const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(p.id).first(); if (q + n > LIMIT.perPrinter) return fail(503, 'its queue is full');
+    const m = await passMake(env, p.id, n), t = now();
+    await db.batch([...m.passes.map((c, i) => db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), p.id, passSlip(p.name || p.id, m.mark, c, head), t + i)), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, p.id)]);
+    return json({ ok: true, n, island: p.id, name: p.name || p.id, mark: m.mark }); }
   return fail(400, 'action');
 }
 /* the approval page: a code looked up (from the island's slip, scanned), then approved for a printer here or a new one by the island's name */
@@ -762,7 +766,7 @@ async function admin(db, env, req, parts) {
     if (b.action === 'name') { const n = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!n) return fail(400, 'name'); await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(n, id).run(); return json({ ok: true, name: n }); }
     if (b.action === 'paper' && ['58', '80'].includes(String(b.paper))) { await db.prepare('UPDATE printers SET paper = ? WHERE id = ?').bind(String(b.paper), id).run(); return json({ ok: true }); }
     /* the calibration strip, drawn on the approval page as the printer's own dots */
-    if (b.action === 'passes' || b.action === 'print') return passDo(db, env, { id, name: (await db.prepare('SELECT name FROM printers WHERE id = ?').bind(id).first() || {}).name }, b);
+    if (b.action === 'passes' || b.action === 'look') return passDo(db, env, { id, name: (await db.prepare('SELECT name FROM printers WHERE id = ?').bind(id).first() || {}).name }, b);
     if (b.action === 'strip') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'strip'); await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-STRIP', ?, 'queued', ?)").bind(rid(), id, b.escpos, now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     if (b.action === 'test') { await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, mesh, status, created) VALUES (?, ?, 'DA-TEST', ?, 'queued', ?)").bind(rid(), id, 'DIRECT ACTION - test print', now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     return fail(400, 'action');
@@ -1075,6 +1079,28 @@ async function passFind(db, env, code) { const c = code.replace('-', ''), day = 
   for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };
   return null; }
 async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
+/* a pass asked for from a phone: the printer's own text and QR, so the code is only ever on the paper; one each quarter hour per island */
+function passSlip(name, mark, code, head) {
+  const o = [], put = (...b) => o.push(...b), txt = s => put(...enc.encode(String(s).replace(/[^\x20-\x7E]/g, '')), 10), size = n => put(0x1D, 0x21, n);
+  if (head) { o.push(...head); put(0x1B, 0x61, 1); } else { put(0x1B, 0x40, 0x1B, 0x61, 1); size(0x11); txt('PASS'); size(0); txt(String(name).toUpperCase().slice(0, 32)); txt('-'.repeat(32)); put(10); size(0x22); txt(mark.w); }
+  put(10); size(0x33); txt(code); size(0); txt('ONE PRINT, STRAIGHT OUT'); put(10);
+  const d = enc.encode('https://novel.global/c#' + code.replace('-', '')), n = d.length + 3;
+  put(0x1D, 0x28, 0x6B, 4, 0, 0x31, 0x41, 0x32, 0, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x43, 6, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x45, 0x31, 0x1D, 0x28, 0x6B, n & 0xFF, n >> 8, 0x31, 0x50, 0x30, ...d, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x51, 0x30);
+  put(10); txt('TODAY - ONE USE'); size(0x01); txt('novel.global/c'); size(0); put(0x1B, 0x64, 4, 0x1D, 0x56, 0x42, 0);
+  let s = ''; for (let i = 0; i < o.length; i += 0x8000) s += String.fromCharCode(...o.slice(i, i + 0x8000)); return btoa(s);
+}
+async function passAsk(db, env, req) {
+  if (!codeKey(env)) return fail(503, 'passes');
+  const b = await body(req, 512), id = String(b.ask || ''); if (!/^[a-z0-9-]{1,40}$/.test(id)) return fail(400, 'ask');
+  const p = await db.prepare("SELECT id, name, seen FROM printers WHERE id = ? AND (token IS NOT NULL OR id = 'novelglobal')").bind(id).first(); if (!p) return fail(404, 'no such island');
+  const k = 'passask:' + id, t = now(), last = await db.prepare('SELECT max(t) AS t FROM hits WHERE k = ?').bind(k).first();
+  if (last && last.t && t - last.t < 15 * 60e3) return fail(429, 'just printed');
+  if (await tooMany(db, env, req, 'passask', 4, 60 * 60e3)) return fail(429, 'too many');
+  const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(id).first(); if (q >= LIMIT.perPrinter) return fail(503, 'its queue is full');
+  const m = await passMake(env, id, 1);
+  await db.batch([db.prepare('INSERT INTO hits (k, t) VALUES (?, ?)').bind(k, t), db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), id, passSlip(p.name || id, m.mark, m.passes[0]), t), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, id)]);
+  return json({ ok: true, name: p.name || id, ready: !!p.seen && t - p.seen < 120e3 });
+}
 async function codeRead(db, env, req, raw) {
   if (await tooMany(db, env, req, 'code', 40, 10 * 60e3)) return fail(429, 'too many');
   const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12);
@@ -1108,6 +1134,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'stories' && p[1] && m === 'GET') return CODE.test(p[1]) ? oneStory(db, p[1]) : fail(400, 'code');
   if (p[0] === 'receipts' && p[1] && m === 'GET') return receipt(db, p[1]);
   if (p[0] === 'c' && p[1] && !p[2] && m === 'GET') return codeRead(db, env, req, p[1]);
+  if (p[0] === 'c' && !p[1] && m === 'POST') return passAsk(db, env, req);
   if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db);
   if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
   if (p[0] === 'plays' && p[1] && m === 'GET') return playOne(db, p[1]);

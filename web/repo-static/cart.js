@@ -219,18 +219,19 @@
   var pass = {
     opts: [['p1', 'ONE'], ['p5', 'FIVE']],
     act: function (a, s, o) { o.n = a === 'p5' ? 5 : 1; return true; },
-    get: function (s, o) { var b = JSON.stringify({ action: 'passes', n: o.n || 1 }); return keeper(b); },
-    send: function (escpos) { return keeper(JSON.stringify({ action: 'print', escpos: escpos })); },
+    get: function () { return keeper(JSON.stringify({ action: 'look' })); },
+    send: function (head, o) { return keeper(JSON.stringify({ action: 'passes', n: o.n || 1, escpos: head })); },
     draw: function (k, d, s, o) {
-      var day = today(), m = d.mark || { e: '·', w: '' }, c = (d.passes || [])[o.at || 0] || '··· ···';
+      var day = today(), m = d.mark || { e: '·', w: '' };
       var y = k.head('PASS', d.name || 'ISLAND', phase(age(day)));
       markDots(k, m.e, W / 2, y + 150, 240);
       y += 310; k.fit(m.w, W / 2, y, '700', 40, W - 60, SANS, 'center');
       y += 26; k.box(M, y, W - 2 * M, 2);
-      y += 118; k.fit(c, W / 2, y, '400', 132, W - 40, TTY, 'center');
-      y += 40; k.txt('ONE PRINT, STRAIGHT OUT', W / 2, y, '600 20px ' + MONO, 'center');
-      y += 26; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/c#' + c.replace(/\W/g, ''), 'TODAY · ONE USE', 'TYPE IT AT novel.global/c');
+      if (o.head) return y + 12;
+      y += 24; k.dots(M + 40, y, W - 2 * M - 80, 120); k.g.fillStyle = '#fff'; k.g.fillRect(M + 48, y + 8, W - 2 * M - 96, 104);
+      k.txt('THE CODE PRINTS HERE', W / 2, y + 68, '600 20px ' + MONO, 'center');
+      y += 160; k.txt('ONE PRINT, STRAIGHT OUT', W / 2, y, '600 20px ' + MONO, 'center');
+      y += 26; k.box(M, y, W - 2 * M, 3); return y + 14;
     }
   };
   function keeper(b) {
@@ -281,9 +282,8 @@
   function print() {
     var go = $('#go'), st = $('#st'); if (!S.ready || !S.to) return; go.disabled = true;
     st.textContent = '· · ·';
-    if (S.K.send) { var l = (S.data.passes || []).slice(), n = 0, one = function () { if (n >= l.length) return Promise.resolve();
-        S.o.at = n; paint(); var r = T.raster(cv, 0); n++; return S.K.send(r).then(one); };
-      return one().then(function () { S.after = 'SENT · ' + l.length + (l.length > 1 ? ' PASSES' : ' PASS'); S.o.at = 0; load(); }, function () { st.textContent = 'NOT SENT'; S.o.at = 0; go.disabled = false; keys(); }); }
+    if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
+      return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'ITS QUEUE IS FULL' : 'NOT SENT'; }).then(function () { go.disabled = false; keys(); }); }
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
     try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
     api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(cv, 0), from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
@@ -294,7 +294,7 @@
     el.innerHTML = l.map(function (x) { return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.dataset.a;
       if (b.dataset.t) { S.o[a] = !S.o[a]; paint(); return; }
-      if (S.K.act && S.K.act(a, S.stack, S.o)) { if ((S.K.feed || S.K.get) && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
+      if (S.K.act && S.K.act(a, S.stack, S.o)) { if (S.K.feed && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
   }
   document.addEventListener('DOMContentLoaded', function () {
     if (!$('#cart')) return; if (IN) document.documentElement.className = 'in';

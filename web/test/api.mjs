@@ -315,16 +315,19 @@ try {
     const on = await call('/api/island', { method: 'POST', token: K, body: { links: ['wish', 'nonsense'] } }), yes = await call('/api/stories', { method: 'POST', ip: '10.0.0.77', body: story('DA-4TPZ', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc }) });
     check('connections: a W.I.S.H. piece is refused by an island without W.I.S.H. on and printed once its keeper switches it on; its own stacks print either way; nothing but the six connections is kept',
       no.status === 403 && [200, 201].includes(own.status) && on.json.links.join() === 'wish' && [200, 201].includes(yes.status), JSON.stringify([no.status, own.status, on.json && on.json.links, yes.status]));
-    /* passes: the keeper prints today's, the reader knows one, it sends one print straight out, once */
-    const ps = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 3 } }), pc = (ps.json.passes || [])[0] || '';
+    /* passes: no screen ever sees a code; the printer gets it on paper; the reader knows it; it sends one print straight out, once */
+    const PT = got.json.token, codeOf = async () => { for (let i = 0; i < 8; i++) { const r = await call(`/api/printers/${id}/next`, { token: PT }); const e = r.json && r.json.escpos; if (!e) return ''; const m = /[A-Z]{3}-[A-Z]{3}/.exec(Buffer.from(e, 'base64').toString('latin1')); if (r.json.code === 'DA-PASS' && m) return m[0]; } return ''; };
+    const lk = await call('/api/island', { method: 'POST', token: K, body: { action: 'look' } }), ps = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), pc = await codeOf();
     const rd = await call('/api/c/' + pc), bad = await call('/api/c/' + (pc ? pc.slice(0, 4) + (pc[4] === 'A' ? 'B' : 'A') + pc.slice(5) : 'AAA-AAA'));
     const p1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPA', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });
     const p2 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPB', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });
-    const rd2 = await call('/api/c/' + pc.replace('-', '')), kp = await call('/api/island', { method: 'POST', token: K, body: { action: 'print', escpos: esc } }), ad = await call('/api/admin/printers/novelglobal', { method: 'POST', key: KEY, body: { action: 'passes' } });
-    check('passes: a keeper prints today\'s with its mark; the reader knows one; it sends one print straight out, once; a changed code is no pass',
-      ps.status === 200 && ps.json.passes.length === 3 && /^[A-Z]{3}-[A-Z]{3}$/.test(pc) && ps.json.mark && ps.json.mark.w && rd.status === 200 && rd.json.kind === 'pass' && rd.json.island === id && rd.json.used === false && bad.status === 404
-      && p1.json.passed === true && p1.json.job.status === 'queued' && !p2.json.passed && p2.json.job.status === 'held' && rd2.json.used === true && kp.status === 200 && ad.status === 200 && ad.json.passes.length === 1,
-      JSON.stringify([ps.status, pc, rd.json, bad.status, p1.json, p2.json, rd2.json, kp.status, ad.status]));
+    const rd2 = await call('/api/c/' + pc.replace('-', '')), ad = await call('/api/admin/printers/novelglobal', { method: 'POST', key: KEY, body: { action: 'passes' } });
+    const a1 = await call('/api/c', { method: 'POST', ip: '10.0.0.79', body: { ask: id } }), a2 = await call('/api/c', { method: 'POST', ip: '10.0.0.80', body: { ask: id } }), a3 = await call('/api/c', { method: 'POST', ip: '10.0.0.79', body: { ask: 'nowhere' } });
+    const seen = JSON.stringify([lk.json, ps.json, ad.json, a1.json]);
+    check('passes: no screen is handed a code, the printer is; the reader knows one; it sends one print straight out, once; a changed code is no pass; asked from a phone, one each quarter hour',
+      lk.status === 200 && lk.json.mark && lk.json.mark.w && ps.status === 200 && ps.json.n === 2 && !/[A-Z]{3}-[A-Z]{3}/.test(seen) && /^[A-Z]{3}-[A-Z]{3}$/.test(pc) && rd.status === 200 && rd.json.kind === 'pass' && rd.json.island === id && rd.json.used === false && bad.status === 404
+      && p1.json.passed === true && p1.json.job.status === 'queued' && !p2.json.passed && p2.json.job.status === 'held' && rd2.json.used === true && ad.status === 200 && a1.status === 200 && a2.status === 429 && a3.status === 404,
+      JSON.stringify([lk.status, ps.json, pc, rd.json, bad.status, p1.json, p2.json, rd2.json, ad.status, a1.json, a2.json, a3.status]));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));
