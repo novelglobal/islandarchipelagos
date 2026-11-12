@@ -135,16 +135,21 @@
   };
 
   /* ───────── book: one page a day ───────── */
-  var bookPage = function (s) { return dayNo(today()) - dayNo(s.from || '2026-11-12') + 1; };
   var book = {
-    feed: function (s, o) { return '/book?p=' + Math.max(1, (o.p || bookPage(s))); },
-    opts: [['prev', '‹ PAGE'], ['next', 'PAGE ›'], ['today', 'TODAY']],
-    act: function (a, s, o) { var p = o.p || bookPage(s); o.p = a === 'today' ? 0 : Math.max(1, p + (a === 'next' ? 1 : -1)); return true; },
+    feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1); },
+    opts: [['bprev', '‹ BOOK'], ['bnext', 'BOOK ›'], ['prev', '‹ PAGE'], ['next', 'PAGE ›']],
+    act: function (a, s, o) {
+      var b = o.b || 1, p = o.p || 1;
+      if (a === 'bprev' || a === 'bnext') { o.b = ((b - 1 + (a === 'bnext' ? 1 : 19)) % 20) + 1; o.p = 1; }
+      else o.p = Math.max(1, p + (a === 'next' ? 1 : -1));
+      return true;
+    },
     draw: function (k, d, s) {
-      k.head('BOOK', 'PAGE ' + d.p + ' / ' + d.of, phase(age(today())));
+      k.head('BOOK', d.b + ' / ' + d.books, 'PAGE ' + d.p + ' / ' + d.of);
       var y = 128; k.fit(String(d.title || '').toUpperCase(), M, y, '700', 28, W - 2 * M, SANS);
-      k.txt(String(d.author || '').toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
-      String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 22px ' + SANS, W - 2 * M, 31) + 12; });
+      k.txt((String(d.author || '') + ' · ' + d.year).toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
+      if (d.review) { y += k.wrap(d.review, M, y, 'italic 400 22px ' + SANS, W - 2 * M, 30) + 8; k.box(M, y, W - 2 * M, 1); y += 34; }
+      String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 21px ' + SANS, W - 2 * M, 29) + 10; });
       y += 4; k.box(M, y, W - 2 * M, 3);
       return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
     }
@@ -305,7 +310,7 @@
     var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     return oneBit(cv, Math.min(cv.height, K.draw(k, data || {}, stack, o || {})));
   }
-  window.CARTS = { draw: draw, kinds: KINDS, today: today, seed: seed, major: MAJOR, bookPage: bookPage };
+  window.CARTS = { draw: draw, kinds: KINDS, today: today, seed: seed, major: MAJOR };
 
   /* page */
   if (!T) return;

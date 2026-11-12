@@ -845,20 +845,49 @@ async function newsThrough() {
   return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
 }
 /* book cart feed: one public-domain book, a page at a time */
-const BOOK = { id: 4341, title: 'Mutual Aid', author: 'Peter Kropotkin · 1902', pages: null };
+/* twenty public-domain books, a page a print; always opens on page 1 */
+const BOOKS = [
+  [4341, 'Mutual Aid', 'Peter Kropotkin', 1902, 'Evolution read as cooperation: ants, birds, villages and guilds that last by helping each other. A field guide for anyone building a commons.', '^INTRODUCTION$'],
+  [23428, 'The Conquest of Bread', 'Peter Kropotkin', 1892, 'A working plan for a city that feeds, houses and warms everyone first. Read it for the arithmetic of enough.', '^THE CONQUEST OF BREAD$'],
+  [3261, 'News from Nowhere', 'William Morris', 1890, 'A man wakes in a future London of gardens, craft and no money. Work turns to pleasure and the Thames runs clean.', '^CHAPTER I: DISCUSSION'],
+  [32, 'Herland', 'Charlotte Perkins Gilman', 1915, 'Three explorers find a country of women who have run it well for two thousand years. A sharp, funny audit of what passes for normal.', '^CHAPTER 1\\.'],
+  [18247, 'The Last Man', 'Mary Shelley', 1826, 'A plague empties the world one city at a time. Shelley on grief, politics and who is left to remember.'],
+  [21970, 'The Scarlet Plague', 'Jack London', 1912, 'Sixty years after the sickness, an old man tells boys on a wild coast what the cities were. Short, bleak and clear.'],
+  [1906, 'Erewhon', 'Samuel Butler', 1872, 'A country that jails the sick, nurses the criminal and once smashed its machines in case they evolved. The Book of the Machines still reads as news.', '^CHAPTER I\\. WASTE LANDS$'],
+  [10002, 'The House on the Borderland', 'William Hope Hodgson', 1908, 'A recluse\u2019s journal from a house at the edge of time. He watches the sun die from his study chair.', '^THE FINDING OF THE MANUSCRIPT$'],
+  [8492, 'The King in Yellow', 'Robert W. Chambers', 1895, 'Stories around a play that unmakes whoever reads it. Art as contagion; the first four are the ones to keep.'],
+  [769, 'The Book of Tea', 'Kakuzo Okakura', 1906, 'A small case for the imperfect, made through a cup of tea. On rooms, flowers and living lightly.', '^I\\. The Cup of Humanity'],
+  [216, 'Tao Teh King', 'Laozi, tr. James Legge', 1891, 'Eighty-one short chapters on yielding, emptiness and the strength of water. Small enough to carry, deep enough to keep returning to.', '^Ch\\. 1\\.'],
+  [59709, 'Chuang Tzu', 'Zhuangzi, tr. Herbert Giles', 1889, 'A butterfly dream, a useless tree that lives long, a cook whose knife never dulls. Philosophy told as jokes and parables.'],
+  [1017, 'The Soul of Man under Socialism', 'Oscar Wilde', 1891, 'Wilde argues for socialism so that everyone can become an individual. Machines take the dull work; people make art.', '^THE chief advantage'],
+  [833, 'The Theory of the Leisure Class', 'Thorstein Veblen', 1899, 'Where conspicuous consumption was named. A dry, exact anatomy of status, waste and display.', '^Chapter One'],
+  [1022, 'Walking', 'Henry David Thoreau', 1862, 'An essay on sauntering toward the wild. The line about wildness preserving the world begins here.', '^I wish to speak'],
+  [201, 'Flatland', 'Edwin A. Abbott', 1884, 'A square in a flat world is shown a third dimension. A satire of rank and a lesson in seeing past your own plane.', '^PART I\\b'],
+  [408, 'The Souls of Black Folk', 'W. E. B. Du Bois', 1903, 'Essays that named double consciousness and the colour line. History, sociology and song in one book.', '^The Forethought$'],
+  [1408, 'The Natural History of Selborne', 'Gilbert White', 1789, 'Letters from a parish naturalist who watched swifts, tortoises and earthworms for decades. The root text of attending to one place.', '^LETTERS to THOMAS PENNANT'],
+  [36541, 'Unto This Last', 'John Ruskin', 1862, 'Four essays against an economics of pure profit. There is no wealth but life.', '^UNTO THIS LAST:$'],
+  [11438, 'The Willows', 'Algernon Blackwood', 1907, 'Two men canoe the Danube into a marsh where the land itself seems to watch. Nature as presence, past the edge of the known.', '^I\\.$']
+];
+const BOOKP = new Map();
+async function bookPages(bk) {
+  if (BOOKP.has(bk[0])) return BOOKP.get(bk[0]);
+  let t = ''; try { const r = await fetch(`https://www.gutenberg.org/cache/epub/${bk[0]}/pg${bk[0]}.txt`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 30 * 86400, '300-599': 0 } } }); if (r.ok) t = await r.text(); } catch {}
+  const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return null;
+  const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
+  const paras = body.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').replace(/_/g, '').replace(/--/g, '\u2014').trim()).filter(p => p && !/^\[Illustration/.test(p));
+  let s = bk[5] ? paras.findIndex(p => new RegExp(bk[5]).test(p)) : -1;
+  if (s < 0) { s = paras.findIndex(p => p.length >= 300); if (s < 0) s = 0; let k = 0; while (s > 0 && k < 2 && paras[s - 1].length < 70) { s--; k++; } }
+  paras.splice(0, s);
+  const pages = []; let cur = '';
+  const add = x => { if (cur && cur.length + x.length > 4800) { pages.push(cur); cur = ''; } cur = cur ? cur + '\n\n' + x : x; };
+  paras.forEach(p => { if (p.length <= 4800) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > 4000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
+  if (cur) pages.push(cur); if (pages.length) BOOKP.set(bk[0], pages); return pages;
+}
 async function bookThrough(url) {
-  if (!BOOK.pages) {
-    let t = ''; try { const r = await fetch(`https://www.gutenberg.org/cache/epub/${BOOK.id}/pg${BOOK.id}.txt`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 30 * 86400, '300-599': 0 } } }); if (r.ok) t = await r.text(); } catch (e) { /* none */ }
-    const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return fail(502, 'book');
-    const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
-    const paras = body.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').replace(/_/g, '').replace(/--/g, '—').trim()).filter(p => p && !/^\[Illustration/.test(p)); const intro = paras.indexOf('INTRODUCTION'); if (intro > 0) paras.splice(0, intro);
-    const pages = []; let cur = '';
-    const add = s => { if (cur && cur.length + s.length > 1200) { pages.push(cur); cur = ''; } cur = cur ? cur + '\n\n' + s : s; };
-    paras.forEach(p => { if (p.length <= 1200) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(s => { if (bit && bit.length + s.length > 1000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + s : s; }); if (bit) add(bit); });
-    if (cur) pages.push(cur); BOOK.pages = pages;
-  }
-  const n = BOOK.pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+url.searchParams.get('p') || 1))), p = ((p0 - 1) % n) + 1;
-  return json({ title: BOOK.title, author: BOOK.author, p, of: n, text: BOOK.pages[p - 1] });
+  const q = url.searchParams, bi = Math.max(1, Math.min(BOOKS.length, Math.round(+q.get('b') || 1))), bk = BOOKS[bi - 1];
+  const pages = await bookPages(bk); if (!pages || !pages.length) return fail(502, 'book');
+  const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
+  return json({ b: bi, books: BOOKS.length, title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
 /* the two things asked of OpenStreetMap: the places with a name (as the radar's knots), and the water. Built here from a box of
    whole tiles, so nothing else can be asked through novel.global */

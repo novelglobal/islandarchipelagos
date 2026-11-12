@@ -489,7 +489,7 @@
   function cartFace(el, k) {
     var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; $('.wx-l', el).textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
     var day = cartDay(), a = day.split('-').map(Number);
-    if (k === 'book') { var p = Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(2026, 10, 12)) / 864e5) + 1; $('.wx-k span', el).textContent = ''; return set('P.' + Math.max(1, p), '', 'MUTUAL AID · KROPOTKIN'); }
+    if (k === 'book') { $('.wx-k span', el).textContent = ''; return set('20', '', 'BOOKS'); }
     if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = ''; return set(ROMAN[i], '', ARCANA[i]); }
     if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
       $('.wx-k span', el).textContent = ''; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }

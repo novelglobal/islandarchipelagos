@@ -551,6 +551,9 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 #hm .hm-card .hm-rk { color: #FFFFFF !important; filter: none; }
 #hm .hm-card .hm-keys:has(.on) { mix-blend-mode: normal; }
 #hm .hm-card .hm-keys:has(.on) .hm-rk { color: #F4F1E8 !important; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .8)); }
+/* one smoked chip, so the keys never sit on the art */
+#hm .hm-card .hm-keys { mix-blend-mode: normal; gap: 0; padding: 2px 4px; border-radius: 17px; background: rgba(14, 16, 22, .46); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+#hm .hm-card .hm-keys .hm-rk { color: #F4F1E8 !important; filter: none; }
 #hm .hm-card .hm-keys .hm-rk.on { color: #FF5436 !important; }
 /* BACK: one plain pill, top left, wherever the card has turned to */
 #hm .hm-card .hm-bk, #hm-talk .tk-bk { position: absolute; left: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px 0 8px; border-radius: 15px; background: #FF5436; color: #0B0B0B; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); cursor: pointer; }
@@ -820,7 +823,7 @@ html.hm-away #hm-sounds { display: none; }
 html.hm-end #hm-sb { transform: translateY(115%); pointer-events: none; }
 
 /* DESIGN PRINT's hero: Design over the poster, in depth, slammed on last, jumping with the glitches, torn down with the paper */
-.sk-zine .zp-hero { position: absolute; z-index: 2; left: 3%; top: 6%; width: 70%; height: auto; overflow: visible; transform: rotate(-.6deg); pointer-events: none; filter: drop-shadow(0 1.2cqw 1.6cqw rgba(0, 0, 0, .35)); }
+.sk-zine .zp-hero { position: absolute; z-index: 2; left: 3%; top: max(6%, 58px); width: 70%; height: auto; overflow: visible; transform: rotate(-.6deg); pointer-events: none; filter: drop-shadow(0 1.2cqw 1.6cqw rgba(0, 0, 0, .35)); }
 @container (min-aspect-ratio: 4/5) { .sk-zine .zp-hero { width: auto; height: 74%; left: 6%; } }
 .zp-hero .zh-g { transform-box: fill-box; transform-origin: 30% 60%; opacity: 0; transform: scale(1.35) rotate(-4deg); }
 .zp-hero.on .zh-g { opacity: 1; transform: none; animation: zh-in .42s cubic-bezier(.2, 1.5, .4, 1) both; }
@@ -903,8 +906,17 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sk-wx .wx-f p { margin: 0; }
 .sk-wx .wx-k { display: flex; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 3px solid #111; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; margin-right: 96px; }
 .sk-wx .wx-k span { font-weight: 500; opacity: .6; }
+#hm .sk-wx .wx-f .wx-k { margin-right: 88px; }
+#hm .hm-card.sk-wx .hm-keys { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#hm .hm-card.sk-wx .hm-keys .hm-rk:not(.on) { color: #111111 !important; }
 .sk-wx .wx-v { display: flex; align-items: baseline; gap: .3em; font: 700 clamp(34px, min(30cqw, 34cqh), 96px)/.9 'Poppins', Arial, sans-serif; letter-spacing: -.04em; }
 .sk-wx .wx-l { font-weight: 600; font-size: .5em; letter-spacing: -.02em; }
 .sk-wx .wx-s { padding-top: 6px; border-top: 1px dashed #111; font: 600 11px/1.2 'IBM Plex Mono', monospace; letter-spacing: .08em; }
 .sk-wx.wx-wet .wx-s { align-self: flex-start; padding: 4px 6px; border: 0; background: #111; color: #F2F1EC; }
 .sk-wx.wx-txt .wx-v { display: block; font: 600 clamp(14px, min(6.4cqw, 9cqh), 22px)/1.22 'Poppins', Arial, sans-serif; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+/* phones: the portfolio card quiet, its window left clear */
+@media (max-width: 600px) {
+  #hm .sk-portfolio .rc-tap, #hm .sk-portfolio .rc-tp, #hm .sk-portfolio .rc-888 { display: none; }
+  #hm .sk-portfolio .hm-rc::before { content: ''; position: absolute; z-index: 5; left: 6.3%; top: 7%; width: 87.6%; height: 61.5%; background: #0E2240; }
+  #hm .sk-portfolio .rc-kept, #hm .sk-portfolio .rc-code { z-index: 6; }
+}

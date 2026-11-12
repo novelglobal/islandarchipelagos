@@ -30,8 +30,8 @@ function plate(p, n) {
   print(p[2]);
   line();
 }
-function foot() {
-  small(BY);
+function foot(all) {
+  if (all) small(BY);
   qr("https://novel.global/play.html?c=PL-2UQN");
   small("novel.global");
   cut();
@@ -58,7 +58,7 @@ function view(p) {
 function cover() {
   show(h("FIRST · " + ISSUE) + t1("SESAME") + '<p style="margin:0 0 8px;opacity:.8">Twelve plates. Three things each.</p>');
   button("SURPRISE", () => view(pick(plates)));
-  button("ISSUE", () => { mast(); plates.forEach((p, i) => plate(p, i + 1)); foot(); });
+  button("ISSUE", () => { mast(); plates.forEach((p, i) => plate(p, i + 1)); foot(true); });
   plates.forEach(p => button(p[0], () => view(p)));
   const k = saved().map(n => plates.find(p => p[0] === n)).filter(Boolean);
   if (k.length) button("KEPT", () => { show(h("KEPT")); k.forEach(p => button(p[0], () => view(p))); button("←", cover); });

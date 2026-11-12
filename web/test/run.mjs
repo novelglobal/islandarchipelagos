@@ -1963,7 +1963,7 @@ for (const HD of [false, true]) if (run('home')) try {
     await page.reload(); await page.waitForSelector('#hm-sb .sl'); await sleep(1500);
     const pl = await page.evaluate(async c => { const z = ms => new Promise(r => setTimeout(r, ms)), id = 'pl-' + c.toLowerCase(), card = document.querySelector(`[data-id="${id}"]`); if (!card) return { card: false }; HOME.open(id); await z(3500);
       const f = document.querySelector('#hm-x iframe'), d = f && f.contentDocument, k = d && d.querySelector('.pk'); return { card: true, small: card.classList.contains('small'), title: card.textContent.trim(), inked: !!(k && k.classList.contains('inked')), h: k ? k.querySelector('canvas').height : 0 }; }, code);
-    check(`home (${tag}): a play from LIVE waits for approval, then stands as a small card that runs sealed and prints onto its paper`, bad === 400 && sent.status === 201 && before === 0 && after.length === 1 && after[0].n === 'TELEGRAM' && pl.card && pl.small && /TELEGRAM/.test(pl.title) && pl.inked && pl.h > 60, JSON.stringify({ bad, st: sent.status, before, after, pl }));
+    check(`home (${tag}): a play from LIVE waits for approval, then stands as a small card that runs sealed and prints onto its paper`, bad === 400 && sent.status === 201 && before === 1 && after.length === 2 && after[0].first && after[1].n === 'TELEGRAM' && pl.card && pl.small && /TELEGRAM/.test(pl.title) && pl.inked && pl.h > 60, JSON.stringify({ bad, st: sent.status, before, after, pl }));
     await page.evaluate(() => history.back()); await sleep(800); }
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
