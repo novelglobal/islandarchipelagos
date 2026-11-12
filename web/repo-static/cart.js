@@ -44,7 +44,7 @@
       y += 18; var fx = M;
       if (window.qrcode && link) { var q = window.qrcode(0, 'M'); q.addData(link); q.make(); var qn = q.getModuleCount(), s = 4; g.fillStyle = '#000';
         for (var r = 0; r < qn; r++) for (var c = 0; c < qn; c++) if (q.isDark(r, c)) g.fillRect(M + c * s, y + r * s, s, s); fx = M + qn * s + 18; }
-      k.txt((l1 || 'PLAY ON CARD') + (k.code ? ' · ' + k.code : ''), fx, y + 26, '600 20px ' + MONO);
+      var l0 = [l1, k.code].filter(Boolean).join(' · '); if (l0) k.txt(l0, fx, y + 26, '600 20px ' + MONO);
       k.txt('novel.global', fx, y + 64, '700 30px ' + SANS);
       if (l2) k.fit(l2, fx, y + 96, '500', 15, W - M - fx, MONO);
       y += 132; k.box(M, y, W - 2 * M, 1); y += 4; k.box(M, y, W - 2 * M, 5); return y + 14;
@@ -108,7 +108,7 @@
         y += BH;
       }
       k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'DATA OPEN-METEO.COM');
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', 'DATA OPEN-METEO.COM');
     }
   };
 
@@ -130,28 +130,45 @@
           y += Math.max(30, k.wrap(e.t, M + 80, y + 22, '500 19px ' + SANS, W - 2 * M - 80, 25)) + 10; });
       }
       k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'WIKIPEDIA · CC BY-SA 4.0');
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', 'WIKIPEDIA · CC BY-SA 4.0');
     }
   };
 
   /* ───────── book: one page a day ───────── */
   var book = {
-    feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1); },
-    opts: [['bprev', '‹ BOOK'], ['bnext', 'BOOK ›'], ['prev', '‹ PAGE'], ['next', 'PAGE ›']],
+    feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1) + (s.shelf ? '&s=' + s.shelf : ''); },
+    opts: [['pick', 'BOOK', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›']],
     act: function (a, s, o) {
       var b = o.b || 1, p = o.p || 1;
-      if (a === 'bprev' || a === 'bnext') { o.b = ((b - 1 + (a === 'bnext' ? 1 : 19)) % 20) + 1; o.p = 1; }
+      var nb = o.nb || 20;
+      if (a === 'pick') { o.b = Math.max(1, Math.min(nb, +o.sel || 1)); o.p = 1; }
+      else if (a === 'bprev' || a === 'bnext') { o.b = ((b - 1 + (a === 'bnext' ? 1 : nb - 1)) % nb) + 1; o.p = 1; }
       else o.p = Math.max(1, p + (a === 'next' ? 1 : -1));
       return true;
     },
-    draw: function (k, d, s) {
-      k.head('BOOK', d.b + ' / ' + d.books, 'PAGE ' + d.p + ' / ' + d.of);
+    draw: function (k, d, s, o) {
+      o.nb = d.books; k.head('READ', s.shelf ? s.name : '', 'PAGE ' + d.p + ' / ' + d.of);
       var y = 128; k.fit(String(d.title || '').toUpperCase(), M, y, '700', 28, W - 2 * M, SANS);
       k.txt((String(d.author || '') + ' · ' + d.year).toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
       if (d.review) { y += k.wrap(d.review, M, y, 'italic 400 22px ' + SANS, W - 2 * M, 30) + 8; k.box(M, y, W - 2 * M, 1); y += 34; }
       String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 21px ' + SANS, W - 2 * M, 29) + 10; });
       y += 4; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
+    }
+  };
+
+  /* ───────── events: the island's own list, one a line: when | what | where ───────── */
+  var events = {
+    feed: function () { return '/settings'; },
+    draw: function (k, d, s) {
+      var y = k.head('EVENTS', s.place || '', phase(age(today()))) + 8, l = String(d.events || '').split('\n').map(function (x) { return x.split('|').map(function (q) { return q.trim(); }); }).filter(function (x) { return x[0] || x[1]; }).slice(0, 12);
+      if (!l.length) { y += 60; k.txt('QUIET', M, y, '700 44px ' + SANS); y += 30; }
+      l.forEach(function (e, i) { k.box(M, y, W - 2 * M, i ? 1 : 3); y += 12;
+        if (e[0]) { k.txt(e[0].toUpperCase(), M, y + 20, '700 20px ' + MONO); y += 28; }
+        y += k.wrap(e[1] || '', M, y + 26, '700 28px ' + SANS, W - 2 * M, 33) + 6;
+        if (e[2]) { k.fit(e[2].toUpperCase(), M, y + 18, '500', 18, W - 2 * M, MONO); y += 28; } y += 8; });
+      k.box(M, y, W - 2 * M, 3);
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', '');
     }
   };
 
@@ -185,7 +202,7 @@
     draw: function (k, d, s, o) {
       if (o.deck) { var pg = o.page || 0, r0 = TPAGE[pg], y0 = k.head('TAROT', 'DECK', (pg + 1) + '/4') + 14, cw = 156, ch = 252;
         for (var n = r0[0]; n < r0[1]; n++) { var j = n - r0[0]; tarotCard(k, n, 12 + (j % 3) * (cw + 10), y0 + Math.floor(j / 3) * (ch + 10), cw, ch); }
-        y0 += Math.ceil((r0[1] - r0[0]) / 3) * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', ''); }
+        y0 += Math.ceil((r0[1] - r0[0]) / 3) * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, '', ''); }
       var day = today(), i = o.i == null ? seed(day + s.id, 22) : o.i, c = MAJOR[i];
       k.head('TAROT', o.i == null ? '' : 'DRAWN', phase(age(day)));
       var x = 56, y = 124, w = W - 112, h = 560;
@@ -196,7 +213,7 @@
       k.fit(c[2], W / 2, y + 450, '600', 19, w - 60, MONO, 'center');
       k.txt('MAJOR ' + (i + 1) + ' / 22', W / 2, y + h - 36, '500 16px ' + MONO, 'center');
       y += h + 20; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', '');
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', '');
     }
   };
 
@@ -259,14 +276,14 @@
     draw: function (k, d, s, o) {
       if (o.deck) { var pg = o.page || 0, y0 = k.head('CARDS', SUIT[pg], (pg + 1) + '/4') + 14, cw = 156, ch = 218;
         for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
-        y0 += 5 * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', ''); }
+        y0 += 5 * (ch + 10) + 4; k.box(M, y0, W - 2 * M, 3); return k.foot(y0, 'https://novel.global/x#' + s.id, '', ''); }
       var day = today(), n = o.n || 1, hand = o.deal || (function () { var l = [], h = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < n; i++) h.push(l.splice(seed(day + s.id + i, l.length), 1)[0]); return h; })();
       k.head('CARDS', o.deal ? 'DEALT' : '', phase(age(day)));
       var y = 124;
       if (n === 1) { playCard(k, hand[0], 96, y, 320, 448); y += 448 + 16; k.fit(RANK[hand[0] % 13].replace('A', 'ACE').replace('J', 'JACK').replace('Q', 'QUEEN').replace('K', 'KING') + ' OF ' + SUIT[Math.floor(hand[0] / 13)], W / 2, y + 30, '700', 28, W - 2 * M, SANS, 'center'); y += 50; }
       else { hand.forEach(function (c, i) { var row = i < 3 ? 0 : 1, col = row ? i - 3 : i, cw = 150, ch = 210, x0 = row ? (W - 2 * cw - 16) / 2 : (W - 3 * cw - 32) / 2; playCard(k, c, R(x0 + col * (cw + 16)), y + row * (ch + 16), cw, ch); }); y += 2 * 226 + 4; }
       k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', '');
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', '');
     }
   };
 
@@ -279,21 +296,31 @@
     for (var y = 0; y < s; y++) for (var x = 0; x < s; x++) { var i = (y * s + x) * 4, a = p[i + 3] / 255; if (a < 0.3) continue;
       var l = (p[i] * 0.3 + p[i + 1] * 0.59 + p[i + 2] * 0.11) / 255; if (l * 15.5 < B[(y % 4) * 4 + (x % 4)] + 2) k.g.fillRect(cx - s / 2 + x, cy - s / 2 + y, 1, 1); }
   };
+  /* the one Irukandji, as line */
+  var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8',
+    'M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
   var pass = {
     opts: [['p1', 'ONE'], ['p5', 'FIVE']],
     act: function (a, s, o) { o.n = a === 'p5' ? 5 : 1; return true; },
     get: function () { return keeper(JSON.stringify({ action: 'look' })); },
     send: function (head, o) { return keeper(JSON.stringify({ action: 'passes', n: o.n || 1, escpos: head })); },
     draw: function (k, d, s, o) {
-      var day = today(), m = d.mark || { e: '·', w: '' };
-      var y = k.head('PASS', d.name || 'ISLAND', phase(age(day)));
-      markDots(k, m.e, W / 2, y + 150, 240);
-      y += 310; k.fit(m.w, W / 2, y, '700', 40, W - 60, SANS, 'center');
-      y += 26; k.box(M, y, W - 2 * M, 2);
-      if (o.head) return y + 12;
-      y += 24; k.dots(M + 40, y, W - 2 * M - 80, 120); k.g.fillStyle = '#fff'; k.g.fillRect(M + 48, y + 8, W - 2 * M - 96, 104);
-      k.txt('CODE', W / 2, y + 68, '600 20px ' + MONO, 'center');
-      y += 140; k.box(M, y, W - 2 * M, 3); return y + 14;
+      /* a contact card: a double frame, the stamp, the island in a solid block, the day's word in a band; the printer adds the code under it */
+      var g = k.g, m = d.mark || { w: '' }, x0 = M + 2, y0 = 6, w = W - 2 * M - 4, h = 236;
+      k.box(x0, y0, w, h); g.fillStyle = '#fff'; g.fillRect(x0 + 6, y0 + 6, w - 12, h - 12);
+      k.box(x0 + 11, y0 + 11, w - 22, h - 22); g.fillStyle = '#fff'; g.fillRect(x0 + 13, y0 + 13, w - 26, h - 26);
+      var cx = x0 + 98, cy = y0 + h / 2, rx = 70, ry = 96;
+      g.strokeStyle = '#000'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, cy - ry); g.lineTo(cx + rx, cy); g.lineTo(cx, cy + ry); g.lineTo(cx - rx, cy); g.closePath(); g.stroke();
+      g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx, cy - ry + 9); g.lineTo(cx + rx - 7, cy); g.lineTo(cx, cy + ry - 9); g.lineTo(cx - rx + 7, cy); g.closePath(); g.stroke();
+      k.txt('8', cx, cy - ry + 40, '400 30px ' + TTY, 'center'); k.txt('8', cx - rx + 22, cy + 9, '400 30px ' + TTY, 'center'); k.txt('8', cx + rx - 22, cy + 9, '400 30px ' + TTY, 'center');
+      g.save(); g.translate(cx, cy + 4); g.scale(1.45, 1.45); g.translate(-32, -33); g.lineWidth = 2.3; g.lineCap = 'round'; g.lineJoin = 'round';
+      IRUK.forEach(function (q, i) { g.setLineDash(i > 4 ? [0.2, 3.6] : []); g.stroke(new Path2D(q)); }); g.restore(); g.setLineDash([]);
+      var bx = cx + rx + 22, bw = x0 + w - 24 - bx, nm = String(d.name || 'ISLAND').toUpperCase();
+      k.box(bx, y0 + 30, bw, 92); g.fillStyle = '#fff'; g.font = '400 92px ' + TTY; var px = 92; while (px > 30 && g.measureText(nm).width > bw - 20) { px -= 2; g.font = '400 ' + px + 'px ' + TTY; }
+      g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(nm, bx + bw / 2, y0 + 76 + px * 0.3);
+      k.box(bx, y0 + 132, bw, 40); g.fillStyle = '#fff'; g.font = '400 40px ' + TTY; px = 40; var mw = String(m.w || '').toUpperCase().split('').join(' ');
+      while (px > 18 && g.measureText(mw).width > bw - 16) { px -= 2; g.font = '400 ' + px + 'px ' + TTY; } g.fillText(mw, bx + bw / 2, y0 + 152 + px * 0.32); g.textAlign = 'left';
+      return y0 + h + 14;
     }
   };
   function keeper(b) {
@@ -305,7 +332,7 @@
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
   }
 
-  var KINDS = { week: week, news: news, book: book, tarot: tarot, cards: cards, pass: pass };
+  var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass };
   function draw(cv, kind, data, stack, o) {
     var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     return oneBit(cv, Math.min(cv.height, K.draw(k, data || {}, stack, o || {})));
@@ -323,7 +350,8 @@
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
-  function paint() { draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); }
+  function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#opts select'), function (s) { if (!d.all || s.options.length === d.all.length) { if (d.b) s.value = String(d.b); return; } s.innerHTML = d.all.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s.value = String(d.b || 1); }); }
+  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); }
   function artTap(e) { if (!S.o.art) return; var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, y = (e.clientY - r.top) * cv.height / r.height;
     var h = HITS.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0]; if (!h) return;
     if (ART[h.key]) { if (confirm('Take this art off?')) { delete ART[h.key]; artSave(h.key, null); paint(); } return; }
@@ -365,13 +393,14 @@
   }
   function opts() {
     var el = $('#opts'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; });
-    el.innerHTML = l.map(function (x) { return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
+    el.innerHTML = l.map(function (x) { if (x[3] === 'select') return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
+    el.addEventListener('change', function (e) { var s = e.target.closest('select'); if (!s) return; S.o.sel = s.value; if (S.K.act && S.K.act(s.dataset.a, S.stack, S.o)) load(); });
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.dataset.a;
       if (b.dataset.t) { S.o[a] = !S.o[a]; paint(); return; }
       if (S.K.act && S.K.act(a, S.stack, S.o)) { if (S.K.feed && a !== 'again' && a !== 'one' && a !== 'five') load(); else paint(); } });
   }
   document.addEventListener('DOMContentLoaded', function () {
-    if (!$('#cart')) return; if (IN) document.documentElement.className = 'in';
+    if (!$('#cart')) return; if (IN) { var dk = false; try { dk = JSON.parse(localStorage.getItem('da.hm.night') || 'false') === true; } catch (e) { dk = false; } document.documentElement.className = 'in' + (dk ? ' dk' : ''); }
     cv = $('#paper canvas');
     var id = (location.hash.slice(1) || new URLSearchParams(location.search).get('c') || 'weather').replace(/[^a-z0-9-]/g, '');
     fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) {

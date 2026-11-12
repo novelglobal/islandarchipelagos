@@ -131,6 +131,7 @@ fs.writeFileSync(path.join(out, 'admin.js'), thermal + '\n' + read(path.join(roo
 /* an island's experience played from its stack (x.html#<stack>), on the same dots */
 fs.writeFileSync(path.join(out, 'x.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'x.js')), 'js'));
 fs.writeFileSync(path.join(out, 'cart.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'cart.js')), 'js'));
+fs.writeFileSync(path.join(out, 'art.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'art.js')), 'js'));
 fs.writeFileSync(path.join(out, 'aura.css'), min(read(path.join(src, 'base', 'aura.css')), 'css'));
 fs.writeFileSync(path.join(out, 'aura.js'), min(read(path.join(src, 'base', 'aura.js')), 'js'));
 fs.writeFileSync(path.join(out, 'home.css'), min(read(path.join(src, 'base', 'home.css')), 'css'));

@@ -46,15 +46,29 @@
     { id: 'kit', size: 'full', title: 'ISLAND', tag: 'INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'portfolio', size: 'full', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', skin: 'wx', cart: 'week', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'news', size: 'small', title: 'NEWS', opens: 'stack:news', skin: 'wx', cart: 'news', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'book', size: 'small', title: 'BOOK', opens: 'stack:book', skin: 'wx', cart: 'book', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'tarot', size: 'small', title: 'TAROT', opens: 'stack:tarot', skin: 'wx', cart: 'tarot', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'cards', size: 'small', title: 'CARDS', opens: 'stack:cards', skin: 'wx', cart: 'cards', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    /* the small cards: three themes, three ways each. THIS WEEK, READ, CARDS */
+    { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', cart: 'week', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'news', size: 'small', title: 'NEWS', opens: 'stack:news', cart: 'news', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'events', size: 'small', title: 'EVENTS', opens: 'stack:events', cart: 'events', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'fiction', size: 'small', title: 'FICTION', opens: 'stack:fiction', cart: 'read', shelf: 'fic', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'nonfiction', size: 'small', title: 'NON-FICTION', opens: 'stack:nonfiction', cart: 'read', shelf: 'non', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'survival', size: 'small', title: 'SURVIVAL', opens: 'stack:survival', cart: 'read', shelf: 'how', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'cards', size: 'small', title: 'PLAYING', opens: 'stack:cards', cart: 'cards', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'tarot', size: 'small', title: 'TAROT', opens: 'stack:tarot', cart: 'tarot', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'slot-1', size: 'small', title: 'OPEN ISLAND', ph: 1, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
+  /* small line drawings: blue on THIS WEEK, ink on CARDS */
+  var WXART = {
+    week: '<circle cx="8.5" cy="8.5" r="3.2"/><path d="M8.5 2.2v1.6M8.5 13.2v1.6M2.2 8.5h1.6M13.2 8.5h1.6M4 4l1.1 1.1M11.9 11.9 13 13M4 13l1.1-1.1M11.9 5.1 13 4"/><path d="M10.5 20.5h8.2a2.9 2.9 0 0 0 0-5.8 4.3 4.3 0 0 0-8.1 1 2.4 2.4 0 0 0-.1 4.8z"/>',
+    news: '<path d="M12 2.5v2M9.6 3.6a3.4 3.4 0 0 1 4.8 0M8 2.2a5.6 5.6 0 0 1 8 0"/><path d="M10.6 6.5h2.8l3.3 15h-9.4zM10.6 6.5l3.9 6.5M13.4 6.5 9.5 13M9.2 13.5h5.6M9.2 13.5l7.5 8M14.8 13.5l-7.5 8"/>',
+    events: '<path d="M3 21V5M21 21V5"/><path d="M3 6.5c6 3.2 12 3.2 18 0"/><path d="M5.6 7.9 6.9 12.6 8.9 8.8M10.5 9.4 12 14l1.5-4.6M15.1 8.8l2 3.8 1.3-4.7"/>',
+    cards: '<path d="M12 3c-2.9 4-7 6.3-7 10a3.4 3.4 0 0 0 6 2.2L10 21h4l-1-5.8A3.4 3.4 0 0 0 19 13c0-3.7-4.1-6-7-10z"/>',
+    tarot: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+    recipes: '<path d="M3 12.5h18a9 6.5 0 0 1-18 0zM9 21.5h6M13.5 11.5 16 2.5M15.8 11.5 20.5 3.5"/><path d="M7.5 10.6h.01M9.6 9.8h.01M11 10.9h.01M6.3 11.6h.01"/>'
+  };
   var JACKED = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space'];
   var SKINS = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play', 'wx'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
@@ -464,6 +478,10 @@
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
   D.body.appendChild(root);
   var col = $('#hm-col'), xv = $('#hm-x'), cards = $$('.hm-card', col); $('.hm-dots').innerHTML = dotsHTML();
+  /* the page dots stand in the middle of the light margin beside the cards, wherever the scrollbar is */
+  function dotsAt() { var d = $('.hm-dots'), op = d && d.offsetParent; if (!op) return; var r = col.getBoundingClientRect(), pr = parseFloat(getComputedStyle(col).paddingRight) || 0, mid = r.left + col.clientWidth - pr / 2;
+    d.style.right = Math.max(0, op.getBoundingClientRect().right - mid - d.offsetWidth / 2) + 'px'; }
+  dotsAt(); addEventListener('resize', dotsAt);
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   function applyCards(text) {
@@ -480,7 +498,10 @@
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
-  var WXD = null, NWD = null;
+  var WXD = null, NWD = null, EVT = null;
+  var SUITS = ['<path d="M12 3c-2.9 4-7 6.3-7 10a3.4 3.4 0 0 0 6 2.2L10 21h4l-1-5.8A3.4 3.4 0 0 0 19 13c0-3.7-4.1-6-7-10z"/>', '<path d="M12 20.5C8 17 3.5 13.3 3.5 8.8A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 1.8c0 4.5-4.5 8.2-8.5 11.7z"/>', '<path d="M12 2.5 18.5 12 12 21.5 5.5 12z"/>', '<circle cx="12" cy="7.3" r="3.6"/><circle cx="7.4" cy="13.4" r="3.6"/><circle cx="16.6" cy="13.4" r="3.6"/><path d="M11 13l-1.2 8h4.4L13 13"/>'];
+  /* the first book on each shelf */
+  var SHELF1 = { fic: ['News from Nowhere', 'WILLIAM MORRIS'], non: ['Mutual Aid', 'PETER KROPOTKIN'], how: ['Woodcraft and Camping', 'GEORGE WASHINGTON SEARS'] };
   var cartDay = function () { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }); } catch (e) { return new Date().toISOString().slice(0, 10); } };
   var cartSeed = function (s, n) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) % n; };
   var ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
@@ -489,10 +510,14 @@
   function cartFace(el, k) {
     var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; $('.wx-l', el).textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
     var day = cartDay(), a = day.split('-').map(Number);
-    if (k === 'book') { $('.wx-k span', el).textContent = ''; return set('20', '', 'BOOKS'); }
+    if (k === 'read') { var sh = SHELF1[el.classList.contains('r-fic') ? 'fic' : el.classList.contains('r-how') ? 'how' : 'non']; $('.wx-k span', el).textContent = ''; return set(sh[0], '', sh[1], true); }
+    if (k === 'recipes') { $('.wx-k span', el).textContent = ''; return set('', '', 'strawberry · black olive · chilli'); }
+    if (k === 'events') { $('.wx-k span', el).textContent = ''; if (EVT === null) return set('··', '', '');
+      var e1 = String(EVT).split('\n').map(function (x) { return x.split('|').map(function (q) { return q.trim(); }); }).filter(function (x) { return x[1]; })[0];
+      return e1 ? set(e1[1], '', [e1[0], e1[2]].filter(Boolean).join(' · ').toUpperCase(), true) : set('QUIET', '', ''); }
     if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = ''; return set(ROMAN[i], '', ARCANA[i]); }
     if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
-      $('.wx-k span', el).textContent = ''; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
+      $('.wx-k span', el).textContent = ''; var sv = $('.wx-ic svg', el); if (sv) sv.innerHTML = SUITS[s]; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
     if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) set(d.news[0], '', 'WIKIPEDIA · IN THE NEWS', true); };
       if (NWD) return putN(NWD); return fetch('/api/news').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { NWD = d; putN(d); }).catch(function () {}); }
     var put = function (d) { var D = d && d.daily; if (!D || !D.time) return; var c = D.weather_code[0], sky = c === 0 ? 'CLEAR' : c <= 2 ? 'SOME CLOUD' : c === 3 ? 'CLOUD' : c <= 48 ? 'FOG' : c <= 57 ? 'DRIZZLE' : c <= 67 ? 'RAIN' : c <= 77 ? 'SNOW' : c <= 82 ? 'SHOWERS' : c <= 86 ? 'SNOW' : 'STORM';
@@ -503,7 +528,7 @@
   var IDLE = null;
   function idleWatch() { if (!('IntersectionObserver' in window)) return; if (IDLE) IDLE.disconnect(); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); RS.scrap = j.buoyScrap !== false; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false; }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
   function tape(w, cls) { return '<b class="' + cls + '" aria-hidden="true">' + w.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b>'; }
@@ -524,13 +549,13 @@
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
-    else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k"><b>' + t + '</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span></p><p class="wx-s"></p></div>';
+    else if (sk === 'wx') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><p class="wx-k">' + (c.tag ? '<i class="wx-g">' + esc(c.tag) + '</i>' : '') + '<b>' + t + '</b><span>TODAY</span></p><p class="wx-v"><b class="wx-h">··</b><span class="wx-l"></span>' + (WXART[c.cart] ? '<i class="wx-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + WXART[c.cart] + '</svg></i>' : '') + '</p><p class="wx-s"></p></div>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
-    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
+    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + (c.size || 'full') + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
       '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div><div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
@@ -731,7 +756,7 @@
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
-    if (c.opens === 'portfolio') { return sheet(c.title, inFrame('studio?from=aura&only=portfolio#portfolio')); }
+    if (c.opens === 'portfolio') { return sheet(c.title, inFrame('art?in=1')); }
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
@@ -852,7 +877,7 @@
      A tap on the thing works as normal; a tap anywhere else only turns the note. Seen once in light and once again in dark */
   var INTRO = {
     radio: [['.rd-play', 'play'], ['.rd-knob[data-knob="water"]', 'each key adds a layer'], ['.flip-b', 'the full studio', 1], ['^#hm-tk', 'talk']],
-    portfolio: [['#gallery .gl-screen', 'swipe. tap to print, hear or talk'], ['#rx-open', 'a code from a receipt'], ['^#hm-tk', 'talk']],
+    portfolio: [['#track', 'swipe. pinch to look closer'], ['#keys [data-k="colour"]', 'colour it'], ['#keys [data-k="print"]', 'print it', 1], ['^#hm-tk', 'talk']],
     zine: [['[data-zt="wild"]', 'three loud marks', 1], ['.zn-tabs [data-zslot="1"]', 'three designs, one per tab'], ['[data-pick="strip"]', 'stickers and pixel animals'], ['^#hm-tk', 'show and talk']],
     research: [['#tools [data-t="paste"]', 'paste a picture'], ['#tools [data-t="link"]', 'tie two things together'], ['#tools [data-t="out"]', 'print or keep'], ['^#hm-tk', 'talk']],
     kit: [['#hm-x .kt-bar a', 'the install guide'], ['#hm-x .hm-list li:not(.gap)', 'tick parts as you find them'], ['#hm-kprint', 'print the parts list'], ['^#hm-tk', 'ask for help']],
@@ -863,7 +888,7 @@
   function introStore() { var s = store.get('da.hm.intro', null) || {}; s.seen = s.seen || {}; return s; }
   function introDoc() { if (IN.id === 'wish' || IN.id === 'kit') return D; var f = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); try { return f && f.contentDocument && f.contentDocument.readyState !== 'loading' ? f.contentDocument : null; } catch (e) { return null; } }
   function intro(on) {
-    clearTimeout(IN.t); if (IN.el) { IN.el.remove(); IN.el = null; } IN.hit = null;
+    clearTimeout(IN.t); clearInterval(IN.fw); if (IN.el) { IN.el.remove(); IN.el = null; } IN.hit = null;
     if (on === false || !IN.id || !INTRO[IN.id] || IN.quiet) return;
     var s = introStore(); if (s.all || (navigator.webdriver && !s.force)) return;
     if (IN.run !== IN.id) { if (s.seen[IN.id]) return; IN.run = IN.id; IN.k = 0; s.seen[IN.id] = INTRO[IN.id].length; store.set('da.hm.intro', s); } if (IN.k >= INTRO[IN.id].length) return;
@@ -871,11 +896,18 @@
       var r = el && el.getBoundingClientRect(), vh = d && d.defaultView.innerHeight;
       if (r && r.width && !look.moved && (r.top < 0 || r.bottom > vh || r.left < 0 || r.right > d.defaultView.innerWidth)) { look.moved = 1; reveal(el); IN.t = setTimeout(look, 550); return; }
       look.moved = 0;
-      var shown = r && r.width && r.height && r.bottom > 0 && r.top < vh && getComputedStyle(el).visibility !== 'hidden';
-      if (!shown) { IN.t = setTimeout(look, 450); return; }
-      IN.cur = [d, el, st]; note(d, r, st); };
-    IN.t = setTimeout(look, 300);
+      var A = r && absOf(d, r), shown = A && r.width && r.height && A.bottom > 0 && A.top < innerHeight && A.right > 0 && A.left < innerWidth && getComputedStyle(el).visibility !== 'hidden';
+      if (!shown) { look.at = null; IN.t = setTimeout(look, 250); return; }
+      if (!look.at || Math.abs(look.at.top - A.top) + Math.abs(look.at.left - A.left) > 2) { look.at = A; IN.t = setTimeout(look, 160); return; }
+      IN.cur = [d, el, st]; IN.at = A; note(d, r, st); follow(); };
+    IN.t = setTimeout(look, IN.k ? 80 : 300);
   }
+  /* where a thing is on the main screen, through the frame it sits in */
+  function absOf(d, r) { var x = 0, y = 0; if (d !== D) { var fe = d.defaultView.frameElement; if (!fe) return null; var b = fe.getBoundingClientRect(); x = b.left; y = b.top; }
+    return { top: r.top + y, left: r.left + x, bottom: r.bottom + y, right: r.right + x }; }
+  /* the note keeps up with its thing while the sheet settles or the page moves */
+  function follow() { clearInterval(IN.fw); IN.fw = setInterval(function () { if (!IN.el || !IN.cur || !IN.cur[1].isConnected) { clearInterval(IN.fw); return; }
+    var A = absOf(IN.cur[0], IN.cur[1].getBoundingClientRect()); if (A && IN.at && Math.abs(A.top - IN.at.top) + Math.abs(A.left - IN.at.left) > 3) { IN.at = A; renote(); } }, 300); }
   /* of everything that matches, the first one on show, and of those the first on screen */
   function pick(d, sel) { var w = d.defaultView, all = [].slice.call(d.querySelectorAll(sel)).filter(function (e) { var r = e.getBoundingClientRect(); return r.width && r.height && w.getComputedStyle(e).visibility !== 'hidden' && !e.closest('[hidden],[aria-hidden="true"]'); });
     return all.filter(function (e) { var r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < w.innerHeight && r.right > 0 && r.left < w.innerWidth; })[0] || all[0] || null; }
@@ -887,7 +919,7 @@
       p = p.parentElement; }
     if (d !== D) { r = el.getBoundingClientRect(); if (r.top < 0 || r.bottom > w.innerHeight) w.scrollBy(0, r.top + r.height / 2 - w.innerHeight / 2); } }
   function note(d, r, st, still) {
-    var off = { x: 0, y: 0 }; if (d !== D) { var fr = xv.querySelector('iframe').getBoundingClientRect(); off.x = fr.left; off.y = fr.top; }
+    var off = { x: 0, y: 0 }; if (d !== D) { var fr = (d.defaultView.frameElement || xv.querySelector('iframe:not(.hm-air):not(.hm-warm)')).getBoundingClientRect(); off.x = fr.left; off.y = fr.top; }
     hook(d.defaultView); hook(window);
     var W = innerWidth, Hh = innerHeight, tx = r.left + r.width / 2 + off.x, ty = r.top + r.height / 2 + off.y, rx = Math.min(150, r.width / 2 + 11), ry = Math.min(64, r.height / 2 + 11), tr = ry;
     IN.hit = { x: r.left + off.x - 8, y: r.top + off.y - 8, w: r.width + 16, h: r.height + 16 };
@@ -912,7 +944,7 @@
     w.addEventListener('scroll', again, true); w.addEventListener('resize', again);
     var stop = function (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); };
     w.addEventListener('pointerdown', function (e) { if (!IN.el || !IN.hit) return; var x = e.clientX, y = e.clientY;
-      if (w !== window) { var fr = xv.querySelector('iframe'); if (fr) { var b = fr.getBoundingClientRect(); x += b.left; y += b.top; } }
+      if (w !== window) { var fr = w.frameElement || xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); if (fr) { var b = fr.getBoundingClientRect(); x += b.left; y += b.top; } }
       var h = IN.hit, onIt = x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h;
       if (onIt || (w === window && e.target.closest && e.target.closest('.hm-back'))) { introNext(); return; }
       IN.eat = Date.now(); stop(e); introNext(); }, true);
@@ -1137,6 +1169,8 @@
      down, and it swims slowly, crown first, with a pulse and a long glide; open the sea and it goes down into it ───────── */
   var jcv = $('#hm-jf'), jx = jcv.getContext('2d'), CUR = '';
   var J = { x: 150, y: 26, vx: -3, vy: 0, a: Math.PI - 0.25, ph: Math.random(), p: 0, blink: 0, s: 1, tx: 0, ty: 0, until: 0 }, NTJ = 40, NRJ = 40;
+  /* the other one: hidden in the portfolio, and now and then up to the banner to find the first; they circle, follow, and part */
+  var J2 = { x: 300, y: 900, vx: 0, vy: 0, a: -Math.PI / 2, ph: 0.5, p: 0, blink: 0, s: 0.85, tx: 0, ty: 0, until: 0, th: 0, on: false, al: 0 }, LOVE = { next: 0, until: 0 };
   var noise = function (a, b, c) { return Math.sin(a * 1.7 + b * 2.3 + c) * 0.5 + Math.sin(a * 0.9 - b * 1.3 + c * 1.9) * 0.3 + Math.sin(b * 3.1 + c * 0.7) * 0.2; };
   function swim(dt, t, open) {
     J.ph += dt / 5.4; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
@@ -1707,9 +1741,17 @@
       if (CUR === 'portfolio') { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect(); if (lr && lr.width) orb = { x: lr.left + lr.width / 2 - jr.left, y: lr.top + lr.height / 2 - jr.top, rx: lr.width * 0.34, ry: lr.height * 0.26 }; }
       else if (CUR === 'radio' && RS.on && RS.sx != null) orb = { x: RS.sx - jr.left, y: RS.sy - jr.top, rx: RS.su * 62, ry: RS.su * 34, slow: 1 }; }
     if (RN.call) { if (now > RN.call.until || away || xv.classList.contains('on')) RN.call = null; else { var rr0 = col.querySelector('.sk-research .hm-rune'), rb0 = rr0 && rr0.getBoundingClientRect(); if (rb0 && rb0.bottom > 0 && rb0.top < innerHeight) orb = { x: RN.call.x - jr.left, y: RN.call.y - jr.top, rx: 34, ry: 18, slow: 1 }; } }
+    if (!LOVE.next) LOVE.next = t + 20;
+    if (!RM.matches && !open && !away && !xv.classList.contains('on')) { if (!LOVE.until && t > LOVE.next) LOVE.until = t + 16; if (LOVE.until && t > LOVE.until) { LOVE.until = 0; LOVE.next = t + 50 + Math.random() * 40; } } else LOVE.until = 0;
+    if (!orb && LOVE.until && J2.on && t > LOVE.until - 7) orb = { x: J2.x, y: J2.y, rx: 30, ry: 12 };
     if (orb) { if (!J.orbit) { J.th = Math.atan2(J.y - orb.y, J.x - orb.x) + 0.5; J.back = false; } J.orbit = orb; }
     else if (J.orbit) { J.orbit = null; J.back = true; }
     if (!RM.matches) swim(dt * (J.orbit ? (J.orbit.slow ? 1.4 : 2.6) : J.back ? 3.2 : 1), t, open); J.blink = Math.max(0, J.blink - dt);
+    if (!RM.matches && !open && !away) { var pf = col.querySelector('[data-id="portfolio"]'), pr2 = pf && pf.getBoundingClientRect(), seen = pr2 && pr2.width && pr2.bottom > 0 && pr2.top < innerHeight, low = (root.clientHeight || innerHeight) - 26, aim = null;
+      if (LOVE.until) aim = { x: J.x, y: J.y, rx: 30, ry: 12 }; else if (seen) aim = J.orbit ? { x: J.x, y: J.y, rx: 26, ry: 18 } : { x: pr2.left + pr2.width * 0.66 - jr.left, y: pr2.top + pr2.height * 0.3 - jr.top, rx: 22, ry: 26, slow: 1 };
+      if (aim) { if (!J2.on) { J2.on = true; J2.x = aim.x + (Math.random() - 0.5) * 120; J2.y = low; J2.a = -Math.PI / 2; } if (!J2.orbit) J2.th = Math.atan2(J2.y - aim.y, J2.x - aim.x); J2.orbit = aim; J2.al = Math.min(1, J2.al + dt * 0.8); }
+      else if (J2.on) { J2.orbit = { x: J2.x, y: low + 40, rx: 1, ry: 1 }; if (J2.y > low - 30) J2.al = Math.max(0, J2.al - dt * 1.2); if (J2.al <= 0) { J2.on = false; J2.orbit = null; } }
+      if (J2.on) { var J0 = J; J = J2; swim(dt * (aim && aim.slow ? 1.4 : 2.4), t, false); J = J0; J2.blink = Math.max(0, J2.blink - dt); } }
     /* only as much of the sea as shows is cleared and drawn */
     var showH = open || wasOpen ? CH : TOPH + 4 + 60 * J.s; wasOpen = open || top.clientHeight > TOPH + 2;
     tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, tcv.width, Math.min(tcv.height, Math.ceil(showH * dpr)));
@@ -1717,9 +1759,9 @@
     murk();
     if (wasOpen) { if (!RB) reefBuild(); drawReef(RM.matches ? 0 : dt, t); }
     var jw = Math.round(rr.width * dpr), jh = Math.round(rr.height * dpr); if (jcv.width !== jw || jcv.height !== jh) { jcv.width = jw; jcv.height = jh; }
-    var wide = J.orbit || J.back || J.wide; J.wide = !!(J.orbit || J.back); jx.setTransform(1, 0, 0, 1, 0, 0);
+    var wide = J.orbit || J.back || J.wide || J2.on || J2.was; J.wide = !!(J.orbit || J.back); J2.was = J2.on; jx.setTransform(1, 0, 0, 1, 0, 0);
     if (wide) jx.clearRect(0, 0, jcv.width, jcv.height); else jx.clearRect(Math.floor((jr.left - rr.left) * dpr) - 1, Math.floor((jr.top - rr.top) * dpr) - 1, Math.ceil(jr.width * dpr) + 2, Math.ceil(jr.height * dpr) + 2);
-    if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); jx.restore(); }
+    if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back && !J2.on) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); if (J2.on) { var J1 = J; J = J2; jx.globalAlpha = J2.al; drawJelly(jx, t); jx.globalAlpha = 1; J = J1; } jx.restore(); }
     if (sheet) return;
     /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself, and the radio on air takes over from it */
     if (RS.song && !away && !(AIR.kept && AIR.on) && !(SND && SND.a)) songTick();

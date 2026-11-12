@@ -1,0 +1,27 @@
+{
+  "v": 1,
+  "id": "survival",
+  "name": "SURVIVAL",
+  "island": "novelglobal",
+  "page": "cart.html",
+  "kind": "book",
+  "where": [
+    -37.77,
+    144.96
+  ],
+  "shelf": "how",
+  "printer": {
+    "profile": "tm-t88v",
+    "dots": 512,
+    "dpi": 180
+  },
+  "blocks": [
+    {
+      "k": "print",
+      "to": [
+        "island",
+        "novelglobal"
+      ]
+    }
+  ]
+}

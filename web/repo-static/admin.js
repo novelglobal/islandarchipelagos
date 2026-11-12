@@ -709,7 +709,12 @@
     const sends = el('section', { class: 'ed' }, el('h3', { text: 'SENT WITHOUT A PRINT' }),
       chk('sd-live', !!st.sendLive, 'STRAIGHT ON THE SITE'), hint('A piece sent to novel.global from a phone with no printer (the print key set to NOVEL.GLOBAL). Unticked, as built: it waits on the Approve page. Ticked: it is on the site for everyone at once. Either way it is not a print: the devices stay locked until a printer has printed something with that phone\'s code.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sendLive: $('#sd-live').checked }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, notice, country, motion, cur, sources, reset);
+    const blog = el('section', { class: 'ed' }, el('h3', { text: 'BLOG' }), chk('bl-on', !!st.blogShow, 'SHOWN'), hint('Off: novel.global/blog.html sends visitors home.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ blogShow: $('#bl-on').checked }) })));
+    const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
+    const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

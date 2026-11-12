@@ -440,7 +440,7 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -454,7 +454,7 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, photos: 3000 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, photos: 3000, events: 3000 };
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
@@ -868,6 +868,16 @@ const BOOKS = [
   [36541, 'Unto This Last', 'John Ruskin', 1862, 'Four essays against an economics of pure profit. There is no wealth but life.', '^UNTO THIS LAST:$'],
   [11438, 'The Willows', 'Algernon Blackwood', 1907, 'Two men canoe the Danube into a marsh where the land itself seems to watch. Nature as presence, past the edge of the known.', '^I\\.$']
 ];
+/* three shelves: made up, true, and how to get by */
+BOOKS.push(
+  [34607, 'Woodcraft and Camping', 'George Washington Sears', 1884, 'Nessmuk, a small man in a light canoe, on travelling light, cooking simply and sleeping dry.', ''],
+  [29558, 'Boy Scouts Handbook', 'Boy Scouts of America', 1911, 'Knots, fires, first aid, tracking, and finding north without a compass.', ''],
+  [28255, 'Shelters, Shacks and Shanties', 'Daniel Carter Beard', 1914, 'A roof from what is to hand: lean-tos, bark huts and log cabins, drawn step by step.', ''],
+  [44215, 'The Book of Camp-Lore and Woodcraft', 'Daniel Carter Beard', 1920, 'Fires for every weather, packs, camp tools and the old knots.', ''],
+  [54138, 'Camp Cookery', 'Maria Parloa', 1878, 'Bread, fish and stews over a fire, and what to pack, from a teacher of cooking.', ''],
+  [48929, 'Backwoods Surgery & Medicine', 'Charles Stuart Moody', 1910, 'Care far from a doctor, as it was done in 1910. Read it as history.', '']);
+const SHELF = { fic: [3261, 32, 18247, 21970, 1906, 10002, 8492, 201, 11438], how: [34607, 29558, 28255, 44215, 54138, 48929] };
+const shelfOf = s => s === 'fic' || s === 'how' ? BOOKS.filter(b => SHELF[s].includes(b[0])) : s === 'non' ? BOOKS.filter(b => !SHELF.fic.includes(b[0]) && !SHELF.how.includes(b[0])) : BOOKS;
 const BOOKP = new Map();
 async function bookPages(bk) {
   if (BOOKP.has(bk[0])) return BOOKP.get(bk[0]);
@@ -884,10 +894,10 @@ async function bookPages(bk) {
   if (cur) pages.push(cur); if (pages.length) BOOKP.set(bk[0], pages); return pages;
 }
 async function bookThrough(url) {
-  const q = url.searchParams, bi = Math.max(1, Math.min(BOOKS.length, Math.round(+q.get('b') || 1))), bk = BOOKS[bi - 1];
+  const q = url.searchParams, L = shelfOf(q.get('s')), bi = Math.max(1, Math.min(L.length, Math.round(+q.get('b') || 1))), bk = L[bi - 1];
   const pages = await bookPages(bk); if (!pages || !pages.length) return fail(502, 'book');
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
-  return json({ b: bi, books: BOOKS.length, title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
+  return json({ b: bi, books: L.length, all: L.map(x => x[1]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
 /* the two things asked of OpenStreetMap: the places with a name (as the radar's knots), and the water. Built here from a box of
    whole tiles, so nothing else can be asked through novel.global */

@@ -1,0 +1,27 @@
+{
+  "v": 1,
+  "id": "fiction",
+  "name": "FICTION",
+  "island": "novelglobal",
+  "page": "cart.html",
+  "kind": "book",
+  "where": [
+    -37.77,
+    144.96
+  ],
+  "shelf": "fic",
+  "printer": {
+    "profile": "tm-t88v",
+    "dots": 512,
+    "dpi": 180
+  },
+  "blocks": [
+    {
+      "k": "print",
+      "to": [
+        "island",
+        "novelglobal"
+      ]
+    }
+  ]
+}

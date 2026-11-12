@@ -127,7 +127,7 @@
     if (d.words && $('#w')) { $('#w').value = String(d.words).toUpperCase().slice(0, 22); S.words = $('#w').value; }
     if (d.img) fetch(d.img).then(function (r) { return r.blob(); }).then(take).catch(function () { draw(true); }); else draw(true); });
   document.addEventListener('DOMContentLoaded', function () {
-    if (IN) document.documentElement.className = 'in';
+    if (IN) { var dk = false; try { dk = JSON.parse(localStorage.getItem('da.hm.night') || 'false') === true; } catch (e) { dk = false; } document.documentElement.className = 'in' + (dk ? ' dk' : ''); }
     var id = (location.hash.slice(1) || 'tall').replace(/[^a-z0-9-]/g, '');
     fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) { if (/^[a-z0-9-]+\.html$/.test(s.page || '')) return location.replace(s.page + location.search + '#' + s.id); S.stack = s; build(); })
       .catch(function () { $('#nm').textContent = '—'; });

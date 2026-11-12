@@ -28,11 +28,13 @@
   button:disabled { opacity: .35; cursor: default; }
   #to, #opts { display: flex; gap: 8px; flex-wrap: wrap; }
   #opts button { flex: 1 1 auto; min-height: 36px; padding: 8px 10px; font-size: 11px; }
+  #opts select { flex: 1 1 100%; min-height: 36px; padding: 8px 10px; font: inherit; font-size: 11px; letter-spacing: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 0; text-transform: uppercase; }
   #to:empty, #opts:empty { display: none; }
   #go { min-height: 56px; font-size: 15px; font-weight: 600; background: var(--ink); color: var(--paper); }
   #st { min-height: 1.2em; margin: 0; color: var(--dim); text-align: center; }
   @media (max-width: 600px) { .side { max-width: none; position: static; } .desk { padding: 12px 0; } }
-  .in { --ink: #ecebe6; --paper: #121417; --line: #ecebe6; --dim: rgba(236, 235, 230, .45); --bg: transparent; }
+  .in { --ink: #111; --paper: #f2f1ec; --line: #111; --dim: rgba(17, 17, 17, .45); --bg: transparent; }
+  .in.dk { --ink: #ecebe6; --paper: #121417; --line: #ecebe6; --dim: rgba(236, 235, 230, .45); }
   .in body { background: transparent; } .in main { padding: 0; } .in .win { border: 0; background: transparent; } .in .win > header { display: none; }
 </style>
 <script src="vendor/qrcode.js"></script>

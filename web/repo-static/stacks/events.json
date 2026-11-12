@@ -1,0 +1,27 @@
+{
+  "v": 1,
+  "id": "events",
+  "name": "EVENTS",
+  "island": "novelglobal",
+  "page": "cart.html",
+  "kind": "events",
+  "where": [
+    -37.77,
+    144.96
+  ],
+  "place": "MELBOURNE",
+  "printer": {
+    "profile": "tm-t88v",
+    "dots": 512,
+    "dpi": 180
+  },
+  "blocks": [
+    {
+      "k": "print",
+      "to": [
+        "island",
+        "novelglobal"
+      ]
+    }
+  ]
+}
