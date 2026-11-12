@@ -473,7 +473,14 @@
      close it after; keep any as a template for the next. All of it is the pops setting: {pops:[…], tpl:[…]} ───────── */
   const POP_ANIMALS = [['frill', 'FRILLED LIZARD'], ['roo', 'KANGAROO'], ['dingo', 'DINGO'], ['emu', 'EMU'], ['quokka', 'QUOKKA'], ['wombat', 'WOMBAT'], ['echidna', 'ECHIDNA']];
   const POP_BASE = { kind: 'faces', name: 'Animal faces', to: '', logos: ['pop/pickles.png', 'pop/foe.png'], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' },
-    tips: { title: 'El Niño', lines: ['El Niño often brings south-east Australia a hotter, drier summer: more fire danger, less rain.', 'Put a shallow bowl of water in the shade, with a stick or stones so bees, birds and lizards can climb out.', 'On hot days, check on neighbours, elders and pets. Cats inside keeps them and wildlife safer.', 'Plant local natives: shade and food for birds, insects and people, on very little water.', 'Found heat-stressed wildlife? Call Wildlife Victoria on 03 8400 7300.', 'Know your fire danger rating, and make a plan with everyone you live with, animals too.'] },
+    tips: { title: 'El Niño', by: {
+      frill: 'In heatwaves, lizards shelter under logs and leaf litter. Leave some fallen wood and mulch in the garden: it is their cool room.',
+      roo: 'In dry spells, roos graze roadsides where runoff keeps the grass green. Drive slower at dawn and dusk, when they move.',
+      dingo: 'Hot paths burn paws. If the ground is too hot for the back of your hand for seven seconds, walk your dog early or late.',
+      emu: 'Emus walk hundreds of kilometres to follow rain. Fences without barbed wire on top, and with gaps beneath, let them through.',
+      quokka: 'Quokkas wait out the heat in dense scrub. Layers of plants, from groundcover to canopy, keep a yard far cooler than lawn.',
+      wombat: 'In bushfires, other animals have sheltered in wombat burrows. Leave burrows and hollow logs be: they are shared refuges.',
+      echidna: 'Echidnas cannot sweat or pant, so they hide from heat. A shallow dish of water on the ground, with a stone to climb out, helps them and bees.' } },
     animals: POP_ANIMALS.map(a => a[0]) };
   const popMint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
   const popUrl = p => 'https://novel.global/' + (p.id === 'pickles' ? 'pickles' : 'popup') + '?k=' + encodeURIComponent(p.key || '');
@@ -502,16 +509,16 @@
     const card = (p, i) => {
       const live = !!(p.on && p.key), q = el('div', { style: 'margin:6px 0' });
       const f = { on: (() => { const c = el('input', { type: 'checkbox' }); c.checked = !!p.on; return c; })(), name: el('input', { maxlength: '40' }), to: el('select', {}, el('option', { value: '', text: 'THE PLACE\'S OWN, ELSE NOVEL.GLOBAL' }), ...printers.map(([v, t]) => el('option', { value: v, text: t }))),
-        durl: el('input', { placeholder: 'https://…' }), dlab: el('input', { maxlength: '24' }), ttl: el('input', { maxlength: '24' }), tips: el('textarea', { rows: '6' }) };
-      f.name.value = p.name || ''; f.to.value = p.to || ''; f.durl.value = (p.donate && p.donate.url) || ''; f.dlab.value = (p.donate && p.donate.label) || ''; f.ttl.value = (p.tips && p.tips.title) || ''; f.tips.value = ((p.tips && p.tips.lines) || []).join('\n');
-      const an = POP_ANIMALS.map(([v, t]) => { const c = el('input', { type: 'checkbox', value: v }); c.checked = !p.animals || p.animals.includes(v); return el('label', { class: 'check' }, c, t); });
+        durl: el('input', { placeholder: 'https://…' }), dlab: el('input', { maxlength: '24' }), ttl: el('input', { maxlength: '24' }) };
+      f.name.value = p.name || ''; f.to.value = p.to || ''; f.durl.value = (p.donate && p.donate.url) || ''; f.dlab.value = (p.donate && p.donate.label) || ''; if (p.tips === undefined || (p.tips && !p.tips.by)) p.tips = popClone(POP_BASE.tips); f.ttl.value = (p.tips && p.tips.title) || POP_BASE.tips.title;
+      const an = POP_ANIMALS.map(([v, t]) => { const c = el('input', { type: 'checkbox', value: v }); c.checked = !p.animals || p.animals.includes(v); const ti = el('textarea', { rows: '2', maxlength: '200', 'data-tip': v }); ti.value = (p.tips && p.tips.by && p.tips.by[v]) || ''; return el('div', { style: 'display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start' }, el('label', { class: 'check' }, c, t), ti); });
       const logos = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' });
       const drawLogos = () => logos.replaceChildren(...(p.logos || []).map((src, j) => el('span', { style: 'display:inline-flex;align-items:center;gap:4px' }, el('img', { src: /^data:/.test(src) ? src : '/' + src, alt: '', style: 'height:44px;width:auto;border:1px solid #ccd;border-radius:4px' }),
           el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { p.logos.splice(j, 1); drawLogos(); } }))),
         el('button', { type: 'button', text: 'ADD LOGO', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = async () => { if (!fi.files[0]) return; p.logos = p.logos || []; p.logos.push(await popLogo(fi.files[0])); drawLogos(); }; fi.click(); } }));
       drawLogos();
       const read = () => { p.on = f.on.checked; p.name = f.name.value.trim() || p.name; p.to = f.to.value; p.donate = f.durl.value.trim() ? { url: f.durl.value.trim(), label: f.dlab.value.trim() || 'DONATE' } : null;
-        const L = f.tips.value.split('\n').map(x => x.trim()).filter(Boolean); p.tips = L.length ? { title: f.ttl.value.trim(), lines: L } : null;
+        const by = {}; an.forEach(r => { const ti = r.querySelector('textarea'), v = ti.value.trim(); if (v) by[ti.dataset.tip] = v; }); p.tips = Object.keys(by).length ? { title: f.ttl.value.trim(), by } : null;
         const A = an.map(l => l.querySelector('input')).filter(c => c.checked).map(c => c.value); p.animals = A.length ? A : POP_ANIMALS.map(a => a[0]); if (!p.key) p.key = popMint(); };
       if (live) popQr(popUrl(p), q);
       return el('section', { class: 'ed' }, el('h3', { text: (p.name || p.id).toUpperCase() }),
@@ -524,8 +531,8 @@
         el('div', { class: 'two' }, el('label', {}, 'NAME', f.name), el('label', {}, 'PRINTER', f.to)),
         el('label', {}, 'LOGOS (TOP OF THE PAGE AND FOOT OF THE KEEPSAKE)', logos),
         el('div', { class: 'two' }, el('label', {}, 'DONATE LINK (EMPTY: NONE)', f.durl), el('label', {}, 'DONATE BUTTON', f.dlab)),
-        el('label', {}, 'TIPS TITLE', f.ttl), el('label', {}, 'TIPS, ONE PER LINE (EMPTY: NO TIPS BUTTON)', f.tips),
-        el('label', {}, 'ANIMALS', el('div', { style: 'display:flex;gap:4px 14px;flex-wrap:wrap' }, ...an)),
+        el('label', {}, 'TIPS TITLE (PRINTED ABOVE THE TIP)', f.ttl),
+        el('label', {}, 'ANIMALS, EACH WITH THE TIP THAT PRINTS UNDER IT (EMPTY: NO TIP)', el('div', { style: 'display:grid;gap:8px' }, ...an)),
         el('div', { class: 'acts' },
           el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { read(); put(); } }),
           el('button', { type: 'button', text: 'SAVE AS TEMPLATE', onclick: () => { read(); const t = popTpl(p); t.name = prompt('Template name', p.name || '') || p.name; doc.tpl.push(t); put(); } }),

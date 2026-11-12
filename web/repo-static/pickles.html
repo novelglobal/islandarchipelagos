@@ -35,6 +35,13 @@
   .tape { position: absolute; top: -12px; left: 50%; width: 92px; height: 24px; transform: translateX(-50%) rotate(-3deg); background: rgba(246, 196, 69, .75); border: 1.5px solid rgba(22, 20, 18, .5); z-index: 1; }
   #nm { position: absolute; left: 14px; bottom: 14px; margin: 0; padding: 5px 11px 6px; background: var(--pink); border: 2px solid var(--ink); border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px; font: 700 15px/1 Poppins, sans-serif; letter-spacing: -.01em; pointer-events: none; transition: transform .25s; }
   #rm { position: absolute; right: 14px; top: 14px; width: 38px; min-height: 38px; padding: 0; font: 600 20px/1 Poppins, sans-serif; letter-spacing: 0; border-radius: 50%; box-shadow: 2px 2px 0 var(--ink); transform: rotate(4deg); }
+  .pens { position: absolute; left: 14px; top: 14px; display: flex; gap: 8px; }
+  .pens button { width: 38px; min-height: 38px; padding: 0; border-radius: 50%; box-shadow: 2px 2px 0 var(--ink); font: 600 18px/1 Poppins, sans-serif; letter-spacing: 0; transition: background .15s; }
+  #pen { transform: rotate(-4deg); } #un { transform: rotate(3deg); }
+  #pen svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  #pen[data-c="k"] { background: var(--ink); } #pen[data-c="k"] svg { stroke: #fff; }
+  #pen[data-c="w"] { background: #fff; box-shadow: 0 0 0 3px var(--sun), 2px 2px 0 3px var(--ink); }
+  #stage.pen { cursor: crosshair; }
   .three { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; margin: 24px 4px 0; }
   .three button { min-height: 56px; }
   #tip { width: 56px; padding: 0; border-radius: 50%; transform: rotate(-4deg); }
@@ -90,6 +97,7 @@
     <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
       <p id="nm" aria-live="polite"></p>
       <button type="button" id="rm" hidden aria-label="Remove the photo" title="Remove the photo">×</button>
+      <div class="pens"><button type="button" id="pen" aria-pressed="false" aria-label="Pencil" title="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L15.6 5a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8 4 20z"/><path d="M13.8 6.8l3.4 3.4"/></svg></button><button type="button" id="un" hidden aria-label="Undo" title="Undo the last line">↶</button></div>
     </div>
     <div class="three">
       <button type="button" id="tip" aria-label="El Niño" title="El Niño: getting ready, for every species"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7"/><path d="M20 3.5v2.6M8.6 8.4l1.8 1.8M31.4 8.4l-1.8 1.8M5 15h2.6M35 15h-2.6"/><path d="M4 29c3.2-3 6.4-3 9.6 0s6.4 3 9.6 0 6.4-3 9.6 0"/><path d="M8 35.5c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0 5.2-2.2 7.8 0"/></svg></button>
