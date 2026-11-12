@@ -489,10 +489,10 @@
   function cartFace(el, k) {
     var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; $('.wx-l', el).textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
     var day = cartDay(), a = day.split('-').map(Number);
-    if (k === 'book') { var p = Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(2026, 10, 12)) / 864e5) + 1; $('.wx-k span', el).textContent = 'PAGE OF THE DAY'; return set('P.' + Math.max(1, p), '', 'MUTUAL AID · KROPOTKIN'); }
-    if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = 'CARD OF THE DAY'; return set(ROMAN[i], '', ARCANA[i]); }
+    if (k === 'book') { var p = Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(2026, 10, 12)) / 864e5) + 1; $('.wx-k span', el).textContent = ''; return set('P.' + Math.max(1, p), '', 'MUTUAL AID · KROPOTKIN'); }
+    if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); $('.wx-k span', el).textContent = ''; return set(ROMAN[i], '', ARCANA[i]); }
     if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
-      $('.wx-k span', el).textContent = 'CARD OF THE DAY'; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
+      $('.wx-k span', el).textContent = ''; return set(r + ['♠', '♥', '♦', '♣'][s], '', ({ A: 'ACE', J: 'JACK', Q: 'QUEEN', K: 'KING' }[r] || r) + ' OF ' + ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'][s]); }
     if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) set(d.news[0], '', 'WIKIPEDIA · IN THE NEWS', true); };
       if (NWD) return putN(NWD); return fetch('/api/news').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { NWD = d; putN(d); }).catch(function () {}); }
     var put = function (d) { var D = d && d.daily; if (!D || !D.time) return; var c = D.weather_code[0], sky = c === 0 ? 'CLEAR' : c <= 2 ? 'SOME CLOUD' : c === 3 ? 'CLOUD' : c <= 48 ? 'FOG' : c <= 57 ? 'DRIZZLE' : c <= 67 ? 'RAIN' : c <= 77 ? 'SNOW' : c <= 82 ? 'SHOWERS' : c <= 86 ? 'SNOW' : 'STORM';
@@ -1050,7 +1050,7 @@
       '<p class="hm-h">CONNECTIONS</p><div class="hm-row">' + (p.all || []).map(function (k) { return '<button class="hm-btn' + ((p.links || []).indexOf(k) >= 0 ? ' on' : '') + '" data-ln="' + k + '" aria-pressed="' + ((p.links || []).indexOf(k) >= 0) + '">' + ({ wish: 'W.I.S.H.', radio: 'RADIO', art: 'ART', words: 'WORDS', cards: 'CARDS', codes: 'CODES' }[k] || k.toUpperCase()) + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h">ITS CARD · UP TO TEN PICTURES</p><div class="hm-pgrid">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { var q = (p.pics || []).filter(function (x) { return x.slot === n; })[0]; return '<button class="hm-pslot' + (q ? ' on' : '') + '" data-ps="' + n + '" aria-label="' + (q ? 'Take this picture away' : 'Add a picture') + '">' + (q ? '<img alt="" src="' + esc(q.url) + '">' : '+') + '</button>'; }).join('') + '</div>' +
       '<div class="hm-row">' + [2, 3, 5, 8].map(function (n) { return '<button class="hm-btn' + ((p.speed || 2) === n ? ' on' : '') + '" data-sp="' + n + '">' + n + ' S</button>'; }).join('') + '</div>' +
-      '<p class="hm-h">PASSES' + (p.mark ? ' · TODAY ' + esc(p.mark.e) + ' ' + esc(p.mark.w) : '') + '</p><div class="hm-row"><button class="hm-btn" data-pass>PRINT PASSES</button></div>' +
+      '<p class="hm-h">PASSES</p><div class="hm-row"><button class="hm-btn" data-pass title="Passes for today' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'PRINT</button></div>' +
       '<div class="hm-row"><button class="hm-btn" data-rn>RENAME</button><button class="hm-btn" data-out>FORGET THIS KEY</button></div>';
       $$('[data-ln]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (p.links || []).slice(), k = b.dataset.ln, i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); call({ method: 'POST', body: JSON.stringify({ links: l }) }).then(fill); beep(i >= 0 ? 330 : 660, 0.05); }); });
       $$('[data-ps]', box).forEach(function (b) { b.addEventListener('click', function () { var n = +b.dataset.ps;

@@ -817,13 +817,29 @@ async function wxThrough(url) {
 }
 /* news cart feed: Wikipedia's In the news and On this day, kept an hour */
 const NEWS = { t: 0, s: '' };
-const plain = h => String(h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+const plain = h => String(h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n === 160 ? 32 : +n)).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+const ECO = /\b(climate|ecolog\w*|environment\w*|species|wildlife|animals?|biodivers\w*|extinct\w*|conservation\w*|deforest\w*|forests?|coral|reefs?|oceans?|marine|whales?|dolphins?|sharks?|birds?|insects?|bees|turtles?|elephants?|tigers?|wolf|wolves|koalas?|habitats?|national parks?|emissions?|carbon|fossil fuels?|droughts?|wildfires?|bushfires?|heatwaves?|glaciers?|ice sheets?|pollution|endangered|livestock|pesticides?)\b/i;
+async function ceDay(d) {
+  try { const r = await fetch(`https://en.wikipedia.org/w/api.php?action=parse&page=Portal:Current_events/${d.getUTCFullYear()}_${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getUTCMonth()]}_${d.getUTCDate()}&prop=text&format=json&formatversion=2`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } });
+    if (!r.ok) return []; const h = String(((await r.json()).parse || {}).text || ''), b = h.slice(Math.max(0, h.indexOf('current-events-content'))), out = [];
+    for (const m of b.matchAll(/<li>((?:(?!<li>|<ul>|<\/li>)[\s\S])*?)<\/li>/g)) { const t = plain(m[1]).replace(/[\u200b-\u200d]/g, '').replace(/(\s*\([^()]*\))+\s*$/, '').trim(); if (t.length > 40 && t.length < 400) out.push(t); }
+    return out; } catch (e) { return []; }
+}
+async function moreNews(day, news) {
+  const a = day.split('-').map(Number), d0 = Date.UTC(a[0], a[1] - 1, a[2]), seen = new Set(news.map(s => s.slice(0, 40)));
+  let pool = []; for (let i = 0; i < 2 && pool.length < 12; i++) pool = pool.concat(await ceDay(new Date(d0 - i * 864e5)));
+  pool = pool.filter(s => { const k = s.slice(0, 40); if (seen.has(k)) return false; seen.add(k); return true; });
+  const more = pool.slice(0, 5);
+  if (![...news, ...more].some(s => ECO.test(s))) { let eco = pool.find(s => ECO.test(s)); for (let i = 2; !eco && i < 5; i++) eco = (await ceDay(new Date(d0 - i * 864e5))).find(s => ECO.test(s)); if (eco) more.splice(Math.min(4, more.length), 1, eco); }
+  return more.map(s => s.slice(0, 320));
+}
 async function newsThrough() {
   if (NEWS.s && Date.now() - NEWS.t < 3600e3) return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
   let j = null; try { const r = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/featured/${day.replace(/-/g, '/')}`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) j = await r.json(); } catch (e) { /* none */ }
   if (!j) return NEWS.s ? new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'no-store' } }) : fail(502, 'news');
-  NEWS.s = JSON.stringify({ day, news: (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean),
+  const news = (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean), more = await moreNews(day, news);
+  NEWS.s = JSON.stringify({ day, news, more,
     otd: (j.onthisday || []).slice(0, 3).map(o => ({ y: +o.year || 0, t: plain(o.text).slice(0, 240) })).filter(o => o.t) }); NEWS.t = Date.now();
   return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
 }
@@ -1079,26 +1095,29 @@ async function passFind(db, env, code) { const c = code.replace('-', ''), day = 
   for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };
   return null; }
 async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
-/* a pass asked for from a phone: the printer's own text and QR, so the code is only ever on the paper; one each quarter hour per island */
+/* a pass asked for from a phone: the printer's own text and QR, so the code is only ever on the paper; 5 to 10 minutes apart, 10 a day per island */
+const asksReady = new WeakMap();
+const askTable = db => { if (!asksReady.has(db)) asksReady.set(db, db.prepare('CREATE TABLE IF NOT EXISTS asks (island TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, next INTEGER NOT NULL, PRIMARY KEY (island, day))').run().catch(e => { asksReady.delete(db); throw e; })); return asksReady.get(db); };
 function passSlip(name, mark, code, head) {
   const o = [], put = (...b) => o.push(...b), txt = s => put(...enc.encode(String(s).replace(/[^\x20-\x7E]/g, '')), 10), size = n => put(0x1D, 0x21, n);
   if (head) { o.push(...head); put(0x1B, 0x61, 1); } else { put(0x1B, 0x40, 0x1B, 0x61, 1); size(0x11); txt('PASS'); size(0); txt(String(name).toUpperCase().slice(0, 32)); txt('-'.repeat(32)); put(10); size(0x22); txt(mark.w); }
-  put(10); size(0x33); txt(code); size(0); txt('ONE PRINT, STRAIGHT OUT'); put(10);
+  put(10); size(0x33); txt(code); size(0); put(10);
   const d = enc.encode('https://novel.global/c#' + code.replace('-', '')), n = d.length + 3;
   put(0x1D, 0x28, 0x6B, 4, 0, 0x31, 0x41, 0x32, 0, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x43, 6, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x45, 0x31, 0x1D, 0x28, 0x6B, n & 0xFF, n >> 8, 0x31, 0x50, 0x30, ...d, 0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x51, 0x30);
-  put(10); txt('TODAY - ONE USE'); size(0x01); txt('novel.global/c'); size(0); put(0x1B, 0x64, 4, 0x1D, 0x56, 0x42, 0);
+  put(10); size(0x01); txt('novel.global/c'); size(0); put(0x1B, 0x64, 4, 0x1D, 0x56, 0x42, 0);
   let s = ''; for (let i = 0; i < o.length; i += 0x8000) s += String.fromCharCode(...o.slice(i, i + 0x8000)); return btoa(s);
 }
 async function passAsk(db, env, req) {
   if (!codeKey(env)) return fail(503, 'passes');
   const b = await body(req, 512), id = String(b.ask || ''); if (!/^[a-z0-9-]{1,40}$/.test(id)) return fail(400, 'ask');
   const p = await db.prepare("SELECT id, name, seen FROM printers WHERE id = ? AND (token IS NOT NULL OR id = 'novelglobal')").bind(id).first(); if (!p) return fail(404, 'no such island');
-  const k = 'passask:' + id, t = now(), last = await db.prepare('SELECT max(t) AS t FROM hits WHERE k = ?').bind(k).first();
-  if (last && last.t && t - last.t < 15 * 60e3) return fail(429, 'just printed');
+  await askTable(db); const t = now(), day = melDay(t), a = await db.prepare('SELECT n, next FROM asks WHERE island = ? AND day = ?').bind(id, day).first();
+  if (a && a.n >= 10) return fail(429, 'today');
+  if (a && t < a.next) return fail(429, 'just printed');
   if (await tooMany(db, env, req, 'passask', 4, 60 * 60e3)) return fail(429, 'too many');
   const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(id).first(); if (q >= LIMIT.perPrinter) return fail(503, 'its queue is full');
   const m = await passMake(env, id, 1);
-  await db.batch([db.prepare('INSERT INTO hits (k, t) VALUES (?, ?)').bind(k, t), db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), id, passSlip(p.name || id, m.mark, m.passes[0]), t), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, id)]);
+  await db.batch([db.prepare('INSERT INTO asks (island, day, n, next) VALUES (?, ?, 1, ?) ON CONFLICT(island, day) DO UPDATE SET n = n + 1, next = excluded.next').bind(id, day, t + Math.round((5 + Math.random() * 5) * 60e3)), db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), id, passSlip(p.name || id, m.mark, m.passes[0]), t), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, id)]);
   return json({ ok: true, name: p.name || id, ready: !!p.seen && t - p.seen < 120e3 });
 }
 async function codeRead(db, env, req, raw) {

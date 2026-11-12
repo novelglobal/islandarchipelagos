@@ -117,14 +117,14 @@
     feed: function () { return '/news'; },
     opts: [['otd', 'ON THIS DAY', true]],
     draw: function (k, d, s, o) {
-      var y = k.head('NEWS', 'IN THE NEWS', phase(age(d.day || today()))) + 8;
-      (d.news || []).slice(0, 5).forEach(function (t, i) {
+      var y = k.head('NEWS', 'WIKIPEDIA', phase(age(d.day || today()))) + 8;
+      (d.news || []).slice(0, 5).concat((d.more || []).slice(0, 5)).forEach(function (t, i) {
         k.box(M, y, W - 2 * M, i ? 1 : 3); y += 10;
         k.txt(('0' + (i + 1)).slice(-2), M, y + 34, '700 34px ' + SANS);
         y += Math.max(44, k.wrap(t, M + 62, y + 26, '600 22px ' + SANS, W - 2 * M - 62, 29)) + 10;
       });
       if (o.otd && (d.otd || []).length) {
-        k.box(M, y, W - 2 * M, 3); y += 34; k.txt('ON THIS DAY', M, y, '600 18px ' + MONO); y += 12;
+        k.box(M, y, W - 2 * M, 3); y += 4; k.box(M, y, W - 2 * M, 1); y += 8;
         d.otd.slice(0, 3).forEach(function (e) { k.box(M, y, W - 2 * M, 1); y += 10;
           k.txt(String(e.y), M, y + 22, '700 22px ' + MONO);
           y += Math.max(30, k.wrap(e.t, M + 80, y + 22, '500 19px ' + SANS, W - 2 * M - 80, 25)) + 10; });
@@ -146,7 +146,7 @@
       k.txt(String(d.author || '').toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
       String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 22px ' + SANS, W - 2 * M, 31) + 12; });
       y += 4; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'ONE PAGE A DAY', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
+      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
     }
   };
 
@@ -162,7 +162,7 @@
     act: function (a, s, o) { if (a === 'today') o.i = null; else { var i; do { i = Math.floor(Math.random() * 22); } while (i === o.i); o.i = i; } return true; },
     draw: function (k, d, s, o) {
       var day = today(), i = o.i == null ? seed(day + s.id, 22) : o.i, c = MAJOR[i];
-      k.head('TAROT', o.i == null ? 'CARD OF THE DAY' : 'DRAWN', phase(age(day)));
+      k.head('TAROT', o.i == null ? '' : 'DRAWN', phase(age(day)));
       var x = 56, y = 124, w = W - 112, h = 560;
       k.box(x, y, w, h); k.g.fillStyle = '#fff'; k.g.fillRect(x + 5, y + 5, w - 10, h - 10); k.box(x + 14, y + 14, w - 28, h - 28); k.g.fillStyle = '#fff'; k.g.fillRect(x + 16, y + 16, w - 32, h - 32);
       k.fit(c[0], W / 2, y + 270, '700', 190, w - 70, SANS, 'center');
@@ -171,7 +171,7 @@
       k.fit(c[2], W / 2, y + 450, '600', 19, w - 60, MONO, 'center');
       k.txt('MAJOR ' + (i + 1) + ' / 22', W / 2, y + h - 36, '500 16px ' + MONO, 'center');
       y += h + 20; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', 'A CARD A DAY');
+      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', '');
     }
   };
 
@@ -198,12 +198,12 @@
     act: function (a, s, o) { if (a === 'one') { o.n = 1; o.deal = null; } else if (a === 'five') { o.n = 5; o.deal = null; } else { var l = [], d = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < (o.n || 1); i++) d.push(l.splice(Math.floor(Math.random() * l.length), 1)[0]); o.deal = d; } return true; },
     draw: function (k, d, s, o) {
       var day = today(), n = o.n || 1, hand = o.deal || (function () { var l = [], h = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < n; i++) h.push(l.splice(seed(day + s.id + i, l.length), 1)[0]); return h; })();
-      k.head('CARDS', o.deal ? 'DEALT' : n > 1 ? 'HAND OF THE DAY' : 'CARD OF THE DAY', phase(age(day)));
+      k.head('CARDS', o.deal ? 'DEALT' : '', phase(age(day)));
       var y = 124;
       if (n === 1) { playCard(k, hand[0], 96, y, 320, 448); y += 448 + 16; k.fit(RANK[hand[0] % 13].replace('A', 'ACE').replace('J', 'JACK').replace('Q', 'QUEEN').replace('K', 'KING') + ' OF ' + SUIT[Math.floor(hand[0] / 13)], W / 2, y + 30, '700', 28, W - 2 * M, SANS, 'center'); y += 50; }
       else { hand.forEach(function (c, i) { var row = i < 3 ? 0 : 1, col = row ? i - 3 : i, cw = 150, ch = 210, x0 = row ? (W - 2 * cw - 16) / 2 : (W - 3 * cw - 32) / 2; playCard(k, c, R(x0 + col * (cw + 16)), y + row * (ch + 16), cw, ch); }); y += 2 * 226 + 4; }
       k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', n > 1 ? 'FIVE CARDS · ANY GAME' : 'A CARD A DAY');
+      return k.foot(y, 'https://novel.global/x#' + s.id, 'PLAY ON CARD', '');
     }
   };
 
@@ -229,9 +229,8 @@
       y += 26; k.box(M, y, W - 2 * M, 2);
       if (o.head) return y + 12;
       y += 24; k.dots(M + 40, y, W - 2 * M - 80, 120); k.g.fillStyle = '#fff'; k.g.fillRect(M + 48, y + 8, W - 2 * M - 96, 104);
-      k.txt('THE CODE PRINTS HERE', W / 2, y + 68, '600 20px ' + MONO, 'center');
-      y += 160; k.txt('ONE PRINT, STRAIGHT OUT', W / 2, y, '600 20px ' + MONO, 'center');
-      y += 26; k.box(M, y, W - 2 * M, 3); return y + 14;
+      k.txt('CODE', W / 2, y + 68, '600 20px ' + MONO, 'center');
+      y += 140; k.box(M, y, W - 2 * M, 3); return y + 14;
     }
   };
   function keeper(b) {
@@ -267,7 +266,7 @@
     var got = S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
     if (!S.K.get && !S.code) api('/c?for=' + S.stack.id).then(function (j) { S.code = j.code || ''; if (S.ready) paint(); }, function () {});
     var fonts = document.fonts && document.fonts.load ? Promise.all(FONTS.map(function (f) { return document.fonts.load(f); })) : Promise.resolve();
-    Promise.all([got, fonts.catch(function () {})]).then(function (r) { S.data = r[0]; if (S.K.get) own(r[0]); paint(); }, function (e) { if (S.K.get) { S.data = {}; paint(); S.ready = false; keys(); } st.textContent = S.K.get && /key|401/.test(e.message) ? 'FOR ISLAND KEEPERS' : 'NOT REACHED · TRY AGAIN SOON'; });
+    Promise.all([got, fonts.catch(function () {})]).then(function (r) { S.data = r[0]; if (S.K.get) own(r[0]); paint(); }, function (e) { if (S.K.get) { S.data = {}; paint(); S.ready = false; keys(); } st.textContent = S.K.get && /key|401/.test(e.message) ? 'KEEPERS' : 'OFFLINE'; st.title = S.K.get ? 'For island keepers' : ''; });
   }
   function own(d) { S.prns = [{ id: d.island, name: d.name }]; S.to = d.island; $('#to').innerHTML = ''; }
   function printers() { if (S.K.get) return;
@@ -283,11 +282,11 @@
     var go = $('#go'), st = $('#st'); if (!S.ready || !S.to) return; go.disabled = true;
     st.textContent = '· · ·';
     if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
-      return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'ITS QUEUE IS FULL' : 'NOT SENT'; }).then(function () { go.disabled = false; keys(); }); }
+      return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'FULL' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
     try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
     api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(cv, 0), from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
-      .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } st.textContent = (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'TRY AGAIN SOON' : 'NOT SENT'; }).then(function () { go.disabled = false; keys(); });
+      .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } st.textContent = (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
   }
   function opts() {
     var el = $('#opts'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; });
