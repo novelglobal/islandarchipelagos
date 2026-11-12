@@ -786,6 +786,21 @@ async function inatThrough(url) {
   if (!r.ok) { if (r.status === 429 || r.status === 403) inatRest = Date.now() + 60e3; return fail(r.status === 429 ? 429 : 502, 'inat'); }
   return new Response(r.body, { headers: { ...JSON_H, 'cache-control': `public, max-age=${Math.min(rule[1], 300)}` } });
 }
+/* weather cart feed, kept an hour */
+const WX_D = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max';
+const WXC = new Map();
+async function wxThrough(url) {
+  const pair = k => { const a = (url.searchParams.get(k) || '').split(',').map(Number); return a.length === 2 && a.every(Number.isFinite) && Math.abs(a[0]) <= 90 && Math.abs(a[1]) <= 180 ? a.map(v => v.toFixed(2)) : null; };
+  const at = pair('at'), sea = pair('sea'); if (!at || (url.searchParams.has('sea') && !sea)) return fail(400, 'at');
+  const key = at + '|' + sea, hit = WXC.get(key); if (hit && Date.now() - hit.t < 3600e3) return new Response(hit.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
+  const get = u => fetch(u, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+  const [f, m] = await Promise.all([get(`https://api.open-meteo.com/v1/forecast?latitude=${at[0]}&longitude=${at[1]}&daily=${WX_D}&timezone=auto&forecast_days=7`),
+    sea ? get(`https://marine-api.open-meteo.com/v1/marine?latitude=${sea[0]}&longitude=${sea[1]}&hourly=sea_level_height_msl&timezone=auto&forecast_days=7`) : null]);
+  if (!f || !f.daily) return hit ? new Response(hit.s, { headers: { ...JSON_H, 'cache-control': 'no-store' } }) : fail(502, 'wx');
+  const s = JSON.stringify({ daily: f.daily, tide: m && m.hourly && Array.isArray(m.hourly.sea_level_height_msl) && m.hourly.sea_level_height_msl.every(Number.isFinite) ? m.hourly.sea_level_height_msl : null });
+  if (WXC.size > 200) WXC.clear(); WXC.set(key, { t: Date.now(), s });
+  return new Response(s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
+}
 /* the two things asked of OpenStreetMap: the places with a name (as the radar's knots), and the water. Built here from a box of
    whole tiles, so nothing else can be asked through novel.global */
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
@@ -934,7 +949,7 @@ const JOURNEY = /^(lv[1-6]|disc-[0-2]|eye|step-[0-3]|dev-[0-3]|booth-(open|print
 function trafficKey(url, m) {
   const p = url.pathname.replace(/^\/api\//, '').split('/')[0];
   if (p === 'beat') { const k = url.searchParams.get('k'); return BEATS.includes(k) || JOURNEY.test(k || '') ? k : null; }
-  if (['inat', 'osm', 'img', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
+  if (['inat', 'osm', 'img', 'wx', 'places', 'stories', 'posts', 'receipts'].includes(p)) return p + (m === 'POST' ? ':sent' : '');
   return null;
 }
 function tally(url, m) { USE.req++; const k = trafficKey(url, m); if (k) USE.keys[k] = (USE.keys[k] || 0) + 1; }
@@ -1002,6 +1017,7 @@ async function api(req, env, url, ctx) {
   if (url.pathname === '/api/beat') return new Response(null, { status: 204, headers: TEXT_H });
   if (url.pathname === '/api/img' && req.method === 'GET') return imgThrough(url);
   if (url.pathname.startsWith('/api/inat/') && req.method === 'GET') return inatThrough(url);
+  if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);
   const p = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean).map(decodeURIComponent); const m = req.method;
