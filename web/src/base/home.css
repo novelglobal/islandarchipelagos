@@ -1036,3 +1036,22 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-full { top: calc(var(--hm-top) / -2 - 14p
 #hm-x .hm-qv .qv-t { margin: 0; font: 700 clamp(28px, 9vw, 52px)/1 Poppins, sans-serif; letter-spacing: -.01em; text-align: center; }
 #hm-x .hm-qv .qv-go { min-width: 160px; height: 56px; border-radius: 28px; border: 0; background: #0B0B0B; color: #F4F1E8; font: 600 14px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; cursor: pointer; }
 html.hm-night #hm-x .hm-qv .qv-go { background: #F4F1E8; color: #0B0B0B; }
+
+/* the circular strategy, by hand: a pen's wobble, a pencil loop, inks off register, a mounted print, paper grain */
+.st-orb .lp, .st-orb .pn, .st-orb .lp2, .st-orb .st-nd { filter: url(#st-ink); }
+.st-orb .lp { stroke-width: .35; opacity: .45; }
+.st-orb .pn { stroke-width: .3; opacity: .35; }
+.st-orb .lp2 { stroke-width: .9; stroke-dasharray: 2.6 6.2 3.8 8.344; opacity: .8; }
+.st-orb .st-nd circle { stroke: rgba(244, 241, 232, .8); stroke-width: .45; transition: transform .4s ease; }
+.st-orb .n0 circle { fill: #C9654E; } .st-orb .n1 circle { fill: #DDB95E; } .st-orb .n2 circle { fill: #5A98C2; } .st-orb .n3 circle { fill: #B4ADD6; }
+.st-orb .st-nd path { stroke: #10223A; stroke-width: 1.9; }
+.st-orb .st-nd.hit circle { transform: scale(1.14); }
+.st-orb .hm-pics { border-radius: 5%; transform: rotate(-1.2deg); box-shadow: 0 0 0 .35cqw rgba(244, 241, 232, .85), 0 12px 24px -14px rgba(0, 0, 0, .55); }
+.st-th { box-shadow: 0 0 0 .35cqw #F4F1E8, 0 6px 12px -8px rgba(0, 0, 0, .5); transition: transform .35s ease, box-shadow .4s; }
+.st-th[data-q="0"] { box-shadow: 0 0 0 .35cqw #C9654E, 0 6px 12px -8px rgba(0, 0, 0, .5); } .st-th[data-q="1"] { box-shadow: 0 0 0 .35cqw #DDB95E, 0 6px 12px -8px rgba(0, 0, 0, .5); }
+.st-th[data-q="2"] { box-shadow: 0 0 0 .35cqw #5A98C2, 0 6px 12px -8px rgba(0, 0, 0, .5); } .st-th[data-q="3"] { box-shadow: 0 0 0 .35cqw #B4ADD6, 0 6px 12px -8px rgba(0, 0, 0, .5); }
+.st-th.pop { transform: scale(1.12); }
+.sk-wish .hm-t { text-shadow: none; }
+.st-alert { background: transparent; border-color: rgba(244, 241, 232, .55); }
+.st-alert i { box-shadow: none; background: #C9654E; }
+.sk-wish .st-grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--grain); background-size: 180px; opacity: .3; mix-blend-mode: soft-light; }
