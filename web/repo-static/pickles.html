@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">
-<title>Adapt together · novel.global</title>
+<title>Pickles × FoE</title>
 <link rel="icon" href="icon.svg">
 <style>
   @font-face { font-family: 'Poppins'; font-weight: 600; src: url(vendor/fonts/poppins-latin-600-normal.woff2) format('woff2'); }
@@ -18,48 +18,43 @@
   a { color: inherit; }
   /* the hand-drawn box: no two corners the same */
   .hd { border: 2.5px solid var(--ink); border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-  .lg { display: flex; align-items: center; gap: 10px; }
-  .lg img { height: 46px; width: auto; display: block; border-radius: 6px; }
-  .lg span { font: 600 16px/1 'IBM Plex Mono', monospace; }
-  .ng { font: 700 13px/1 Poppins, sans-serif; text-decoration: none; padding: 7px 11px; transform: rotate(1.5deg); background: #fff; }
-  h1 { margin: 6px 0 12px; font: 700 clamp(46px, 15vw, 66px)/.9 Poppins, sans-serif; letter-spacing: -.04em; position: relative; display: inline-block; }
-  h1 svg { position: absolute; left: -2%; bottom: -10px; width: 104%; height: 16px; fill: none; stroke: var(--tom); stroke-width: 5; stroke-linecap: round; }
-  .row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
-  button, .bt { font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 999px; min-height: 38px; padding: 0 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
-  .row > :nth-child(odd) { transform: rotate(-1.2deg); } .row > :nth-child(even) { transform: rotate(1deg); }
+  header { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0 18px; }
+  header img { height: 92px; width: auto; display: block; border-radius: 10px; }
+  header img:first-child { transform: rotate(-3deg); } header img:last-child { transform: rotate(2.5deg); }
+  header span { font: 700 26px/1 Poppins, sans-serif; color: var(--tom); transform: rotate(8deg); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+  button, .bt { font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 999px; min-height: 40px; padding: 0 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .row > :nth-child(odd) { transform: rotate(-1.4deg); } .row > :nth-child(even) { transform: rotate(1.2deg); }
   button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
   button:active { transform: translateY(1px) rotate(0); }
   button:disabled { opacity: .45; }
-  .tabs { margin-bottom: 10px; }
-  .tabs button { min-height: 42px; padding: 0 18px; font-size: 13px; }
   .stg { position: relative; padding: 8px; background: #fff; transform: rotate(-.6deg); box-shadow: 6px 7px 0 rgba(22, 20, 18, .9); }
-  #stage { display: block; width: 100%; aspect-ratio: 512 / 680; touch-action: none; cursor: grab; border-radius: 3px; }
-  .tape { position: absolute; top: -12px; left: 50%; width: 92px; height: 24px; transform: translateX(-50%) rotate(-3deg); background: rgba(246, 196, 69, .75); border: 1.5px solid rgba(22, 20, 18, .5); }
-  .tools { margin: 16px 0 6px; justify-content: space-between; }
-  .tools .ph { background: var(--tom); color: #fff; border-color: var(--ink); min-height: 44px; padding: 0 18px; }
-  .tools .sm { width: 40px; padding: 0; font-size: 16px; letter-spacing: 0; }
-  #picks { margin: 8px 0 18px; }
-  #picks i { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--a) 0 3px, var(--b) 3.5px); border: 1.5px solid var(--ink); }
-  h2 { margin: 26px 0 10px; font: 700 26px/1 Poppins, sans-serif; letter-spacing: -.02em; }
-  #pl { margin: 12px 0 18px; padding: 14px 16px; background: var(--pink); font: 600 19px/1.3 Poppins, sans-serif; letter-spacing: -.01em; transform: rotate(.8deg); }
-  #go { width: 100%; min-height: 62px; font-size: 17px; letter-spacing: .2em; background: var(--ink); color: var(--paper); border-radius: 18px 255px 18px 225px / 225px 18px 255px 18px; }
-  .gor { display: flex; align-items: center; gap: 10px; margin-top: 10px; min-height: 22px; }
+  #stage { display: block; width: 100%; aspect-ratio: 512 / 640; touch-action: none; cursor: grab; border-radius: 3px; background: var(--paper); }
+  #stage:active { cursor: grabbing; }
+  .tape { position: absolute; top: -12px; left: 50%; width: 92px; height: 24px; transform: translateX(-50%) rotate(-3deg); background: rgba(246, 196, 69, .75); border: 1.5px solid rgba(22, 20, 18, .5); z-index: 1; }
+  #nm { position: absolute; left: 14px; bottom: 14px; margin: 0; padding: 5px 11px 6px; background: var(--pink); border: 2px solid var(--ink); border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px; font: 700 15px/1 Poppins, sans-serif; letter-spacing: -.01em; pointer-events: none; }
+  .vw { position: absolute; right: 12px; top: 12px; display: flex; gap: 0; }
+  .vw button { min-height: 30px; padding: 0 10px; font-size: 10px; border-radius: 0; transform: none; }
+  .vw button:first-child { border-radius: 999px 0 0 999px; border-right: 0; } .vw button:last-child { border-radius: 0 999px 999px 0; }
+  .two { margin: 22px 0 0; gap: 12px; }
+  .two button { min-height: 52px; padding: 0 22px; font-size: 14px; }
+  #ph { background: var(--tom); color: #fff; }
+  #adj { margin: 14px 0 0; gap: 6px; }
+  #adj button { width: 44px; min-height: 44px; padding: 0; font-size: 18px; letter-spacing: 0; }
+  #adj #fit { width: auto; padding: 0 12px; font-size: 11px; letter-spacing: .12em; }
+  #go { width: 100%; margin-top: 22px; min-height: 62px; font-size: 17px; letter-spacing: .2em; background: var(--ink); color: var(--paper); border-radius: 18px 255px 18px 225px / 225px 18px 255px 18px; transform: rotate(.4deg); }
+  .gor { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; min-height: 22px; }
   #led { width: 9px; height: 9px; border-radius: 50%; background: #B9B2A2; border: 1.5px solid var(--ink); flex: none; }
   #led.on { background: #2FBF55; }
   #st { margin: 0; font-weight: 600; letter-spacing: .14em; }
-  .keep { margin-top: 12px; }
-  #code { margin-top: 16px; padding: 14px 16px; background: #fff; }
-  #code p { margin: 0 0 10px; }
-  #code b { font: 700 30px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; padding: 4px 10px; border: 2.5px solid var(--ink); border-radius: 6px; display: inline-block; margin-right: 10px; }
-  .give { margin-top: 30px; padding: 16px; background: var(--leaf); color: var(--paper); box-shadow: 6px 7px 0 var(--ink); transform: rotate(.4deg); }
-  .give h2 { margin-top: 0; color: var(--sun); }
-  .give p { margin: 0 0 12px; }
-  .give .bt { background: var(--sun); border-color: var(--ink); min-height: 48px; font-size: 15px; padding: 0 22px; }
-  .give small { display: block; margin-top: 10px; word-break: break-all; opacity: .9; }
-  .more { margin-top: 26px; text-align: center; }
+  #after { margin-top: 30px; text-align: center; }
+  #code { display: inline-block; font: 700 40px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; padding: 8px 14px 8px 20px; border: 3px solid var(--ink); border-radius: 8px; background: #fff; transform: rotate(-1.5deg); margin-bottom: 14px; }
+  .give { margin-top: 26px; padding: 18px 16px; background: var(--leaf); color: var(--paper); box-shadow: 6px 7px 0 var(--ink); transform: rotate(.6deg); }
+  .give .bt { background: var(--sun); min-height: 52px; font-size: 15px; padding: 0 24px; }
+  .give small { display: block; margin-top: 10px; word-break: break-all; }
+  .more { margin-top: 24px; }
   #gate { text-align: center; padding-top: 18vh; }
-  #gate h1 { margin-bottom: 18px; }
+  #gate h1 { margin: 6px 0 18px; font: 700 clamp(46px, 15vw, 66px)/.9 Poppins, sans-serif; letter-spacing: -.04em; }
   #gate form { display: flex; gap: 8px; justify-content: center; margin-top: 18px; }
   #gate input { font: 600 18px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; text-transform: uppercase; width: 150px; min-height: 44px; padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); text-align: center; }
   #gst { min-height: 20px; margin-top: 12px; letter-spacing: .14em; }
@@ -74,46 +69,25 @@
 </section>
 
 <section id="card" hidden>
-  <header>
-    <div class="lg" aria-label="Pickles Milk Bar and Friends of the Earth Melbourne"><img id="lg-p" src="pop/pickles.png" alt="Pickles Milk Bar" crossorigin="anonymous"><span aria-hidden="true">×</span><img id="lg-f" src="pop/foe.png" alt="Friends of the Earth Melbourne" crossorigin="anonymous"></div>
-    <a class="ng hd" href="/" title="Every card on novel.global">novel.global</a>
-  </header>
-  <h1 title="Adapt together: a pledge for animals this El Niño">together<svg viewBox="0 0 200 16" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10C30 3 52 14 80 8S130 4 156 9 190 6 197 7"/></svg></h1>
+  <header aria-label="Pickles Milk Bar and Friends of the Earth Melbourne"><img id="lg-p" src="pop/pickles.png" alt="Pickles Milk Bar" crossorigin="anonymous"><span aria-hidden="true">×</span><img id="lg-f" src="pop/foe.png" alt="Friends of the Earth Melbourne" crossorigin="anonymous"></header>
 
-  <div class="row tabs" role="group" aria-label="Kind">
-    <button type="button" data-mode="animal" aria-pressed="true" title="Your face in an Australian animal">ANIMAL</button>
-    <button type="button" data-mode="frame" aria-pressed="false" title="Your photo in a hand-cut frame">FRAME</button>
+  <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
+    <p id="nm" aria-live="polite"></p>
+    <div class="vw" role="group" aria-label="View"><button type="button" id="vc" aria-pressed="true" title="The colour picture you keep">COLOUR</button><button type="button" id="vp" aria-pressed="false" title="Exactly what the printer makes">PRINT</button></div>
   </div>
+  <div class="row" id="adj" hidden><button type="button" id="zo" aria-label="Smaller" title="Smaller">−</button><button type="button" id="zi" aria-label="Bigger" title="Bigger">+</button><button type="button" id="tl" aria-label="Turn left" title="Turn left">↺</button><button type="button" id="tr" aria-label="Turn right" title="Turn right">↻</button><button type="button" id="fit" title="Back into the hole">FIT</button></div>
 
-  <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas></div>
-  <div class="row tools">
-    <button type="button" class="ph" id="ph" title="Take or choose a photo">PHOTO</button>
-    <span class="row"><button type="button" class="sm" id="zout" aria-label="Smaller">−</button><button type="button" class="sm" id="zin" aria-label="Bigger">+</button><button type="button" class="sm" id="rl" aria-label="Turn left">↺</button><button type="button" class="sm" id="rr" aria-label="Turn right">↻</button></span>
-  </div>
-  <div class="row" id="picks"></div>
+  <div class="row two"><button type="button" id="an" title="Another animal">ANIMAL</button><button type="button" id="ph" title="Take or choose a photo of your face">PHOTO</button></div>
 
-  <h2 title="A pledge for animals, for the hot, the wet and the in-between">pledge</h2>
-  <div class="row" role="group" aria-label="Pledge">
-    <button type="button" data-pl="hot" title="For the heat">HOT</button>
-    <button type="button" data-pl="wet" title="For the floods">WET</button>
-    <button type="button" data-pl="shade" title="For the long run">SHADE</button>
-  </div>
-  <p id="pl" class="hd"></p>
-
-  <button type="button" id="go" title="Print it here, on the café's printer">PRINT</button>
+  <button type="button" id="go" disabled title="Print it here, on the café's printer">PRINT</button>
   <div class="gor"><i id="led" aria-hidden="true"></i><p id="st" aria-live="polite"></p></div>
-  <div class="row keep"><button type="button" id="sv" title="Keep the colour picture">SAVE</button><button type="button" id="sh" title="Send the colour picture">SHARE</button></div>
 
-  <div id="code" class="hd" hidden><p>Your code is on the print.</p><b></b><a class="bt" href="/" title="Every card on novel.global, opened by your code">OPEN</a></div>
-
-  <section class="give hd">
-    <h2 title="For Friends of the Earth Melbourne's Act On Climate">donate</h2>
-    <p>For Act On Climate and the 2027 Adaptation Fair, with Friends of the Earth Melbourne.</p>
-    <a class="bt" id="donate" href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener">GIVE $10</a>
-    <small>melbournefoe.org.au/climatedonate</small>
+  <section id="after" hidden>
+    <b id="code" title="Your code is on the print: it opens novel.global"></b>
+    <div class="row"><button type="button" id="sv" title="Keep the colour picture">SAVE</button><a class="bt" href="/" title="Every card on novel.global, opened by your code">OPEN</a></div>
+    <div class="give hd"><a class="bt" id="donate" href="https://www.melbournefoe.org.au/climatedonate#10" target="_blank" rel="noopener" title="For Act On Climate and the 2027 Adaptation Fair, with Friends of the Earth Melbourne">DONATE $10</a><small>melbournefoe.org.au/climatedonate</small></div>
+    <p class="more"><a class="bt hd" href="/" title="Every card on novel.global">MORE CARDS</a></p>
   </section>
-
-  <p class="more"><a class="bt hd" href="/" title="Every card on novel.global">MORE CARDS</a></p>
 </section>
 <script src="pickles.js"></script>
 </main></body></html>

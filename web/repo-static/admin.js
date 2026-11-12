@@ -724,8 +724,8 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'MAKER', disabled: !myWho, onclick: async () => { try { await api('makers', { method: 'POST', body: JSON.stringify({ who: myWho }) }); mkSay.textContent = myWho + ' CAN PUT THINGS UP'; } catch (e) { mkSay.textContent = 'NOT DONE'; } } })), mkSay,
       hint('Linked: the ways back makers chose to leave with their code (mesh, email, mobile, Steam). Seen only here.'), lkList);
     lkLoad();
-    const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-quick', st.quickTap !== false, 'QUICK TAP'), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('QUICK TAP: one tap on a deep card (novel.global: a quick photo print) opens it full screen with its quick print; a double tap or a long press opens the whole card. The nine small cards always open at once. EVERY CARD: the big cards stand three to a screen too.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ quickTap: $('#ct-quick').checked, cartridges: $('#ct-all').checked }) })));
+    const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('EVERY CARD: the big cards stand three to a screen too.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#ct-all').checked }) })));
     const popLink = () => location.origin + '/pickles?k=' + encodeURIComponent($('#pop-key').value.trim());
     const pop = el('section', { class: 'ed' }, el('h3', { text: 'POP-UP' }), chk('pop-on', !!st.popOn, 'OPEN'),
       el('label', { class: 'check' }, 'KEY ', (() => { const i = el('input', { id: 'pop-key', maxlength: '40', autocomplete: 'off', spellcheck: 'false' }); i.value = st.popKey || ''; i.addEventListener('input', () => { $('#pop-link').textContent = popLink(); }); return i; })()),
