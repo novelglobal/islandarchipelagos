@@ -58,7 +58,7 @@
     { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'portfolio', size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-3', size: 'small', title: 'OPEN ISLAND', ph: 3, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'slot-3', size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
@@ -87,12 +87,18 @@
   function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0); }), o = lay('order');
     if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); } return l; }
   var WIDE = matchMedia('(min-width: 900px)');
-  function perPage() { var n = +lay('per'); return n === 3 || n === 6 || n === 9 ? n : WIDE.matches ? 9 : 3; }
-  function colHTML() { var out = '', run = [], P = perPage(), free = !!((lay('order') || []).length);
-    var flush = function () { for (var k = 0; k < run.length; k += P) { var ch = run.slice(k, k + P); if (k && ch.every(function (r) { return r[1]; })) break; out += '<section class="hm-trio p' + P + ' n' + Math.min(3, ch.length) + '">' + ch.map(function (r) { return r[0]; }).join('') + '</section>'; } run = []; };
-    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], own = ownSize(c) === 'small', th = !!c.g, g1 = false; if (was !== null && own !== was) flush(); was = own;
-      if (sizeOf(c) !== 'small') { flush(); wasT = wasG = null; out += cardHTML(c, i); return; }
-      if (!free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush(); g1 = true; } } wasT = th; wasG = c.g || null; run.push([cardHTML(c, i, g1), !!c.ph]); }); flush(); return out + FOOT; }
+  function perPage() { var n = +lay('per'); return n === 3 || n === 6 || n === 9 ? n : 9; }
+  function tierOf(c) { if (sizeOf(c) !== 'small') return 'full'; if (OPT.carts && (c.size || 'full') !== 'small') return 'trio'; if (c.trio) return 'trio'; return c.lib || c.g || c.ph || c.opens === 'play' ? 'nine' : 'trio'; }
+  function colHTML() { var out = '', run = [], P9 = perPage(), P = P9, free = !!((lay('order') || []).length);
+    var flush = function () { for (var k = 0; k < run.length; k += P) { var ch = run.slice(k, k + P); if (k && ch.every(function (r) { return r[1]; })) break;
+        /* a band behind each row, in its theme's grey */
+        var rows = [], m = 0; ch.forEach(function (r, j) { if (!j || r[3] || m === 3) { rows.push(r[2]); m = 0; } m++; });
+        var bands = P === 9 ? ' hm-bands" style="' + rows.slice(0, 3).map(function (g, j) { return '--r' + (j + 1) + ':var(--th-' + g + ')'; }).join(';') : '';
+        out += '<section class="hm-trio p' + P + ' n' + Math.min(3, ch.length) + bands + '">' + ch.map(function (r) { return r[0]; }).join('') + '</section>'; } run = []; };
+    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], tr = tierOf(c), th = !!c.g, g1 = false; if (was !== null && tr !== was) flush(); was = tr; P = tr === 'nine' ? P9 : 3;
+      if (tr === 'full') { flush(); wasT = wasG = null; out += cardHTML(c, i); return; }
+      if (tr === 'nine' && !free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush(); g1 = true; } } wasT = th; wasG = c.g || null;
+      run.push([cardHTML(c, i, g1), !!c.ph, c.g || (c.ph ? 'slot' : 'app'), g1]); }); flush(); return out + FOOT; }
   /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
   var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
   var FOOT = '<footer class="hm-foot" aria-hidden="true"><div class="hf-grid">' + FOOT_T.map(function (t, k) { return '<canvas class="hf-t t' + k + '" data-pat="' + t.join(',') + '"></canvas>'; }).join('') +
@@ -195,11 +201,11 @@
   var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
   /* CIRCULAR STRATEGY: a loop, never a line. Chairs ride round it through four stops (picked up, mended, used again, home), each stop changing them; a touch or a scroll spins it */
   var ORBIT = '<div class="st-orb" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><filter id="st-ink" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale=".75"/></filter></defs><circle class="lp" r="40"/><path class="pn" d="M-9 -39C14 -43 41 -24 40.4 2S16 41.6 -2 40.2S-41 21 -40.3 -1.5S-27 -38.5 -3 -40.6S12 -39.5 16 -37.2"/><circle class="lp2" r="40"/><path class="cv" transform="rotate(45) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(135) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(225) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(315) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><g class="st-nd n0" transform="translate(0 -40)"><g class="nd-in" style="--dx:0px;--dy:-20px;--k:0"><circle r="7.4"/><text>W</text></g></g><g class="st-nd n1" transform="translate(40 0)"><g class="nd-in" style="--dx:20px;--dy:0px;--k:1"><circle r="7.4"/><text>I</text></g></g><g class="st-nd n2" transform="translate(0 40)"><g class="nd-in" style="--dx:0px;--dy:20px;--k:2"><circle r="7.4"/><text>S</text></g></g><g class="st-nd n3" transform="translate(-40 0)"><g class="nd-in" style="--dx:-20px;--dy:0px;--k:3"><circle r="7.4"/><text>H</text></g></g></svg>' +
-    '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6-t.jpg"></i></div>';
+    '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6-t.jpg"></i><b class="st-stg"><i>FOUND</i><i>MENDED</i><i>USED</i><i>HOME</i></b></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   /* a line in a made-up hand, written, crossed out, rubbed away, and another tried: the doubt before the poem, small, in the gap */
-  var SWEEP = '<div class="rd-fx" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
-    '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g><path class="pl" d="M-3.5 -5L5.5 0L-3.5 5Z"/></svg></div>';
+  var SWEEP = '<div class="rd-fx"><svg viewBox="-50 -50 100 100" aria-hidden="true"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
+    '<circle r="16"/><circle r="30"/><circle r="46"/><path class="ax" d="M-48 0h96M0-48v96"/><g class="sw"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="url(#rd-sw)"/></g></svg><button type="button" class="rd-mute" aria-pressed="false" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="sp" d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path class="wv" d="M15.5 9.5c1.2 1.4 1.2 3.6 0 5M18 7c2.4 2.8 2.4 7.2 0 10"/><path class="x" d="M16 10l4.5 4.5M20.5 10L16 14.5"/></svg></button></div>';
   /* DESIGN PRINT: a big street poster pasted up on the white wall in the photograph, piece by piece, torn paper and glitched type */
   /* the poster's hero, pasted last: Design in a blackletter, acid lime, standing off the paper in depth. Its own layer, so the paper's
      multiply never dulls it; it glitches and is torn down with the rest */
@@ -228,7 +234,7 @@
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
     [[22, 30], [48, 52], [78, 40], [36, 84], [66, 96], [84, 74], [18, 112], [50, 128]].map(function (p, k) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (k ? 1.2 : 1.9) + '"' + (k ? '' : ' class="me"') + ' style="--k:' + k + '"/>'; }).join('') + '</svg></div>';
   /* DIRECT ACTION RADIO: the reef's water painted on down into the card, and a solar beacon riding it: a panel, its wires, the two radios strapped to its mast, a lamp that calls */
-  var RS = { scrap: true, cv: null, io: null, on: true, w: 0, h: 0, k: 1, E: 1, base: null, nt: null, snow: [], rip: [], rt: 0, drawn: false };
+  var RS = { muted: true, scrap: true, cv: null, io: null, on: true, w: 0, h: 0, k: 1, E: 1, base: null, nt: null, snow: [], rip: [], rt: 0, drawn: false };
   function rrect(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
   function rsBase(w, h, E) {
     var c = D.createElement('canvas'), k = RS.k; c.width = Math.round(w * k); c.height = Math.round(h * k); var g = c.getContext('2d'), r = rnd(301), sea = NIGHT ? '#06152A' : '#17457F', lit = NIGHT ? '#0E2B52' : '#1E58A8', bw = E * 0.34;
@@ -247,25 +253,28 @@
     g.globalCompositeOperation = 'source-over'; flaws(g, w, h, 304, 0.22);
     return c;
   }
-  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); if (RS.nino) songOn(); else songOff(); }, true);
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); if (RS.nino) muteSet(false); if (!RS.song) songOn(); }, true);
+  /* the sound key: the song turns on the radar always; this lets it be heard. El Niño unmutes it and doubles its pace to 120 */
+  function muteSet(m) { RS.muted = m; if (!m) ac(); $$('.rd-mute').forEach(function (b) { b.setAttribute('aria-pressed', String(!m)); b.title = m ? 'Sound' : 'Mute'; }); }
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-mute'); if (!b) return; e.preventDefault(); e.stopPropagation(); muteSet(!RS.muted); if (!RS.song) songOn(); }, true);
   /* El Niño on the buoy: a small song dropped at random on the radar, the hand at its fast turn (two bars of 120, a note on a sixteenth as the hand
      crosses it), timed by the sound's own clock; off, it stops and the radar is as it was. Off screen or behind an experience it waits */
   var SONG_TURN = 4, PENTA = [0, 3, 5, 7, 10, 12, 15, 17];
-  function songOn() { var c = ac(), svg = col.querySelector('.sk-radio .rd-fx svg'); if (!c || !svg) return; songOff(); var at = {}, n = 6 + Math.floor(Math.random() * 4), notes = [];
+  function songOn() { var svg = col.querySelector('.sk-radio .rd-fx svg'); if (!svg) return; songOff(); var at = {}, n = 6 + Math.floor(Math.random() * 4), notes = [];
     while (notes.length < n) { var k = Math.floor(Math.random() * 32); if (at[k]) continue; at[k] = 1; notes.push({ k: k, a: k / 32 * 360, r: 14 + Math.random() * 30, f: 110 * Math.pow(2, PENTA[Math.floor(Math.random() * PENTA.length)] / 12), d: Math.random() < 0.3 ? 2 : 1 }); }
     var g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'sg');
     g.innerHTML = notes.map(function (o, i) { var x = (o.r * Math.cos(o.a * Math.PI / 180)).toFixed(2), y = (o.r * Math.sin(o.a * Math.PI / 180)).toFixed(2); return '<rect x="' + (x - 1.6 * o.d) + '" y="' + (y - 1.6 * o.d) + '" width="' + (3.2 * o.d) + '" height="' + (3.2 * o.d) + '" style="animation-delay:' + (i * 0.07) + 's"/>'; }).join('');
-    svg.appendChild(g); RS.song = { notes: notes, g: g, sw: svg.querySelector('.sw'), t0: c.currentTime + 0.12, next: 0 }; }
+    svg.appendChild(g); RS.song = { notes: notes, g: g, sw: svg.querySelector('.sw'), ph: 0, lt: 0, lk: -1 }; }
   function songOff() { var S = RS.song; if (!S) return; RS.song = null; S.g.remove(); S.sw.style.animation = ''; S.sw.style.transform = ''; }
   function songNote(c, f, t, d) { var o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(), len = 0.22 * d + 0.12;
     o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; lp.type = 'lowpass'; lp.frequency.setValueAtTime(2600, t); lp.frequency.exponentialRampToValueAtTime(500, t + len);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
     o.connect(lp); o2.connect(lp); lp.connect(g).connect(c.destination); o.start(t); o2.start(t); o.stop(t + len + 0.05); o2.stop(t + len + 0.05); }
-  function songTick() { var S = RS.song, c = ac(); if (!S || !c) return; if (!S.g.isConnected) { songOn(); return; } var now = c.currentTime, SL = SONG_TURN / 32;
-    /* back after a wait: the song picks up from the next sixteenth instead of crowding in what it missed */
-    if (S.t0 + S.next * SL < now - 0.05) S.next = Math.ceil((now - S.t0) / SL);
-    while (S.t0 + S.next * SL < now + 0.15) { var t = S.t0 + S.next * SL, k = S.next % 32; S.notes.forEach(function (o) { if (o.k === k) songNote(c, o.f, t, o.d); }); S.next++; }
-    var th = ((now - S.t0) / SONG_TURN * 360) % 360; if (th < 0) th += 360; S.sw.style.animation = 'none'; S.sw.style.transform = 'rotate(' + th.toFixed(1) + 'deg)';
+  /* the hand's turn: 8 s at rest, 4 s (two bars of 120) in El Niño; the notes sound as it crosses them, only while unmuted */
+  function songTick() { var S = RS.song; if (!S) return; if (!S.g.isConnected) { songOn(); return; } var now = performance.now() / 1000, T = RS.nino ? SONG_TURN : SONG_TURN * 2;
+    if (S.lt) S.ph += Math.min(0.1, now - S.lt) / T; S.lt = now; var f = S.ph % 1, k = Math.floor(f * 32);
+    if (k !== S.lk) { if (!RS.muted && !(AIR.kept && AIR.on) && !(SND && SND.a)) { var c = ac(); if (c && c.state === 'running') S.notes.forEach(function (o) { if (o.k === k) songNote(c, o.f, c.currentTime + 0.02, o.d * (RS.nino ? 1 : 1.6)); }); } S.lk = k; }
+    var th = f * 360; S.sw.style.animation = 'none'; S.sw.style.transform = 'rotate(' + th.toFixed(1) + 'deg)';
     var rs = S.g.children; for (var i = 0; i < rs.length; i++) { var d = (th - S.notes[i].a + 360) % 360; rs[i].classList.toggle('on', d < 40); } }
   /* the buoy as found things: a jerrycan for its float, a bent pole, a cracked panel tied on, a jar for its lamp, a coat hanger for an aerial; drawn by hand, nothing quite straight */
   function hand(g, P, seed, n) { var r = rnd(seed); for (var p = 0; p < (n || 2); p++) { g.beginPath(); P.forEach(function (q, i) { var x = q[0] + (r() - 0.5) * 1.3, y = q[1] + (r() - 0.5) * 1.3; if (i) g.lineTo(x, y); else g.moveTo(x, y); }); g.globalAlpha = p ? 0.4 : 1; g.stroke(); } g.globalAlpha = 1; }
@@ -274,7 +283,7 @@
     var RU = '#8C4A26', RL = '#C77A48', VG = '#6FA595', RP = '#B9A47A', TP = '#CDBD8C', PL = '#DCD6C4';
     g.lineCap = 'round'; g.lineJoin = 'round';
     /* the banner: a long strip of black cloth on a driftwood staff, flying off the can, the card's name set along it */
-    var fx = 26 * u, fy = -64 * u, FW = Math.max(60 * u, Math.min(118 * u, (RS.w || 300) * 0.62 - fx - 8)), FH = 13 * u, N = 24, wv = function (k) { return Math.sin(t * 1.9 - k * 0.42) * k / N * 3.2 * u + Math.sin(t * 3.1 - k * 0.9) * k / N * 0.9 * u; }, dy = function (k) { return k / N * 3 * u; };
+    var fx = 26 * u, fy = -64 * u, FW = Math.max(60 * u, Math.min(160 * u, (RS.w || 300) - fx + 5 * u - 14)), FH = 15 * u, N = 24, wv = function (k) { return Math.sin(t * 1.9 - k * 0.42) * k / N * 3.2 * u + Math.sin(t * 3.1 - k * 0.9) * k / N * 0.9 * u; }, dy = function (k) { return k / N * 3 * u; };
     g.strokeStyle = '#8A6A44'; g.lineWidth = 1.7 * u; hand(g, [[15 * u, -4 * u], [21 * u, -50 * u], [fx, fy - 3 * u]], 420);
     g.fillStyle = '#121212'; g.beginPath(); g.moveTo(fx, fy);
     for (var k = 1; k <= N; k++) g.lineTo(fx + FW * k / N, fy + wv(k) + dy(k));
@@ -284,8 +293,9 @@
     var ttl = String(((typeof byId === 'function' && byId('radio')) || {}).title || 'DIRECT ACTION RADIO').toUpperCase(), n = ttl.length, x0 = fx + 3 * u, span = FW - 12 * u, fs = Math.min(FH * 0.68, span / n * 1.75);
     g.font = '600 ' + fs.toFixed(1) + 'px "Archivo Narrow", Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     var tw = g.measureText(ttl).width, sc = Math.min(1, span / tw), cx0 = x0 + (span - tw * sc) / 2, last = ttl.lastIndexOf(' ');
+    var tan = t * 0.85, tcs = Math.cos(tan), TBL = 190 * u * Math.abs(tcs) + 8 * u, lit = function (x) { if (!NIGHT) return 1; var d = x - 2 * u; return tcs > 0 ? Math.max(0.03, Math.min(1, (TBL - d) / (24 * u)) * (0.5 + 0.5 * tcs)) : 0.03; };
     for (var ci = 0, acc = 0; ci < n; ci++) { var ch = ttl[ci], cw = g.measureText(ch).width * sc, lx2 = cx0 + acc + cw / 2, kk = (lx2 - fx) / FW * N; acc += cw; if (ch === ' ') continue;
-      var sl = (wv(kk + 0.5) - wv(kk - 0.5)) / (FW / N); g.save(); g.translate(lx2, fy + FH / 2 + wv(kk) + dy(kk) * 0.9); g.rotate(Math.atan(sl)); g.scale(sc, 1); g.fillStyle = ci > last ? '#FF6B1A' : '#F1F0EC'; g.fillText(ch, 0, 0); g.restore(); }
+      var sl = (wv(kk + 0.5) - wv(kk - 0.5)) / (FW / N); g.save(); g.translate(lx2, fy + FH / 2 + wv(kk) + dy(kk) * 0.9); g.rotate(Math.atan(sl)); g.scale(sc, 1); g.fillStyle = ci > last ? '#FF6B1A' : '#F1F0EC'; g.globalAlpha = lit(lx2); g.fillText(ch, 0, 0); g.restore(); }
     g.textAlign = 'start'; g.textBaseline = 'alphabetic';
     /* a rope down to a brick */
     g.strokeStyle = RP; g.lineWidth = 0.9 * u; hand(g, [[0, 8 * u], [-1.2 * u, 15 * u], [-0.6 * u, 22 * u]], 401);
@@ -345,13 +355,22 @@
     g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -3 * u); g.lineTo(-7 * u, -3.4 * u); g.lineTo(0.6 * u, -9 * u); g.lineTo(8 * u, -3.2 * u); g.lineTo(0, -3 * u); g.moveTo(0.6 * u, -9 * u); g.lineTo(0.6 * u, -11 * u); g.arc(1.8 * u, -11 * u, 1.2 * u, Math.PI, Math.PI * 2.2); g.stroke(); g.restore();
     g.strokeStyle = '#F1F0EC'; [pp, (pp + 0.5) % 1].forEach(function (p2) { var R = (6 + p2 * 44) * u; g.globalAlpha = (1 - p2) * 0.45; g.lineWidth = 1; g.beginPath(); g.arc(lx, ly, R, -0.75, 0.75); g.stroke(); g.beginPath(); g.arc(lx, ly, R, Math.PI - 0.75, Math.PI + 0.75); g.stroke(); }); g.globalAlpha = 1;
   }
+  function rsWash(w, h) { var c = D.createElement('canvas'), k = RS.k; c.width = Math.round(w * k); c.height = Math.round(h * k); var g = c.getContext('2d'), r = rnd(611); g.scale(k, k);
+    var P = NIGHT ? ['46,64,110', '84,70,118', '30,86,98'] : ['64,104,164', '188,150,96', '118,138,150', '164,96,74'];
+    for (var i = 0; i < 28; i++) { var x = r() * w, y = r() * h * 0.8, R = (0.12 + r() * 0.3) * w, cl = P[i % P.length], a = 0.05 + r() * 0.07;
+      g.save(); g.translate(x, y); g.rotate(r() * 6.28); g.scale(1, 0.45 + r() * 0.6);
+      var gr = g.createRadialGradient(0, 0, R * 0.15, 0, 0, R); gr.addColorStop(0, 'rgba(' + cl + ',' + (a * 0.5).toFixed(3) + ')'); gr.addColorStop(0.84, 'rgba(' + cl + ',' + a.toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + cl + ',0)'); g.fillStyle = gr;
+      g.beginPath(); for (var q = 0; q <= 28; q++) { var an = q / 28 * 6.2832, rr = R * (0.84 + r() * 0.16); if (q) g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); else g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); } g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(' + cl + ',' + (a * 1.3).toFixed(3) + ')'; g.lineWidth = 1.1; g.stroke(); g.restore(); }
+    grain(g, w, h, Math.round(w * h / 26), 'rgba(70,58,44,.16)', 612, 1.2);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'destination-in'; g.drawImage(RS.base, 0, 0); return c; }
   function rdSea(t, dt) {
     var cv = RS.cv;
     if (!cv || !cv.isConnected) { cv = RS.cv = col.querySelector('.sk-radio .rd-sea'); RS.w = 0; if (RS.io) RS.io.disconnect(); if (!cv) return;
       if ('IntersectionObserver' in window) { RS.io = new IntersectionObserver(function (es) { RS.on = es[es.length - 1].isIntersecting; }); RS.io.observe(cv); } }
     if (!RS.on || xv.classList.contains('on')) return;
     var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
-    if (w !== RS.w || h !== RS.h || RS.nt !== NIGHT) { RS.w = w; RS.h = h; RS.nt = NIGHT; RS.k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * RS.k); cv.height = Math.round(h * RS.k); RS.E = h / 1.4; RS.base = rsBase(w, h, RS.E);
+    if (w !== RS.w || h !== RS.h || RS.nt !== NIGHT) { RS.w = w; RS.h = h; RS.nt = NIGHT; RS.k = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * RS.k); cv.height = Math.round(h * RS.k); RS.E = h / 1.4; RS.base = rsBase(w, h, RS.E); RS.wash = rsWash(w, h);
       var r = rnd(305); RS.snow = []; for (var i = 0; i < 26; i++) RS.snow.push({ x: r() * w, y: r() * RS.E, r: 0.5 + r() * 1.1, v: 2 + r() * 4, p: r() * 7 }); RS.drawn = false; }
     if (RM.matches) { if (RS.drawn) return; t = 2; dt = 0; } RS.drawn = true;
     var g = cv.getContext('2d'), E = RS.E, k = RS.k, O = '#FF6B1A', ink = NIGHT ? 'rgba(200,225,255,.92)' : '#F1F0EC', Fy = E * 0.83;
@@ -365,8 +384,8 @@
     g.globalCompositeOperation = 'source-over';
     /* the beacon: it bobs and leans on a slow swell */
     var heat = RS.heat = (RS.heat || 0) + ((RS.nino ? 1 : 0) - (RS.heat || 0)) * Math.min(1, (dt || 1) * 0.6);
-    var u = E / 118, bx = w * 0.36, by = Fy + (Math.sin(t * 0.85) * 2.2 + Math.sin(t * 0.37) * 1.2 + Math.sin(t * 23) * heat * 0.9) * u, roll = (Math.sin(t * 0.6 + 0.8) * 0.055 + Math.sin(t * 0.23) * 0.03) * (1 + heat * 2.6), sw = Math.sin(t * 1.1);
-    var cr = cv.getBoundingClientRect(); RS.sx = cr.left + bx; RS.sy = cr.top + by - 36 * u; RS.su = u;
+    var u = E / 118, bx = -5 * u, by = Fy + (Math.sin(t * 0.85) * 2.2 + Math.sin(t * 0.37) * 1.2 + Math.sin(t * 23) * heat * 0.9) * u, roll = (Math.sin(t * 0.6 + 0.8) * 0.055 + Math.sin(t * 0.23) * 0.03) * (1 + heat * 2.6), sw = Math.sin(t * 1.1);
+    var cr = cv.getBoundingClientRect(); RS.sx = cr.left + bx; RS.sy = cr.top + by - 36 * u; RS.su = u; RS.sky = { x: cr.left + w * 0.58, y: cr.top + E * 0.3, rx: w * 0.3, ry: E * 0.1 };
     if (heat > 0.01) { if (!RS.boil) { RS.boil = []; RS.puff = []; } g.globalCompositeOperation = 'source-atop';
       g.fillStyle = 'rgba(255,110,24,' + (0.46 * heat).toFixed(3) + ')'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(92,80,28,' + (0.34 * heat).toFixed(3) + ')'; g.fillRect(0, Fy, w, h);
       if (Math.random() < heat * (dt || 0) * 36) RS.boil.push({ x: Math.random() * w, y: E * 1.08, r: 1 + Math.random() * 3, v: 20 + Math.random() * 40 });
@@ -440,7 +459,7 @@
     /* its lights: two small LEDs blinking out of step; after dark a torch on the lamp turns, its beam sweeping the water, a flash as it faces out */
     g.save(); g.translate(bx, by); g.rotate(roll); var bl = Math.floor(t * 1.6) % 2;
     [[-18.2, -31.2, '#FF3B2E', bl], [6.6, -48.6, '#5CE07A', 1 - bl]].forEach(function (L) { g.fillStyle = L[3] ? L[2] : 'rgba(30,30,30,.8)'; if (L[3]) { g.shadowColor = L[2]; g.shadowBlur = NIGHT ? 9 : 4; } g.beginPath(); g.arc(L[0] * u, L[1] * u, 0.8 * u, 0, 7); g.fill(); g.shadowBlur = 0; });
-    if (NIGHT) { var ly2 = (RS.scrap ? -82 : -84) * u, an = t * 0.85, cs = Math.cos(an), BL = 150 * u * Math.abs(cs) + 8 * u, sp = 8 * u * (0.4 + 0.6 * Math.abs(Math.sin(an))), dr = cs > 0 ? 1 : -1;
+    if (NIGHT) { var ly2 = (RS.scrap ? -82 : -84) * u, an = t * 0.85, cs = Math.cos(an), BL = 190 * u * Math.abs(cs) + 8 * u, sp = 8 * u * (0.4 + 0.6 * Math.abs(Math.sin(an))), dr = cs > 0 ? 1 : -1;
       var bg = g.createLinearGradient(2 * u, ly2, 2 * u + dr * BL, ly2 + BL * 0.1); bg.addColorStop(0, 'rgba(255,228,160,.5)'); bg.addColorStop(1, 'rgba(255,228,160,0)'); g.globalCompositeOperation = 'lighter'; g.fillStyle = bg;
       g.beginPath(); g.moveTo(2 * u, ly2 - 1.2 * u); g.lineTo(2 * u + dr * BL, ly2 - sp); g.lineTo(2 * u + dr * BL, ly2 + sp + BL * 0.2); g.lineTo(2 * u, ly2 + 1.2 * u); g.closePath(); g.fill();
       var fa = Math.max(0, 1 - Math.abs(cs) / 0.22); if (fa > 0) { var fg2 = g.createRadialGradient(2 * u, ly2, 0, 2 * u, ly2, 30 * u); fg2.addColorStop(0, 'rgba(255,240,200,' + (0.7 * fa).toFixed(2) + ')'); fg2.addColorStop(1, 'rgba(255,240,200,0)'); g.fillStyle = fg2; g.beginPath(); g.arc(2 * u, ly2, 30 * u, 0, 7); g.fill(); }
@@ -448,6 +467,7 @@
     g.restore();
     /* below the surface the water holds it a little dimmer */
     g.save(); g.beginPath(); g.rect(0, Fy + 2, w, h); g.clip(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = NIGHT ? 'rgba(6,21,42,.45)' : 'rgba(23,69,127,.42)'; g.fillRect(0, Fy, w, h); g.restore();
+    if (RS.wash) { g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'multiply'; g.drawImage(RS.wash, 0, 0); g.globalCompositeOperation = 'source-over'; g.setTransform(k, 0, 0, k, 0, 0); }
     /* hot water, lo-fi: the whole picture read back in big pixels */
     if (heat > 0.04) { var f = Math.round(1 + heat * 4), pw2 = Math.ceil(cv.width / f), ph2 = Math.ceil(cv.height / f), pc = RS.px || (RS.px = D.createElement('canvas')); if (pc.width !== pw2 || pc.height !== ph2) { pc.width = pw2; pc.height = ph2; }
       var px = pc.getContext('2d'); px.clearRect(0, 0, pw2, ph2); px.drawImage(cv, 0, 0, pw2, ph2); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.imageSmoothingEnabled = false; g.drawImage(pc, 0, 0, cv.width, cv.height); g.imageSmoothingEnabled = true; }
@@ -508,7 +528,7 @@
         if (!c) { c = { id: id, size: 'full', title: id.toUpperCase(), opens: 'panel', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] }; CARDS.push(c); } order.push(id);
         ls.slice(1).forEach(function (l) { var kv = /^\s*([a-z]+)\s*(?::\s*(.*))?$/i.exec(l); if (!kv) return; var k = kv[1].toLowerCase(), v = (kv[2] || '').trim().slice(0, 120);
           if (k === 'hide') hide[id] = 1; else if (k === 'where') { var ll = v.split(',').map(Number); if (ll.length === 2 && ll.every(isFinite)) c.where = ll; }
-          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (/^(full|half|small)$/.test(v)) c.size = v; }
+          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (v === 'nine') { c.size = 'small'; c.lib = true; c.trio = false; } else if (/^(full|half|small)$/.test(v)) { c.size = v; c.trio = v === 'small'; c.lib = false; } }
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
@@ -525,9 +545,13 @@
   var ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
   var ARCANA = ['THE FOOL', 'THE MAGICIAN', 'THE HIGH PRIESTESS', 'THE EMPRESS', 'THE EMPEROR', 'THE HIEROPHANT', 'THE LOVERS', 'THE CHARIOT', 'STRENGTH', 'THE HERMIT', 'WHEEL OF FORTUNE', 'JUSTICE', 'THE HANGED MAN', 'DEATH', 'TEMPERANCE', 'THE DEVIL', 'THE TOWER', 'THE STAR', 'THE MOON', 'THE SUN', 'JUDGEMENT', 'THE WORLD'];
   function wxCard() { $$('.sk-wx', col).forEach(function (el) { var c = CARDS.filter(function (x) { return x.id === el.dataset.id; })[0]; if (c) cartFace(el, c.cart || 'week'); }); }
+  /* the moon as it is this week, drawn: lit from the right while it waxes, the left while it wanes */
+  function moonSVG() { var ph = (((Date.now() / 864e5 - 10962.76) / 29.530588853) % 1 + 1) % 1, a = Math.cos(ph * 2 * Math.PI), sw = ph < 0.5 ? 1 : 0, rx = (Math.abs(a) * 10).toFixed(2);
+    return '<svg viewBox="0 0 24 24"><circle class="mo-d" cx="12" cy="12" r="10"/><path class="mo-l" d="M12 2A10 10 0 0 ' + sw + ' 12 22A' + rx + ' 10 0 0 ' + (a > 0 ? 1 - sw : sw) + ' 12 2Z"/></svg>'; }
   function cartFace(el, k) {
     var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; var L = $('.wx-l', el); if (L) L.textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
     var day = cartDay();
+    if (k === 'events') { var mk = $('.wx-wk', el); if (mk && !mk.firstChild) mk.innerHTML = moonSVG(); }
     if (k === 'read') { var sh = SHELF1[el.classList.contains('r-fic') ? 'fic' : el.classList.contains('r-how') ? 'how' : 'non']; return set(sh[0], '', sh[1]); }
     if (k === 'recipes') { $('.wx-s', el).innerHTML = '<em>strawberry</em><em>black olive</em><em>chilli</em>'; return; }
     if (k === 'events') { if (EVT === null) return set('', '', '');
@@ -539,7 +563,8 @@
     if (k === 'news') { var putN = function (d) { if (d && d.news && d.news[0]) { set(d.news[0], '', '', true); el.title = 'From Wikipedia, in the news'; } };
       if (NWD) return putN(NWD); return fetch('/api/news').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { NWD = d; putN(d); }).catch(function () {}); }
     var put = function (d) { var D = d && d.daily; if (!D || !D.time) return; var c = D.weather_code[0], sky = c === 0 ? 'CLEAR' : c <= 2 ? 'SOME CLOUD' : c === 3 ? 'CLOUD' : c <= 48 ? 'FOG' : c <= 57 ? 'DRIZZLE' : c <= 67 ? 'RAIN' : c <= 77 ? 'SNOW' : c <= 82 ? 'SHOWERS' : c <= 86 ? 'SNOW' : 'STORM';
-      set(Math.round(D.temperature_2m_max[0]) + '°', Math.round(D.temperature_2m_min[0]) + '°', sky + ' · RAIN ' + D.precipitation_probability_max[0] + '%'); el.title = 'Today in Melbourne, from Open-Meteo'; el.classList.toggle('wx-wet', D.precipitation_probability_max[0] >= 60); };
+      set(Math.round(D.temperature_2m_max[0]) + '°', Math.round(D.temperature_2m_min[0]) + '°', sky + ' · RAIN ' + D.precipitation_probability_max[0] + '%'); el.title = 'Today in Melbourne, from Open-Meteo'; el.classList.toggle('wx-wet', D.precipitation_probability_max[0] >= 60);
+      var wk = $('.wx-wk', el), mx = (D.temperature_2m_max || []).slice(0, 7); if (wk && mx.length > 2) { var lo = Math.min.apply(null, mx) - 3, hi = Math.max.apply(null, mx) + 1; wk.innerHTML = mx.map(function (v, j) { var pr = (D.precipitation_probability_max || [])[j] || 0; return '<i style="--h:' + Math.round((v - lo) / (hi - lo) * 100) + '%;--p:' + (pr / 100).toFixed(2) + '"></i>'; }).join(''); } };
     if (WXD) return put(WXD);
     fetch('/api/wx?at=-37.77,144.96&sea=-37.86,144.9').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { WXD = d; put(d); }).catch(function () {}); }
   /* idle cards */
@@ -571,14 +596,15 @@
     else if (sk === 'space') inner = (OPT.one ? '<button type="button" class="hm-tag sp-inst" data-kitopen title="The install and its checklist"><i></i>ONE CLICK INSTALL</button><div class="sp-prn">' + PRN_HTML + '</div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') { var nm = t.charAt(0) + t.slice(1).toLowerCase();
-      inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><b class="wx-k">' + nm + '</b>' +
+      inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><i class="wx-a" aria-hidden="true"></i><i class="wx-b" aria-hidden="true"></i>' + (c.g === 'week' ? '<span class="wx-wk" aria-hidden="true"></span>' : '') + '<b class="wx-k">' + nm + '</b>' +
         (c.g === 'read' ? '<div class="wx-bk" aria-hidden="true"><i></i><i></i><p><b class="wx-h"></b><span class="wx-s"></span></p></div>' :
           c.g === 'deck' ? '<div class="wx-pc" aria-hidden="true"><i></i><p><b class="wx-h"></b><i class="wx-ic"><svg viewBox="0 0 24 24"></svg></i><span class="wx-s"></span></p></div>' :
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
+    else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
+    var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO + '<i class="zn-w2p" aria-hidden="true">web2print</i>' : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     var smf = sizeOf(c) === 'small' && SMALL[sk] != null ? '<div class="sm-f" aria-hidden="true"><b class="sm-k"><span>' + SMALL_T[sk] + '</span></b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (g1 ? ' g1' : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
@@ -790,7 +816,7 @@
     if (c.opens === 'pop') return sheet(c.title, inFrame((c.pop === 'pickles' ? 'pickles' : 'popup') + '?in=1#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
-    if (c.opens === 'bench') return sheet(c.title, inFrame('bench?in=1' + (opt && opt.mode ? '&m=' + opt.mode : '') + '#b'));
+    if (c.opens === 'bench') { var bm = (opt && opt.mode) || c.mode; return sheet(c.title, inFrame('bench?in=1' + (bm ? '&m=' + bm : '') + '#b')); }
     if (c.opens === 'unlock') return sheet('YOUR PRINTER', unlockIn);
     if (c.opens === 'play') return sheet(c.title, inFrame('play.html?c=' + encodeURIComponent(c.play) + '#p'));
   }
@@ -1124,7 +1150,7 @@
       $$('[data-ln]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (p.links || []).slice(), k = b.dataset.ln, i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); call({ method: 'POST', body: JSON.stringify({ links: l }) }).then(fill); beep(i >= 0 ? 330 : 660, 0.05); }); });
       $$('[data-ps]', box).forEach(function (b) { b.addEventListener('click', function () { var n = +b.dataset.ps;
         if (b.classList.contains('on')) { if (confirm('Take this picture off your card?')) fetch('/api/island/pics/' + n, { method: 'DELETE', headers: { authorization: 'Bearer ' + key } }).then(function () { return call(); }).then(fill); return; }
-        var fi = D.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.addEventListener('change', function () { var file = fi.files && fi.files[0]; if (!file) return; b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n, { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); fi.click(); }); });
+        filePick(false, function (file) { b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n, { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); }); });
       $$('[data-sp]', box).forEach(function (b) { b.addEventListener('click', function () { call({ method: 'POST', body: JSON.stringify({ speed: +b.dataset.sp }) }).then(fill); beep(550, 0.05); }); });
       $('[data-pass]', box).addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       $('[data-rn]', box).addEventListener('click', function () { var n = prompt('Its name', p.name); if (n && n.trim()) call({ method: 'POST', body: JSON.stringify({ name: n.trim() }) }).then(fill); });
@@ -1132,15 +1158,18 @@
     box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say">· · ·</p>'; call().then(fill, function () { box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say" title="The key did not open it">LOCKED</p>'; });
   }
 
+  /* one file picker kept in the page (a phone drops the choice of one that never was); the camera first when asked */
+  var FPK = null;
+  function filePick(cam, cb) { if (!FPK) { FPK = D.createElement('input'); FPK.type = 'file'; FPK.accept = 'image/*'; FPK.setAttribute('aria-hidden', 'true'); FPK.tabIndex = -1; FPK.style.cssText = 'position:fixed;left:-300px;top:0;width:1px;height:1px;opacity:0'; D.body.appendChild(FPK);
+      FPK.addEventListener('change', function () { var f = FPK.files && FPK.files[0], c = FPK._cb; FPK.value = ''; if (f && c) c(f); }); }
+    if (cam) FPK.setAttribute('capture', 'environment'); else FPK.removeAttribute('capture'); FPK._cb = cb; FPK.click(); }
   /* ───────── printing from the home: a canvas to the printer that is listening ───────── */
   function printCanvas(cv, was) { if (!NG.printAgain) return Promise.reject(new Error('no base')); return NG.printAgain(cv.toDataURL('image/png'), was); }
   function quickPrint() { careEarn('print');
-    var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.setAttribute('capture', 'environment');
-    f.addEventListener('change', function () { var file = f.files && f.files[0]; if (!file) return; find('booth'); var u = URL.createObjectURL(file), im = new Image();
+    filePick(true, function (file) { find('booth'); var u = URL.createObjectURL(file), im = new Image();
       im.onload = function () { var W = 512, c; if (window.SLIPS && SLIPS.quick) c = SLIPS.quick(im, W); else { c = D.createElement('canvas'); c.width = W; c.height = Math.round(W * im.naturalHeight / im.naturalWidth); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); }
         URL.revokeObjectURL(u); horn(0.6); printCanvas(c, 'quick').then(function () { if (NG.toast) NG.toast('PRINTING'); }, function () { if (NG.toast) NG.toast('NO PRINTER ONLINE'); }); };
       im.src = u; });
-    f.click();
   }
 
   /* ───────── the printers: who is listening, for the radar keys ───────── */
@@ -1236,7 +1265,7 @@
     if (far) { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min((root.clientHeight || innerHeight) - 20, J.y)); }
     else if (!open) { J.y += (lo - J.y) * Math.min(1, dt * 0.6); if (J.x < -50) { J.x = VW + 50; J.y = lo; } if (J.x > VW + 60) J.x = -40; }
     else { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min(CH - 40, J.y)); }
-    var ws = (open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
+    var ws = (O && O.sky ? 0.3 : open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
   }
   /* the other one, drawn as the Irukandji was first drawn: the round bell in lines, its four strings in dots, lighter and smaller */
   var IRUK2 = null;
@@ -1328,7 +1357,7 @@
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
     var hit = [0, 0, 0, 0]; if (!ORB.pre) { ORB.pre = 1; for (var pc = 1; pc <= 10; pc++) new Image().src = '/cards/chair-' + pc + '-t.jpg'; }
     $$('.st-th', el).forEach(function (t, k) { var a = ORB.a + k * TAU / 4 + TAU / 8, A = ((a % TAU) + TAU) % TAU, s = (A + Math.PI / 2) / (Math.PI / 2), q = Math.floor(s) % 4, near = Math.abs(s - Math.round(s));
-      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
+      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (!k && el.dataset.st !== String(q)) el.dataset.st = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
     $$('.st-nd', el).forEach(function (n, k) { n.classList.toggle('hit', !!hit[k]); }); }
   requestAnimationFrame(orbit);
   /* a chair reaching a stop comes out of it as another of the ten, never one already on the loop */
@@ -1838,7 +1867,7 @@
     var orb = null;
     if (!open && !away && !xv.classList.contains('on')) {
       if (CUR === 'portfolio') { var lb = col.querySelector('[data-id="portfolio"]'), lr = lb && lb.getBoundingClientRect(); if (lr && lr.width) orb = { x: lr.left + lr.width / 2 - jr.left, y: lr.top + lr.height / 2 - jr.top, rx: lr.width * 0.34, ry: lr.height * 0.26 }; }
-      else if (CUR === 'radio' && RS.on && RS.sx != null) orb = { x: RS.sx - jr.left, y: RS.sy - jr.top, rx: RS.su * 62, ry: RS.su * 34, slow: 1 }; }
+      else if (CUR === 'radio' && RS.on && RS.sky) orb = { x: RS.sky.x - jr.left, y: RS.sky.y - jr.top, rx: RS.sky.rx, ry: RS.sky.ry, slow: 1, sky: 1 }; }
     if (RN.call) { if (now > RN.call.until || away || xv.classList.contains('on')) RN.call = null; else { var rr0 = col.querySelector('.sk-research .hm-rune'), rb0 = rr0 && rr0.getBoundingClientRect(); if (rb0 && rb0.bottom > 0 && rb0.top < innerHeight) orb = { x: RN.call.x - jr.left, y: RN.call.y - jr.top, rx: 34, ry: 18, slow: 1 }; } }
     if (!LOVE.next) LOVE.next = t + 20;
     if (!RM.matches && !open && !away && !xv.classList.contains('on') && CUR === 'portfolio') { if (!LOVE.until && t > LOVE.next) LOVE.until = t + 16; if (LOVE.until && t > LOVE.until) { LOVE.until = 0; LOVE.next = t + 50 + Math.random() * 40; } } else LOVE.until = 0;
@@ -1866,7 +1895,7 @@
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back && !J2.on) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); if (J2.on) { jx.globalAlpha = J2.al; if (OPT.stamp) drawJelly2(jx, t, J2); else drawJelly3(jx, t, J2); jx.globalAlpha = 1; } jx.restore(); }
     if (sheet) return;
     /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself, and the radio on air takes over from it */
-    if (RS.song && !away && !(AIR.kept && AIR.on) && !(SND && SND.a)) songTick();
+    if (!away && RS.on) { if (!RS.song) songOn(); songTick(); }
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
     if (!away) hudDraw(now);

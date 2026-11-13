@@ -350,9 +350,13 @@
   }
 
   var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass };
+  /* the prints with no art of their own take one at their head */
+  ['week', 'news', 'events', 'book'].forEach(function (n) { var K = KINDS[n]; K.opts = (K.opts || []).concat([['art', 'ART', false]]); K.head = true; });
   function draw(cv, kind, data, stack, o) {
     var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
-    return oneBit(cv, Math.min(cv.height, K.draw(k, data || {}, stack, o || {})));
+    var top = 0, hw = W - 48; if (K.head && o && (o.art || ART.head)) { panel(k, 'head', 'spots', 24, 20, hw, Math.round(hw * 0.56), 5); top = 20 + Math.round(hw * 0.56) + 18; k.g.save(); k.g.translate(0, top); }
+    var hgt = K.draw(k, data || {}, stack, o || {}); if (top) k.g.restore();
+    return oneBit(cv, Math.min(cv.height, hgt + top));
   }
   window.CARTS = { draw: draw, kinds: KINDS, today: today, seed: seed, major: MAJOR };
 
@@ -368,14 +372,25 @@
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
   function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { if (!d.all || s.options.length === d.all.length) { if (d.b) s.value = String(d.b); return; } s.innerHTML = d.all.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s.value = String(d.b || 1); }); }
-  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); }
+  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); }
+  /* one file picker, kept in the page: a phone drops the choice of a picker that was never in it */
+  var FI = null;
+  function filePick(cb) { if (!FI) { FI = document.createElement('input'); FI.type = 'file'; FI.accept = 'image/*'; FI.setAttribute('aria-hidden', 'true'); FI.tabIndex = -1; FI.style.cssText = 'position:fixed;left:-300px;top:0;width:1px;height:1px;opacity:0';
+      document.body.appendChild(FI); FI.addEventListener('change', function () { var f = FI.files && FI.files[0], c = FI._cb; FI.value = ''; if (f && c) c(f); }); } FI._cb = cb; FI.click(); }
   function artTap(e) { if (!S.o.art) return; var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, y = (e.clientY - r.top) * cv.height / r.height;
-    var h = HITS.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0]; if (!h) return;
+    var h = HITS.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0]; if (h) artHit(h); }
+  function artHit(h) {
     if (ART[h.key]) { if (confirm('Take this art off?')) { delete ART[h.key]; artSave(h.key, null); paint(); } return; }
-    var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*';
-    fi.addEventListener('change', function () { var f = fi.files && fi.files[0]; if (!f) return; var u = URL.createObjectURL(f), im = new Image();
+    filePick(function (f) { var u = URL.createObjectURL(f), im = new Image();
       im.onload = function () { var k = Math.min(1, 360 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = R(im.width * k); c.height = R(im.height * k); var q = c.getContext('2d'); q.fillStyle = '#fff'; q.fillRect(0, 0, c.width, c.height); q.filter = 'grayscale(1) contrast(1.15)'; q.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-        var url = c.toDataURL('image/jpeg', 0.72), a = new Image(); a.onload = function () { ART[h.key] = a; if (!artSave(h.key, url)) S.after = 'FULL'; paint(); }; a.src = url; }; im.src = u; }); fi.click(); }
+        var url = c.toDataURL('image/jpeg', 0.72), a = new Image(); a.onload = function () { ART[h.key] = a; if (!artSave(h.key, url)) S.after = 'FULL'; paint(); }; a.src = url; };
+      im.onerror = function () { URL.revokeObjectURL(u); S.after = '×'; paint(); }; im.src = u; }); }
+  /* where art can go, drawn over the paper while ART is on: a tap there picks a picture, or takes one off */
+  function artMarks() { var pp = $('#paper'), ov = $('#artov'); if (!pp) return; if (!ov) { ov = document.createElement('div'); ov.id = 'artov'; pp.appendChild(ov);
+      ov.addEventListener('click', function (e) { var b = e.target.closest('[data-h]'); if (b && HITS[+b.dataset.h]) { e.stopPropagation(); artHit(HITS[+b.dataset.h]); } }); }
+    ov.hidden = !S.o.art; if (!S.o.art) { ov.innerHTML = ''; return; } var sx = cv.offsetWidth / cv.width, sy = cv.offsetHeight / cv.height;
+    ov.style.cssText = 'left:' + cv.offsetLeft + 'px;top:' + cv.offsetTop + 'px;width:' + cv.offsetWidth + 'px;height:' + cv.offsetHeight + 'px';
+    ov.innerHTML = HITS.map(function (q, i) { var has = !!ART[q.key]; return '<button type="button" data-h="' + i + '"' + (has ? ' class="has"' : '') + ' style="left:' + (q.x * sx).toFixed(1) + 'px;top:' + (q.y * sy).toFixed(1) + 'px;width:' + (q.w * sx).toFixed(1) + 'px;height:' + (q.h * sy).toFixed(1) + 'px" aria-label="' + (has ? 'Take this art off' : 'Your art here') + '" title="' + (has ? 'Take this art off' : 'Your art here') + '"><i>' + (has ? '×' : '<svg class="ptr" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12V5.2a1.6 1.6 0 0 1 3.2 0V11m0-2.2a1.6 1.6 0 0 1 3.2 0V11.4m0-1.2a1.6 1.6 0 0 1 3.2 0v4.6c0 3.6-2.6 6.2-6.2 6.2h-.9c-2.1 0-3.5-.9-4.6-2.4l-3-4.3a1.6 1.6 0 0 1 2.6-1.9L9 15"/></svg>') + '</i></button>'; }).join(''); }
   function load() {
     var st = $('#st'); S.ready = false; keys(); st.textContent = '· · ·';
     var got = S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
@@ -413,7 +428,7 @@
     var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o); if (QK) S.o.deck = false;
     /* a select (the book picker) stands above the paper; keys beside it */
     if (pk) pk.innerHTML = l.filter(function (x) { return x[3] === 'select'; }).map(function (x) { return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; }).join('');
-    el.innerHTML = l.map(function (x) { if (x[3] === 'select') return pk ? '' : '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + '>' + x[1] + '</button>'; }).join('');
+    el.innerHTML = l.map(function (x) { if (x[3] === 'select') return pk ? '' : '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + (x[0] === 'art' ? ' title="Your own art on the print"' : '') + '>' + (x[0] === 'art' ? '<svg class=\"ptr\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12V5.2a1.6 1.6 0 0 1 3.2 0V11m0-2.2a1.6 1.6 0 0 1 3.2 0V11.4m0-1.2a1.6 1.6 0 0 1 3.2 0v4.6c0 3.6-2.6 6.2-6.2 6.2h-.9c-2.1 0-3.5-.9-4.6-2.4l-3-4.3a1.6 1.6 0 0 1 2.6-1.9L9 15\"/></svg>' : '') + x[1] + '</button>'; }).join('');
     if (pk) pk.addEventListener('change', function (e) { var s = e.target.closest('select'); if (!s) return; S.o.sel = s.value; if (S.K.act && S.K.act(s.dataset.a, S.stack, S.o)) load(); });
     el.addEventListener('change', function (e) { var s = e.target.closest('select'); if (!s) return; S.o.sel = s.value; if (S.K.act && S.K.act(s.dataset.a, S.stack, S.o)) load(); });
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.dataset.a;

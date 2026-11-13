@@ -83,19 +83,22 @@
     var nm = $('#nm'); nm.textContent = S.an[1]; nm.style.transform = 'rotate(' + (Math.random() * 6 - 3).toFixed(1) + 'deg)';
     return load(S.an).then(function () { OV = null; OV = animal(SC); fit(); paint(); }); }
   function take(f) { if (!f) return; var u = URL.createObjectURL(f), im = new Image();
-    im.onload = function () { var k = Math.min(1, 1400 / Math.max(im.width, im.height)), c = D.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); S.img = c; fit(); paint(); $('#go').disabled = false; $('#rm').hidden = false; say(''); };
+    im.onload = function () { var k = Math.min(1, 1400 / Math.max(im.width, im.height)), c = D.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); S.img = c; fit(); paint(); $('#go').disabled = false; $('#rm').hidden = false; say(''); if (COARSE && !S.tipped) { S.tipped = 1; var tp = $('#tip'); if (tp) { tp.hidden = false; setTimeout(function () { tp.hidden = true; }, 5200); } } };
     im.onerror = function () { say('×'); }; im.src = u; }
+  var COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   function pen() { S.pen = (S.pen + 1) % 3; var b = $('#pen'); b.dataset.c = ['', 'k', 'w'][S.pen]; b.setAttribute('aria-pressed', String(!!S.pen)); b.title = ['Pencil', 'Pencil: black', 'Pencil: white'][S.pen]; cv.classList.toggle('pen', !!S.pen); $('#un').hidden = !S.lines.length; }
   function undo() { S.lines.pop(); $('#un').hidden = !S.lines.length; paint(); }
   function drop() { S.lines = []; $('#un').hidden = true; S.img = null; $('#go').disabled = true; $('#rm').hidden = true; paint(); }
-  function pick() { var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.addEventListener('change', function () { take(f.files && f.files[0]); }); f.click(); }
+  var FI = null;
+  function pick() { if (!FI) { FI = D.createElement('input'); FI.type = 'file'; FI.accept = 'image/*'; FI.setAttribute('aria-hidden', 'true'); FI.tabIndex = -1; FI.style.cssText = 'position:fixed;left:-300px;top:0;width:1px;height:1px;opacity:0'; D.body.appendChild(FI);
+      FI.addEventListener('change', function () { var f = FI.files && FI.files[0]; FI.value = ''; if (f) { S.lines = []; $('#un').hidden = true; take(f); } }); } FI.click(); }
   function zoom(k, ax, ay) { if (!S.img) return; ax = ax == null ? S.x : ax; ay = ay == null ? S.y : ay; S.x = ax + (S.x - ax) * k; S.y = ay + (S.y - ay) * k; S.s = Math.max(0.02, Math.min(20, S.s * k)); paint(); }
   function turn(da) { if (!S.img) return; S.r += da; paint(); }
   function gestures() { var P = {}, last = null, moved = 0;
     var at = function (e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * AW / r.width, (e.clientY - r.top) * AH / r.height]; };
     var two = function () { var k = Object.keys(P); if (k.length < 2) return null; var a = P[k[0]], b = P[k[1]]; return { m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], d: Math.hypot(a[0] - b[0], a[1] - b[1]), a: Math.atan2(b[1] - a[1], b[0] - a[0]) }; };
     var ln = null;
-    cv.addEventListener('pointerdown', function (e) { P[e.pointerId] = at(e); cv.setPointerCapture(e.pointerId); last = two(); moved = 0;
+    cv.addEventListener('pointerdown', function (e) { var tp = $('#tip'); if (tp) tp.hidden = true; P[e.pointerId] = at(e); cv.setPointerCapture(e.pointerId); last = two(); moved = 0;
       if (S.pen && !last) { ln = { c: S.pen === 1 ? '#161412' : '#FFFFFF', p: [P[e.pointerId]] }; S.lines.push(ln); paint(); }
       else if (ln && last) { if (ln.p.length < 4) S.lines.splice(S.lines.indexOf(ln), 1); ln = null; paint(); } });
     cv.addEventListener('pointermove', function (e) { if (!P[e.pointerId]) return; if (ln) { var q = at(e), lp = ln.p[ln.p.length - 1]; P[e.pointerId] = q; if (Math.hypot(q[0] - lp[0], q[1] - lp[1]) > 1.5) { ln.p.push(q); paint(); } return; }

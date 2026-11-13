@@ -126,7 +126,8 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 .sk-radio div.kas { margin-top: .6cqw; }
 .sk-radio div.kas span { font-size: calc(6.7cqw * var(--fk)); margin-left: calc((1 - var(--fk)) * 28cqw); }
 .sk-radio div.kas span.own { background: #FF6B1A; color: #0B0B0B; }
-.rd-fx { position: absolute; left: 0; right: 0; bottom: 0; aspect-ratio: 3 / 4; pointer-events: none; opacity: .6; }
+.rd-fx { position: absolute; left: 0; right: 0; bottom: 0; aspect-ratio: 3 / 4; pointer-events: none; }
+.rd-fx > svg { opacity: .5; }
 .rd-fx svg { position: absolute; left: var(--rx, 30%); top: var(--ry, 64%); width: 96%; aspect-ratio: 1; transform: translate(-50%, -50%); overflow: visible; fill: none; stroke: rgba(255, 255, 255, .5); stroke-width: .35; }
 .rd-fx .ax { stroke-dasharray: 1 2; stroke: rgba(255, 255, 255, .4); }
 .rd-fx .sw { animation: rd-sw 7s linear infinite; transform-origin: 0 0; opacity: .32; } .rd-fx .sw path { stroke: none; }
@@ -597,7 +598,7 @@ html.hm-up #hm #hm-tk { display: inline-flex; }
 .rd-sea { position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--rs) * 1.4); display: block; pointer-events: none; }
 
 /* El Niño: its switch is on the buoy's float */
-.rd-nino { position: absolute; z-index: 2; left: calc(36% + var(--rs) * .11); top: calc(var(--rs) * .745); width: 36px; height: 36px; transform: translate(-50%, -50%); border-radius: 50%; }
+.rd-nino { position: absolute; z-index: 2; left: calc(var(--rs) * .068); top: calc(var(--rs) * .745); width: 36px; height: 36px; transform: translate(-50%, -50%); border-radius: 50%; }
 .rd-nino:focus-visible { outline: 1.5px dashed #FF6B1A; outline-offset: 2px; }
 /* the cables let out onto the cards, and their switch on the board */
 #hm-cx { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; pointer-events: none; display: none; }
@@ -1162,3 +1163,90 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm-x .mn-per span { flex: 1; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; color: var(--hm-ink); opacity: .6; }
 #hm-x .mn-per button { width: 44px; height: 36px; border: 1px solid var(--hm-ink); border-radius: 18px; background: none; color: var(--hm-ink); font: 600 12px/1 'IBM Plex Mono', monospace; cursor: pointer; }
 #hm-x .mn-per button[aria-pressed="true"] { background: var(--hm-ink); color: var(--hm-bg, #E8E7E3); }
+/* the radar's sound key: always there at its centre, muted until touched */
+#hm .rd-fx .rd-mute { position: absolute; z-index: 3; left: var(--rx, 30%); top: var(--ry, 64%); width: 42px; height: 42px; transform: translate(-50%, -50%); padding: 0; border: 1px solid rgba(255, 255, 255, .75); border-radius: 50%; background: rgba(8, 18, 36, .42); color: #F4F1E8; display: grid; place-items: center; pointer-events: auto; cursor: pointer; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+#hm .rd-fx .rd-mute svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#hm .rd-fx .rd-mute .wv { display: none; } #hm .rd-fx .rd-mute[aria-pressed="true"] .wv { display: inline; } #hm .rd-fx .rd-mute[aria-pressed="true"] .x { display: none; }
+#hm .rd-fx .rd-mute[aria-pressed="true"] { background: rgba(255, 107, 26, .55); }
+.rd-fx .rd-mute:focus-visible { outline: 1.5px dashed #FF6B1A; outline-offset: 3px; }
+#hm .hm-card.small .rd-fx .rd-mute { width: 30px; height: 30px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 16px; height: 16px; }
+/* ───────── 0.5. CIRCULAR STRATEGY in stages: the loop, one chair going round it, the stop it has reached lit with its letter and its
+   word; the rest quiet. Set in a plain book serif, spaced capitals ───────── */
+.sk-wish .st-hud, .sk-wish .st-tent, .st-orb .pn { display: none; }
+.sk-wish .hm-l.m, .sk-wish .hm-l.b > canvas { opacity: .12; }
+.st-orb i.st-th ~ i.st-th { display: none; }
+.st-orb .nd-in { animation: none; }
+.st-orb .st-nd circle { transform: scale(.3); opacity: .6; transition: transform .7s cubic-bezier(.3, 1.4, .5, 1), opacity .7s; }
+.st-orb .st-nd text { font: 400 9.4px/1 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; opacity: 0; transition: opacity .6s .15s; }
+.st-orb[data-st="0"] .n0 circle, .st-orb[data-st="1"] .n1 circle, .st-orb[data-st="2"] .n2 circle, .st-orb[data-st="3"] .n3 circle { transform: scale(1); opacity: 1; }
+.st-orb[data-st="0"] .n0 text, .st-orb[data-st="1"] .n1 text, .st-orb[data-st="2"] .n2 text, .st-orb[data-st="3"] .n3 text { opacity: 1; }
+.st-orb .st-nd.hit circle { transform: scale(1.12); }
+.st-orb .st-stg { position: absolute; left: 0; right: 0; top: 100%; height: 6cqw; margin-top: 5cqw; pointer-events: none; }
+.st-orb .st-stg i { position: absolute; left: 0; right: 0; text-align: center; font: 400 4.4cqw/1 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; font-style: normal; letter-spacing: .38em; color: #F4F1E8; opacity: 0; transform: translateY(1.5cqw); transition: opacity .7s, transform .7s; }
+.st-orb[data-st="0"] .st-stg i:nth-child(1), .st-orb[data-st="1"] .st-stg i:nth-child(2), .st-orb[data-st="2"] .st-stg i:nth-child(3), .st-orb[data-st="3"] .st-stg i:nth-child(4) { opacity: .9; transform: none; }
+.sk-wish .hm-t { font: 400 9.6cqw/1.06 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; letter-spacing: .1em; text-transform: uppercase; }
+@container (min-aspect-ratio: 1/1) { .sk-wish .hm-t { font-size: 5.6cqw; } .st-orb .st-stg i { font-size: 2.6cqh; } }
+.hm-card.small.sk-wish.sm .sm-k span { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; }
+
+/* DESIGN PRINT: where it comes from, small */
+.zn-w2p { position: absolute; right: 4.5cqw; bottom: 3.6cqw; z-index: 2; font: 400 2.5cqw/1 'Departure Mono', ui-monospace, monospace; font-style: normal; letter-spacing: .12em; color: #111; opacity: .6; pointer-events: none; }
+.hm-card.small .zn-w2p { font-size: 3.4cqw; }
+
+/* ISLAND ARCHIPELAGOS: its network named on a band along the foot; the constellation quieter so the title and the printer balance */
+.sp-lan { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 3cqw; height: 9cqw; background: #0A0A0A; color: #F4F1E8; font: 400 3cqw/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .34em; pointer-events: none; }
+.sp-lan i { width: 1.6cqw; height: 1.6cqw; border-radius: 50%; background: #FF3B2E; box-shadow: 0 0 1.4cqw #FF3B2E; animation: sp-lan 2.4s steps(2) infinite; }
+.sp-lan i + i, .sp-lan i:last-child { animation-delay: 1.2s; }
+@keyframes sp-lan { 50% { opacity: .25; } }
+.sk-space .hm-in { padding-bottom: 11cqw; }
+@container (min-aspect-ratio: 1/1) { .sp-lan { height: 6cqh; font-size: 2cqh; } .sk-space .hm-in { padding-bottom: 8cqh; } }
+@media (prefers-reduced-motion: reduce) { .sp-lan i { animation: none; } }
+/* ───────── 0.5. THE NINE: the library, nine to a screen on a phone as on a desk, a theme to a row, each row on a band of its theme's grey.
+   Greyscale with one splash of colour (photographs stay in full colour) ───────── */
+#hm { --th-week: #E2DFD7; --th-read: #C4C3BF; --th-deck: #2B2B2E; --th-app: #8E8D89; --th-slot: #8E8D89; }
+#hm.night { --th-week: #34332F; --th-read: #262624; --th-deck: #121214; --th-app: #1D1D1C; --th-slot: #1D1D1C; }
+.hm-trio.hm-bands { background: linear-gradient(180deg, var(--r1, transparent) 0 31%, var(--r2, var(--r1)) 35.5% 64%, var(--r3, var(--r2)) 68.5%); }
+@media (max-width: 899px) {
+  .hm-trio.p9 { grid-auto-flow: row; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .hm-trio.p9 .g1 { grid-row-start: auto; grid-column-start: 1; }
+  .hm-trio.hm-bands { box-sizing: border-box; padding: 7px; border-radius: 14px; }
+  .hm-trio.p9 .hm-card.small { border-radius: 9px; }
+}
+
+/* two layers under every face: a print texture, and a thing of the theme's own */
+.sk-wx .wx-a, .sk-wx .wx-b { position: absolute; inset: 0; pointer-events: none; }
+.g-week .wx-a { background: radial-gradient(circle, var(--ink) 22%, transparent 26%) 0 0 / 2.6cqmin 2.6cqmin; -webkit-mask-image: radial-gradient(circle at 100% 100%, #000, transparent 72%); mask-image: radial-gradient(circle at 100% 100%, #000, transparent 72%); opacity: .13; }
+.g-week[data-id="weather"] .wx-b { background: repeating-radial-gradient(circle at 84% 18%, transparent 0 6cqmin, var(--ink) 6cqmin 6.3cqmin); opacity: .13; -webkit-mask-image: linear-gradient(200deg, #000 30%, transparent 75%); mask-image: linear-gradient(200deg, #000 30%, transparent 75%); }
+.g-week[data-id="news"] .wx-b { background: linear-gradient(var(--ink), var(--ink)) 7cqmin 19cqmin / calc(100% - 14cqmin) .5cqmin no-repeat, linear-gradient(var(--ink), var(--ink)) 7cqmin 20.4cqmin / calc(100% - 14cqmin) .2cqmin no-repeat, repeating-linear-gradient(90deg, transparent 0 calc(33.3% - .15cqmin), var(--ink) calc(33.3% - .15cqmin) 33.3%) 0 24cqmin / 100% calc(100% - 30cqmin) no-repeat; opacity: .16; }
+.g-week[data-id="events"] .wx-b { left: 2.4cqmin; right: auto; width: 1.6cqmin; background: radial-gradient(circle, var(--ink) 42%, transparent 48%) 0 0 / 1.6cqmin 3.4cqmin; opacity: .28; }
+.g-week .wx-wk { position: absolute; right: 7cqmin; top: 6.4cqmin; display: flex; align-items: flex-end; gap: .9cqmin; height: 11cqmin; }
+.g-week .wx-wk i { width: 2.2cqmin; height: max(8%, var(--h)); background: var(--ink); border-radius: .6cqmin .6cqmin 0 0; opacity: calc(.35 + var(--p) * .65); }
+.g-week .wx-wk i:first-child { box-shadow: 0 0 0 .5cqmin var(--c-bg), 0 0 0 .8cqmin var(--ink); }
+.g-week[data-id="events"] .wx-wk { height: 14cqmin; width: 14cqmin; }
+.g-week .wx-wk svg { width: 100%; height: 100%; }
+.g-week .wx-wk .mo-d { fill: none; stroke: var(--ink); stroke-width: .9; opacity: .5; } .g-week .wx-wk .mo-l { fill: var(--ink); }
+
+/* READ, greyscale: grey grounds, pale covers, the genre's one colour on the spine; a library card's rules, its date stamp */
+.hm-card.sk-wx.g-read { --c-bg: #D9D8D4; --ink: #111; --bk: #F5F3EE; --bk2: #A3A29E; --bk3: #5B5B58; --sp: #2F9B4E; }
+.hm-card.sk-wx.g-read.r-non { --c-bg: #AAA9A5; --bk: #EEECE6; --bk2: #6F6E6B; --bk3: #D2D1CC; --sp: #8E7FE0; }
+.hm-card.sk-wx.g-read.r-how { --c-bg: #2D2D2C; --ink: #F1EFEA; --bk: #F4F1E8; --bk2: #8B8A86; --bk3: #4A4A48; --sp: #F3D21E; }
+.wx-bk > p::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8%; border-radius: 1.4cqmin 0 0 1.4cqmin; background: var(--sp); }
+.g-read .wx-a { background: linear-gradient(90deg, transparent 12cqmin, var(--sp) 12cqmin 12.35cqmin, transparent 12.35cqmin), repeating-linear-gradient(180deg, transparent 0 6.4cqmin, var(--ink) 6.4cqmin 6.6cqmin); opacity: .13; }
+.g-read .wx-b { left: auto; right: 6cqmin; top: 5cqmin; bottom: auto; width: 17cqmin; height: 17cqmin; border-radius: 50%; border: .55cqmin solid var(--ink); box-shadow: inset 0 0 0 1.2cqmin var(--c-bg), inset 0 0 0 1.5cqmin var(--ink); transform: rotate(-14deg); opacity: .2; }
+
+/* CARDS: the back of a deck behind, a foil light crossing the card now and then */
+.g-deck .wx-a { background: repeating-linear-gradient(45deg, transparent 0 2.6cqmin, var(--ink) 2.6cqmin 2.8cqmin), repeating-linear-gradient(-45deg, transparent 0 2.6cqmin, var(--ink) 2.6cqmin 2.8cqmin); opacity: .07; }
+.g-deck .wx-b { z-index: 2; background: linear-gradient(112deg, transparent 42%, rgba(255, 255, 255, .42) 50%, transparent 58%) 0 0 / 300% 100% no-repeat; mix-blend-mode: soft-light; animation: wx-glint 9s ease-in-out infinite; }
+.g-deck[data-id="tarot"] .wx-b { animation-delay: -3s; } .g-deck[data-id^="pl-"] .wx-b { animation-delay: -6s; }
+@keyframes wx-glint { 0%, 62% { background-position: 120% 0; } 88%, 100% { background-position: -20% 0; } }
+.hm-card.hm-idle .wx-b { animation: none; }
+@media (prefers-reduced-motion: reduce) { .g-deck .wx-b { animation: none; opacity: 0; } }
+/* a phone's nine are narrow: the title smaller, the week's marks under it, the figures fitted */
+@container (max-width: 150px) {
+  .sk-wx .wx-k { font-size: clamp(12px, 13cqw, 17px); top: 6cqw; left: 7cqw; }
+  .g-week .wx-wk { left: 7cqw; right: auto; top: 22cqw; height: 9cqw; }
+  .g-week[data-id="events"] .wx-wk { width: 18cqw; height: 18cqw; }
+  .g-week:not(.wx-txt) .wx-v { font-size: 34cqw; bottom: 24cqw; left: 7cqw; }
+  .g-week .wx-s { font-size: 7.4cqw; left: 7cqw; right: 6cqw; bottom: 6cqw; }
+  .g-week.wx-txt .wx-v { font-size: 12.5cqw; left: 7cqw; right: 6cqw; }
+  .g-read .wx-b { display: none; }
+}

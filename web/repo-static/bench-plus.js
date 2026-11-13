@@ -348,7 +348,7 @@
     if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = whoNow(), pub = $('#lv .lv-pub'), again = function () { $('#lv-send').click(); };
       if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'CODE'; codeAsk(pub, again); return; }
       say.textContent = '···'; fetch('/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src }) })
-        .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : r.status === 401 ? 'CODE' : 'NOT SENT'; say.title = r.status === 401 ? 'A code from a print puts it up' : ''; if (r.status === 401) codeAsk(pub, again); flash('lv-send', 0); return; }
+        .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : r.status === 401 ? 'CODE' : r.status === 503 ? 'FULL' : 'NOT SENT'; if (r.status === 503) say.title = 'Full for now: more open as the month turns'; say.title = r.status === 401 ? 'A code from a print puts it up' : ''; if (r.status === 401) codeAsk(pub, again); flash('lv-send', 0); return; }
           r.json().then(function (j) { say.textContent = j.shown ? 'UP · ' + j.code : 'WAITING · ' + j.code; say.title = j.shown ? 'On novel.global now, as a small card' : 'Waiting for approval'; }, function () { say.textContent = 'SENT'; }); linkAsk(pub); flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
         .catch(function () { say.textContent = 'OFFLINE'; flash('lv-send', 0); }); } }
 

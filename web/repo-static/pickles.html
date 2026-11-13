@@ -47,7 +47,14 @@
   #tip { width: 56px; padding: 0; border-radius: 50%; transform: rotate(-4deg); }
   #tip svg { width: 34px; height: 34px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   #ph { background: var(--pk); color: #fff; font-size: 15px; letter-spacing: .16em; border-radius: 22px 255px 22px 225px / 225px 22px 255px 22px; transform: rotate(-.8deg); box-shadow: 3px 4px 0 var(--ink); }
-  #an { background: var(--foe); color: #fff; min-height: 44px; font-size: 11px; padding: 0 14px; transform: rotate(2deg); }
+  #an { display: inline-flex; align-items: center; gap: 7px; background: var(--foe); color: #fff; min-height: 44px; font-size: 11px; padding: 0 14px 0 11px; transform: rotate(2deg); }
+  .ptr { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  /* a phone has no pointer to show it: two fingers drawn on the photo once, moving it and pinching it, then gone */
+  #tip { position: absolute; left: 50%; top: 50%; z-index: 3; width: 120px; height: 120px; margin: -60px 0 0 -60px; pointer-events: none; }
+  #tip i { position: absolute; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: rgba(255, 255, 255, .35); box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+  #tip .t1 { left: 22px; top: 22px; animation: tp1 2.6s ease-in-out infinite; } #tip .t2 { left: 64px; top: 64px; animation: tp2 2.6s ease-in-out infinite; }
+  @keyframes tp1 { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(14px, 10px); } 60% { transform: translate(-10px, -10px); } }
+  @keyframes tp2 { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(14px, 10px); } 60% { transform: translate(10px, 10px); } }
   #go { width: 100%; margin-top: 18px; min-height: 62px; font-size: 17px; letter-spacing: .2em; background: var(--ink); color: var(--paper); border-radius: 18px 255px 18px 225px / 225px 18px 255px 18px; transform: rotate(.4deg); transition: opacity .2s; }
   .gor { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; min-height: 22px; }
   #led { width: 9px; height: 9px; border-radius: 50%; background: #B9B2A2; border: 1.5px solid var(--ink); flex: none; }
@@ -100,12 +107,13 @@
   <div id="make">
     <div class="stg hd"><i class="tape" aria-hidden="true"></i><canvas id="stage" aria-label="Your picture: drag to move, pinch to size and turn"></canvas>
       <p id="nm" aria-live="polite"></p>
+      <p id="tip" hidden aria-hidden="true"><i class="t1"></i><i class="t2"></i></p>
       <button type="button" id="rm" hidden aria-label="Remove the photo" title="Remove the photo">×</button>
       <div class="pens"><button type="button" id="pen" aria-pressed="false" aria-label="Pencil" title="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L15.6 5a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8 4 20z"/><path d="M13.8 6.8l3.4 3.4"/></svg></button><button type="button" id="un" hidden aria-label="Undo" title="Undo the last line">↶</button></div>
     </div>
     <div class="three">
       <button type="button" id="ph" title="Take or choose a photo of your face">PHOTO</button>
-      <button type="button" id="an" title="Another animal">ANIMAL</button>
+      <button type="button" id="an" title="Another animal"><svg class="ptr" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12V5.2a1.6 1.6 0 0 1 3.2 0V11m0-2.2a1.6 1.6 0 0 1 3.2 0V11.4m0-1.2a1.6 1.6 0 0 1 3.2 0v4.6c0 3.6-2.6 6.2-6.2 6.2h-.9c-2.1 0-3.5-.9-4.6-2.4l-3-4.3a1.6 1.6 0 0 1 2.6-1.9L9 15"/></svg>ANIMAL</button>
     </div>
     <button type="button" id="go" disabled title="Print it here, on the café printer">PRINT</button>
     <div class="gor"><i id="led" aria-hidden="true"></i><p id="st" aria-live="polite"></p></div>

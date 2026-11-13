@@ -520,7 +520,7 @@
         el('button', { type: 'button', text: 'ADD LOGO', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = async () => { if (!fi.files[0]) return; p.logos.push({ src: await popLogo(fi.files[0]), href: '' }); drawLogos(); }; fi.click(); } }));
       drawLogos();
       /* their novel.global: the order, sizes and what shows for people who come in by this pop-up's link, and its own small card there */
-      const HB = [...HOME_CARDS.filter(c => c[0] !== 'kit'), ['pop-' + p.id, 'THEIR CARD', 'small']], ph = p.home || {};
+      const HB = [...HOME_CARDS.filter(c => c[0] !== 'kit').map(c => [c[0], c[1], c[2] === 'nine' ? 'small' : c[2]]), ['pop-' + p.id, 'THEIR CARD', 'small']], ph = p.home || {};
       const hrows = (ph.order && ph.order.length ? ph.order : HB.map(c => c[0])).map(id => HB.find(c => c[0] === id)).filter(Boolean); HB.forEach(c => { if (!hrows.includes(c)) hrows.push(c); });
       const hst = hrows.map(c => ({ id: c[0], name: c[1], own: c[2], size: (ph.size && ph.size[c[0]]) || c[2], hide: !!(ph.hide && ph.hide.includes(c[0])) }));
       const hlist = el('div', { style: 'display:grid;gap:5px' });
@@ -568,8 +568,8 @@
   /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the WORDS AND BOARDS
      page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
   const HOME_CARDS = [['radio', 'DIRECT ACTION RADIO', 'full'], ['wish', 'CIRCULAR STRATEGY', 'full'], ['research', 'RESEARCH BOARD', 'full'], ['zine', 'DESIGN PRINT', 'full'], ['kit', 'ISLAND', 'full'], ['space', 'ISLAND ARCHIPELAGOS', 'full'],
-    ['weather', 'WEATHER', 'small'], ['news', 'NEWS', 'small'], ['events', 'EVENTS', 'small'], ['fiction', 'FICTION', 'small'], ['nonfiction', 'NON-FICTION', 'small'], ['survival', 'SURVIVAL', 'small'],
-    ['cards', 'PLAYING', 'small'], ['tarot', 'TAROT', 'small'], ['pl-pl-2uqn', 'SESAME', 'small'], ['portfolio', 'PORTFOLIO', 'small']];
+    ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'EVENTS', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
+    ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small']];
   async function home() {
     const st = await (await api('settings')).json();
     const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('home'); };
@@ -579,10 +579,10 @@
     const blocks = String(st.cards || '').split(/\n(?=\s*#)/).map(b => { const ls = b.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); return m ? { id: m[1].toLowerCase(), ls: ls.slice(1).filter(l => l.trim()) } : null; }).filter(Boolean);
     const rows = []; blocks.forEach(b => { if (!rows.some(r => r.id === b.id)) rows.push(b); });
     HOME_CARDS.forEach(([id]) => { if (!rows.some(r => r.id === id)) rows.push({ id, ls: [] }); });
-    rows.forEach(r => { const known = HOME_CARDS.find(c => c[0] === r.id), sz = r.ls.map(l => /^\s*size\s*:\s*(full|small)\s*$/i.exec(l)).filter(Boolean)[0];
+    rows.forEach(r => { const known = HOME_CARDS.find(c => c[0] === r.id), sz = r.ls.map(l => /^\s*size\s*:\s*(full|small|nine)\s*$/i.exec(l)).filter(Boolean)[0];
       r.name = known ? known[1] : r.id.toUpperCase(); r.size = sz ? sz[1].toLowerCase() : known ? known[2] : 'full'; r.own = known ? known[2] : 'full'; r.hide = r.ls.some(l => /^\s*hide\s*$/i.test(l)); r.rest = r.ls.filter(l => !/^\s*(hide|size\s*:.*)\s*$/i.test(l)); });
     const list = el('div', { style: 'display:grid;gap:6px' });
-    const draw = () => list.replaceChildren(...rows.map((r, i) => { const sz = el('select', { style: 'width:110px' }, el('option', { value: 'full', text: 'BIG' }), el('option', { value: 'small', text: 'SMALL' })); sz.value = r.size; sz.onchange = () => { r.size = sz.value; };
+    const draw = () => list.replaceChildren(...rows.map((r, i) => { const sz = el('select', { style: 'width:110px' }, el('option', { value: 'full', text: 'BIG' }), el('option', { value: 'small', text: 'SMALL' }), el('option', { value: 'nine', text: 'NINE' })); sz.value = r.size; sz.onchange = () => { r.size = sz.value; };
       const on = el('input', { type: 'checkbox' }); on.checked = !r.hide; on.onchange = () => { r.hide = !on.checked; };
       const mv = d => () => { const j = i + d; if (j < 0 || j >= rows.length) return; rows.splice(j, 0, rows.splice(i, 1)[0]); draw(); };
       return el('div', { style: 'display:grid;grid-template-columns:34px 34px 1fr 110px 90px;gap:8px;align-items:center' },
@@ -591,7 +591,7 @@
     draw();
     const text = () => rows.map(r => { const ls = r.rest.slice(); if (r.size !== r.own) ls.push('size: ' + r.size); if (r.hide) ls.push('hide'); return '# ' + r.id + (ls.length ? '\n' + ls.join('\n') : ''); }).join('\n');
     const cardsEd = el('section', { class: 'ed' }, el('h3', { text: 'CARDS' }), list,
-      hint('The order they stand in on novel.global, top to bottom. BIG fills the screen; SMALL stands three to a screen, so small cards read best in threes. Untick SHOWN to take a card off the home.'),
+      hint('The order they stand in on novel.global, top to bottom. BIG fills the screen. SMALL stands three to a screen. NINE stands in the library, nine to a screen, a theme to a row: where new apps start, and where a card is moved up from once it earns it. Untick SHOWN to take a card off the home.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cards: text() }) }),
         el('button', { type: 'button', text: 'AS THEY STARTED', onclick: () => { if (confirm('Put every card back as it started? Words typed for the cards go too.')) save({ cards: '' }); } })));
     const look = el('section', { class: 'ed' }, el('h3', { text: 'LOOK' }),
@@ -850,7 +850,7 @@
     const mkSay = el('p', { class: 'hint' });
     const lkList = el('ol', { class: 'list' });
     const lkLoad = async () => { try { const j = await (await api('links')).json(); lkList.replaceChildren(...(j.links || []).map(l => el('li', {}, el('span', { text: l.who + ' · ' + l.k.toUpperCase() + ' · ' + l.v + ' · ' + when(l.at) }), el('button', { type: 'button', text: 'REMOVE', onclick: async () => { await api('links/' + encodeURIComponent(l.who) + '/' + l.k, { method: 'DELETE' }); lkLoad(); } })))); if (!(j.links || []).length) lkList.replaceChildren(el('li', { text: 'NONE YET' })); } catch (e) { /* locked */ } };
-    const making = el('section', { class: 'ed' }, el('h3', { text: 'MAKING' }), chk('sb-on', st.sandbox !== false, 'SANDBOX'), hint('On, while testing: a game, block or card from the engine goes up at once when its maker has a code a printer printed. Off: each waits on the Approve page. Either way only a printed code (proof someone stood at a printer) can put things up.'),
+    const making = el('section', { class: 'ed' }, el('h3', { text: 'MAKING' }), chk('sb-on', st.sandbox !== false, 'SANDBOX'), hint('On: an app from the engine goes up at once when its maker has a code a printer printed: three a code a month, while fewer than forty have gone up in thirty days. Past that, each waits on the Approve page. Off: every one waits. The ceiling is five a code and a hundred and fifty a month. Only a printed code (proof someone stood at a printer) can send one, and each is 40 KB at most.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sandbox: $('#sb-on').checked }) })),
       hint('This browser’s code: ' + (myWho || 'none yet (open novel.global here first)') + '. MAKER marks it as printed, so you can put things up from this browser.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'MAKER', disabled: !myWho, onclick: async () => { try { await api('makers', { method: 'POST', body: JSON.stringify({ who: myWho }) }); mkSay.textContent = myWho + ' CAN PUT THINGS UP'; } catch (e) { mkSay.textContent = 'NOT DONE'; } } })), mkSay,

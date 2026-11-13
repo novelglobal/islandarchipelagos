@@ -1101,7 +1101,7 @@ async function savePost(db, env, req) {
 /* ───────── the router ───────── */
 /* plays: small things made in the builder's LIVE bench; they wait for approval, then stand as small cards. Their code runs only in a
    sandbox with no network, on the phone that opens it */
-const PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
+const PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'], PLAY_OPEN = 40, PLAY_MONTH = 150, PLAY_CODE = 5;
 async function playSend(db, env, req) {
   if (await tooMany(db, env, req, 'play', 6, 10 * 60e3)) return fail(429, 'slow down');
   const b = await body(req, 80e3); const n = typeof b.n === 'string' ? b.n.trim().toUpperCase().slice(0, 24) : '', src = typeof b.src === 'string' ? b.src : '';
@@ -1110,7 +1110,13 @@ async function playSend(db, env, req) {
   /* only a code a print gave (proof a person stood at a printer), or the owner's own key; while the sandbox is on, it goes up at once */
   const own = !!env.ADMIN_KEY && !!bearer(req) && await same(bearer(req), env.ADMIN_KEY);
   if (!own && !(await coded(db, who))) return fail(401, 'code');
-  const up = own || !!(await settingsOf(db)).sandbox;
+  /* open, within a month's measure: sized for about ten makers a month. A printed code puts its first three of a month straight up while
+     the site has put up fewer than forty; past that they wait for approval; five a code and a hundred and fifty in all is the ceiling */
+  const since = now() - 30 * 864e5;
+  const { m } = await db.prepare("SELECT count(*) AS m FROM stories WHERE kind = 'play' AND created > ?").bind(since).first();
+  const { k } = await db.prepare("SELECT count(*) AS k FROM stories WHERE kind = 'play' AND who = ? AND created > ?").bind(who, since).first();
+  if (!own && m >= PLAY_MONTH) return fail(503, 'full'); if (!own && k >= PLAY_CODE) return fail(429, 'enough');
+  const up = own || (!!(await settingsOf(db)).sandbox && m < PLAY_OPEN && k < 3);
   const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (!up && w >= 200) return fail(503, 'full');
   const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
   const t = now();
