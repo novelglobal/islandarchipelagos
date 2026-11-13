@@ -39,13 +39,13 @@
      card's own medium), and one small colour it owns: the strategy's dark green, the radio's lavender, the zine's tomato, the island's
      amber, the archipelagos' coral */
   var CARDS = [
-    { id: 'intro', size: 'full', title: 'ISLAND ARCHIPELAGOS', skin: 'intro', opens: 'none', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'radio', size: 'full', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'wish', size: 'full', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'research', size: 'full', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'zine', size: 'full', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'kit', size: 'full', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'space', size: 'full', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'intro', size: 'small', title: 'ISLAND ARCHIPELAGOS', skin: 'intro', opens: 'none', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'radio', size: 'small', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'wish', size: 'small', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'research', size: 'small', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'zine', size: 'small', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'kit', size: 'small', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
+    { id: 'space', size: 'small', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
 
     /* the small cards: three themes, three ways each. THIS WEEK, READ, CARDS */
     { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', cart: 'week', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
@@ -82,7 +82,11 @@
   var PH = (PLACE && PLACE.home) || {};
   if (PLACE && PLACE.card) (function () { var at = CARDS.findIndex(function (c) { return c.id === 'portfolio'; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: 'pop-' + PLACE.id, pop: PLACE.id, size: 'small', title: String(PLACE.name || PLACE.id).toUpperCase().slice(0, 24), opens: 'pop', skin: 'play', art: 'slot', pal: 5, motion: 'shadow', where: [-37.8136, 144.9631] }); })();
   function lay(k) { var m = MINE && MINE[k]; return m != null && !(Array.isArray(m) && !m.length && k === 'order') ? m : PH[k]; }
-  function ownSize(c) { var m = (MINE && MINE.size && MINE.size[c.id]) || (PH.size && PH.size[c.id]); return m === 'small' || m === 'full' ? m : c.size || 'full'; }
+  /* a set (the week ahead, the books, the decks) stands at one size: a size given to any of them is the size of all */
+  function setOf(c) { return c.join != null ? c.join : (c.g || ''); }
+  function kin(c) { var j = setOf(c); return j ? CARDS.filter(function (x) { return setOf(x) === j; }) : [c]; }
+  function sizeIn(m, c) { if (!m) return null; var k = kin(c), v = m[c.id]; for (var j = 0; !v && j < k.length; j++) v = m[k[j].id]; return v; }
+  function ownSize(c) { var m = sizeIn(MINE && MINE.size, c) || sizeIn(PH.size, c); return m === 'small' || m === 'full' ? m : c.size || 'full'; }
   function sizeOf(c) { return OPT.carts ? 'small' : ownSize(c); }
   /* the cards as this person stands them: [card, its place in CARDS] */
   function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !x[0].off && !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0); }), o = lay('order');
@@ -524,14 +528,18 @@
   dotsAt(); addEventListener('resize', dotsAt);
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
+  var SZN = 0;
   function applyCards(text) {
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
         if (!c) { c = { id: id, size: 'full', title: id.toUpperCase(), opens: 'panel', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] }; CARDS.push(c); } order.push(id);
         ls.slice(1).forEach(function (l) { var kv = /^\s*([a-z]+)\s*(?::\s*(.*))?$/i.exec(l); if (!kv) return; var k = kv[1].toLowerCase(), v = (kv[2] || '').trim().slice(0, 120);
           if (k === 'hide') hide[id] = 1; else if (k === 'show') c.off = false; else if (k === 'where') { var ll = v.split(',').map(Number); if (ll.length === 2 && ll.every(isFinite)) c.where = ll; }
-          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (v === 'nine') { c.size = 'small'; c.lib = true; c.trio = false; } else if (/^(full|half|small)$/.test(v)) { c.size = v; c.trio = v === 'small'; c.lib = false; } }
+          else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (v === 'nine') { c.size = 'small'; c.lib = true; c.trio = false; } else if (/^(full|half|small)$/.test(v)) { c.size = v; c.trio = v === 'small'; c.lib = false; } c.szAt = ++SZN; }
+          else if (k === 'join') c.join = /^none$/i.test(v) ? '' : v.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
+      /* a set stands at the size novel.global gave last to any of its cards */
+      CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
     col.innerHTML = colHTML(); cards = $$('.hm-card', col); requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
@@ -580,21 +588,37 @@
   /* a label-maker strip: each letter pressed a little off its line */
   function tape(w, cls) { return '<b class="' + cls + '" aria-hidden="true">' + w.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b>'; }
   /* THE OPENER: what novel.global and Island Archipelagos are, in the owner's words. Nothing opens from it; × puts it away (the HOME panel brings it back) */
-  /* THE OPENER: the owner's words, set as a form. Nothing opens from it; × puts it away (the HOME panel brings it back) */
-  var IN_SEAL = '<svg class="in-seal" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34"/><circle cx="20" cy="20" r="6.5"/><path d="M20 7.5v4M20 28.5v4M7.5 20h4M28.5 20h4M11.2 11.2l2.8 2.8M26 26l2.8 2.8M28.8 11.2L26 14M14 26l-2.8 2.8"/></svg>';
-  function introP() { return ['Island Archipelagos turns these e-waste thermal printers into creative portals for a new kind of physical internet.',
-    'With a Raspberry Pi and a repurposed receipt printer, novel.global hosts an evolving world of artwork, stories, music, software, experiments and collective activity on 80mm thermal paper. No subscription, platform fee or permission required.',
-    'Each unique printer builds a world, modifies its tools, shares its art and creates new islands. They become points of connection and distribution in public, professional, and third spaces.']; }
-  function introHTML(c, i, g1) { var sm = sizeOf(c) === 'small';
+  /* THE OPENER: receipt 00, the first one. Aged thermal paper, black ink only: the mark at its head, the owner's words, an archipelago printed
+     in dots at its foot. Nothing opens from it; × puts it away (the HOME panel brings it back). Everything here is made inside functions:
+     the first cards are drawn before this part of the file has run */
+  function introP() { return ['Island Archipelagos turns these e-waste thermal printers into patchy creative zones for a new kind of physical internet.',
+    'With a Raspberry Pi and a repurposed receipt printer, novel.global hosts an evolving world of artwork, stories, music, software, experiments and collective activity on 80mm thermal paper.',
+    'Each unique printer creates a new point of connection and distribution in public, professional, and third spaces.']; }
+  function introMark() { return '<svg class="in-mk" viewBox="0 0 237 112" role="img" aria-label="novel.global"><defs><pattern id="in-dot" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.9" fill="#161514"/></pattern></defs><rect x="10" y="10" width="91.6" height="92" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8"/></svg>'; }
+  function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-f"><div class="in-hd">' + IN_SEAL + '<p class="in-k">novel.global\u2019s</p></div><h2 class="in-t">Island Archipelagos</h2>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">Island Archipelagos</h2>' +
       '<p class="in-l">A local area network of independent publishing islands, built from discarded printers and open-source technology.</p>' +
-      ('<ol class="in-b">' + introP().map(function (q, n) { return '<li><b aria-hidden="true">0' + (n + 1) + '</b><p>' + q + '</p></li>'; }).join('') + '</ol>' +
-        '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>') + '</div>' +
+      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '</div>' +
+      '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>' +
+      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas><b class="in-no" aria-label="Receipt 00">00</b></div></div>' +
       '<button type="button" class="in-x" data-introx aria-label="Close" title="Close">×</button></article></section>'; }
+  /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;
+     the coasts ringed, the sea a sparse tone */
+  function introArc() { $$('.sk-intro .in-arc', col).forEach(function (cv) { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || cv.dataset.pw === w + 'x' + h) return; cv.dataset.pw = w + 'x' + h;
+    var px = w > 420 ? 2 : 1.5, W2 = Math.round(w / px), H2 = Math.round(h / px); cv.width = W2; cv.height = H2; var g = cv.getContext('2d'), im = g.createImageData(W2, H2), d = im.data;
+    var hs = function (x, y) { var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
+    var vn = function (x, y) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      return (hs(xi, yi) * (1 - u) + hs(xi + 1, yi) * u) * (1 - v) + (hs(xi, yi + 1) * (1 - u) + hs(xi + 1, yi + 1) * u) * v; };
+    var B = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5], sc = 7 / W2;
+    for (var y = 0; y < H2; y++) for (var x = 0; x < W2; x++) { var X = x * sc, Y = y * sc * 1.15, e = vn(X, Y) * 0.55 + vn(X * 2.1 + 7, Y * 2.1 + 3) * 0.3 + vn(X * 4.7 + 1, Y * 4.7 + 9) * 0.15;
+      e += 0.1 * Math.sin(y / H2 * Math.PI) - 0.05; var t, th = B[(y % 4) * 4 + (x % 4)] / 16;
+      if (e > 0.58) t = 0.62 + (e - 0.58) * 2.4; else if (Math.abs(e - 0.545) < 0.006 || Math.abs(e - 0.5) < 0.0045) t = 1; else t = 0.07 + Math.max(0, e - 0.3) * 0.25;
+      var k = (y * W2 + x) * 4, on = t > th; d[k] = d[k + 1] = d[k + 2] = 20; d[k + 3] = on ? 235 : 0; }
+    g.putImageData(im, 0, 0); }); }
   /* the opener stood small: the type steps down until every word is in */
-  function introFit() { $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && f.scrollHeight > f.clientHeight + 1) { px -= 0.25; f.style.fontSize = px + 'px'; } }); }
+  function introFit() { $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; } }); introArc(); }
   addEventListener('resize', function () { requestAnimationFrame(introFit); });
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set('da.hm.mine', MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
@@ -1395,15 +1419,16 @@
       body.innerHTML = '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
         '<div title="' + (ps ? 'A print pass for today: your next print goes straight out' : 'A print pass comes from the printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
         (who ? '<p class="mn-per" role="group" aria-label="Small cards to a screen" title="Small cards to a screen"><span>SCREEN</span>' + [3, 6, 9].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (P === n) + '">' + n + '</button>'; }).join('') + '</p>' +
-        '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
-        return '<li data-id="' + esc(c.id) + '"' + (off ? ' class="off"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
+        '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = c.id === 'intro' ? 'Opener' : SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
+        var js = setOf(c), jp = js && i > 0 && setOf(l[i - 1]) === js, jn = js && i < l.length - 1 && setOf(l[i + 1]) === js, jc = jp || jn ? ' jn' + (jp ? '' : ' jn-a') + (jn ? '' : ' jn-z') : '';
+        return '<li data-id="' + esc(c.id) + '"' + (off || jc ? ' class="' + (off ? 'off' : '') + jc + '"' : '') + (jc ? ' title="Joined: one size for the set"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
           '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small shares it">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
         '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>' : ''); };
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
       if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
       var li = b.closest('li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
       if (b.dataset.mv) { var j = i + +b.dataset.mv; if (j < 0 || j >= l.length) return; l.splice(j, 0, l.splice(i, 1)[0]); }
-      else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; MINE.size[id] = ownSize(l[i]) === 'small' ? 'full' : 'small'; return keep(null); }
+      else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; var nz = ownSize(l[i]) === 'small' ? 'full' : 'small'; kin(l[i]).forEach(function (x) { MINE.size[x.id] = nz; }); return keep(null); }
       else if (b.hasAttribute('data-on')) { MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
       keep(l); };
     draw(); }

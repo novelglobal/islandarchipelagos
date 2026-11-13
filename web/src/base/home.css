@@ -1276,32 +1276,6 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 .sm-inst { position: absolute; left: 7cqmin; bottom: 13cqmin; display: inline-flex; align-items: center; gap: .6em; padding: .55em .8em; background: #0A0A0A; color: #F4F1E8; font: 600 clamp(8px, 3.2cqmin, 12px)/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .1em; }
 .sm-inst i { width: .7em; height: .7em; border-radius: 50%; background: #FFB000; box-shadow: 0 0 .6em #FFB000; }
 
-/* ───────── THE OPENER: a form from a sunlit state. Paper, green-black ink, hairline rules; the only colour is the sun ───────── */
-.hm-card.sk-intro { --in-p: #EEEDE5; --in-i: #1A1E1A; --in-r: rgba(26,30,26,.28); --in-sun: #D9961A; --c-bg: var(--in-p); --c-ink: var(--in-i); background: var(--in-p); color: var(--in-i); }
-.sk-intro .hm-art { opacity: .45; }
-.sk-intro .in-f { position: absolute; inset: 3cqw; z-index: 2; display: flex; flex-direction: column; padding: 5cqw 5cqw 6cqw; border: 1px solid var(--in-i); overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
-.sk-intro .in-f::-webkit-scrollbar { display: none; }
-.sk-intro .in-hd { display: flex; align-items: center; gap: 2.6cqw; padding-bottom: 3.4cqw; border-bottom: 1px solid var(--in-i); padding-right: 44px; }
-.sk-intro .in-seal { flex: none; width: clamp(22px, 7.5cqw, 34px); height: auto; fill: none; stroke: var(--in-i); stroke-width: 1.6; }
-.sk-intro .in-seal circle { fill: var(--in-sun); stroke: none; }
-.sk-intro .in-seal path { stroke: var(--in-sun); stroke-linecap: square; }
-.sk-intro .in-k { margin: 0; font: 500 clamp(10px, 3cqw, 12.5px)/1 'IBM Plex Mono', monospace; letter-spacing: .2em; text-transform: uppercase; }
-.sk-intro .in-t { margin: 5cqw 0 0; font: 900 clamp(32px, 13cqw, 78px)/.9 'Fraunces', Georgia, serif; letter-spacing: -.03em; text-transform: none; }
-.sk-intro .in-l { margin: 4.5cqw 0 0; padding: 0 0 5cqw; border-bottom: 1px solid var(--in-i); font: 600 clamp(13px, 4.1cqw, 19px)/1.32 'Archivo Narrow', Arial, sans-serif; letter-spacing: .01em; text-transform: uppercase; }
-.sk-intro .in-b { list-style: none; margin: 0; padding: 0; }
-.sk-intro .in-b li { display: grid; grid-template-columns: 9cqw 1fr; gap: 2cqw; padding: 3.6cqw 0; border-bottom: 1px solid var(--in-r); }
-.sk-intro .in-b b { font: 500 clamp(9px, 2.6cqw, 11px)/1.9 'IBM Plex Mono', monospace; letter-spacing: .1em; color: var(--in-i); opacity: .6; }
-.sk-intro .in-b p { margin: 0; font: 400 clamp(13px, 3.5cqw, 15px)/1.62 'Poppins', Arial, sans-serif; letter-spacing: .005em; max-width: 58ch; }
-.sk-intro .in-s { margin: 4.5cqw 0 0; padding: 3.4cqw 3.6cqw; border: 1px solid var(--in-i); border-left: 5px solid var(--in-sun); }
-.sk-intro .in-s strong { font: 600 clamp(12px, 3.6cqw, 16px)/1.35 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; text-transform: uppercase; }
-#hm .sk-intro .in-x { position: absolute; z-index: 3; right: calc(3cqw + 3.4cqw); top: calc(3cqw + 3.2cqw); width: 34px; height: 34px; min-width: 34px; display: grid; place-items: center; padding: 0; border: 1px solid var(--in-i); border-radius: 0; background: var(--in-p); color: var(--in-i); font: 300 20px/1 Arial, sans-serif; cursor: pointer; }
-.sk-intro .in-x:focus-visible { outline: 2px solid var(--in-sun); outline-offset: 2px; }
-@container (min-aspect-ratio: 1/1) { .sk-intro .in-t { font-size: clamp(32px, 10cqh, 78px); } .sk-intro .in-b li { grid-template-columns: 6cqw 1fr; } .sk-intro .in-l { font-size: clamp(13px, 3.4cqh, 19px); } }
-.hm-card.small.sk-intro .in-f { justify-content: flex-end; overflow: hidden; }
-.hm-card.small.sk-intro .in-hd { position: absolute; left: 5cqw; right: 5cqw; top: 5cqw; }
-.hm-card.small.sk-intro .in-t { font-size: clamp(26px, 12cqw, 46px); }
-.hm-card.small.sk-intro .in-l { border-bottom: 0; padding-bottom: 0; font-size: clamp(11px, 3.8cqw, 15px); }
-#hm.night .hm-card.sk-intro { --in-p: #151715; --in-i: #E6E4DA; --in-r: rgba(230,228,218,.24); }
 /* ───────── 0.5c. CIRCULAR STRATEGY: the long word rides with the photograph, from the letter it passed to the next; the texture back, quieter ───────── */
 .st-orb .st-stg { display: none; }
 .st-orb .st-wd { position: absolute; left: 50%; top: 50%; z-index: 2; width: 0; height: 0; pointer-events: none; will-change: translate; }
@@ -1317,30 +1291,59 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 .sk-wish .st-hud { display: block; opacity: .22; }
 @media (prefers-reduced-motion: reduce) { .sk-wish .st-hud { display: none; } }
 
-/* the opener stood small: every word, in em so one size steps it all down to fit (introFit) */
-.hm-card.small.sk-intro .in-f { justify-content: flex-start; font-size: 13px; padding: 1.4em 1.5em 1.5em; }
-.hm-card.small.sk-intro .in-hd { position: static; gap: .8em; padding: 0 3.2em .9em 0; }
-.hm-card.small.sk-intro .in-seal { width: 2em; }
-.hm-card.small.sk-intro .in-k { font-size: .78em; }
-.hm-card.small.sk-intro .in-t { margin-top: .5em; font-size: 2.9em; }
-.hm-card.small.sk-intro .in-l { margin-top: .6em; padding-bottom: .9em; border-bottom: 1px solid var(--in-i); font-size: 1em; }
-.hm-card.small.sk-intro .in-b li { grid-template-columns: 2.2em 1fr; gap: .4em; padding: .7em 0; }
-.hm-card.small.sk-intro .in-b b { font-size: .7em; }
-.hm-card.small.sk-intro .in-b p { font-size: .88em; line-height: 1.45; }
-.hm-card.small.sk-intro .in-s { margin-top: .8em; padding: .6em .8em; border-left-width: 4px; }
-.hm-card.small.sk-intro .in-s strong { font-size: .88em; }
-@container (min-aspect-ratio: 1/1) {
-  .hm-card.small.sk-intro .in-f { display: grid; grid-template-columns: 1fr 1.35fr; grid-template-rows: auto min-content min-content auto auto; column-gap: 1.6em; align-content: start; }
-  .hm-card.small.sk-intro .in-hd { grid-column: 1 / -1; }
-  .hm-card.small.sk-intro .in-t { grid-column: 1; grid-row: 2; font-size: 2.4em; }
-  .hm-card.small.sk-intro .in-l { grid-column: 1; grid-row: 3; border-bottom: 0; align-self: start; }
-  .hm-card.small.sk-intro .in-b { grid-column: 2; grid-row: 2 / 5; margin-top: .5em; }
-  .hm-card.small.sk-intro .in-s { grid-column: 2; grid-row: 5; }
-  .hm-card.small.sk-intro .in-hd { min-height: 40px; box-sizing: border-box; }
-  .hm-card.small.sk-intro .in-b li:first-child { padding-top: 0; }
-}
 /* ───────── the nine stood big or small: the corner is the talk and locate keys' own ───────── */
 .hm-card.full.g-week .wx-wk, .hm-card.small.g-week .wx-wk { left: 7cqmin; right: auto; top: calc(6.4cqmin + clamp(17px, 9.5cqmin, 34px) * 1.5); height: 9cqmin; }
 .hm-card.full.g-week[data-id="events"] .wx-wk, .hm-card.small.g-week[data-id="events"] .wx-wk { width: 16cqmin; height: 16cqmin; }
 .hm-card.full.g-read .wx-b, .hm-card.small.g-read .wx-b { display: none; }
 .hm-card.full.g-week[data-id="news"] .wx-b, .hm-card.small.g-week[data-id="news"] .wx-b { -webkit-mask-image: linear-gradient(#000 0 34%, transparent 52%); mask-image: linear-gradient(#000 0 34%, transparent 52%); }
+/* ───────── THE OPENER: receipt 00. Aged thermal paper torn at both ends, black ink only, no rules; the archipelago printed in dots at its foot ───────── */
+.hm-card.sk-intro { --in-p: #ECE8DD; --in-i: #161514; --c-bg: var(--in-p); --c-ink: var(--in-i); color: var(--in-i); border-radius: 0;
+  background: radial-gradient(130% 95% at 50% 38%, transparent 52%, rgba(150, 118, 62, .2) 100%), radial-gradient(40% 30% at 12% 78%, rgba(160, 130, 70, .1), transparent 70%), repeating-linear-gradient(0deg, rgba(0, 0, 0, .022) 0 1px, transparent 1px 3px), var(--in-p);
+  -webkit-mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 14px 8px repeat-x, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 8px repeat-x, linear-gradient(#000 0 0) center / 100% calc(100% - 14px) no-repeat;
+  mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 14px 8px repeat-x, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 8px repeat-x, linear-gradient(#000 0 0) center / 100% calc(100% - 14px) no-repeat; }
+.sk-intro .hm-art { opacity: .5; mix-blend-mode: multiply; }
+.sk-intro .in-f { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 11cqw 8cqw 9cqw; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.sk-intro .in-f::-webkit-scrollbar { display: none; }
+.sk-intro .in-hd { display: flex; justify-content: center; }
+.sk-intro .in-mk { width: clamp(64px, 26cqw, 132px); height: auto; fill: var(--in-i); }
+.sk-intro .in-mk circle { fill: url(#in-dot); stroke: var(--in-i); stroke-width: 3; }
+.sk-intro .in-t { margin: 8cqw 0 0; font: 400 clamp(22px, 8.2cqw, 60px)/1.05 'Poppins', Arial, sans-serif; letter-spacing: -.025em; text-transform: none; text-align: center; white-space: nowrap; }
+.sk-intro .in-l { margin: 4cqw auto 0; font: 500 clamp(11px, 3.4cqw, 15px)/1.45 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+.sk-intro .in-b { margin-top: 7cqw; }
+.sk-intro .in-b p { margin: 0 0 1.2em; font: 400 clamp(12.5px, 3.6cqw, 15px)/1.6 'IBM Plex Mono', monospace; letter-spacing: -.015em; }
+.sk-intro .in-s { margin: 2cqw -8cqw 0; padding: 5cqw 8cqw; background: var(--in-i); color: var(--in-p); }
+.sk-intro .in-s strong { display: block; font: 600 clamp(14px, 4.6cqw, 22px)/1.25 'Archivo Narrow', Arial, sans-serif; letter-spacing: .02em; text-transform: uppercase; }
+.sk-intro .in-ft { position: relative; margin: 7cqw -8cqw 0; flex: none; }
+.sk-intro .in-arc { display: block; width: 100%; height: 46cqw; image-rendering: pixelated; }
+.sk-intro .in-no { position: absolute; right: 8cqw; bottom: 3cqw; padding: .1em .25em 0; background: var(--in-p); font: 400 clamp(26px, 11cqw, 64px)/1 'Departure Mono', ui-monospace, monospace; letter-spacing: -.02em; }
+#hm .sk-intro .in-x { position: absolute; z-index: 3; right: 5cqw; top: 6cqw; width: 34px; height: 34px; min-width: 34px; display: grid; place-items: center; padding: 0; border: 1.5px solid var(--in-i); border-radius: 0; background: var(--in-p); color: var(--in-i); font: 300 20px/1 Arial, sans-serif; cursor: pointer; }
+.sk-intro .in-x:focus-visible { outline: 2px dashed var(--in-i); outline-offset: 2px; }
+@container (min-aspect-ratio: 1/1) { .sk-intro .in-f { padding: 8cqh 9cqw; } .sk-intro .in-mk { width: clamp(64px, 16cqh, 132px); } .sk-intro .in-t { font-size: clamp(22px, 7cqh, 60px); } .sk-intro .in-arc { height: 30cqh; } }
+#hm.night .hm-card.sk-intro { filter: brightness(.82) contrast(1.05); }
+/* the opener stood small: every word, in em so one size steps it all down to fit (introFit) */
+.hm-card.small.sk-intro .in-f { font-size: 13px; padding: 2.2em 1.6em 1.6em; }
+.hm-card.small.sk-intro .in-mk { width: 5.5em; }
+.hm-card.small.sk-intro .in-t { margin-top: .9em; font-size: 2.1em; }
+.hm-card.small.sk-intro .in-l { margin-top: .7em; font-size: .78em; }
+.hm-card.small.sk-intro .in-b { margin-top: 1.3em; }
+.hm-card.small.sk-intro .in-b p { font-size: .82em; line-height: 1.5; }
+.hm-card.small.sk-intro .in-s { margin: .4em -1.6em 0; padding: .9em 1.6em; }
+.hm-card.small.sk-intro .in-s strong { font-size: .95em; }
+.hm-card.small.sk-intro .in-ft { margin: 1.2em -1.6em 0; }
+.hm-card.small.sk-intro .in-arc { height: 7em; }
+.hm-card.small.sk-intro .in-no { right: 1.6em; bottom: .5em; font-size: 2.2em; }
+@container (min-aspect-ratio: 1/1) {
+  .hm-card.small.sk-intro .in-f { display: grid; grid-template-columns: 1fr 1.3fr; grid-template-rows: auto min-content min-content auto auto; column-gap: 1.8em; align-content: start; }
+  .hm-card.small.sk-intro .in-hd { grid-column: 1; grid-row: 1; justify-content: flex-start; }
+  .hm-card.small.sk-intro .in-t { grid-column: 1; grid-row: 2; text-align: left; white-space: normal; }
+  .hm-card.small.sk-intro .in-l { grid-column: 1; grid-row: 3; text-align: left; margin-left: 0; }
+  .hm-card.small.sk-intro .in-ft { grid-column: 1; grid-row: 4 / 6; margin: 1em 0 0; align-self: end; }
+  .hm-card.small.sk-intro .in-b { grid-column: 2; grid-row: 1 / 5; margin-top: max(3.2em, calc(6cqw + 40px - 2.2em)); }
+  .hm-card.small.sk-intro .in-s { grid-column: 2; grid-row: 5; margin: 0; }
+}
+/* copy everywhere on the cards: no word left alone on a last line, the size unchanged */
+#hm .hm-card p, #hm .hm-card h2, #hm .hm-card strong { text-wrap: pretty; }
+#hm .sk-intro .in-l, #hm .sk-intro .in-s strong { text-wrap: balance; }
+/* the HOME panel: a set's rows held by one bracket on the left */
+#hm .mn-l li.jn { position: relative; } #hm .mn-l li.jn::before { content: ''; position: absolute; left: -9px; top: 0; bottom: 0; border-left: 2px solid currentColor; opacity: .55; }
+#hm .mn-l li.jn-a::before { top: 50%; border-top: 2px solid currentColor; width: 5px; } #hm .mn-l li.jn-z::before { bottom: 50%; border-bottom: 2px solid currentColor; width: 5px; }
