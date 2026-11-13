@@ -163,7 +163,7 @@
 
   function dress() { if (Array.isArray(CFG.logos)) { var hd = $('header'); hd.replaceChildren(); hd.hidden = !CFG.logos.length; CFG.logos.forEach(function (lg, i) { if (typeof lg === 'string') lg = { src: lg, href: /foe\.png$/.test(lg) && CFG.donate ? CFG.donate.url : '' }; if (i) { var x = D.createElement('span'); x.setAttribute('aria-hidden', 'true'); x.textContent = '×'; hd.appendChild(x); }
       var im = D.createElement('img'); if (!/^data:/.test(lg.src)) im.crossOrigin = 'anonymous'; im.src = lg.src; im.alt = ''; if (/^https:\/\//.test(lg.href || '')) { var a = D.createElement('a'); a.href = lg.href; a.target = '_blank'; a.rel = 'noopener'; a.appendChild(im); hd.appendChild(a); } else hd.appendChild(im); }); }
-    var dn = CFG.donate; if (dn && dn.url) { $('#donate').href = dn.url; $('#donate').textContent = dn.label || 'DONATE'; $('#dn-u').textContent = dn.url.replace(/^https?:\/\/(www\.)?/, '').replace(/[#?].*$/, ''); } else $('.give').hidden = true;
+    var dn = CFG.donate; if (dn && /^https:\/\//.test(dn.url || '')) { $('#donate').href = dn.url; $('#donate').textContent = dn.label || 'DONATE'; $('#dn-u').textContent = dn.url.replace(/^https?:\/\/(www\.)?/, '').replace(/[#?].*$/, ''); } else $('.give').hidden = true;
   }
   function open() { dress(); $('#gate').hidden = true; $('#card').hidden = false; cv = $('#stage'); cv.width = AW * SC; cv.height = AH * SC; cx2 = cv.getContext('2d'); gestures(); another(); printers();
     $('#an').addEventListener('click', another); $('#ph').addEventListener('click', pick); $('#go').addEventListener('click', print); $('#sv').addEventListener('click', save); $('#rm').addEventListener('click', drop); $('#pen').addEventListener('click', pen); $('#un').addEventListener('click', undo); }

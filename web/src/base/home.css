@@ -892,7 +892,7 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { width: 28px; height: 28px; border-
 
 /* warm and idle */
 #hm-x iframe.hm-warm { display: none !important; }
-#hm .hm-card.hm-idle, #hm .hm-card.hm-idle *, html.hm-sheet #hm-col, html.hm-sheet #hm-col * { animation-play-state: paused !important; }
+#hm .hm-card.hm-idle, #hm .hm-card.hm-idle *, #hm .hm-card.hm-idle *::before, #hm .hm-card.hm-idle *::after, html.hm-sheet #hm-col, html.hm-sheet #hm-col *, html.hm-sheet #hm-col *::before, html.hm-sheet #hm-col *::after { animation-play-state: paused !important; }
 
 /* phone bars */
 html.hm-on:not(.hm-away), html.hm-on:not(.hm-away) body { background-color: #E8E7E3; }
@@ -1107,3 +1107,5 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sk-space .sp-prn .hm-prn { position: absolute; inset: 0; left: 0; bottom: 0; width: 100%; height: 100%; transform: none; aspect-ratio: auto; }
 #hm .sk-space .sp-fz { position: absolute; left: 6cqw; top: 13.5cqh; margin: 0; font-size: 6.4cqw; line-height: 1.05; }
 @container (min-aspect-ratio: 1/1) { .sk-space .sp-prn { top: 12cqh; width: auto; height: 70cqh; } #hm .sk-space .sp-fz { top: 22cqh; font-size: 3.4cqw; } }
+/* the chairs start from the loop's centre; the loop carries each out by translate, which costs no layout */
+.st-orb .st-th { left: 50%; top: 50%; will-change: translate; }

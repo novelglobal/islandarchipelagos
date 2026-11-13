@@ -840,7 +840,13 @@
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, notice, country, motion, cur, sources, reset);
+    /* grouped by what they change, each group under its own word; the keys at the top jump to a group */
+    const grp = (id, t, why) => el('h3', { id: 'set-' + id, class: 'set-g', title: why, text: t });
+    const G = [['print', 'PRINTING', 'How prints look and when they go out', [printq, sends, gates]], ['words', 'WORDS', 'What the site says first, and where it is', [start, notice, country, events]],
+      ['look', 'LOOK', 'How the site moves and its style packs', [motion, styles]], ['making', 'MAKING', 'What people may put up', [making]], ['folio', 'PORTFOLIO', 'The blog, its curations and its sources', [blog, cur, sources]], ['reset', 'RESET', 'Back to the start, and what this browser keeps', [reset]]];
+    const jump = el('div', { class: 'acts', style: 'margin:0 0 14px' }, ...G.map(g => el('button', { type: 'button', text: g[1], title: g[2], onclick: () => { const h = document.getElementById('set-' + g[0]); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); } })),
+      el('button', { type: 'button', text: 'HOME →', title: 'The cards on the home: order, size and look', onclick: () => show('home') }), el('button', { type: 'button', text: 'POP-UPS →', title: 'Pop-up cards, their links and QR codes', onclick: () => show('popups') }));
+    main.replaceChildren(...head('Settings'), jump, ...G.flatMap(g => [grp(g[0], g[1], g[2]), ...[].concat(...g[3].map(x => Array.isArray(x) ? x : [x]))]));
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */
