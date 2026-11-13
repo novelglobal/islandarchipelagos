@@ -63,11 +63,8 @@
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
   var SMALL = {
-    radio: '<div class="sm-o sm-radio"><i></i><i></i><img alt="" decoding="async" loading="lazy" src="/cards/radio.jpg"></div>',
-    wish: '<div class="sm-o sm-wish"><svg viewBox="-50 -50 100 100"><circle class="r1" r="41"/><circle class="r2" r="41"/>' + [['W', 0, -41, '#E25C40'], ['I', 41, 0, '#F4C542'], ['S', 0, 41, '#1EA0E0'], ['H', -41, 0, '#C9C1F7']].map(function (n) { return '<g transform="translate(' + n[1] + ' ' + n[2] + ')"><circle r="8.6" fill="' + n[3] + '"/><text>' + n[0] + '</text></g>'; }).join('') + '</svg><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"></div>',
-    research: '<div class="sm-o sm-pins"><img alt="" decoding="async" loading="lazy" src="/cards/ref-cathaya.jpg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-moa.jpg"></div>',
-    zine: '<div class="sm-o sm-post"><img alt="" decoding="async" loading="lazy" src="/cards/zine.jpg"></div>',
-    kit: '<div class="sm-o sm-prn">' + PRN_HTML + '</div>',
+    radio: '', wish: '', research: '', zine: '',
+    kit: '',
     space: '<div class="sm-o sm-prn">' + PRN_HTML + '</div>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
   };
@@ -79,14 +76,23 @@
   var OPT = { talk: false, find: false, one: true, stamp: false, carts: false };
   /* a cartridge: a small card, three to a screen. With EVERY CARD on, the big ones stand that way too */
   var MINE = store.get('da.hm.mine', null);
-  function ownSize(c) { var m = MINE && MINE.size && MINE.size[c.id]; return m === 'small' || m === 'full' ? m : c.size || 'full'; }
+  /* a place's own novel.global (a pop-up's, from its link): its order, sizes and its card. A person's own choices sit over it */
+  var PLACE = store.get('da.pop.home', null); if (PLACE && !(PLACE.at && Date.now() - PLACE.at < 30 * 864e5)) PLACE = null;
+  var PH = (PLACE && PLACE.home) || {};
+  if (PLACE && PLACE.card) (function () { var at = CARDS.findIndex(function (c) { return c.id === 'portfolio'; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: 'pop-' + PLACE.id, pop: PLACE.id, size: 'small', title: String(PLACE.name || PLACE.id).toUpperCase().slice(0, 24), opens: 'pop', skin: 'play', art: 'slot', pal: 5, motion: 'shadow', where: [-37.8136, 144.9631] }); })();
+  function lay(k) { var m = MINE && MINE[k]; return m != null && !(Array.isArray(m) && !m.length && k === 'order') ? m : PH[k]; }
+  function ownSize(c) { var m = (MINE && MINE.size && MINE.size[c.id]) || (PH.size && PH.size[c.id]); return m === 'small' || m === 'full' ? m : c.size || 'full'; }
   function sizeOf(c) { return OPT.carts ? 'small' : ownSize(c); }
   /* the cards as this person stands them: [card, its place in CARDS] */
-  function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !(OPT.one && x[0].id === 'kit') && !(MINE && MINE.hide && MINE.hide.indexOf(x[0].id) >= 0); }), o = MINE && MINE.order;
+  function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0); }), o = lay('order');
     if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); } return l; }
-  function colHTML() { var out = '', run = [];
-    var flush = function () { for (var k = 0; k < run.length; k += 3) out += '<section class="hm-trio n' + Math.min(3, run.length - k) + '">' + run.slice(k, k + 3).join('') + '</section>'; run = []; };
-    var was = null; view().forEach(function (x) { var c = x[0], i = x[1], own = ownSize(c) === 'small'; if (was !== null && own !== was) flush(); was = own; if (sizeOf(c) === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out + FOOT; }
+  var WIDE = matchMedia('(min-width: 900px)');
+  function perPage() { var n = +lay('per'); return n === 3 || n === 6 || n === 9 ? n : WIDE.matches ? 9 : 3; }
+  function colHTML() { var out = '', run = [], P = perPage(), free = !!((lay('order') || []).length);
+    var flush = function () { for (var k = 0; k < run.length; k += P) { var ch = run.slice(k, k + P); if (k && ch.every(function (r) { return r[1]; })) break; out += '<section class="hm-trio p' + P + ' n' + Math.min(3, ch.length) + '">' + ch.map(function (r) { return r[0]; }).join('') + '</section>'; } run = []; };
+    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], own = ownSize(c) === 'small', th = !!c.g, g1 = false; if (was !== null && own !== was) flush(); was = own;
+      if (sizeOf(c) !== 'small') { flush(); wasT = wasG = null; out += cardHTML(c, i); return; }
+      if (!free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush(); g1 = true; } } wasT = th; wasG = c.g || null; run.push([cardHTML(c, i, g1), !!c.ph]); }); flush(); return out + FOOT; }
   /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
   var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
   var FOOT = '<footer class="hm-foot" aria-hidden="true"><div class="hf-grid">' + FOOT_T.map(function (t, k) { return '<canvas class="hf-t t' + k + '" data-pat="' + t.join(',') + '"></canvas>'; }).join('') +
@@ -484,7 +490,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-mine" aria-label="Home" title="Your home: order, size, what shows" hidden><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<button id="hm-mine" aria-label="Home" title="Your home: your code, your pass, your cards"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -546,7 +552,7 @@
 
   /* a label-maker strip: each letter pressed a little off its line */
   function tape(w, cls) { return '<b class="' + cls + '" aria-hidden="true">' + w.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b>'; }
-  function cardHTML(c, i) {
+  function cardHTML(c, i, g1) {
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
     var sm = sizeOf(c) === 'small', noT = c.ph || (sm && !OPT.talk), noF = c.ph || (sm && !OPT.find);
     var keys = (noT ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (noF ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
@@ -574,8 +580,8 @@
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
-    var smf = sizeOf(c) === 'small' && SMALL[sk] ? '<div class="sm-f" aria-hidden="true"><b class="sm-k">' + SMALL_T[sk] + '</b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
-    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
+    var smf = sizeOf(c) === 'small' && SMALL[sk] != null ? '<div class="sm-f" aria-hidden="true"><b class="sm-k"><span>' + SMALL_T[sk] + '</span></b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
+    return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (g1 ? ' g1' : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
       '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div>' + smf + '<div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
@@ -781,6 +787,7 @@
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
+    if (c.opens === 'pop') return sheet(c.title, inFrame((c.pop === 'pickles' ? 'pickles' : 'popup') + '?in=1#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
     if (c.opens === 'bench') return sheet(c.title, inFrame('bench?in=1' + (opt && opt.mode ? '&m=' + opt.mode : '') + '#b'));
@@ -1330,23 +1337,29 @@
   col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
   /* your home: for anyone with a code (they have printed here). Kept on this phone only */
-  function mineKey() { var k = $('#hm-mine'); if (k) k.hidden = !store.get('da.who', ''); }
   function mineIn(body) { body.classList.add('mn');
+    var who = store.get('da.who', ''), ok = !!store.get('da.who.ok', 0), ps = store.get('da.pass', null), today = cartDay(); if (ps && (ps.day !== today || !ps.code)) ps = null;
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
-    var keep = function (l) { MINE = MINE || {}; MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
-    var draw = function () { var l = rows(); body.innerHTML = '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
+    var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
+    var draw = function () { var l = rows(), P = perPage();
+      body.innerHTML = '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
+        '<div title="' + (ps ? 'A print pass for today: your next print goes straight out' : 'A print pass comes from the printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
+        (who ? '<p class="mn-per" role="group" aria-label="Small cards to a screen" title="Small cards to a screen"><span>SCREEN</span>' + [3, 6, 9].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (P === n) + '">' + n + '</button>'; }).join('') + '</p>' +
+        '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
         return '<li data-id="' + esc(c.id) + '"' + (off ? ' class="off"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
-          '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small stands three to a screen">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
-        '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>'; };
+          '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small shares it">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
+        '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>' : ''); };
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
+      if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
       var li = b.closest('li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
       if (b.dataset.mv) { var j = i + +b.dataset.mv; if (j < 0 || j >= l.length) return; l.splice(j, 0, l.splice(i, 1)[0]); }
-      else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; MINE.size[id] = ownSize(l[i]) === 'small' ? 'full' : 'small'; }
-      else if (b.hasAttribute('data-on')) { MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); }
+      else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; MINE.size[id] = ownSize(l[i]) === 'small' ? 'full' : 'small'; return keep(null); }
+      else if (b.hasAttribute('data-on')) { MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
       keep(l); };
     draw(); }
+  WIDE.addEventListener('change', function () { if (!(MINE && MINE.per)) applyCards(null); });
   $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); sheet('HOME', mineIn); });
-  mineKey(); addEventListener('storage', mineKey); addEventListener('focus', mineKey);
+
 
   /* ───────── the reef: the forms rounded and lit, in their own colours; the life on it in white line, alive to a touch ───────── */
   var RB = null, PT = { x: -999, y: -999, vx: 0, vy: 0 };

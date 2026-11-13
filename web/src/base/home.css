@@ -1050,20 +1050,20 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .st-orb svg { z-index: 2; pointer-events: none; }
 .st-orb .st-th { z-index: 1; }
 /* ───────── a big card stood small: the nine's frame. The big art rests; the title, one thing of the card's own, and room ───────── */
-.hm-card.small.sm > .hm-art, .hm-card.small.sm > .hm-in, .hm-card.small.sm > .hm-rune, .hm-card.small.sm > .rd-nino, .hm-card.small.sm > .hm-fr { display: none; }
+.hm-card.small.sm > .hm-in, .hm-card.small.sm > .hm-rune, .hm-card.small.sm > .rd-nino { display: none; }
 .sm-f { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; color: var(--ink); pointer-events: none; }
 .sm-k { position: absolute; left: 7cqmin; top: 6.4cqmin; max-width: 44cqw; font: 700 clamp(17px, 9.5cqmin, 34px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; }
 .sm-o { position: absolute; right: 12cqmin; top: 50%; height: 76cqh; aspect-ratio: 1; transform: translateY(-50%); }
 .sm-o img { display: block; width: 100%; height: 100%; object-fit: cover; }
 #hm .hm-card.small.sm .hm-keys { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 #hm .hm-card.small.sm .hm-keys .hm-rk:not(.on) { color: var(--ink) !important; }
-.hm-card.small.sk-radio.sm { --c-bg: #17457F; --ink: #F4F1E8; }
-.hm-card.small.sk-wish.sm { --c-bg: #123866; --ink: #F4F1E8; }
-.hm-card.small.sk-research.sm { --c-bg: #F1F0EC; --ink: #111; }
-.hm-card.small.sk-zine.sm { --c-bg: #FF5436; --ink: #111; }
-.hm-card.small.sk-kit.sm { --c-bg: #F4F2EC; --ink: #111; }
-.hm-card.small.sk-space.sm { --c-bg: #0E3A6B; --ink: #F4F1E8; }
-.hm-card.small.sk-portfolio.sm { --c-bg: #143D71; --ink: #F4F1E8; }
+.hm-card.small.sk-radio.sm { --ink: #F4F1E8; }
+.hm-card.small.sk-wish.sm { --ink: #F4F1E8; }
+.hm-card.small.sk-research.sm { --ink: #111; }
+.hm-card.small.sk-zine.sm { --ink: #111; }
+.hm-card.small.sk-kit.sm { --ink: #111; }
+.hm-card.small.sk-space.sm { --ink: #F4F1E8; }
+.hm-card.small.sk-portfolio.sm { --ink: #F4F1E8; }
 /* radio: the found radio in a round window, two rings going out from it */
 .sm-radio img { border-radius: 50%; box-shadow: 0 0 0 .8cqmin #F4F1E8; }
 .sm-radio i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(244, 241, 232, .55); animation: sm-ring 4.5s cubic-bezier(.2, .6, .3, 1) infinite; }
@@ -1096,7 +1096,7 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
   .sm-k { max-width: 80cqw; }
   .sm-o { right: auto; left: 50%; top: 58%; height: auto; width: 62cqw; transform: translate(-50%, -50%); }
   .sm-post { width: 50cqw; transform: translate(-50%, -50%) rotate(-3deg); }
-  .sm-prn { width: 50cqw; }
+  .sm-prn { width: 44cqw; top: 64%; }
   .sm-slip { width: 44cqw; height: auto; transform: translate(-50%, -46%) rotate(3deg); }
 }
 @media (prefers-reduced-motion: reduce) { .sm-radio i, .sm-wish .r2 { animation: none; } }
@@ -1123,3 +1123,42 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 #hm-x .mn-l .mn-on[aria-checked="true"] i { transform: translateX(18px); opacity: 1; }
 #hm-x .mn-ft { max-width: 520px; margin: 18px auto 0; }
 #hm-x .mn-ft button { padding: 0 16px; }
+/* ───────── small cards, round 11. The big card's own art stays behind its small face: the title on a strip of the card's ground, like a
+   label; grain over all of them ───────── */
+.sm-f { z-index: 3; }
+.sm-k { max-width: 78cqw; line-height: 1.22; }
+.sm-k span { padding: .08em .3em .12em; background: var(--lab, #0B0B0B); color: var(--lab-ink, #F4F1E8); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.hm-card.small.sk-radio.sm { --lab: #17457F; } .hm-card.small.sk-wish.sm { --lab: #123866; }
+.hm-card.small.sk-research.sm { --lab: #0B0B0B; } .hm-card.small.sk-research.sm .sm-k span { box-shadow: .5em .5em 0 -.2em #D9F24A; }
+.hm-card.small.sk-zine.sm { --lab: #FF5436; --lab-ink: #111; } .hm-card.small.sk-kit.sm { --lab: #0A0A0A; }
+.hm-card.small.sk-space.sm { --lab: #0E3A6B; } .hm-card.small.sk-portfolio.sm { --lab: #143D71; }
+.sk-wx .wx-f::after, .sm-f::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: var(--grain); background-size: 180px; opacity: .28; mix-blend-mode: soft-light; }
+.sk-wx .wx-f { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06), inset 0 -18cqmin 22cqmin -20cqmin rgba(0, 0, 0, .18); }
+
+/* how many small cards a screen holds. A phone: one, two or three columns of three. A desk: one, two or three rows of three, every card
+   card-shaped. A theme's first card (.g1) starts a new column or row, so this week, read and cards each keep their own line */
+.hm-trio.p6 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); grid-auto-flow: column; }
+.hm-trio.p9 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(3, 1fr); grid-auto-flow: column; gap: 8px; }
+.hm-trio.p6 .hm-slot, .hm-trio.p9 .hm-slot { display: contents; } .hm-trio.p6 .hm-sur, .hm-trio.p9 .hm-sur { display: none; }
+.hm-trio.p6 .g1, .hm-trio.p9 .g1 { grid-row-start: 1; }
+@media (min-width: 900px) {
+  .hm-trio, .hm-trio.p6, .hm-trio.p9 { --rows: 1; --ch: min(620px, calc((100dvh - var(--hm-top) - var(--hm-peek) - 56px - (var(--rows) - 1) * 14px) / var(--rows))); grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(3, calc(var(--ch) * 5 / 7)); grid-auto-columns: auto; grid-auto-rows: var(--ch); gap: 14px; }
+  .hm-trio.p6 { --rows: 2; } .hm-trio.p9 { --rows: 3; }
+  .hm-trio .hm-card.small, .hm-trio .hm-card.small.sk-wx { width: 100%; height: 100%; max-height: none; aspect-ratio: auto; align-self: stretch; margin: 0; }
+  .hm-trio.p6 .g1, .hm-trio.p9 .g1 { grid-row-start: auto; grid-column-start: 1; }
+}
+
+/* the arrange key and day or night belong to the main screen only */
+html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { display: none; }
+
+/* your home: the code and the pass, then the screen, then the cards */
+#hm-x .mn-id { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 520px; margin: 0 auto 16px; }
+#hm-x .mn-id > div { padding: 12px 14px 13px; border: 1px solid var(--hm-ink); border-radius: 10px; }
+#hm-x .mn-id dt { font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; color: var(--hm-ink); opacity: .6; }
+#hm-x .mn-id dd { margin: 8px 0 0; font: 700 26px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; color: var(--hm-ink); }
+#hm-x .mn-id dd.no { opacity: .3; }
+#hm-x .mn-id dd i { display: block; margin-top: 7px; font: 600 9px/1 'IBM Plex Mono', monospace; font-style: normal; letter-spacing: .14em; opacity: .7; }
+#hm-x .mn-per { display: flex; align-items: center; gap: 8px; max-width: 520px; margin: 0 auto 8px; }
+#hm-x .mn-per span { flex: 1; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; color: var(--hm-ink); opacity: .6; }
+#hm-x .mn-per button { width: 44px; height: 36px; border: 1px solid var(--hm-ink); border-radius: 18px; background: none; color: var(--hm-ink); font: 600 12px/1 'IBM Plex Mono', monospace; cursor: pointer; }
+#hm-x .mn-per button[aria-pressed="true"] { background: var(--hm-ink); color: var(--hm-bg, #E8E7E3); }

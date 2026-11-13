@@ -362,8 +362,10 @@ async function send(db, env, req) {
   if (await tooMany(db, env, req, 'send', LIMIT.sends, 10 * 60e3)) return refuse(429, 'too many sends from one place in ten minutes');
   const kind = ['record', 'cells', 'example', 'message'].includes(b.kind) ? b.kind : 'story';
   /* a pop-up's own link: open only while the pop-up is, and its prints go straight out on its printer (or novel.global's) unless it asks for approval */
-  const popP = b.from === 'pop' ? await popFind(db, env, b.pop, b.popId) : null; if (b.from === 'pop' && !popP) return fail(403, 'closed');
-  const popAuto = !!(popP && popP.auto !== false && typeof b.dest === 'string' && (b.dest === (popP.to || '') || b.dest === popP.id || b.dest === 'novelglobal'));
+  /* a phone that came in by the pop-up's link carries its key (a cookie): with FREE PRINTING on, every card it prints goes straight out too */
+  const popCk = (/(?:^|;\s*)pop=([a-z0-9]{6,40})/.exec(req.headers.get('cookie') || '') || [])[1] || '';
+  const popP = b.from === 'pop' ? await popFind(db, env, b.pop, b.popId) : popCk ? await popFind(db, env, popCk, '') : null; if (b.from === 'pop' && !popP) return fail(403, 'closed');
+  const popAuto = !!(popP && popP.auto !== false && (b.from === 'pop' || popP.free === true) && typeof b.dest === 'string' && (b.dest === (popP.to || '') || b.dest === popP.id || b.dest === 'novelglobal'));
   if (!CODE.test(b.code || '')) return fail(400, 'code');
   /* a message to novel.global (the portfolio's send message) is a story kept private: printed once approved, never listed */
   if ((kind === 'story' || kind === 'message') && !(typeof b.body === 'string' && /^[A-Za-z0-9_-]{20,}$/.test(b.body) && b.body.length <= LIMIT.sig)) return fail(400, 'story');
@@ -1181,7 +1183,8 @@ async function popFind(db, env, k, id) { if (typeof k !== 'string' || !k) return
 async function popOk(db, env, k, id) { return !!(await popFind(db, env, k, id)); }
 async function popGet(db, env, req, url) { if (await tooMany(db, env, req, 'pop', 40, 10 * 60e3)) return fail(429, 'too many');
   const p = await popFind(db, env, url.searchParams.get('k') || '', url.searchParams.get('p') || ''); if (!p) return fail(404, 'closed');
-  const pub = {}; ['id', 'name', 'to', 'logos', 'donate', 'tips', 'animals'].forEach(f => { if (p[f] !== undefined) pub[f] = p[f]; }); return json({ ok: true, pop: pub }); }
+  const pub = {}; ['id', 'name', 'to', 'logos', 'donate', 'tips', 'animals', 'home', 'card', 'free'].forEach(f => { if (p[f] !== undefined) pub[f] = p[f]; });
+  const r = json({ ok: true, pop: pub }); if (typeof p.key === 'string' && /^[a-z0-9]{6,40}$/.test(p.key)) r.headers.append('set-cookie', 'pop=' + p.key + '; Path=/api; Max-Age=259200; HttpOnly; Secure; SameSite=Lax'); return r; }
 async function passFind(db, env, code) { const c = code.replace('-', ''), day = melDay(), n = c.slice(0, 3), m = c.slice(3);
   const { results } = await db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'").all();
   for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };

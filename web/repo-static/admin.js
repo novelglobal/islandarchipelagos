@@ -519,7 +519,20 @@
           el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { p.logos.splice(j, 1); drawLogos(); } }))),
         el('button', { type: 'button', text: 'ADD LOGO', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = async () => { if (!fi.files[0]) return; p.logos.push({ src: await popLogo(fi.files[0]), href: '' }); drawLogos(); }; fi.click(); } }));
       drawLogos();
-      const read = () => { p.on = f.on.checked; p.auto = f.auto.checked; p.name = f.name.value.trim() || p.name; p.to = f.to.value; p.donate = f.durl.value.trim() ? { url: f.durl.value.trim(), label: f.dlab.value.trim() || 'DONATE' } : null;
+      /* their novel.global: the order, sizes and what shows for people who come in by this pop-up's link, and its own small card there */
+      const HB = [...HOME_CARDS.filter(c => c[0] !== 'kit'), ['pop-' + p.id, 'THEIR CARD', 'small']], ph = p.home || {};
+      const hrows = (ph.order && ph.order.length ? ph.order : HB.map(c => c[0])).map(id => HB.find(c => c[0] === id)).filter(Boolean); HB.forEach(c => { if (!hrows.includes(c)) hrows.push(c); });
+      const hst = hrows.map(c => ({ id: c[0], name: c[1], own: c[2], size: (ph.size && ph.size[c[0]]) || c[2], hide: !!(ph.hide && ph.hide.includes(c[0])) }));
+      const hlist = el('div', { style: 'display:grid;gap:5px' });
+      const hdraw = () => hlist.replaceChildren(...hst.map((r, i) => { const sz = el('select', { style: 'width:100px' }, el('option', { value: 'full', text: 'BIG' }), el('option', { value: 'small', text: 'SMALL' })); sz.value = r.size; sz.onchange = () => { r.size = sz.value; };
+        const on = el('input', { type: 'checkbox' }); on.checked = !r.hide; on.onchange = () => { r.hide = !on.checked; }; const mv = d => () => { const j = i + d; if (j < 0 || j >= hst.length) return; hst.splice(j, 0, hst.splice(i, 1)[0]); hdraw(); };
+        return el('div', { style: 'display:grid;grid-template-columns:32px 32px 1fr 100px 86px;gap:8px;align-items:center' }, el('button', { type: 'button', text: '↑', onclick: mv(-1) }), el('button', { type: 'button', text: '↓', onclick: mv(1) }), el('b', { text: r.name, style: 'font:600 12px var(--mono);letter-spacing:.08em' }), sz, el('label', { class: 'check' }, on, 'SHOWN')); }));
+      hdraw();
+      const hper = el('select', { style: 'width:220px' }, ...[['', 'AS THE SITE: 3 ON A PHONE, 9 ON A DESK'], ['3', '3 TO A SCREEN'], ['6', '6 TO A SCREEN'], ['9', '9 TO A SCREEN']].map(([v, t]) => el('option', { value: v, text: t }))); hper.value = ph.per ? String(ph.per) : '';
+      const hon = el('input', { type: 'checkbox' }); hon.checked = !!p.home; const hcard = el('input', { type: 'checkbox' }); hcard.checked = !!p.card; const hfree = el('input', { type: 'checkbox' }); hfree.checked = p.free === true;
+      const readHome = () => { p.card = hcard.checked; p.free = hfree.checked; if (!hon.checked) { p.home = null; return; } const base = HB.map(c => c[0]).join(','), ord = hst.map(r => r.id), size = {}; hst.forEach(r => { if (r.size !== r.own) size[r.id] = r.size; });
+        p.home = { order: ord.join(',') === base ? [] : ord, size, hide: hst.filter(r => r.hide).map(r => r.id), per: +hper.value || 0 }; };
+      const read = () => { readHome(); p.on = f.on.checked; p.auto = f.auto.checked; p.name = f.name.value.trim() || p.name; p.to = f.to.value; p.donate = f.durl.value.trim() ? { url: f.durl.value.trim(), label: f.dlab.value.trim() || 'DONATE' } : null;
         const by = {}; an.forEach(r => { const ti = r.querySelector('textarea'), v = ti.value.trim(); if (v) by[ti.dataset.tip] = v; }); p.tips = Object.keys(by).length ? { title: f.ttl.value.trim(), by } : null;
         const A = an.map(l => l.querySelector('input')).filter(c => c.checked).map(c => c.value); p.animals = A.length ? A : POP_ANIMALS.map(a => a[0]); if (!p.key) p.key = popMint(); };
       if (live) popQr(popUrl(p), q);
@@ -533,6 +546,12 @@
         el('div', { class: 'two' }, el('label', {}, 'NAME', f.name), el('label', {}, 'PRINTER', f.to)),
         el('label', {}, 'LOGOS (TOP OF THE PAGE AND FOOT OF THE KEEPSAKE)', logos),
         el('div', { class: 'two' }, el('label', {}, 'DONATE LINK (EMPTY: NONE)', f.durl), el('label', {}, 'DONATE BUTTON', f.dlab)),
+        el('h3', { text: 'THEIR NOVEL.GLOBAL', style: 'margin-top:14px' }),
+        el('small', { class: 'hint', text: 'What people who came in by this link find on novel.global afterwards (for a month, on their phone). Their own choices on the HOME panel still win.' }),
+        el('label', { class: 'check' }, hcard, 'THEIR CARD ON THE HOME (A SMALL CARD THAT OPENS THIS POP-UP)'),
+        el('label', { class: 'check' }, hfree, 'FREE PRINTING: EVERY CARD THEY PRINT GOES STRAIGHT OUT, NO APPROVAL'),
+        el('label', { class: 'check' }, hon, 'THEIR OWN ORDER, SIZES AND SCREEN'), hlist, el('label', {}, 'SMALL CARDS TO A SCREEN', hper),
+        el('h3', { text: 'THE CARD', style: 'margin-top:14px' }),
         el('label', {}, 'TIPS TITLE (PRINTED ABOVE THE TIP)', f.ttl),
         el('label', {}, 'ANIMALS, EACH WITH THE TIP THAT PRINTS UNDER IT (EMPTY: NO TIP)', el('div', { style: 'display:grid;gap:8px' }, ...an)),
         el('div', { class: 'acts' },
