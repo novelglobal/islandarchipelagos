@@ -66,7 +66,7 @@
     radio: '<div class="sm-o sm-radio"><i></i><i></i><img alt="" decoding="async" loading="lazy" src="/cards/radio.jpg"></div>',
     wish: '<div class="sm-o sm-wish"><svg viewBox="-50 -50 100 100"><circle class="r1" r="41"/><circle class="r2" r="41"/>' + [['W', 0, -41, '#E25C40'], ['I', 41, 0, '#F4C542'], ['S', 0, 41, '#1EA0E0'], ['H', -41, 0, '#C9C1F7']].map(function (n) { return '<g transform="translate(' + n[1] + ' ' + n[2] + ')"><circle r="8.6" fill="' + n[3] + '"/><text>' + n[0] + '</text></g>'; }).join('') + '</svg><img alt="" decoding="async" loading="lazy" src="/cards/chair-4.jpg"></div>',
     research: '<div class="sm-o sm-pins"><img alt="" decoding="async" loading="lazy" src="/cards/ref-cathaya.jpg"><img alt="" decoding="async" loading="lazy" src="/cards/ref-moa.jpg"></div>',
-    zine: '<div class="sm-o sm-post"><img alt="" decoding="async" loading="lazy" src="/cards/zine.jpg"><b>print it</b></div>',
+    zine: '<div class="sm-o sm-post"><img alt="" decoding="async" loading="lazy" src="/cards/zine.jpg"></div>',
     kit: '<div class="sm-o sm-prn">' + PRN_HTML + '</div>',
     space: '<div class="sm-o sm-prn">' + PRN_HTML + '</div>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
@@ -1049,7 +1049,7 @@
     var spec = [['PAPER', '80 MM ROLL'], ['PRINTER', 'EPSON TM-T88V (USB) OR COMPATIBLE'], ['COMPUTER', 'RASPBERRY PI'], ['POWER', '24 V OR SOLAR'], ['WORKS', 'OFFLINE']];
     body.classList.add('kt');
     body.innerHTML = '<div class="kt-bar"><b>ISLAND</b><a href="' + GH + '" target="_blank" rel="noopener">INSTALL</a></div>' +
-      '<div class="kt-row"><span>MAKE WITH IT</span><button class="kt-pr" id="hm-kbench" title="Island Archipelagos: the bench, for the printer you build">ISLAND ARCHIPELAGOS</button></div>' +
+      '<div class="kt-row"><span>BENCH</span><button class="kt-pr" id="hm-kbench" title="Island Archipelagos: the bench, for the printer you build">ISLAND ARCHIPELAGOS</button></div>' +
       '<img class="kt-hero" alt="" decoding="async" src="/printer-top.jpg">' +
       spec.map(function (s) { return '<div class="kt-row"><span>' + s[0] + '</span><b>' + s[1] + '</b></div>'; }).join('') +
       '<div class="kt-row"><a href="/build-a-solar-printer.txt" download>PARTS LIST</a><b>TXT</b></div>' +

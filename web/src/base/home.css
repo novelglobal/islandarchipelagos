@@ -1084,8 +1084,7 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .sm-pins::before { right: 30%; top: 0; } .sm-pins::after { left: 30%; bottom: 76%; background: #D9F24A; box-shadow: 0 0 0 1.5px #111; }
 /* design print: the poster on its wall */
 .sm-post { aspect-ratio: 3 / 4; transform: translateY(-50%) rotate(-3deg); background: #F4F1E8; box-shadow: 0 2cqmin 3.4cqmin -1.6cqmin rgba(0, 0, 0, .5); }
-.sm-post img { position: absolute; left: 7%; top: 6%; width: 86%; height: 62%; }
-.sm-post b { position: absolute; left: 7%; right: 7%; bottom: 6%; font: 700 clamp(12px, 8.6cqmin, 30px)/.9 'Poppins', Arial, sans-serif; letter-spacing: -.045em; color: #1B3FD0; }
+.sm-post img { position: absolute; left: 6%; top: 4.5%; width: 88%; height: 91%; }
 /* the island and the archipelagos: the printer itself, its lamp waiting, paper feeding */
 .sm-prn { aspect-ratio: 3 / 4; }
 .sm-prn .hm-prn { position: absolute; inset: 0; left: 0; bottom: 0; width: 100%; height: 100%; transform: none; aspect-ratio: auto; }
