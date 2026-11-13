@@ -78,10 +78,15 @@
   /* the owner's switches (Settings): keys on the small cards, ISLAND folded into ISLAND ARCHIPELAGOS, the second jellyfish's look */
   var OPT = { talk: false, find: false, one: true, stamp: false, carts: false };
   /* a cartridge: a small card, three to a screen. With EVERY CARD on, the big ones stand that way too */
-  function sizeOf(c) { return OPT.carts ? 'small' : c.size || 'full'; }
+  var MINE = store.get('da.hm.mine', null);
+  function ownSize(c) { var m = MINE && MINE.size && MINE.size[c.id]; return m === 'small' || m === 'full' ? m : c.size || 'full'; }
+  function sizeOf(c) { return OPT.carts ? 'small' : ownSize(c); }
+  /* the cards as this person stands them: [card, its place in CARDS] */
+  function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !(OPT.one && x[0].id === 'kit') && !(MINE && MINE.hide && MINE.hide.indexOf(x[0].id) >= 0); }), o = MINE && MINE.order;
+    if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); } return l; }
   function colHTML() { var out = '', run = [];
     var flush = function () { for (var k = 0; k < run.length; k += 3) out += '<section class="hm-trio n' + Math.min(3, run.length - k) + '">' + run.slice(k, k + 3).join('') + '</section>'; run = []; };
-    var was = null; CARDS.forEach(function (c, i) { if (OPT.one && c.id === 'kit') return; var own = (c.size || 'full') === 'small'; if (was !== null && own !== was) flush(); was = own; if (sizeOf(c) === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out + FOOT; }
+    var was = null; view().forEach(function (x) { var c = x[0], i = x[1], own = ownSize(c) === 'small'; if (was !== null && own !== was) flush(); was = own; if (sizeOf(c) === 'small') run.push(cardHTML(c, i)); else { flush(); out += cardHTML(c, i); } }); flush(); return out + FOOT; }
   /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
   var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
   var FOOT = '<footer class="hm-foot" aria-hidden="true"><div class="hf-grid">' + FOOT_T.map(function (t, k) { return '<canvas class="hf-t t' + k + '" data-pat="' + t.join(',') + '"></canvas>'; }).join('') +
@@ -479,7 +484,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<button id="hm-mine" aria-label="Home" title="Your home: order, size, what shows" hidden><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -1324,6 +1329,24 @@
     for (var i = 0; i < 10; i++) { ORBC = ORBC % 10 + 1; var u = '/cards/chair-' + ORBC + '-t.jpg'; if (on.indexOf(u) < 0) { im.src = u; return; } } }
   col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
+  /* your home: for anyone with a code (they have printed here). Kept on this phone only */
+  function mineKey() { var k = $('#hm-mine'); if (k) k.hidden = !store.get('da.who', ''); }
+  function mineIn(body) { body.classList.add('mn');
+    var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
+    var keep = function (l) { MINE = MINE || {}; MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
+    var draw = function () { var l = rows(); body.innerHTML = '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
+        return '<li data-id="' + esc(c.id) + '"' + (off ? ' class="off"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
+          '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small stands three to a screen">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
+        '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>'; };
+    body.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
+      var li = b.closest('li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
+      if (b.dataset.mv) { var j = i + +b.dataset.mv; if (j < 0 || j >= l.length) return; l.splice(j, 0, l.splice(i, 1)[0]); }
+      else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; MINE.size[id] = ownSize(l[i]) === 'small' ? 'full' : 'small'; }
+      else if (b.hasAttribute('data-on')) { MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); }
+      keep(l); };
+    draw(); }
+  $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); sheet('HOME', mineIn); });
+  mineKey(); addEventListener('storage', mineKey); addEventListener('focus', mineKey);
 
   /* ───────── the reef: the forms rounded and lit, in their own colours; the life on it in white line, alive to a touch ───────── */
   var RB = null, PT = { x: -999, y: -999, vx: 0, vy: 0 };
