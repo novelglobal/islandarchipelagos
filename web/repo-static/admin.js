@@ -569,7 +569,7 @@
      page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
   const HOME_CARDS = [['intro', 'OPENER', 'full'], ['radio', 'DIRECT ACTION RADIO', 'full'], ['wish', 'CIRCULAR STRATEGY', 'full'], ['research', 'RESEARCH BOARD', 'full'], ['zine', 'DESIGN PRINT', 'full'], ['kit', 'ISLAND', 'full'], ['space', 'ISLAND ARCHIPELAGOS', 'full'],
     ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'EVENTS', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
-    ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small', 1], ['slot-2', 'OPEN ISLAND', 'nine', 1]];
+    ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small', 1], ['slot-2', 'OPEN ISLAND', 'nine', 1], ['slot-3', 'MAKE', 'nine', 1]];
   async function home() {
     const st = await (await api('settings')).json();
     const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('home'); };

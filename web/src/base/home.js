@@ -59,7 +59,7 @@
     { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', off: true, size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-3', size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
