@@ -1250,3 +1250,49 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
   .g-week.wx-txt .wx-v { font-size: 12.5cqw; left: 7cqw; right: 6cqw; }
   .g-read .wx-b { display: none; }
 }
+/* ───────── 0.5b. the big cards stood small ───────── */
+/* RADIO: the flag names it; the photograph lower, the radio in the lower part of the card */
+.hm-card.small.sk-radio.sm .sm-k { display: none; }
+.hm-card.small.sk-radio .hm-bgimg, .hm-card.small.sk-radio .rd-fx { transform: translateY(max(0px, calc(42.7cqw - 18cqh))); }
+/* STRATEGY: no strip behind its name; the loop lower, under the name */
+.hm-card.small.sk-wish.sm .sm-k span { background: none; padding: 0; }
+.hm-card.small .st-orb { width: 70cqw; top: 30cqh; }
+@container (min-aspect-ratio: 1/1) { .hm-card.small .st-orb { width: 62cqh; top: 16cqh; right: 8cqw; } }
+.st-orb { top: 13cqh; }
+/* the stops: every letter there, quiet; the one reached lit. Under the loop, a word in a hand, there a second or two and gone */
+.st-orb .st-nd circle { transform: scale(.62); opacity: .55; }
+.st-orb .st-nd text { opacity: .55; }
+.st-orb .st-stg i { font: 400 6cqw/1 'Architects Daughter', 'Comic Sans MS', cursive; letter-spacing: .02em; text-transform: none; transform: rotate(-3deg) translateY(1cqw); }
+.st-orb[data-st="0"] .st-stg i:nth-child(1), .st-orb[data-st="1"] .st-stg i:nth-child(2), .st-orb[data-st="2"] .st-stg i:nth-child(3), .st-orb[data-st="3"] .st-stg i:nth-child(4) { opacity: 0; transform: rotate(-3deg); animation: st-flash 1.8s ease both; }
+@keyframes st-flash { 0% { opacity: 0; transform: rotate(-3deg) translateY(1cqw); } 18%, 70% { opacity: .95; transform: rotate(-3deg); } 100% { opacity: 0; transform: rotate(-3deg) translateY(-1cqw); } }
+@container (min-aspect-ratio: 1/1) { .st-orb .st-stg i { font-size: 3.6cqh; } }
+/* RESEARCH: the pictures lower, under the name */
+.hm-card.small.sk-research .rb-refs { top: 26cqh; }
+@container (min-aspect-ratio: 1/1) { .hm-card.small.sk-research .rb-refs { top: 22cqh; } }
+/* DESIGN PRINT: the poster is its headline */
+.hm-card.small.sk-zine.sm .sm-k { display: none; }
+/* ISLAND ARCHIPELAGOS stood small: its line, and its install */
+.sm-sub { position: absolute; left: 7cqmin; top: calc(6.4cqmin + clamp(17px, 9.5cqmin, 34px) * 1.5); margin: 0; font: 600 clamp(8px, 3.2cqmin, 12px)/1.2 'IBM Plex Mono', monospace; letter-spacing: .16em; color: #F4F1E8; opacity: .85; }
+.sm-inst { position: absolute; left: 7cqmin; bottom: 13cqmin; display: inline-flex; align-items: center; gap: .6em; padding: .55em .8em; background: #0A0A0A; color: #F4F1E8; font: 600 clamp(8px, 3.2cqmin, 12px)/1 'Archivo Narrow', Arial, sans-serif; letter-spacing: .1em; }
+.sm-inst i { width: .7em; height: .7em; border-radius: 50%; background: #FFB000; box-shadow: 0 0 .6em #FFB000; }
+
+/* ───────── THE OPENER: a printed sheet. Greys, black type, one red light ───────── */
+.hm-card.sk-intro { --c-bg: #EFEDE7; --c-ink: #111; background: #EFEDE7; color: #111; }
+.sk-intro .hm-art { opacity: .5; }
+.sk-intro .in-f { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 8cqw 7cqw 7cqw; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.sk-intro .in-f::-webkit-scrollbar { display: none; }
+.sk-intro .in-k { display: flex; align-items: center; gap: .6em; margin: 0; font: 600 clamp(10px, 3.2cqw, 13px)/1 'IBM Plex Mono', monospace; letter-spacing: .16em; text-transform: uppercase; }
+.sk-intro .in-k i { width: .75em; height: .75em; border-radius: 50%; background: #FF3B2E; box-shadow: 0 0 .7em #FF3B2E; }
+.sk-intro .in-t { margin: 4cqw 0 0; font: 700 clamp(30px, 12.5cqw, 76px)/.92 'Poppins', Arial, sans-serif; letter-spacing: -.045em; text-transform: none; }
+.sk-intro .in-l { margin: 4cqw 0 0; padding-bottom: 5cqw; border-bottom: 1.5px dashed #111; font: 400 clamp(16px, 5.4cqw, 26px)/1.25 Georgia, 'Times New Roman', serif; }
+.sk-intro .in-b { margin-top: 5cqw; columns: 1; }
+.sk-intro .in-b p { margin: 0 0 1.1em; font: 400 clamp(12.5px, 3.6cqw, 15px)/1.55 'IBM Plex Mono', monospace; letter-spacing: -.01em; max-width: 62ch; }
+#hm .sk-intro .in-x { position: absolute; z-index: 3; right: 4cqw; top: 4cqw; width: 36px; height: 36px; min-width: 36px; display: grid; place-items: center; padding: 0; border: 1.5px solid #111; border-radius: 50%; background: #EFEDE7; color: #111; font: 400 20px/1 Arial, sans-serif; cursor: pointer; }
+.sk-intro .in-x:focus-visible { outline: 2px dashed #FF3B2E; outline-offset: 2px; }
+@container (min-aspect-ratio: 1/1) { .sk-intro .in-f { padding: 6cqh 7cqw; } .sk-intro .in-t { font-size: clamp(30px, 9cqh, 76px); } .sk-intro .in-b { columns: 2; column-gap: 5cqw; } .sk-intro .in-l { font-size: clamp(16px, 4cqh, 26px); } }
+.hm-card.small.sk-intro .in-f { justify-content: flex-end; overflow: hidden; }
+.hm-card.small.sk-intro .in-t { font-size: clamp(22px, 13cqw, 44px); }
+.hm-card.small.sk-intro .in-l { border-bottom: 0; padding-bottom: 0; font-size: clamp(13px, 5.4cqw, 19px); }
+.hm-card.small.sk-intro .in-k { position: absolute; left: 7cqw; top: 8cqw; }
+#hm.night .hm-card.sk-intro { --c-bg: #161616; background: #161616; color: #ECEAE4; }
+#hm.night .sk-intro .in-l { border-color: #ECEAE4; } #hm.night .sk-intro .in-x, #hm.night #hm-col .sk-intro .in-x { background: #161616; color: #ECEAE4; border-color: #ECEAE4; }

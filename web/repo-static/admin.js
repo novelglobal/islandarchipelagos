@@ -567,9 +567,9 @@
 
   /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the WORDS AND BOARDS
      page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
-  const HOME_CARDS = [['radio', 'DIRECT ACTION RADIO', 'full'], ['wish', 'CIRCULAR STRATEGY', 'full'], ['research', 'RESEARCH BOARD', 'full'], ['zine', 'DESIGN PRINT', 'full'], ['kit', 'ISLAND', 'full'], ['space', 'ISLAND ARCHIPELAGOS', 'full'],
+  const HOME_CARDS = [['intro', 'OPENER', 'full'], ['radio', 'DIRECT ACTION RADIO', 'full'], ['wish', 'CIRCULAR STRATEGY', 'full'], ['research', 'RESEARCH BOARD', 'full'], ['zine', 'DESIGN PRINT', 'full'], ['kit', 'ISLAND', 'full'], ['space', 'ISLAND ARCHIPELAGOS', 'full'],
     ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'EVENTS', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
-    ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small']];
+    ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small', 1], ['slot-2', 'OPEN ISLAND', 'nine', 1]];
   async function home() {
     const st = await (await api('settings')).json();
     const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('home'); };
@@ -580,7 +580,7 @@
     const rows = []; blocks.forEach(b => { if (!rows.some(r => r.id === b.id)) rows.push(b); });
     HOME_CARDS.forEach(([id]) => { if (!rows.some(r => r.id === id)) rows.push({ id, ls: [] }); });
     rows.forEach(r => { const known = HOME_CARDS.find(c => c[0] === r.id), sz = r.ls.map(l => /^\s*size\s*:\s*(full|small|nine)\s*$/i.exec(l)).filter(Boolean)[0];
-      r.name = known ? known[1] : r.id.toUpperCase(); r.size = sz ? sz[1].toLowerCase() : known ? known[2] : 'full'; r.own = known ? known[2] : 'full'; r.hide = r.ls.some(l => /^\s*hide\s*$/i.test(l)); r.rest = r.ls.filter(l => !/^\s*(hide|size\s*:.*)\s*$/i.test(l)); });
+      r.name = known ? known[1] : r.id.toUpperCase(); r.size = sz ? sz[1].toLowerCase() : known ? known[2] : 'full'; r.own = known ? known[2] : 'full'; r.off = !!(known && known[3]); r.hide = r.ls.some(l => /^\s*hide\s*$/i.test(l)) || (r.off && !r.ls.some(l => /^\s*show\s*$/i.test(l))); r.rest = r.ls.filter(l => !/^\s*(hide|show|size\s*:.*)\s*$/i.test(l)); });
     const list = el('div', { style: 'display:grid;gap:6px' });
     const draw = () => list.replaceChildren(...rows.map((r, i) => { const sz = el('select', { style: 'width:110px' }, el('option', { value: 'full', text: 'BIG' }), el('option', { value: 'small', text: 'SMALL' }), el('option', { value: 'nine', text: 'NINE' })); sz.value = r.size; sz.onchange = () => { r.size = sz.value; };
       const on = el('input', { type: 'checkbox' }); on.checked = !r.hide; on.onchange = () => { r.hide = !on.checked; };
@@ -589,7 +589,7 @@
         el('button', { type: 'button', text: '↑', title: 'Earlier', onclick: mv(-1) }), el('button', { type: 'button', text: '↓', title: 'Later', onclick: mv(1) }),
         el('b', { text: r.name, style: 'font:600 12px var(--mono);letter-spacing:.08em' }), sz, el('label', { class: 'check' }, on, 'SHOWN')); }));
     draw();
-    const text = () => rows.map(r => { const ls = r.rest.slice(); if (r.size !== r.own) ls.push('size: ' + r.size); if (r.hide) ls.push('hide'); return '# ' + r.id + (ls.length ? '\n' + ls.join('\n') : ''); }).join('\n');
+    const text = () => rows.map(r => { const ls = r.rest.slice(); if (r.size !== r.own) ls.push('size: ' + r.size); if (r.hide && !r.off) ls.push('hide'); if (!r.hide && r.off) ls.push('show'); return '# ' + r.id + (ls.length ? '\n' + ls.join('\n') : ''); }).join('\n');
     const cardsEd = el('section', { class: 'ed' }, el('h3', { text: 'CARDS' }), list,
       hint('The order they stand in on novel.global, top to bottom. BIG fills the screen. SMALL stands three to a screen. NINE stands in the library, nine to a screen, a theme to a row: where new apps start, and where a card is moved up from once it earns it. Untick SHOWN to take a card off the home.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cards: text() }) }),
