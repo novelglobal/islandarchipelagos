@@ -1447,3 +1447,22 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 /* DIRECT ACTION RADIO: the sound key larger, easy to hit */
 #hm .rd-fx .rd-mute { width: 52px; height: 52px; } #hm .rd-fx .rd-mute svg { width: 26px; height: 26px; }
 #hm .hm-card.small .rd-fx .rd-mute { width: 42px; height: 42px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 21px; height: 21px; }
+/* receipt 00 as e-ink: a cool grey screen-paper rather than yellowed stock, ink a soft black with the slight bloom of e-ink type,
+   faint refresh bands across it and the ghost of the last page left at the top; the archipelago always has a dotted ground under it */
+.hm-card.sk-intro { --in-p: #E3E3DE; --in-i: #222221; }
+#hm .sk-intro .in-f { color: #222221; }
+#hm .sk-intro .in-f::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .018) 0 1px, transparent 1px 3px), radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, .35), transparent 70%); }
+#hm .sk-intro .in-t, #hm .sk-intro .in-l, #hm .sk-intro .in-b p, #hm .sk-intro .in-ia > span { text-shadow: 0 0 .6px rgba(34, 34, 33, .55); }
+#hm .sk-intro .in-b p, #hm .sk-intro .in-l { font-weight: 400; color: #2A2A29; }
+#hm .sk-intro .in-t { letter-spacing: .02em; }
+#hm .sk-intro .in-s { background: #222221; } #hm .sk-intro .in-s strong { color: #E3E3DE; text-shadow: none; }
+#hm .sk-intro .in-ft { background: radial-gradient(circle, rgba(34, 34, 33, .28) .9px, transparent 1.1px) 0 0 / 4px 4px; }
+#hm .sk-intro .in-arc { opacity: .92; }
+#hm .sk-intro .in-mk { filter: drop-shadow(0 0 .5px rgba(34, 34, 33, .5)); }
+/* BLUEPAPER: the strategy under the name in the serif, for contrast */
+#hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; font-weight: 400; font-style: italic; letter-spacing: .01em; opacity: .9; }
+/* DIRECT ACTION RADIO: the sound key and its rings centred on the radio in the photograph, and larger */
+#hm .sk-radio .rd-fx { --rx: 33.6%; --ry: 66%; }
+#hm .rd-fx .rd-mute { width: 58px; height: 58px; } #hm .rd-fx .rd-mute svg { width: 28px; height: 28px; }
+#hm .hm-card.small .rd-fx .rd-mute { width: 48px; height: 48px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 24px; height: 24px; }

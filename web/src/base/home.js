@@ -548,7 +548,7 @@
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -615,7 +615,7 @@
       '</article></section>'; }
   /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;
      the coasts ringed, the sea a sparse tone */
-  function introArc() { $$('.sk-intro .in-arc', col).forEach(function (cv) { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || cv.dataset.pw === w + 'x' + h) return; cv.dataset.pw = w + 'x' + h;
+  function introArc() { $$('.sk-intro .in-arc', col).forEach(function (cv) { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || (cv.dataset.pw === w + 'x' + h && cv.width !== 300)) return; cv.dataset.pw = w + 'x' + h;
     var px = w > 420 ? 2 : 1.5, W2 = Math.round(w / px), H2 = Math.round(h / px); cv.width = W2; cv.height = H2; var g = cv.getContext('2d'), im = g.createImageData(W2, H2), d = im.data;
     var hs = function (x, y) { var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
     var vn = function (x, y) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
@@ -1412,7 +1412,7 @@
   /* the cards' frames, from the posters: none, dotted bitmap, lilac steps, cyan stripes, coral double rule, pink and green, blueprint */
   addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'wires' && Array.isArray(d.w)) { WIRES = d.w.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW); saveWires(); if (jk) board(); else lamps(); } });
   /* the strategy's loop: a slow turn of its own, faster for a touch or a scroll; each chair takes on the stop it last passed */
-  var ORB = { a: 0, v: 0.16, t: 0, top: 0 }, TAU = Math.PI * 2;
+  var TAU = Math.PI * 2, ORB = { a: -TAU * 3 / 8 + 0.04, v: 0.16, t: 0, top: 0 };
   function orbit(now) { requestAnimationFrame(orbit); var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
     if (!el || D.hidden || away || xv.classList.contains('on')) return; if (!ORB.r || now - ORB.rt > 1000 || col.scrollTop !== ORB.top) { ORB.r = el.getBoundingClientRect(); ORB.rt = now; ORB.w = ORB.r.width; } var r = ORB.r; if (r.bottom < 0 || r.top > innerHeight) return;
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
