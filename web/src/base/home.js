@@ -89,8 +89,10 @@
   function ownSize(c) { var m = sizeIn(MINE && MINE.size, c) || sizeIn(PH.size, c); return m === 'small' || m === 'full' ? m : c.size || 'full'; }
   function sizeOf(c) { return OPT.carts ? 'small' : ownSize(c); }
   /* the cards as this person stands them: [card, its place in CARDS] */
-  function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return !x[0].off && !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0); }), o = lay('order');
-    if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); } return l; }
+  function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return x[0].id === 'intro' || (!x[0].off && !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0)); }), o = lay('order');
+    if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); }
+    /* the opener stands first, always */
+    l.sort(function (a, b) { return (b[0].id === 'intro') - (a[0].id === 'intro'); }); return l; }
   var WIDE = matchMedia('(min-width: 900px)');
   function perPage() { var n = +lay('per'); return n === 3 || n === 6 || n === 9 ? n : 9; }
   function tierOf(c) { if (sizeOf(c) !== 'small') return 'full'; if (OPT.carts && (c.size || 'full') !== 'small') return 'trio'; if (c.trio) return 'trio'; return c.lib || c.g || c.ph || c.opens === 'play' ? 'nine' : 'trio'; }
@@ -529,7 +531,7 @@
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
-  function logosOf(c) { var LOGOS = { radio: ['/logos/inaturalist.png'], wish: ['/logos/rmit.png'], research: ['mark'], zine: ['/logos/epson.png', '/logos/blue4est.png'] }, l = c.logos != null ? c.logos : (LOGOS[c.id] || []); if (!l.length) return '';
+  function logosOf(c) { var l = c.logos || []; if (!l.length) return '';
     return '<span class="hm-pl" aria-label="Made with">' + l.map(function (u) { return u === 'mark' ? '<i class="pl-ng">' + MARK + '<b>novel.global</b></i>' : '<img alt="" decoding="async" loading="lazy" class="pl-' + esc(u.replace(/^.*\//, '').replace(/\..*$/, '')) + '" src="' + esc(u) + '">'; }).join('') + '</span>'; }
   function logosCheck() { $$('.hm-pl img', col).forEach(function (im) { var gone = function () { var pl = im.parentNode; im.remove(); if (pl && !pl.children.length) pl.remove(); }; if (im.complete && !im.naturalWidth) gone(); else im.addEventListener('error', gone); }); }
   function applyCards(text) {
@@ -545,8 +547,8 @@
       /* a set stands at the size novel.global gave last to any of its cards */
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
-      for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+      for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -586,7 +588,7 @@
   function idleWatch() { if (!('IntersectionObserver' in window)) { $$('.hm-pics img[data-src]', col).forEach(function (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }); return; } if (IDLE) IDLE.disconnect(); if (WAKE) WAKE.disconnect();
     WAKE = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) return; var bx = e.target.querySelector('.hm-pics'); if (bx && bx._wake) { bx._wake.splice(0).forEach(function (f) { f(); }); } }); }, { threshold: 0.2 }); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); WAKE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
     var o2 = { talk: j.smallTalk === true, find: j.smallFind === true, one: j.oneIsland !== false, stamp: j.jellyStamp === true, carts: j.cartridges === true }, re = o2.talk !== OPT.talk || o2.find !== OPT.find || o2.one !== OPT.one || o2.carts !== OPT.carts; OPT = o2; if (re) applyCards(null); }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -609,8 +611,8 @@
       '<p class="in-l">A local area network of independent publishing islands, built from discarded printers and open-source technology.</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>' +
-      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas><b class="in-no" aria-label="Receipt 00">00</b></div></div>' +
-      '<button type="button" class="in-x" data-introx aria-label="Close" title="Close">×</button></article></section>'; }
+      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div></div>' +
+      '</article></section>'; }
   /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;
      the coasts ringed, the sea a sparse tone */
   function introArc() { $$('.sk-intro .in-arc', col).forEach(function (cv) { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || cv.dataset.pw === w + 'x' + h) return; cv.dataset.pw = w + 'x' + h;
@@ -624,6 +626,14 @@
       if (e > 0.58) t = 0.62 + (e - 0.58) * 2.4; else if (Math.abs(e - 0.545) < 0.006 || Math.abs(e - 0.5) < 0.0045) t = 1; else t = 0.07 + Math.max(0, e - 0.3) * 0.25;
       var k = (y * W2 + x) * 4, on = t > th; d[k] = d[k + 1] = d[k + 2] = 20; d[k + 3] = on ? 235 : 0; }
     g.putImageData(im, 0, 0); }); }
+  /* the opener's words from admin (HOME, OPENER): headline, lede, paragraphs (a blank line between), signature, closing line; an empty field keeps its own */
+  function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
+    $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
+      put('.in-t', o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
+      if (typeof o.body === 'string' && o.body.trim()) { var b = cd.querySelector('.in-b'), ia = b && b.querySelector('.in-ia'); if (b) { $$('p:not(.in-ia)', b).forEach(function (p) { p.remove(); });
+        o.body.trim().split(/\n\s*\n/).forEach(function (t) { var p = D.createElement('p'); p.textContent = t.trim(); b.insertBefore(p, ia); }); } } });
+    INTRO_TXT = txt; requestAnimationFrame(introFit); }
+  var INTRO_TXT = '';
   /* the opener stood small: the type steps down until every word is in */
   function introFit() { $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; } }); introArc(); }
   addEventListener('resize', function () { requestAnimationFrame(introFit); });
@@ -1316,7 +1326,7 @@
     if (far) { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min((root.clientHeight || innerHeight) - 20, J.y)); }
     else if (!open) { J.y += (lo - J.y) * Math.min(1, dt * 0.6); if (J.x < -50) { J.x = VW + 50; J.y = lo; } if (J.x > VW + 60) J.x = -40; }
     else { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min(CH - 40, J.y)); }
-    var ws = (O && O.sky ? 0.2 : open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * (O && O.sky ? 6 : 0.8));
+    var ws = (O && O.sky ? 0.85 : open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
   }
   /* the other one, drawn as the Irukandji was first drawn: the round bell in lines, its four strings in dots, lighter and smaller */
   var IRUK2 = null;
@@ -1438,7 +1448,7 @@
       var li = b.closest('li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
       if (b.dataset.mv) { var j = i + +b.dataset.mv; if (j < 0 || j >= l.length) return; l.splice(j, 0, l.splice(i, 1)[0]); }
       else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; var nz = ownSize(l[i]) === 'small' ? 'full' : 'small'; kin(l[i]).forEach(function (x) { MINE.size[x.id] = nz; }); return keep(null); }
-      else if (b.hasAttribute('data-on')) { MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
+      else if (b.hasAttribute('data-on')) { if (id === 'intro') return; MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
       keep(l); };
     draw(); }
   WIDE.addEventListener('change', function () { if (!(MINE && MINE.per)) applyCards(null); });
