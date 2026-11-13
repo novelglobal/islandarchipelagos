@@ -1347,3 +1347,55 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 /* the HOME panel: a set's rows held by one bracket on the left */
 #hm .mn-l li.jn { position: relative; } #hm .mn-l li.jn::before { content: ''; position: absolute; left: -9px; top: 0; bottom: 0; border-left: 2px solid currentColor; opacity: .55; }
 #hm .mn-l li.jn-a::before { top: 50%; border-top: 2px solid currentColor; width: 5px; } #hm .mn-l li.jn-z::before { bottom: 50%; border-bottom: 2px solid currentColor; width: 5px; }
+/* receipt 00, second pass: the headline in capitals where the name was; Island Archipelagos signed under the words; the closing line centred;
+   the seal stamped across its corner, in the same ink, a little worn */
+.sk-intro .in-t { white-space: normal; text-wrap: balance; font: 600 clamp(17px, 6.4cqw, 40px)/1.12 'Archivo Narrow', Arial, sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+.sk-intro .in-b .in-ia { margin: 0; }
+.sk-intro .in-s { position: relative; text-align: center; }
+.sk-intro .in-seal { position: absolute; right: 3cqw; top: -15cqw; width: 23cqw; height: auto; transform: rotate(-14deg); fill: var(--in-i); stroke: var(--in-i); opacity: .78; mix-blend-mode: multiply; pointer-events: none;
+  -webkit-mask: radial-gradient(circle at 30% 70%, #000 40%, rgba(0, 0, 0, .55) 75%); mask: radial-gradient(circle at 30% 70%, #000 40%, rgba(0, 0, 0, .55) 75%); }
+.sk-intro .in-seal .o { fill: none; stroke-width: 1.6; } .sk-intro .in-seal .t { stroke-width: .8; stroke-dasharray: 1.4 2; }
+.sk-intro .in-seal .ry { fill: none; stroke-width: 1.4; stroke-linecap: round; } .sk-intro .in-seal .sn { stroke: none; }
+.hm-card.small.sk-intro .in-t { font-size: 1.45em; }
+.hm-card.small.sk-intro .in-seal { width: 5.2em; top: -3.4em; right: .8em; }
+/* CIRCULAR STRATEGY, third pass: the letters reached stay lit until all four are, then go out together; the word small, under the loop,
+   clear of the photographs, there for a moment */
+.st-orb .st-nd.on circle { transform: scale(1); opacity: 1; } .st-orb .st-nd.on text { opacity: 1; }
+.st-orb.clr .st-nd circle { transform: scale(.62); opacity: .3; transition: transform 1s ease, opacity 1s ease; }
+.st-orb.clr .st-nd text { opacity: .3; transition: opacity 1s ease; }
+.st-orb .st-wd { left: 0; right: 0; top: calc(100% + 4.5cqw); width: auto; height: auto; padding: 0; translate: none !important; justify-content: center; font-size: 3.6cqw; }
+.st-orb .st-wd.in { animation: st-wd3 1.5s ease both; }
+@keyframes st-wd3 { 0% { opacity: 0; transform: rotate(-3deg) translateY(.8cqw); } 18%, 62% { opacity: .9; transform: rotate(-3deg); } 100% { opacity: 0; transform: rotate(-3deg) translateY(-.6cqw); } }
+@container (min-aspect-ratio: 1/1) { .st-orb .st-wd { font-size: 2.6cqh; top: calc(100% + 2.4cqh); padding: 0; } }
+/* the seal signs the name: stamped beside Island Archipelagos, clear of the words above */
+.sk-intro .nw { white-space: nowrap; }
+.sk-intro .in-b .in-ia { display: flex; align-items: center; justify-content: space-between; gap: 1em; }
+.sk-intro .in-ia .in-seal, .hm-card.small.sk-intro .in-ia .in-seal { position: static; flex: none; width: 4.2em; margin: -.9em -.2em -.7em 0; }
+/* ONE CLICK INSTALL on the top of the photograph, over the power bank; the Pi's light stays clear below */
+.sm-prn .sm-inst { left: 6%; top: 7%; bottom: auto; z-index: 3; }
+.sk-space .sp-prn .sp-inst { position: absolute; left: 6%; top: 7%; margin: 0; font-size: clamp(9px, 2.6cqw, 13px) !important; padding: .55em .8em !important; gap: .6em; }
+.sk-space .sp-prn .sp-inst i { width: .7em; height: .7em; }
+/* partner logos: who helped build the card, small, bottom right, on a quiet paper tone that sits back */
+.hm-pl { position: absolute; right: 2.4cqw; bottom: 2.4cqw; z-index: 6; display: flex; align-items: center; gap: 1.4cqw; padding: .9cqw 1.4cqw; background: rgba(214, 210, 200, .72); border-radius: 2px; pointer-events: none; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.hm-pl img { display: block; height: 3.2cqw; min-height: 11px; max-height: 20px; width: auto; mix-blend-mode: multiply; }
+
+
+
+.hm-pl .pl-ng { display: inline-flex; align-items: center; gap: .5em; font: 600 clamp(8px, 1.9cqw, 12px)/1 'IBM Plex Mono', monospace; font-style: normal; color: #111; letter-spacing: .04em; }
+.hm-pl .pl-ng svg { height: 1.2em; width: auto; color: #111; }
+.sk-space ~ .hm-pl, .sk-radio .hm-pl { bottom: 3.4cqw; }
+/* receipt 00, third pass: one typeface, one alignment. Every line in the mono, centred down the paper; only the headline steps up in size */
+#hm .sk-intro .in-t, #hm .sk-intro .in-l, #hm .sk-intro .in-b p, #hm .sk-intro .in-s strong { font-family: 'IBM Plex Mono', ui-monospace, monospace; text-align: center; margin-left: auto; margin-right: auto; }
+#hm .sk-intro .in-t { font-weight: 600; letter-spacing: .01em; line-height: 1.2; text-transform: uppercase; }
+#hm .sk-intro .in-l, #hm .sk-intro .in-b p, #hm .sk-intro .in-s strong { font-weight: 500; letter-spacing: .02em; text-transform: uppercase; line-height: 1.55; }
+#hm .sk-intro .in-b p { font-size: clamp(11px, 3.3cqw, 14px); }
+#hm .sk-intro .in-l { font-size: clamp(11px, 3.3cqw, 14px); }
+#hm .sk-intro .in-s strong { font-size: clamp(11px, 3.3cqw, 14px); font-weight: 600; }
+#hm .sk-intro .in-b .in-ia { justify-content: center; gap: .8em; }
+#hm .hm-card.small.sk-intro .in-l, #hm .hm-card.small.sk-intro .in-b p, #hm .hm-card.small.sk-intro .in-s strong { font-size: .8em; }
+#hm .hm-card.small.sk-intro .in-t { font-size: 1.35em; }
+@container (min-aspect-ratio: 1/1) { #hm .hm-card.small.sk-intro .in-f { display: flex; flex-direction: column; } #hm .hm-card.small.sk-intro .in-b { margin-top: 1.2em; } }
+/* the small cards' names stand over their photographs */
+.sm-f .sm-k { z-index: 4; }
+.sm-prn .sm-inst { top: 9%; }
+.hm-pl img.pl-inaturalist { height: 2.4cqw; min-height: 9px; max-height: 15px; } .hm-pl img.pl-rmit { height: 3.8cqw; min-height: 13px; max-height: 24px; }

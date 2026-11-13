@@ -66,7 +66,7 @@
   var SMALL = {
     radio: '', wish: '', research: '', zine: '',
     kit: '',
-    space: '<div class="sm-o sm-prn">' + PRN_HTML + '</div><p class="sm-sub">THERMAL PRINTER COMMUNITIES</p><b class="sm-inst"><i></i>ONE CLICK INSTALL</b>',
+    space: '<div class="sm-o sm-prn">' + PRN_HTML + '<b class="sm-inst"><i></i>ONE CLICK INSTALL</b></div><p class="sm-sub">THERMAL PRINTER COMMUNITIES</p>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
   };
   var SMALL_T = { radio: 'Direct action radio', wish: 'Circular strategy', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
@@ -529,6 +529,9 @@
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
+  function logosOf(c) { var LOGOS = { radio: ['/logos/inaturalist.png'], wish: ['/logos/rmit.png'], research: ['mark'], zine: ['/logos/epson.png', '/logos/blue4est.png'] }, l = c.logos != null ? c.logos : (LOGOS[c.id] || []); if (!l.length) return '';
+    return '<span class="hm-pl" aria-label="Made with">' + l.map(function (u) { return u === 'mark' ? '<i class="pl-ng">' + MARK + '<b>novel.global</b></i>' : '<img alt="" decoding="async" loading="lazy" class="pl-' + esc(u.replace(/^.*\//, '').replace(/\..*$/, '')) + '" src="' + esc(u) + '">'; }).join('') + '</span>'; }
+  function logosCheck() { $$('.hm-pl img', col).forEach(function (im) { var gone = function () { var pl = im.parentNode; im.remove(); if (pl && !pl.children.length) pl.remove(); }; if (im.complete && !im.naturalWidth) gone(); else im.addEventListener('error', gone); }); }
   function applyCards(text) {
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
@@ -536,13 +539,14 @@
         ls.slice(1).forEach(function (l) { var kv = /^\s*([a-z]+)\s*(?::\s*(.*))?$/i.exec(l); if (!kv) return; var k = kv[1].toLowerCase(), v = (kv[2] || '').trim().slice(0, 120);
           if (k === 'hide') hide[id] = 1; else if (k === 'show') c.off = false; else if (k === 'where') { var ll = v.split(',').map(Number); if (ll.length === 2 && ll.every(isFinite)) c.where = ll; }
           else if (k === 'opens') { if (OPENS.test(v)) c.opens = v; } else if (k === 'motion') { if (/^(shadow|speed)$/.test(v)) c.motion = v; } else if (k === 'art') { if (ART[v]) c.art = v; } else if (k === 'size') { if (v === 'nine') { c.size = 'small'; c.lib = true; c.trio = false; } else if (/^(full|half|small)$/.test(v)) { c.size = v; c.trio = v === 'small'; c.lib = false; } c.szAt = ++SZN; }
+          else if (k === 'logos') c.logos = /^none$/i.test(v) ? [] : v.split(/[\s,]+/).filter(function (u) { return u === 'mark' || /^\/[a-z0-9\/._-]+\.(png|jpg|jpeg|webp|svg)$/i.test(u); }).slice(0, 4);
           else if (k === 'join') c.join = /^none$/i.test(v) ? '' : v.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       /* a set stands at the size novel.global gave last to any of its cards */
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -591,16 +595,19 @@
   /* THE OPENER: receipt 00, the first one. Aged thermal paper, black ink only: the mark at its head, the owner's words, an archipelago printed
      in dots at its foot. Nothing opens from it; × puts it away (the HOME panel brings it back). Everything here is made inside functions:
      the first cards are drawn before this part of the file has run */
-  function introP() { return ['Island Archipelagos turns these e-waste thermal printers into patchy creative zones for a new kind of physical internet.',
-    'With a Raspberry Pi and a repurposed receipt printer, novel.global hosts an evolving world of artwork, stories, music, software, experiments and collective activity on 80mm thermal paper.',
+  function introP() { return [
     'Each unique printer creates a new point of connection and distribution in public, professional, and third spaces.']; }
+  /* the seal of the archipelagos: a stamp in the margin of the form. Two rings, a sun of twenty-four rays, the islands as five dots round it */
+  function introSeal() { var r = '', d = ''; for (var k = 0; k < 24; k++) { var a = k * Math.PI / 12, l = k % 2 ? 25 : 29; r += 'M' + (50 + 15 * Math.cos(a)).toFixed(1) + ' ' + (50 + 15 * Math.sin(a)).toFixed(1) + 'L' + (50 + l * Math.cos(a)).toFixed(1) + ' ' + (50 + l * Math.sin(a)).toFixed(1); }
+    for (k = 0; k < 5; k++) { var b = -Math.PI / 2 + k * Math.PI * 2 / 5; d += '<circle cx="' + (50 + 38.5 * Math.cos(b)).toFixed(1) + '" cy="' + (50 + 38.5 * Math.sin(b)).toFixed(1) + '" r="2.6"/>'; }
+    return '<svg class="in-seal" viewBox="0 0 100 100" aria-hidden="true"><circle class="o" cx="50" cy="50" r="47"/><circle class="o" cx="50" cy="50" r="43.5"/><circle class="o t" cx="50" cy="50" r="33"/><path class="ry" d="' + r + '"/><circle class="sn" cx="50" cy="50" r="10"/>' + d + '</svg>'; }
   function introMark() { return '<svg class="in-mk" viewBox="0 0 237 112" role="img" aria-label="novel.global"><defs><pattern id="in-dot" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.9" fill="#161514"/></pattern></defs><rect x="10" y="10" width="91.6" height="92" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8"/></svg>'; }
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">Island Archipelagos</h2>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">A new safe, creative, physical internet</h2>' +
       '<p class="in-l">A local area network of independent publishing islands, built from discarded printers and open-source technology.</p>' +
-      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '</div>' +
+      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>' +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas><b class="in-no" aria-label="Receipt 00">00</b></div></div>' +
       '<button type="button" class="in-x" data-introx aria-label="Close" title="Close">×</button></article></section>'; }
@@ -637,7 +644,7 @@
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = (OPT.one ? '<button type="button" class="hm-tag sp-inst" data-kitopen title="The install and its checklist"><i></i>ONE CLICK INSTALL</button><div class="sp-prn">' + PRN_HTML + '</div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<button type="button" class="hm-tag sp-inst" data-kitopen title="The install and its checklist"><i></i>ONE CLICK INSTALL</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') { var nm = t.charAt(0) + t.slice(1).toLowerCase();
       inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><i class="wx-a" aria-hidden="true"></i><i class="wx-b" aria-hidden="true"></i>' + (c.g === 'week' ? '<span class="wx-wk" aria-hidden="true"></span>' : '') + '<b class="wx-k">' + nm + '</b>' +
@@ -648,13 +655,13 @@
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
-    var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO + '<i class="zn-w2p" aria-hidden="true">web2print</i>' : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
+    var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     var smf = sizeOf(c) === 'small' && SMALL[sk] != null ? '<div class="sm-f" aria-hidden="true"><b class="sm-k"><span>' + SMALL_T[sk] + '</span></b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (g1 ? ' g1' : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
-      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div>' + smf + '<div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i></article></section>';
+      '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div>' + smf + '<div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i>' + logosOf(c) + '</article></section>';
   }
   /* the street poster on DESIGN PRINT pastes itself up a piece at a time, holds with a glitch now and then, is painted over and goes up again.
      Only while the card is in view and nothing is open over the cards; still and whole for reduced motion */
@@ -1401,8 +1408,10 @@
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
     var hit = [0, 0, 0, 0]; if (!ORB.pre) { ORB.pre = 1; for (var pc = 1; pc <= 10; pc++) new Image().src = '/cards/chair-' + pc + '-t.jpg'; }
     $$('.st-th', el).forEach(function (t, k) { var a = ORB.a + k * TAU / 4 + TAU / 8, A = ((a % TAU) + TAU) % TAU, s = (A + Math.PI / 2) / (Math.PI / 2), q = Math.floor(s) % 4, near = Math.abs(s - Math.round(s));
-      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (!k && el.dataset.st !== String(q)) { el.dataset.st = q; var wd = el.querySelector('.st-wd'); if (wd) { wd.textContent = ['theories', 'beliefs', 'principles', 'behaviours'][q]; wd.classList.remove('in'); void wd.offsetWidth; wd.classList.add('in'); } }
-      if (!k) { var wd2 = el.querySelector('.st-wd'); if (wd2) wd2.style.translate = t.style.translate; } if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
+      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (!k && el.dataset.st !== String(q)) { el.dataset.st = q; var wd = el.querySelector('.st-wd'); if (wd) { wd.textContent = ['theories', 'beliefs', 'principles', 'behaviours'][q]; wd.classList.remove('in'); void wd.offsetWidth; wd.classList.add('in'); }
+        /* each letter reached stays lit; once all four are, they go out together and the round begins again */
+        var dn = el._dn || (el._dn = {}); if (Object.keys(dn).length >= 4) { el._dn = dn = {}; el.classList.add('clr'); clearTimeout(el._ct); el._ct = setTimeout(function () { el.classList.remove('clr'); }, 1300); } dn[q] = 1;
+        $$('.st-nd', el).forEach(function (nd, j) { nd.classList.toggle('on', !!dn[j]); }); } if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
     $$('.st-nd', el).forEach(function (n, k) { n.classList.toggle('hit', !!hit[k]); }); }
   requestAnimationFrame(orbit);
   /* a chair reaching a stop comes out of it as another of the ten, never one already on the loop */
