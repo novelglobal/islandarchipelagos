@@ -23,7 +23,9 @@ const story = (code, extra = {}) => ({ kind: 'story', code, body: SIG, lat: -37.
 
 try {
   /* what is made is a draft until the approval page shows it on the site: these checks show it */
-  { const st0 = await call('/api/settings'); check('what people make starts hidden from visitors, the example shown', st0.json.madeShow === false && st0.json.exampleShow === true, JSON.stringify(st0.json)); await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true } }); }
+  { const st0 = await call('/api/settings'); check('what people make starts hidden from visitors, the example shown', st0.json.madeShow === false && st0.json.exampleShow === true, JSON.stringify(st0.json));
+    check('free printing on and the print pass off, to begin with', st0.json.freePrint === true && st0.json.passOn === false, JSON.stringify([st0.json.freePrint, st0.json.passOn]));
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true, freePrint: false, passOn: true } }); }
   const h = await call('/api/health');
   check('health answers ok with the build', h.status === 200 && /^ok \w+/.test(h.text), h.text);
   const pa = await call('/api/partners');

@@ -1944,7 +1944,7 @@ for (const HD of [false, true]) if (run('home')) try {
   check(`home (${tag}): the opener leads, then RADIO; portfolio and the unlock put away; the photos in colour, design print named in full; one card size on any screen`, hc.ids === 'intro,radio,wish,research,zine,space' && hc.zine === 'DESIGN PRINT' && !hc.strip && hc.qr && !hc.grey && hc.w <= 461 && hc.h > hc.w * 1.5, JSON.stringify(hc));
   /* a cable from ZINE: KIT goes dull and takes nothing; ENGINE takes it */
   const h1 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), sb = document.querySelector('#hm-sb');
-    sb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); await z(600);
+    sb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); await z(600); for (let i = 0; i < 20; i++) { const a = sb.getBoundingClientRect().top; await z(100); if (Math.abs(sb.getBoundingClientRect().top - a) < 1) break; }
     const at = id => { const b = sb.querySelector('[data-j="' + id + '"]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }, j = sb.querySelector('[data-j="zine"]');
     const drag = async to => { const [x, y] = at('zine'), [tx, ty] = at(to), ev = (t, X, Y) => j.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, clientX: X, clientY: Y, pointerId: 5, pointerType: 'touch' }));
       ev('pointerdown', x, y); ev('pointermove', x + 12, y + 12); ev('pointermove', tx, ty); await z(120); const s = { ok: [...sb.querySelectorAll('.sl.ok')].map(q => q.dataset.s), dl: [...sb.querySelectorAll('.sl.dl')].map(q => q.dataset.s) }; ev('pointerup', tx, ty); await z(200); return s; };

@@ -382,7 +382,9 @@ async function send(db, env, req) {
   if (P && P.id !== 'novelglobal' && b.stage !== 'stack' && !linksOf(P.links).includes('wish')) return refuse(403, 'this island has not switched on W.I.S.H.');
   if (toMesh && !(typeof b.mesh === 'string' && b.mesh)) return fail(400, 'mesh');
   if (dest && b.escpos != null && !b64ok(b.escpos, LIMIT.escpos)) return refuse(400, 'the print is too long');
-  let passed = false; if (P && (b.escpos || b.mesh) && typeof b.pass === 'string' && PASS.test(b.pass) && codeKey(env)) { const c = b.pass.replace('-', ''), day = melDay(); if (await passMac(env, P.id, day, c.slice(0, 3)) === c.slice(3)) passed = await passUse(db, c.slice(0, 3) + '-' + c.slice(3), day, P.id); }
+  /* FREE PRINTING (on to begin with): every print goes straight out. PRINT PASS (off to begin with): a printed pass is neither asked for nor used up */
+  const SP = await settingsOf(db), free = !!SP.freePrint;
+  let passed = false; if (SP.passOn && P && (b.escpos || b.mesh) && typeof b.pass === 'string' && PASS.test(b.pass) && codeKey(env)) { const c = b.pass.replace('-', ''), day = melDay(); if (await passMac(env, P.id, day, c.slice(0, 3)) === c.slice(3)) passed = await passUse(db, c.slice(0, 3) + '-' + c.slice(3), day, P.id); }
   if (b.mesh != null && (typeof b.mesh !== 'string' || enc.encode(b.mesh).length > LIMIT.mesh)) return fail(400, 'mesh');
   const { n } = await db.prepare("SELECT count(*) AS n FROM stories WHERE status = 'waiting'").first(); if (n >= LIMIT.waiting) return refuse(503, 'too many stories waiting for approval');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
@@ -396,7 +398,7 @@ async function send(db, env, req) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
     const screenGone = P.touch && (!P.touch_seen || t - P.touch_seen > 150e3);
-    job = { id: rid(), status: P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
+    job = { id: rid(), status: free || P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
   }
@@ -414,7 +416,7 @@ async function send(db, env, req) {
   const lowRes = (await settingsOf(db)).lowRes, full = env.MEDIA && b.full && !lowRes ? dataFile(b.full, LIMIT.full) : null, art = env.MEDIA && b.art ? dataURL(b.art, LIMIT.full) : null;
   if (art && (await r2Bytes(db)) + art.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(`art/${id}`, art, { httpMetadata: { contentType: 'image/jpeg' } }); await db.prepare('UPDATE stories SET art = ? WHERE id = ?').bind(art.length, id).run(); } catch (e) { /* kept without it */ } }
   if (full && (await r2Bytes(db)) + full.bytes.length < CAP.r2 * 0.8) { try { await env.MEDIA.put(mediaKey(id), full.bytes, { httpMetadata: { contentType: full.type } }); await db.prepare('UPDATE stories SET full = ? WHERE id = ?').bind(full.bytes.length, id).run(); } catch (e) { /* the story is kept without it */ } }
-  return json({ id, status: st0, job, ...(passed ? { passed: true } : {}), ...(popAuto && job && job.status === 'queued' ? { straight: true } : {}) }, 201);
+  return json({ id, status: st0, job, ...(passed ? { passed: true } : {}), ...((popAuto || free) && job && job.status === 'queued' ? { straight: true } : {}) }, 201);
 }
 /* the sender's receipt: where their story is, and where its print is in the queue */
 async function receipt(db, id) {
@@ -445,7 +447,7 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: false, freePrint: true };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);

@@ -202,7 +202,7 @@
   var DRIFT = '<svg class="st-tent" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + [[12, 0, 34], [20, 0, 22], [83, 0, 40], [90, 0, 26]].map(function (t, k) { return '<path style="--k:' + k + '" d="M' + t[0] + ' ' + t[1] + 'c3 ' + t[2] * 0.25 + ' -3 ' + t[2] * 0.5 + ' 0 ' + t[2] * 0.75 + 's-2 ' + t[2] * 0.2 + ' 0 ' + t[2] * 0.25 + '"/>'; }).join('') + '</svg>';
   /* CIRCULAR STRATEGY: a loop, never a line. Chairs ride round it through four stops (picked up, mended, used again, home), each stop changing them; a touch or a scroll spins it */
   var ORBIT = '<div class="st-orb" aria-hidden="true"><svg viewBox="-50 -50 100 100"><defs><filter id="st-ink" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale=".75"/></filter></defs><circle class="lp" r="40"/><path class="pn" d="M-9 -39C14 -43 41 -24 40.4 2S16 41.6 -2 40.2S-41 21 -40.3 -1.5S-27 -38.5 -3 -40.6S12 -39.5 16 -37.2"/><circle class="lp2" r="40"/><path class="cv" transform="rotate(45) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(135) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(225) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><path class="cv" transform="rotate(315) translate(0 -40) rotate(90)" d="M-1.6 -2.2L1.2 0L-1.6 2.2"/><g class="st-nd n0" transform="translate(0 -40)"><g class="nd-in" style="--dx:0px;--dy:-20px;--k:0"><circle r="7.4"/><text>W</text></g></g><g class="st-nd n1" transform="translate(40 0)"><g class="nd-in" style="--dx:20px;--dy:0px;--k:1"><circle r="7.4"/><text>I</text></g></g><g class="st-nd n2" transform="translate(0 40)"><g class="nd-in" style="--dx:0px;--dy:20px;--k:2"><circle r="7.4"/><text>S</text></g></g><g class="st-nd n3" transform="translate(-40 0)"><g class="nd-in" style="--dx:-20px;--dy:0px;--k:3"><circle r="7.4"/><text>H</text></g></g></svg>' +
-    '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6-t.jpg"></i><b class="st-stg"><i>theories</i><i>beliefs</i><i>principles</i><i>behaviours</i></b></div>';
+    '<div class="hm-pics"></div><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-4-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-8-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-2-t.jpg"></i><i class="st-th" data-q="0"><img alt="" decoding="async" loading="lazy" src="/cards/chair-6-t.jpg"></i><b class="st-wd" aria-hidden="true"></b><b class="st-stg"><i>theories</i><i>beliefs</i><i>principles</i><i>behaviours</i></b></div>';
   /* DIRECT ACTION RADIO: a radar no one sees, sweeping the radio in the photograph; its play key breathing */
   /* a line in a made-up hand, written, crossed out, rubbed away, and another tried: the doubt before the poem, small, in the gap */
   var SWEEP = '<div class="rd-fx"><svg viewBox="-50 -50 100 100" aria-hidden="true"><defs><linearGradient id="rd-sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".75"/></linearGradient><pattern id="rd-px" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="3.3" height="3.3" fill="#FFFFFF" fill-opacity=".12" stroke="none"/></pattern></defs><circle r="46" fill="url(#rd-px)" stroke="none"/>' +
@@ -534,7 +534,7 @@
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id]) CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -580,16 +580,22 @@
   /* a label-maker strip: each letter pressed a little off its line */
   function tape(w, cls) { return '<b class="' + cls + '" aria-hidden="true">' + w.split('').map(function (ch, j) { return '<i style="--j:' + [0.6, -0.8, 0.3, -0.4, 0.9, -0.2, 0.5][j % 7] + '">' + ch + '</i>'; }).join('') + '</b>'; }
   /* THE OPENER: what novel.global and Island Archipelagos are, in the owner's words. Nothing opens from it; × puts it away (the HOME panel brings it back) */
-  function introP() { return ['A Raspberry Pi 3+ with an 8 GB+ microSD running novel.global OS (the custom .img file, in the official Imager app) connects a printer like the Epson TM-T88V, and it becomes a console. Any browser is the interface to access and create web2print experiences, and new forms of publishing, fundraising and direct action.',
-    'There is no cost or barrier besides presence and physical validation in order to print. Live compass navigation finds the printers online; each printer you discover gives you a print pass for the day, and if it is your first time, a code: your login, password, identity and memory on the platform.',
-    'You can talk on every element, and people on the same island can see it and talk back. Post and share artwork, songs, stories, apps and experiences, or use and keep things to yourself.',
-    'novel.global gives you all the code and blueprints to create your own island archipelagos. It lets you do almost anything in the printer\u2019s world, which keeps developing as the community builds it, mods it and makes it their own.']; }
+  /* THE OPENER: the owner's words, set as a form. Nothing opens from it; × puts it away (the HOME panel brings it back) */
+  var IN_SEAL = '<svg class="in-seal" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34"/><circle cx="20" cy="20" r="6.5"/><path d="M20 7.5v4M20 28.5v4M7.5 20h4M28.5 20h4M11.2 11.2l2.8 2.8M26 26l2.8 2.8M28.8 11.2L26 14M14 26l-2.8 2.8"/></svg>';
+  function introP() { return ['Island Archipelagos turns these e-waste thermal printers into creative portals for a new kind of physical internet.',
+    'With a Raspberry Pi and a repurposed receipt printer, novel.global hosts an evolving world of artwork, stories, music, software, experiments and collective activity on 80mm thermal paper. No subscription, platform fee or permission required.',
+    'Each unique printer builds a world, modifies its tools, shares its art and creates new islands. They become points of connection and distribution in public, professional, and third spaces.']; }
   function introHTML(c, i, g1) { var sm = sizeOf(c) === 'small';
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-f"><p class="in-k"><i aria-hidden="true"></i>novel.global presents</p><h2 class="in-t">Island Archipelagos</h2><p class="in-l">a web2print publishing platform designed for e-waste thermal printers.</p>' +
-      (sm ? '' : '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '</div>') + '</div>' +
+      '<div class="in-f"><div class="in-hd">' + IN_SEAL + '<p class="in-k">novel.global\u2019s</p></div><h2 class="in-t">Island Archipelagos</h2>' +
+      '<p class="in-l">A local area network of independent publishing islands, built from discarded printers and open-source technology.</p>' +
+      ('<ol class="in-b">' + introP().map(function (q, n) { return '<li><b aria-hidden="true">0' + (n + 1) + '</b><p>' + q + '</p></li>'; }).join('') + '</ol>' +
+        '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>') + '</div>' +
       '<button type="button" class="in-x" data-introx aria-label="Close" title="Close">×</button></article></section>'; }
+  /* the opener stood small: the type steps down until every word is in */
+  function introFit() { $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && f.scrollHeight > f.clientHeight + 1) { px -= 0.25; f.style.fontSize = px + 'px'; } }); }
+  addEventListener('resize', function () { requestAnimationFrame(introFit); });
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set('da.hm.mine', MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
@@ -1279,7 +1285,7 @@
     if (far) { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min((root.clientHeight || innerHeight) - 20, J.y)); }
     else if (!open) { J.y += (lo - J.y) * Math.min(1, dt * 0.6); if (J.x < -50) { J.x = VW + 50; J.y = lo; } if (J.x > VW + 60) J.x = -40; }
     else { J.x = Math.max(-30, Math.min(VW + 30, J.x)); J.y = Math.max(8, Math.min(CH - 40, J.y)); }
-    var ws = (O && O.sky ? 0.3 : open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * 0.8);
+    var ws = (O && O.sky ? 0.2 : open && !far ? 1.45 : 1) * (VW > 900 ? 1.25 : 1); J.s += (ws - J.s) * Math.min(1, dt * (O && O.sky ? 6 : 0.8));
   }
   /* the other one, drawn as the Irukandji was first drawn: the round bell in lines, its four strings in dots, lighter and smaller */
   var IRUK2 = null;
@@ -1371,7 +1377,8 @@
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
     var hit = [0, 0, 0, 0]; if (!ORB.pre) { ORB.pre = 1; for (var pc = 1; pc <= 10; pc++) new Image().src = '/cards/chair-' + pc + '-t.jpg'; }
     $$('.st-th', el).forEach(function (t, k) { var a = ORB.a + k * TAU / 4 + TAU / 8, A = ((a % TAU) + TAU) % TAU, s = (A + Math.PI / 2) / (Math.PI / 2), q = Math.floor(s) % 4, near = Math.abs(s - Math.round(s));
-      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (!k && el.dataset.st !== String(q)) el.dataset.st = q; if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
+      t.style.translate = (0.4 * ORB.w * Math.cos(a)).toFixed(1) + 'px ' + (0.4 * ORB.w * Math.sin(a)).toFixed(1) + 'px'; if (t.dataset.q !== String(q)) t.dataset.q = q; if (!k && el.dataset.st !== String(q)) { el.dataset.st = q; var wd = el.querySelector('.st-wd'); if (wd) { wd.textContent = ['theories', 'beliefs', 'principles', 'behaviours'][q]; wd.classList.remove('in'); void wd.offsetWidth; wd.classList.add('in'); } }
+      if (!k) { var wd2 = el.querySelector('.st-wd'); if (wd2) wd2.style.translate = t.style.translate; } if (near < 0.09) hit[Math.round(s) % 4] = 1; if (near < 0.09 && !t.classList.contains('pop') && !RM.matches) nextChair(el, t); t.classList.toggle('pop', near < 0.09); });
     $$('.st-nd', el).forEach(function (n, k) { n.classList.toggle('hit', !!hit[k]); }); }
   requestAnimationFrame(orbit);
   /* a chair reaching a stop comes out of it as another of the ten, never one already on the loop */
