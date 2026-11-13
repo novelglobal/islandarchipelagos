@@ -1339,3 +1339,8 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
   .hm-card.small.sk-intro .in-hd { min-height: 40px; box-sizing: border-box; }
   .hm-card.small.sk-intro .in-b li:first-child { padding-top: 0; }
 }
+/* ───────── the nine stood big or small: the corner is the talk and locate keys' own ───────── */
+.hm-card.full.g-week .wx-wk, .hm-card.small.g-week .wx-wk { left: 7cqmin; right: auto; top: calc(6.4cqmin + clamp(17px, 9.5cqmin, 34px) * 1.5); height: 9cqmin; }
+.hm-card.full.g-week[data-id="events"] .wx-wk, .hm-card.small.g-week[data-id="events"] .wx-wk { width: 16cqmin; height: 16cqmin; }
+.hm-card.full.g-read .wx-b, .hm-card.small.g-read .wx-b { display: none; }
+.hm-card.full.g-week[data-id="news"] .wx-b, .hm-card.small.g-week[data-id="news"] .wx-b { -webkit-mask-image: linear-gradient(#000 0 34%, transparent 52%); mask-image: linear-gradient(#000 0 34%, transparent 52%); }
