@@ -598,7 +598,7 @@
      in dots at its foot. Nothing opens from it; × puts it away (the HOME panel brings it back). Everything here is made inside functions:
      the first cards are drawn before this part of the file has run */
   function introP() { return [
-    'Each unique printer creates a new point of connection and distribution in public, professional, and third spaces.']; }
+    'Each printer becomes a local point of connection and distribution, enabling people to publish, exchange and share creative ideas in public, professional and community spaces.']; }
   /* the seal of the archipelagos: a stamp in the margin of the form. Two rings, a sun of twenty-four rays, the islands as five dots round it */
   function introSeal() { var r = '', d = ''; for (var k = 0; k < 24; k++) { var a = k * Math.PI / 12, l = k % 2 ? 25 : 29; r += 'M' + (50 + 15 * Math.cos(a)).toFixed(1) + ' ' + (50 + 15 * Math.sin(a)).toFixed(1) + 'L' + (50 + l * Math.cos(a)).toFixed(1) + ' ' + (50 + l * Math.sin(a)).toFixed(1); }
     for (k = 0; k < 5; k++) { var b = -Math.PI / 2 + k * Math.PI * 2 / 5; d += '<circle cx="' + (50 + 38.5 * Math.cos(b)).toFixed(1) + '" cy="' + (50 + 38.5 * Math.sin(b)).toFixed(1) + '" r="2.6"/>'; }
@@ -607,10 +607,10 @@
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">A new safe, creative, physical internet</h2>' +
-      '<p class="in-l">A local area network of independent publishing islands, built from discarded printers and open-source technology.</p>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">A new kind of physical internet, built from repurposed waste.</h2>' +
+      '<p class="in-l">Connecting independent publishing stations through a local network powered by open-source technology.</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
-      '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to make your own.</strong></p>' +
+      '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div></div>' +
       '</article></section>'; }
   /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;

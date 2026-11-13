@@ -605,8 +605,8 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#hm-all').checked, oneIsland: $('#hm-one').checked, smallTalk: $('#hm-talk').checked, smallFind: $('#hm-find').checked, jellyStamp: $('#hm-jel').checked }) })));
     let op = {}; try { op = st.opener ? JSON.parse(st.opener) : {}; } catch (e) { op = {}; }
     const of = (k, ph, rows) => { const t = el('textarea', { rows: rows || 2, placeholder: ph, style: 'width:100%' }); t.value = op[k] || ''; t.dataset.k = k; return t; };
-    const ofs = [of('head', 'A new safe, creative, physical internet'), of('lede', 'A local area network of independent publishing islands, built from discarded printers and open-source technology.', 3),
-      of('body', 'Each unique printer creates a new point of connection and distribution in public, professional, and third spaces.', 5), of('sign', 'Island Archipelagos', 1), of('bar', 'novel.global provides the operating system, software and blueprints to make your own.', 2)];
+    const ofs = [of('head', 'A new kind of physical internet, built from repurposed waste.'), of('lede', 'Connecting independent publishing stations through a local network powered by open-source technology.', 3),
+      of('body', 'Each printer becomes a local point of connection and distribution, enabling people to publish, exchange and share creative ideas in public, professional and community spaces.', 5), of('sign', 'Island Archipelagos', 1), of('bar', 'novel.global provides the operating system, software and blueprints to build your own.', 2)];
     const opener = el('section', { class: 'ed' }, el('h3', { text: 'OPENER' }),
       el('label', {}, 'HEADLINE', ofs[0]), el('label', {}, 'LEDE', ofs[1]), el('label', {}, 'WORDS', ofs[2]), hint('A blank line starts a new paragraph.'), el('label', {}, 'SIGNED', ofs[3]), el('label', {}, 'BLACK BAR', ofs[4]),
       hint('Empty: the words shown in grey stay.'),

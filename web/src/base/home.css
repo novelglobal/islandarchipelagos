@@ -1414,3 +1414,11 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm .sk-intro .in-arc { position: absolute; inset: 0; width: 100%; height: 100%; }
 #hm .hm-card.small.sk-intro .in-ft { min-height: 6em; }
 #hm .hm-pl { z-index: 3; }
+/* receipt 00, the owner's words: room under the headline, the lede kept to the body's measure, the archipelago clear of the torn foot */
+#hm .sk-intro .in-l { margin-top: 1.1em; max-width: 34em; }
+#hm .sk-intro .in-b p { max-width: 40em; }
+#hm .sk-intro .in-ft { margin-bottom: 2.4cqw; }
+#hm .hm-card.small.sk-intro .in-l { margin-top: .9em; }
+#hm .sk-intro .in-ia .in-seal, #hm .hm-card.small.sk-intro .in-ia .in-seal { width: 3.4em; margin: -.5em 0 0; }
+#hm .sk-intro .in-b .in-ia { margin-bottom: .9em; }
+#hm .sk-intro .in-hd, #hm .hm-card.small.sk-intro .in-hd { justify-content: center; padding-left: 0; padding-right: 0; }
