@@ -1471,3 +1471,5 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm .rd-fx .rd-mute { padding: 0 !important; text-indent: 0; line-height: 0; }
 #hm .rd-fx .rd-mute svg { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); }
 #hm .hm-card.small .rd-fx .rd-mute { width: 56px; height: 56px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 28px; height: 28px; }
+/* the serif subline set in to meet the stem of the b above it */
+#hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { padding-left: .12em; }
