@@ -1461,8 +1461,13 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm .sk-intro .in-arc { opacity: .92; }
 #hm .sk-intro .in-mk { filter: drop-shadow(0 0 .5px rgba(34, 34, 33, .5)); }
 /* BLUEPAPER: the strategy under the name in the serif, for contrast */
-#hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; font-weight: 400; font-style: italic; letter-spacing: .01em; opacity: .9; }
+#hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', 'Iowan Old Style', Georgia, serif; font-weight: 400; font-style: normal; letter-spacing: .02em; opacity: .9; }
 /* DIRECT ACTION RADIO: the sound key and its rings centred on the radio in the photograph, and larger */
 #hm .sk-radio .rd-fx { --rx: 33.6%; --ry: 66%; }
 #hm .rd-fx .rd-mute { width: 58px; height: 58px; } #hm .rd-fx .rd-mute svg { width: 28px; height: 28px; }
 #hm .hm-card.small .rd-fx .rd-mute { width: 48px; height: 48px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 24px; height: 24px; }
+/* the sound key: its mark dead centre in the ring, the ring on the middle of the radio */
+#hm .sk-radio .rd-fx { --ry: 69.5%; }
+#hm .rd-fx .rd-mute { padding: 0 !important; text-indent: 0; line-height: 0; }
+#hm .rd-fx .rd-mute svg { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); }
+#hm .hm-card.small .rd-fx .rd-mute { width: 56px; height: 56px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 28px; height: 28px; }
