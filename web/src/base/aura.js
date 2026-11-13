@@ -1939,20 +1939,22 @@
   /* the intention's line: no ruled line but stars that gather into a row of dots under the words, as W.I.S.H.'s letters do;
      brighter while it is being written in */
   var SLINE = { raf: 0 };
+  function auSeen(c) { if (D0.hidden || !c.getClientRects().length) return false; var r = c.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; }
+  var D0 = document;
   function starLine() {
-    cancelAnimationFrame(SLINE.raf); var lab = panel.querySelector('.au-line'), ta = lab && lab.querySelector('#au-say'); if (!ta || lab.querySelector('.au-sline')) return;
+    cancelAnimationFrame(SLINE.raf); clearTimeout(SLINE.to); var lab = panel.querySelector('.au-line'), ta = lab && lab.querySelector('#au-say'); if (!ta || lab.querySelector('.au-sline')) return;
     var c = document.createElement('canvas'); c.className = 'au-sline'; c.setAttribute('aria-hidden', 'true'); lab.appendChild(c);
     var dp = Math.min(2, window.devicePixelRatio || 1), g = c.getContext('2d'), R = rnd(11), pts = [], W0 = 0, t0 = performance.now();
     var build = function () { var w = Math.max(40, Math.round(c.clientWidth)); if (w === W0) return; W0 = w; c.width = w * dp; c.height = 14 * dp; pts = [];
       for (var xx = 3; xx < w - 2; xx += 8) { var an = R() * 7, rr = 18 + R() * 60; pts.push({ x: xx, sx: xx + Math.cos(an) * rr, sy: 7 + Math.sin(an) * rr * 0.45, r: 0.85 + R() * 0.55, ph: R() * 7, dl: R() * 0.7 + xx / w * 0.6 }); } };
-    (function tick(now) { if (!c.isConnected) return; build(); var t = (now - t0) / 1000, hot = document.activeElement === ta; g.setTransform(dp, 0, 0, dp, 0, 0); g.clearRect(0, 0, W0, 14); g.fillStyle = '#F4F1E8';
+    (function tick(now) { if (!c.isConnected) return; if (!auSeen(c)) { SLINE.to = setTimeout(function () { SLINE.raf = requestAnimationFrame(tick); }, 500); return; } build(); var t = (now - t0) / 1000, hot = document.activeElement === ta; g.setTransform(dp, 0, 0, dp, 0, 0); g.clearRect(0, 0, W0, 14); g.fillStyle = '#F4F1E8';
       pts.forEach(function (q) { var k2 = still ? 1 : Math.max(0, Math.min(1, (t - q.dl) / 1.6)); k2 = 1 - Math.pow(1 - k2, 3);
         var px = q.sx + (q.x - q.sx) * k2 + (still ? 0 : Math.sin(t * 0.7 + q.ph) * 0.25), py = q.sy + (7 - q.sy) * k2 + (still ? 0 : Math.cos(t * 0.6 + q.ph) * 0.25);
         g.globalAlpha = Math.max(0, (hot ? 0.95 : 0.55) * (0.62 + 0.38 * Math.sin(t * 1.4 + q.ph)) * (0.3 + 0.7 * k2)); g.beginPath(); g.arc(px, py, q.r, 0, 7); g.fill(); });
       SLINE.raf = requestAnimationFrame(tick); })(t0);
   }
   function starLetters() {
-    cancelAnimationFrame(STARS.raf); var bs = [].slice.call(panel.querySelectorAll('.au-wish b')); if (!bs.length) return;
+    cancelAnimationFrame(STARS.raf); clearTimeout(STARS.to); var bs = [].slice.call(panel.querySelectorAll('.au-wish b')); if (!bs.length) return;
     var t0 = performance.now(), CW = 60, CH = 64, dp = Math.min(2, window.devicePixelRatio || 1);
     var sets = bs.map(function (bb, li) {
       var c = document.createElement('canvas'); c.width = CW * dp; c.height = CH * dp; c.className = 'au-stars'; c.setAttribute('aria-hidden', 'true');
@@ -1962,7 +1964,7 @@
         pts.push({ x: x0 + (R() - 0.5), y: y + (R() - 0.5), sx: CW / 2 + Math.cos(an) * rr, sy: CH / 2 + Math.sin(an) * rr, r: 0.45 + R() * 0.8, ph: R() * 7, dl: R() * 0.9 + li * 0.3 }); } }
       bb.appendChild(c); return { c: c, g: c.getContext('2d'), pts: pts, li: bb.parentNode };
     });
-    (function tick(now) { if (!sets[0].c.isConnected) return; var t = (now - t0) / 1000;
+    (function tick(now) { if (!sets[0].c.isConnected) return; if (!auSeen(sets[0].c)) { STARS.to = setTimeout(function () { STARS.raf = requestAnimationFrame(tick); }, 500); return; } var t = (now - t0) / 1000;
       sets.forEach(function (st) { var g = st.g, hot = st.li.matches(':focus-within'); g.setTransform(dp, 0, 0, dp, 0, 0); g.clearRect(0, 0, CW, CH); g.fillStyle = '#F4F1E8';
         st.pts.forEach(function (q) { var k = still ? 1 : Math.max(0, Math.min(1, (t - q.dl) / 1.8)); k = 1 - Math.pow(1 - k, 3);
           var px = q.sx + (q.x - q.sx) * k + (still ? 0 : Math.sin(t * 0.7 + q.ph) * 0.3), py = q.sy + (q.y - q.sy) * k + (still ? 0 : Math.cos(t * 0.6 + q.ph) * 0.3);

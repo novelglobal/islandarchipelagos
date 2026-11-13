@@ -1422,3 +1422,28 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm .sk-intro .in-ia .in-seal, #hm .hm-card.small.sk-intro .in-ia .in-seal { width: 3.4em; margin: -.5em 0 0; }
 #hm .sk-intro .in-b .in-ia { margin-bottom: .9em; }
 #hm .sk-intro .in-hd, #hm .hm-card.small.sk-intro .in-hd { justify-content: center; padding-left: 0; padding-right: 0; }
+/* BLUEPAPER (the card that was CIRCULAR STRATEGY): its name in the clean lowercase, the strategy named under it on one line */
+#hm .sk-wish .hm-t, #hm .hm-card.small.sk-wish.sm .sm-k span { font-family: 'Poppins', Arial, sans-serif; font-weight: 700; letter-spacing: -.04em; text-transform: none; }
+#hm .sk-wish .st-sub { white-space: nowrap; font: 500 clamp(10px, 3.2cqmin, 14px)/1.2 'Poppins', Arial, sans-serif; letter-spacing: .01em; text-transform: none; color: #F4F1E8; opacity: .8; }
+#hm .sk-wish .st-alert.st-sub { background: none; padding: 0; border: 0; font-size: clamp(12px, 3.6cqw, 18px); }
+#hm .sk-wish .st-alert.st-sub i { display: none; }
+/* the W.I.S.H. ring, clean: one hairline circle, no inked wobble or hand-drawn path; the letters in Poppins on quiet discs; a letter reached is filled */
+#hm .st-orb .lp, #hm .st-orb .pn, #hm .st-orb .lp2, #hm .st-orb .st-nd { filter: none; }
+#hm .st-orb .pn, #hm .st-orb .lp2 { display: none; }
+#hm .st-orb .lp { fill: none; stroke: rgba(244, 241, 232, .6); stroke-width: .35; stroke-dasharray: none; }
+#hm .st-orb .cv { fill: none; stroke: rgba(244, 241, 232, .7); stroke-width: .4; }
+#hm .st-orb .st-nd circle { fill: #0E2A4F; stroke: rgba(244, 241, 232, .75); stroke-width: .45; transform: scale(.8); opacity: 1; }
+#hm .st-orb .st-nd text { font: 600 7px/1 'Poppins', Arial, sans-serif; fill: #F4F1E8; letter-spacing: 0; opacity: .75; }
+#hm .st-orb .st-nd.on circle { fill: #F4F1E8; stroke: #F4F1E8; transform: scale(1); }
+#hm .st-orb .st-nd.on text { fill: #0E2A4F; opacity: 1; }
+#hm .st-orb.clr .st-nd circle { fill: #0E2A4F; stroke: rgba(244, 241, 232, .75); transform: scale(.8); transition: transform 1s ease, fill 1s ease; }
+#hm .st-orb.clr .st-nd text { fill: #F4F1E8; opacity: .75; }
+/* the word written beside the letter it belongs to, outside the ring */
+#hm .st-orb .st-wd { top: auto; bottom: auto; left: auto; right: auto; }
+#hm .st-orb[data-st="0"] .st-wd { left: 0; right: 0; bottom: 99%; justify-content: center; }
+#hm .st-orb[data-st="1"] .st-wd { right: 0; top: 60%; justify-content: flex-end; }
+#hm .st-orb[data-st="2"] .st-wd { left: 0; right: 0; top: 99%; justify-content: center; }
+#hm .st-orb[data-st="3"] .st-wd { left: 0; top: 60%; justify-content: flex-start; }
+/* DIRECT ACTION RADIO: the sound key larger, easy to hit */
+#hm .rd-fx .rd-mute { width: 52px; height: 52px; } #hm .rd-fx .rd-mute svg { width: 26px; height: 26px; }
+#hm .hm-card.small .rd-fx .rd-mute { width: 42px; height: 42px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 21px; height: 21px; }

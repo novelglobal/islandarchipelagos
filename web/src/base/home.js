@@ -41,7 +41,7 @@
   var CARDS = [
     { id: 'intro', size: 'small', title: 'ISLAND ARCHIPELAGOS', skin: 'intro', opens: 'none', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'small', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'wish', size: 'small', title: 'CIRCULAR STRATEGY', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'wish', size: 'small', title: 'BLUEPAPER', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'small', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'small', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'small', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
@@ -50,7 +50,7 @@
     /* the small cards: three themes, three ways each. THIS WEEK, READ, CARDS */
     { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', cart: 'week', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'news', size: 'small', title: 'NEWS', opens: 'stack:news', cart: 'news', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'events', size: 'small', title: 'EVENTS', opens: 'stack:events', cart: 'events', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'events', size: 'small', title: 'LAN PARTIES', opens: 'stack:events', cart: 'events', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'fiction', size: 'small', title: 'FICTION', opens: 'stack:fiction', cart: 'read', shelf: 'fic', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'nonfiction', size: 'small', title: 'NON-FICTION', opens: 'stack:nonfiction', cart: 'read', shelf: 'non', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'survival', size: 'small', title: 'SURVIVAL', opens: 'stack:survival', cart: 'read', shelf: 'how', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
@@ -64,12 +64,12 @@
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
   var SMALL = {
-    radio: '', wish: '', research: '', zine: '',
+    radio: '', wish: '<p class="sm-sub st-sub">circular strategic response</p>', research: '', zine: '',
     kit: '',
     space: '<div class="sm-o sm-prn">' + PRN_HTML + '<b class="sm-inst"><i></i>ONE CLICK INSTALL</b></div><p class="sm-sub">THERMAL PRINTER COMMUNITIES</p>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
   };
-  var SMALL_T = { radio: 'Direct action radio', wish: 'Circular strategy', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
+  var SMALL_T = { radio: 'Direct action radio', wish: 'bluepaper', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
   var JACKED = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space'];
   var SKINS = ['intro', 'portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play', 'wx'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
@@ -263,7 +263,7 @@
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-nino'); if (!b) return; e.preventDefault(); e.stopPropagation(); RS.nino = !RS.nino; RS.drawn = false; b.setAttribute('aria-pressed', String(RS.nino)); beep(RS.nino ? 196 : 523, RS.nino ? 0.18 : 0.06); if (RS.nino) muteSet(false); if (!RS.song) songOn(); }, true);
   /* the sound key: the song turns on the radar always; this lets it be heard. El Niño unmutes it and doubles its pace to 120 */
   function muteSet(m) { RS.muted = m; if (!m) ac(); $$('.rd-mute').forEach(function (b) { b.setAttribute('aria-pressed', String(!m)); b.title = m ? 'Sound' : 'Mute'; }); }
-  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-mute'); if (!b) return; e.preventDefault(); e.stopPropagation(); muteSet(!RS.muted); if (!RS.song) songOn(); }, true);
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.rd-mute'); if (!b && e.clientX != null) b = $$('.rd-mute').filter(function (m) { var r = m.getBoundingClientRect(); return r.width && e.clientX >= r.left - 4 && e.clientX <= r.right + 4 && e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4 && getComputedStyle(m).visibility !== 'hidden' && getComputedStyle(m).display !== 'none'; })[0]; if (!b) return; e.preventDefault(); e.stopPropagation(); muteSet(!RS.muted); if (!RS.song) songOn(); }, true);
   /* El Niño on the buoy: a small song dropped at random on the radar, the hand at its fast turn (two bars of 120, a note on a sixteenth as the hand
      crosses it), timed by the sound's own clock; off, it stops and the radar is as it was. Off screen or behind an experience it waits */
   var SONG_TURN = 4, PENTA = [0, 3, 5, 7, 10, 12, 15, 17];
@@ -663,7 +663,7 @@
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
     else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
-    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert"><i></i>EL NIÑO · CLIMATE DIRECT ACTION</p></div><span class="hm-lamps"></span>';
+    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">circular strategic response</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';

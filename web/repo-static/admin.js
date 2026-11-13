@@ -393,7 +393,7 @@
   /* a card's own pictures: the photographs CIRCULAR STRATEGY turns through (up to ten) and how fast; the picture behind DIRECT ACTION RADIO and how strongly it shows */
   function picsCard() {
     const sec = el('section', { class: 'printer ed' }), box = el('div');
-    sec.append(el('h3', { text: 'CARD PICTURES' }), el('div', { class: 'note', text: 'CIRCULAR STRATEGY TURNS THROUGH UP TO TEN PHOTOGRAPHS, SHOWN IN GREY. DIRECT ACTION RADIO HAS ONE PICTURE BEHIND ITS WORDS. EACH IS MADE SMALLER HERE BEFORE IT IS SENT.' }), box);
+    sec.append(el('h3', { text: 'CARD PICTURES' }), el('div', { class: 'note', text: 'BLUEPAPER TURNS THROUGH UP TO TEN PHOTOGRAPHS, SHOWN IN GREY. DIRECT ACTION RADIO HAS ONE PICTURE BEHIND ITS WORDS. EACH IS MADE SMALLER HERE BEFORE IT IS SENT.' }), box);
     const shrink = file => new Promise((ok, no) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => (b ? ok(b) : no(new Error('shrink'))), 'image/jpeg', 0.84); }; im.onerror = no; im.src = u; });
     const pick = () => new Promise(ok => { const i = el('input', { type: 'file', accept: 'image/*' }); i.addEventListener('change', () => ok(i.files && i.files[0])); i.click(); });
     const slotOf = u => +(/\/(\d)\?/.exec(u) || [0, -1])[1];
@@ -406,7 +406,7 @@
       const speed = el('select', { 'aria-label': 'How often the photographs turn', onchange: async () => { await api('cards/wish', { method: 'POST', body: JSON.stringify({ speed: +speed.value }) }); } }, [1, 2, 3, 5, 8, 12].map(n => el('option', { value: n, text: `EVERY ${n} S` })));
       speed.value = String(w.speed || 2);
       const shade = el('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round((r.shade == null ? 0.35 : r.shade) * 100), 'aria-label': 'How strongly the radio picture shows', onchange: async () => { await api('cards/radio', { method: 'POST', body: JSON.stringify({ shade: shade.value / 100 }) }); } });
-      box.replaceChildren(el('div', { class: 'note', text: 'CIRCULAR STRATEGY' }), el('div', { class: 'pgrid' }, ws), el('div', { class: 'acts' }, speed),
+      box.replaceChildren(el('div', { class: 'note', text: 'BLUEPAPER' }), el('div', { class: 'pgrid' }, ws), el('div', { class: 'acts' }, speed),
         el('div', { class: 'note', text: 'DIRECT ACTION RADIO' }), el('div', { class: 'pgrid' }, slot('radio', 0, (r.pics || [])[0])), el('div', { class: 'acts' }, el('span', { text: 'SHOWS AT ' }), shade));
     }
     fill().catch(() => box.replaceChildren(el('div', { class: 'note', text: 'THE PICTURES COULD NOT BE READ' })));
@@ -567,8 +567,8 @@
 
   /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the WORDS AND BOARDS
      page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
-  const HOME_CARDS = [['intro', 'OPENER', 'small'], ['radio', 'DIRECT ACTION RADIO', 'small'], ['wish', 'CIRCULAR STRATEGY', 'small'], ['research', 'RESEARCH BOARD', 'small'], ['zine', 'DESIGN PRINT', 'small'], ['kit', 'ISLAND', 'small'], ['space', 'ISLAND ARCHIPELAGOS', 'small'],
-    ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'EVENTS', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
+  const HOME_CARDS = [['intro', 'OPENER', 'small'], ['radio', 'DIRECT ACTION RADIO', 'small'], ['wish', 'BLUEPAPER', 'small'], ['research', 'RESEARCH BOARD', 'small'], ['zine', 'DESIGN PRINT', 'small'], ['kit', 'ISLAND', 'small'], ['space', 'ISLAND ARCHIPELAGOS', 'small'],
+    ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'LAN PARTIES', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
     ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small', 1], ['slot-2', 'OPEN ISLAND', 'nine', 1], ['slot-3', 'MAKE', 'nine', 1]];
   const JOIN0 = { weather: 'week', news: 'week', events: 'week', fiction: 'read', nonfiction: 'read', survival: 'read', cards: 'deck', tarot: 'deck', 'pl-pl-2uqn': 'deck' };
   async function home() {
@@ -871,7 +871,7 @@
       hint('Linked: the ways back makers chose to leave with their code (mesh, email, mobile, Steam). Seen only here.'), lkList);
     lkLoad();
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
-    const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
+    const events = el('section', { class: 'ed' }, el('h3', { text: 'LAN PARTIES' }), hint('One a line: when | what | where. Shown on the LAN PARTIES card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
     /* grouped by what they change, each group under its own word; the keys at the top jump to a group */
     const grp = (id, t, why) => el('h3', { id: 'set-' + id, class: 'set-g', title: why, text: t });
