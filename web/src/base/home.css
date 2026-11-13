@@ -1473,3 +1473,68 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 #hm .hm-card.small .rd-fx .rd-mute { width: 56px; height: 56px; } #hm .hm-card.small .rd-fx .rd-mute svg { width: 28px; height: 28px; }
 /* the serif subline set in to meet the stem of the b above it */
 #hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { padding-left: .12em; }
+/* ───────── 0.5 final pass ───────── */
+/* BLUEPAPER: the line under the name in an upright book serif, smooth, sitting close under it */
+#hm .sk-wish .st-sub, #hm .sk-wish .st-alert.st-sub { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight: 400; font-style: normal; letter-spacing: .01em; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; text-shadow: none; filter: none; }
+#hm .hm-card.small.sk-wish .sm-sub.st-sub { top: calc(6.4cqmin + clamp(17px, 9.5cqmin, 34px) * 1.16); }
+#hm .sk-wish .st-alert.st-sub { margin-top: -1.4cqw; }
+
+/* THE OPENER, front: the printer at work filling the card, its lights going, the moa feeding out on the paper; a small key turns it over */
+#hm .hm-card.sk-intro:not(.flip) { -webkit-mask: none; mask: none; border-radius: 8px; }
+#hm .hm-card.sk-intro { background: radial-gradient(130% 95% at 50% 38%, transparent 55%, rgba(0, 0, 0, .1) 100%), repeating-linear-gradient(0deg, rgba(0, 0, 0, .02) 0 1px, transparent 1px 3px), var(--in-p); perspective: 1400px; }
+#hm .sk-intro .in-front { position: absolute; inset: 0; z-index: 4; overflow: hidden; border-radius: inherit; background: var(--in-p); cursor: pointer; transform-origin: 50% 50%; backface-visibility: hidden; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .35s .15s; }
+#hm .sk-intro .in-prn { position: absolute; left: 50%; top: 62%; bottom: auto; width: auto; height: 100%; aspect-ratio: 900 / 1200; transform: translate(-50%, -82%); }
+#hm .sk-intro .in-prn .slot { bottom: -30%; }
+@container (max-aspect-ratio: 3/4) { #hm .sk-intro .in-prn { width: 100%; height: auto; } }
+#hm .sk-intro .in-prn .ph { border-radius: 0; box-shadow: none; background-size: 100% 100%; }
+#hm .sk-intro .in-prn .l-act { background: #7CFF6B; box-shadow: 0 0 6px 2px rgba(124, 255, 107, .75); animation: hm-act 2.4s steps(1) infinite; }
+#hm .sk-intro .in-prn .l-prn { background: #7CFF6B; box-shadow: 0 0 8px 3px rgba(124, 255, 107, .8); animation: hm-wait 1.6s ease-in-out infinite; }
+#hm .sk-intro .in-prn .l-pwr { animation: hm-wait 3.2s ease-in-out infinite; }
+#hm .sk-intro .in-prn .slot .paper { animation: in-feed 10s steps(14) infinite; }
+@keyframes in-feed { 0%, 6% { transform: translateY(-100%); } 55%, 92% { transform: translateY(-74%); } 100% { transform: translateY(-74%); opacity: 0; } }
+#hm .sk-intro .in-prn .slot .paper img { filter: grayscale(1) contrast(1.6) brightness(1.1); }
+#hm .sk-intro .in-f { transform: rotateY(180deg); opacity: 0; pointer-events: none; backface-visibility: hidden; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .25s; }
+#hm .sk-intro.flip .in-front { transform: rotateY(-180deg); opacity: 0; pointer-events: none; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .25s; }
+#hm .sk-intro.flip .in-f { transform: none; opacity: 1; pointer-events: auto; transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .35s .15s; }
+#hm .sk-intro .in-flip { position: absolute; right: 12px; bottom: 12px; z-index: 6; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 1px solid rgba(244, 241, 232, .7); border-radius: 50%; background: rgba(14, 14, 13, .55); color: #F4F1E8; cursor: pointer; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+#hm .sk-intro .in-flip svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#hm .sk-intro .in-f .in-flip { position: sticky; align-self: flex-end; right: auto; bottom: 0; margin-top: 10px; flex: none; border-color: rgba(34, 34, 33, .5); background: rgba(227, 227, 222, .8); color: #222221; width: 34px; height: 34px; }
+@media (prefers-reduced-motion: reduce) { #hm .sk-intro .in-front, #hm .sk-intro .in-f { transition: opacity .2s; } #hm .sk-intro .in-prn .slot .paper { animation: none; transform: translateY(-40%); } }
+
+/* ISLAND ARCHIPELAGOS: the photograph as a thermal print, grey ink on paper dots; the two keys out to the side, by the Pi and by the printer */
+#hm .sm-prn .hm-prn .ph, #hm .sk-space .sp-prn .hm-prn .ph { filter: grayscale(1) contrast(1.25) brightness(1.1); }
+#hm .sm-prn .hm-prn::after, #hm .sk-space .sp-prn .hm-prn::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 4px; background: radial-gradient(circle, rgba(20, 20, 20, .16) .6px, transparent .9px) 0 0 / 2px 2px, repeating-linear-gradient(180deg, rgba(0, 0, 0, .05) 0 1px, transparent 1px 4px); mix-blend-mode: multiply; }
+#hm .sm-prn .hm-prn .led, #hm .sk-space .sp-prn .hm-prn .led { filter: grayscale(1); opacity: .6; }
+#hm .sm-prn .sm-inst { left: auto; right: 64%; top: 29%; bottom: auto; white-space: nowrap; z-index: 3; }
+#hm .sm-prn .sm-inst.sm-parts { top: 62%; right: 76%; }
+#hm .sm-prn .sm-inst::after, #hm .sk-space .sp-prn .sp-inst::after { content: ''; position: absolute; left: 100%; top: 50%; width: 10px; border-top: 1px solid currentColor; opacity: .7; }
+#hm .sk-space .sp-prn .sp-inst { left: auto; right: 64%; top: 29%; white-space: nowrap; }
+#hm .sk-space .sp-prn .sp-inst.sp-parts { top: 62%; right: 76%; }
+
+/* THE WALL: past the logo at the foot, one artwork to a screen, whole and in colour on black; nothing else on it until it is tapped */
+.hm-wall { position: relative; flex: none; height: 92vh; margin: 0; background: #050505; scroll-snap-align: start; overflow: hidden; }
+.hm-wall .wl-tr { display: flex; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+.hm-wall .wl-tr::-webkit-scrollbar { display: none; }
+.hm-wall .wl-it { flex: 0 0 100%; height: 100%; margin: 0; position: relative; display: block; overflow: hidden; scroll-snap-align: center; touch-action: pan-x pan-y; user-select: none; -webkit-user-select: none; }
+.hm-wall .wl-it.zm { touch-action: none; }
+.hm-wall .wl-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 50% 50%; will-change: transform; -webkit-user-drag: none; }
+.hm-wall .wl-op { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 8px; border-radius: 10px; background: rgba(10, 10, 10, .72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.hm-wall .wl-op[hidden] { display: none; }
+#hm .hm-wall .wl-op button, #hm .hm-wall .wl-op a { padding: 9px 12px; border: 1px solid rgba(244, 241, 232, .4); border-radius: 6px; background: none; color: #F4F1E8; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; }
+#hm .hm-wall .wl-op button:hover, #hm .hm-wall .wl-op a:hover { background: rgba(244, 241, 232, .12); }
+.hm-wall .wl-msg { flex-basis: 100%; margin: 2px 0 0; min-height: 1em; text-align: center; color: #F4F1E8; opacity: .8; font: 500 11px/1.3 'IBM Plex Mono', monospace; letter-spacing: .06em; }
+.hm-wall .wl-msg:empty { display: none; }
+/* MAIN two to a screen: each card half the screen on a phone, two across on a desk; a lone last card takes half a screen */
+@media (max-width: 899px) {
+  .hm-trio.p2 { gap: 12px; }
+  .hm-trio.p2.n1 { height: calc((100dvh - var(--hm-top) - var(--hm-peek) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px) / 2); min-height: 214px; }
+}
+@media (min-width: 900px) {
+  .hm-trio.p2 { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: calc(var(--ch) * 5 / 7); gap: 18px; }
+}
+/* ISLAND ARCHIPELAGOS keeps its name on one line at every size, so its subline always shows */
+.hm-card.small.sk-space .sm-k { max-width: none; white-space: nowrap; font-size: clamp(17px, min(9.5cqmin, 7.6cqw), 34px); }
+.hm-card.small.sk-space .sm-sub { top: calc(6.4cqmin + clamp(17px, min(9.5cqmin, 7.6cqw), 34px) * 1.42); }
+/* the moa as a paper sticker laid on the photograph: a white cut edge, a flat shadow, a slight tilt, fed out in a few jumps like a hand-moved cut-out */
+#hm .sk-intro .in-prn .slot { transform: rotate(-2.5deg); transform-origin: 50% 0; overflow: hidden; padding: 0 6px 8px; margin-left: -6px; }
+#hm .sk-intro .in-prn .slot .paper { left: 10%; right: 10%; background: #FFFFFF; border: 3px solid #FFFFFF; border-top: 0; box-shadow: 3px 4px 0 rgba(20, 20, 20, .3); }

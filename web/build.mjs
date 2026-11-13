@@ -35,7 +35,7 @@ const fonts = [['Poppins', 200, 'normal', 'poppins'], ['Poppins', 400, 'normal',
   ['IBM Plex Mono', 400, 'normal', 'ibm-plex-mono'], ['IBM Plex Mono', 500, 'normal', 'ibm-plex-mono'], ['IBM Plex Mono', 600, 'normal', 'ibm-plex-mono'],
   ['VT323', 400, 'normal', 'vt323'],
   /* for the press: a flourished serif, a blackletter as on a rider's arm, a spray can, and bubble letters */
-  ['Playfair Display', 400, 'italic', 'playfair-display'], ['Playfair Display', 700, 'italic', 'playfair-display'],
+  ['Playfair Display', 400, 'italic', 'playfair-display'], ['Playfair Display', 400, 'normal', 'playfair-display'], ['Playfair Display', 700, 'italic', 'playfair-display'],
   ['UnifrakturMaguntia', 400, 'normal', 'unifrakturmaguntia'], ['Sedgwick Ave Display', 400, 'normal', 'sedgwick-ave-display'], ['Rubik Bubbles', 400, 'normal', 'rubik-bubbles']];
 const faces = [], files = [];
 for (const [fam, w, st, pkg] of fonts) {

@@ -64,9 +64,9 @@
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
   var SMALL = {
-    radio: '', wish: '<p class="sm-sub st-sub">circular strategic response</p>', research: '', zine: '',
+    radio: '', wish: '<p class="sm-sub st-sub">strategic storytelling</p>', research: '', zine: '',
     kit: '',
-    space: '<div class="sm-o sm-prn">' + PRN_HTML + '<b class="sm-inst"><i></i>ONE CLICK INSTALL</b></div><p class="sm-sub">THERMAL PRINTER COMMUNITIES</p>',
+    space: '<div class="sm-o sm-prn">' + PRN_HTML + '<b class="sm-inst" data-kitopen><i></i>ONE CLICK INSTALL</b><b class="sm-inst sm-parts" data-kitopen><i></i>PARTS LIST</b></div><p class="sm-sub">THERMAL PRINTER COMMUNITIES</p>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
   };
   var SMALL_T = { radio: 'Direct action radio', wish: 'bluepaper', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
@@ -86,7 +86,7 @@
   function setOf(c) { return c.join != null ? c.join : (c.g || ''); }
   function kin(c) { var j = setOf(c); return j ? CARDS.filter(function (x) { return setOf(x) === j; }) : [c]; }
   function sizeIn(m, c) { if (!m) return null; var k = kin(c), v = m[c.id]; for (var j = 0; !v && j < k.length; j++) v = m[k[j].id]; return v; }
-  function ownSize(c) { var m = sizeIn(MINE && MINE.size, c) || sizeIn(PH.size, c); return m === 'small' || m === 'full' ? m : c.size || 'full'; }
+  function ownSize(c) { var u = sizeIn(MINE && MINE.size, c); if (u === 'small' || u === 'full') return u; var m = sizeIn(PH.size, c), z = m === 'small' || m === 'full' ? m : c.size || 'full'; return z === 'small' && !WIDE.matches && !(c.lib || c.g || c.ph || c.opens === 'play') ? 'full' : z; }
   function sizeOf(c) { return OPT.carts ? 'small' : ownSize(c); }
   /* the cards as this person stands them: [card, its place in CARDS] */
   function view() { var l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return x[0].id === 'intro' || (!x[0].off && !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0)); }), o = lay('order');
@@ -94,6 +94,7 @@
     /* the opener stands first, always */
     l.sort(function (a, b) { return (b[0].id === 'intro') - (a[0].id === 'intro'); }); return l; }
   var WIDE = matchMedia('(min-width: 900px)');
+  function mainPer() { var n = +lay('main'); return n === 2 || n === 3 ? n : (WIDE.matches ? 3 : 2); }
   function perPage() { var n = +lay('per'); return n === 3 || n === 6 || n === 9 ? n : 9; }
   function tierOf(c) { if (sizeOf(c) !== 'small') return 'full'; if (OPT.carts && (c.size || 'full') !== 'small') return 'trio'; if (c.trio) return 'trio'; return c.lib || c.g || c.ph || c.opens === 'play' ? 'nine' : 'trio'; }
   function colHTML() { var out = '', run = [], P9 = perPage(), P = P9, free = !!((lay('order') || []).length);
@@ -102,10 +103,10 @@
         var rows = [], m = 0; ch.forEach(function (r, j) { if (!j || r[3] || m === 3) { rows.push(r[2]); m = 0; } m++; });
         var bands = P === 9 ? ' hm-bands" style="' + rows.slice(0, 3).map(function (g, j) { return '--r' + (j + 1) + ':var(--th-' + g + ')'; }).join(';') : '';
         out += '<section class="hm-trio p' + P + ' n' + Math.min(3, ch.length) + bands + '">' + ch.map(function (r) { return r[0]; }).join('') + '</section>'; } run = []; };
-    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], tr = tierOf(c), th = !!c.g, g1 = false; if (was !== null && tr !== was) flush(); was = tr; P = tr === 'nine' ? P9 : 3;
+    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], tr = tierOf(c), th = !!c.g, g1 = false; if (was !== null && tr !== was) flush(); was = tr; P = tr === 'nine' ? P9 : mainPer();
       if (tr === 'full') { flush(); wasT = wasG = null; out += cardHTML(c, i); return; }
       if (tr === 'nine' && !free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush(); g1 = true; } } wasT = th; wasG = c.g || null;
-      run.push([cardHTML(c, i, g1), !!c.ph, c.g || (c.ph ? 'slot' : 'app'), g1]); }); flush(); return out + FOOT; }
+      run.push([cardHTML(c, i, g1), !!c.ph, c.g || (c.ph ? 'slot' : 'app'), g1]); }); flush(); return out + FOOT + wallHTML(); }
   /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
   var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
   var FOOT = '<footer class="hm-foot" aria-hidden="true"><div class="hf-grid">' + FOOT_T.map(function (t, k) { return '<canvas class="hf-t t' + k + '" data-pat="' + t.join(',') + '"></canvas>'; }).join('') +
@@ -531,6 +532,33 @@
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
+  function wallArt() { return [{ src: '/wall/poster-01.webp', name: 'poster-01', island: 'novelglobal', where: 'Melbourne' }]; }
+  function wallHTML() { return '<section class="hm-wall" aria-label="Wall"><div class="wl-tr">' + wallArt().map(function (a, k) { return '<figure class="wl-it" data-k="' + k + '"><img class="wl-im" alt="" decoding="async" loading="lazy" draggable="false" src="' + esc(a.src) + '"></figure>'; }).join('') +
+    '</div><div class="wl-op" hidden><button type="button" data-wl="play">PLAY</button><button type="button" data-wl="where">WHERE</button><button type="button" data-wl="print">PRINT</button><a data-wl="save" download>SAVE</a><p class="wl-msg" aria-live="polite"></p></div></section>'; }
+  var WL = { s: 1, x: 0, y: 0, pts: {}, play: 0 };
+  function wlSize() { var cs = getComputedStyle(col), top = parseFloat(cs.scrollPaddingTop) || 0; $$('.hm-wall', col).forEach(function (w) { w.style.height = (col.clientHeight - top) + 'px'; w.style.marginLeft = '-' + cs.paddingLeft; w.style.marginRight = '-' + cs.paddingRight; }); }
+  function wlFig() { var tr = col.querySelector('.wl-tr'); if (!tr) return null; var k = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth)); return tr.children[k] || tr.children[0]; }
+  function wlSet(fig, s, x, y) { var im = fig && fig.querySelector('.wl-im'); if (!im) return; WL.s = Math.max(1, Math.min(6, s)); var r = fig.getBoundingClientRect(), mx = Math.max(0, (im.offsetWidth * WL.s - r.width) / 2), my = Math.max(0, (im.offsetHeight * WL.s - r.height) / 2);
+    WL.x = Math.max(-mx, Math.min(mx, x)); WL.y = Math.max(-my, Math.min(my, y)); if (WL.s === 1) WL.x = WL.y = 0; im.style.transform = 'translate(' + WL.x.toFixed(1) + 'px,' + WL.y.toFixed(1) + 'px) scale(' + WL.s.toFixed(3) + ')'; fig.classList.toggle('zm', WL.s > 1.01); }
+  function wlStop() { cancelAnimationFrame(WL.play); WL.play = 0; }
+  function wlOps(show) { var o = col.querySelector('.wl-op'); if (!o) return; if (show == null) show = o.hidden; o.hidden = !show; if (show) { var a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0]; var sv = o.querySelector('[data-wl="save"]'); sv.href = a.src; sv.setAttribute('download', a.name + a.src.replace(/^.*(\.[a-z0-9]+)$/i, '$1')); o.querySelector('.wl-msg').textContent = ''; } }
+  function wlWire() { var wall = col.querySelector('.hm-wall'); if (!wall || wall.dataset.on) return; wall.dataset.on = 1; wlSize();
+    var tr = wall.querySelector('.wl-tr'), down = null, moved = 0, d0 = 0, s0 = 1, c0 = null;
+    tr.addEventListener('scroll', function () { $$('.wl-it', tr).forEach(function (f) { if (f !== wlFig()) { var im = f.querySelector('.wl-im'); if (im) im.style.transform = ''; f.classList.remove('zm'); } }); }, { passive: true });
+    tr.addEventListener('pointerdown', function (e) { wlStop(); WL.pts[e.pointerId] = [e.clientX, e.clientY]; var ks = Object.keys(WL.pts); if (ks.length === 1) { down = [e.clientX, e.clientY, WL.x, WL.y]; moved = 0; } else if (ks.length === 2) { var a = WL.pts[ks[0]], b = WL.pts[ks[1]]; d0 = Math.hypot(a[0] - b[0], a[1] - b[1]); s0 = WL.s; c0 = [WL.x, WL.y]; moved = 99; } });
+    tr.addEventListener('pointermove', function (e) { if (!WL.pts[e.pointerId]) return; WL.pts[e.pointerId] = [e.clientX, e.clientY]; var ks = Object.keys(WL.pts), fig = wlFig();
+      if (ks.length === 2 && d0) { var a = WL.pts[ks[0]], b = WL.pts[ks[1]]; wlSet(fig, s0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / d0, c0[0], c0[1]); e.preventDefault(); }
+      else if (ks.length === 1 && down) { var dx = e.clientX - down[0], dy = e.clientY - down[1]; moved = Math.max(moved, Math.hypot(dx, dy)); if (WL.s > 1.01) { wlSet(fig, WL.s, down[2] + dx, down[3] + dy); e.preventDefault(); } } }, { passive: false });
+    var up = function (e) { var was = WL.pts[e.pointerId]; delete WL.pts[e.pointerId]; if (!Object.keys(WL.pts).length) { if (was && down && moved < 8 && e.type === 'pointerup') { if (WL.tap && performance.now() - WL.tap < 300) { WL.tap = 0; clearTimeout(WL.tt); wlSet(wlFig(), WL.s > 1.01 ? 1 : 2.5, 0, 0); } else { WL.tap = performance.now(); WL.tt = setTimeout(function () { WL.tap = 0; wlOps(); }, 300); } } down = null; d0 = 0; } };
+    tr.addEventListener('pointerup', up); tr.addEventListener('pointercancel', up);
+    tr.addEventListener('wheel', function (e) { if (!e.ctrlKey) return; e.preventDefault(); wlStop(); wlSet(wlFig(), WL.s * Math.exp(-e.deltaY * 0.01), WL.x, WL.y); }, { passive: false });
+    wall.querySelector('.wl-op').addEventListener('click', function (e) { var b = e.target.closest('[data-wl]'); if (!b) { wlOps(false); return; } var k = b.dataset.wl, a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0], msg = wall.querySelector('.wl-msg');
+      if (k === 'save') return; e.preventDefault();
+      if (k === 'where') msg.textContent = a.island ? 'On ' + a.island + (a.where ? ', ' + a.where : '') : 'Not on an island yet';
+      if (k === 'print') { msg.textContent = 'Sending'; ((NG && NG.printAgain) ? NG.printAgain(a.src, a.name) : Promise.reject(new Error('none'))).then(function (st) { msg.textContent = st === 'queued' ? 'Printing' : 'Waiting for a printer'; }, function () { msg.textContent = 'No printer nearby'; }); }
+      if (k === 'play') { wlOps(false); var fig = wlFig(), im = fig && fig.querySelector('.wl-im'); if (!im) return; var t0 = performance.now(), bw = im.offsetWidth, bh = im.offsetHeight, nr = (im.naturalWidth || 1) / (im.naturalHeight || 1), dw = Math.min(bw, bh * nr), dh = dw / nr, s = Math.max(1.6, Math.min(6, bw / dw)), span = Math.max(0, (dh * s - bh) / 2);
+        (function go(now) { var p = ((now - t0) / 22000) % 1, e2 = 0.5 - 0.5 * Math.cos(p * Math.PI * 2); wlSet(fig, s, 0, span - e2 * span * 2); WL.play = requestAnimationFrame(go); })(t0); } });
+  }
   function logosOf(c) { var l = c.logos || []; if (!l.length) return '';
     return '<span class="hm-pl" aria-label="Made with">' + l.map(function (u) { return u === 'mark' ? '<i class="pl-ng">' + MARK + '<b>novel.global</b></i>' : '<img alt="" decoding="async" loading="lazy" class="pl-' + esc(u.replace(/^.*\//, '').replace(/\..*$/, '')) + '" src="' + esc(u) + '">'; }).join('') + '</span>'; }
   function logosCheck() { $$('.hm-pl img', col).forEach(function (im) { var gone = function () { var pl = im.parentNode; im.remove(); if (pl && !pl.children.length) pl.remove(); }; if (im.complete && !im.naturalWidth) gone(); else im.addEventListener('error', gone); }); }
@@ -548,7 +576,7 @@
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -607,12 +635,14 @@
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
+      '<div class="in-front"><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">A new kind of physical internet, built from repurposed waste.</h2>' +
       '<p class="in-l">Connecting independent publishing stations through a local network powered by open-source technology.</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
-      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div></div>' +
+      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
       '</article></section>'; }
+  function introFlip(l) { return '<button type="button" class="in-flip" data-inflip aria-label="' + l + '" title="' + l + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg></button>'; }
   /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;
      the coasts ringed, the sea a sparse tone */
   function introArc() { $$('.sk-intro .in-arc', col).forEach(function (cv) { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h || (cv.dataset.pw === w + 'x' + h && cv.width !== 300)) return; cv.dataset.pw = w + 'x' + h;
@@ -636,7 +666,10 @@
   var INTRO_TXT = '';
   /* the opener stood small: the type steps down until every word is in */
   function introFit() { $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; } }); introArc(); }
-  addEventListener('resize', function () { requestAnimationFrame(introFit); });
+  addEventListener('resize', function () { requestAnimationFrame(introFit); requestAnimationFrame(wlSize); });
+  addEventListener('click', function (e) { var f = e.target.closest && (e.target.closest('[data-inflip]') || e.target.closest('.sk-intro .in-front')); if (!f) return; var cd = f.closest('.sk-intro'); if (!cd) return; e.preventDefault(); e.stopPropagation(); cd.classList.toggle('flip'); if (cd.classList.contains('flip')) requestAnimationFrame(function () { introFit(); introArc(); }); }, true);
+  /* small-card keys that lie under the card's open-button answer where they show */
+  addEventListener('click', function (e) { if (e.clientX == null || (e.target.closest && e.target.closest('.rd-mute, [data-inflip]'))) return; var k = $$('.sm-f [data-kitopen]').filter(function (m) { var r = m.getBoundingClientRect(); return r.width && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; })[0]; if (!k) return; e.preventDefault(); e.stopPropagation(); open('kit'); }, true);
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set('da.hm.mine', MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
@@ -654,16 +687,16 @@
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<button type="button" class="hm-tag sp-inst" data-kitopen title="The install and its checklist"><i></i>ONE CLICK INSTALL</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<button type="button" class="hm-tag sp-inst" data-kitopen title="The install and its checklist"><i></i>ONE CLICK INSTALL</button><button type="button" class="hm-tag sp-inst sp-parts" data-kitopen title="Every part, to tick off"><i></i>PARTS LIST</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="sp-sub">THERMAL PRINTER COMMUNITIES</p><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
-    else if (sk === 'wx') { var nm = t.charAt(0) + t.slice(1).toLowerCase();
+    else if (sk === 'wx') { var nm = (t.charAt(0) + t.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
       inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><i class="wx-a" aria-hidden="true"></i><i class="wx-b" aria-hidden="true"></i>' + (c.g === 'week' ? '<span class="wx-wk" aria-hidden="true"></span>' : '') + '<b class="wx-k">' + nm + '</b>' +
         (c.g === 'read' ? '<div class="wx-bk" aria-hidden="true"><i></i><i></i><p><b class="wx-h"></b><span class="wx-s"></span></p></div>' :
           c.g === 'deck' ? '<div class="wx-pc" aria-hidden="true"><i></i><p><b class="wx-h"></b><i class="wx-ic"><svg viewBox="0 0 24 24"></svg></i><span class="wx-s"></span></p></div>' :
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
     else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
-    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">circular strategic response</p></div><span class="hm-lamps"></span>';
+    else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">strategic storytelling</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
@@ -824,7 +857,7 @@
       for (var r = 0; r < n; r++) for (var cc = 0; cc < n; cc++) if (m.isDark(r, cc)) g.fillRect((cc + pad) * px, (r + pad) * px, px, px); }).catch(function () {});
   }
   /* the last print, hanging from ISLAND's slot */
-  function lastPrint() { var el = col.querySelector('.hm-prn .paper'); if (!el) return; var pt = store.get('da.pt.v1', null), a = AU(), put = function (u) { if (u) el.innerHTML = '<img alt="" src="' + esc(u) + '">'; };
+  function lastPrint() { var el = col.querySelector('.hm-prn:not(.in-prn) .paper'); if (!el) return; var pt = store.get('da.pt.v1', null), a = AU(), put = function (u) { if (u) el.innerHTML = '<img alt="" src="' + esc(u) + '">'; };
     if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put((l && l[0] && l[0].src) || '/cards/portfolio.webp'); }).catch(function () { put('/cards/portfolio.webp'); }); }
   fetch('/api/cards').then(function (r) { return r.ok ? r.json() : { cards: {} }; }).then(function (j) { CPICS = j.cards || {}; pics(); partners().then(isleCards); }).catch(function () { /* none yet */ });
 
@@ -1437,21 +1470,23 @@
     var draw = function () { var l = rows(), P = perPage();
       body.innerHTML = '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
         '<div title="' + (ps ? 'A print pass for today: your next print goes straight out' : 'A print pass comes from the printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
-        (who ? '<p class="mn-per" role="group" aria-label="Small cards to a screen" title="Small cards to a screen"><span>SCREEN</span>' + [3, 6, 9].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (P === n) + '">' + n + '</button>'; }).join('') + '</p>' +
-        '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = c.id === 'intro' ? 'Opener' : SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase());
+        (who ? '<p class="mn-per" role="group" aria-label="Main cards to a screen" title="Main cards to a screen"><span>MAIN</span>' + [2, 3].map(function (n) { return '<button type="button" data-main="' + n + '" aria-pressed="' + (mainPer() === n) + '">' + n + '</button>'; }).join('') + '</p>' +
+        '<p class="mn-per" role="group" aria-label="Small cards to a screen" title="Small cards to a screen"><span>SCREEN</span>' + [3, 6, 9].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (P === n) + '">' + n + '</button>'; }).join('') + '</p>' +
+        '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = c.id === 'intro' ? 'Opener' : SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
         var js = setOf(c), jp = js && i > 0 && setOf(l[i - 1]) === js, jn = js && i < l.length - 1 && setOf(l[i + 1]) === js, jc = jp || jn ? ' jn' + (jp ? '' : ' jn-a') + (jn ? '' : ' jn-z') : '';
         return '<li data-id="' + esc(c.id) + '"' + (off || jc ? ' class="' + (off ? 'off' : '') + jc + '"' : '') + (jc ? ' title="Joined: one size for the set"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
           '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small shares it">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
         '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>' : ''); };
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
       if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
+      if (b.dataset.main) { MINE = MINE || {}; MINE.main = +b.dataset.main; return keep(null); }
       var li = b.closest('li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
       if (b.dataset.mv) { var j = i + +b.dataset.mv; if (j < 0 || j >= l.length) return; l.splice(j, 0, l.splice(i, 1)[0]); }
       else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; var nz = ownSize(l[i]) === 'small' ? 'full' : 'small'; kin(l[i]).forEach(function (x) { MINE.size[x.id] = nz; }); return keep(null); }
       else if (b.hasAttribute('data-on')) { if (id === 'intro') return; MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
       keep(l); };
     draw(); }
-  WIDE.addEventListener('change', function () { if (!(MINE && MINE.per)) applyCards(null); });
+  WIDE.addEventListener('change', function () { applyCards(null); });
   $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); sheet('HOME', mineIn); });
 
 
@@ -1960,7 +1995,7 @@
     if (!away) { jx.save(); jx.setTransform(dpr, 0, 0, dpr, (jr.left - rr.left) * dpr, (jr.top - rr.top) * dpr); if (!J.orbit && !J.back && !J2.on) { jx.beginPath(); jx.rect(0, 0, jr.width, jr.height); jx.clip(); } drawJelly(jx, t); if (J2.on) { jx.globalAlpha = J2.al; if (OPT.stamp) drawJelly2(jx, t, J2); else drawJelly3(jx, t, J2); jx.globalAlpha = 1; } jx.restore(); }
     if (sheet) return;
     /* the buoy's song plays on while the cards are looked through; an experience opened over them has the sound to itself, and the radio on air takes over from it */
-    if (!away && RS.on) { if (!RS.song) songOn(); songTick(); }
+    if (!away && (RS.on || (RS.song && !RS.muted))) { if (!RS.song) songOn(); songTick(); }
     if (WIRES.length || LOOSE) drawCables(RM.matches ? 0 : t);
     if (!away) rdSea(t, dt);
     if (!away) hudDraw(now);
