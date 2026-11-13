@@ -1538,3 +1538,15 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 /* the moa as a paper sticker laid on the photograph: a white cut edge, a flat shadow, a slight tilt, fed out in a few jumps like a hand-moved cut-out */
 #hm .sk-intro .in-prn .slot { transform: rotate(-2.5deg); transform-origin: 50% 0; overflow: hidden; padding: 0 6px 8px; margin-left: -6px; }
 #hm .sk-intro .in-prn .slot .paper { left: 10%; right: 10%; background: #FFFFFF; border: 3px solid #FFFFFF; border-top: 0; box-shadow: 3px 4px 0 rgba(20, 20, 20, .3); }
+/* THE OPENER on a phone: the photograph fills the card; the print feeds out once and stays; the copy side fades in over it, all of it in view, its key in the corner */
+#hm .sk-intro .in-prn { top: 50%; left: 50%; height: max(100%, 133.4cqw); width: auto; transform: translate(-50%, -50%); }
+@container (max-aspect-ratio: 3/4) { #hm .sk-intro .in-prn { width: auto; height: 100%; } }
+#hm .sk-intro .in-prn .slot { bottom: 0; }
+#hm .sk-intro .in-prn .slot .paper { animation: in-out 3.6s steps(12) .9s both; }
+@keyframes in-out { from { transform: translateY(-100%); } to { transform: translateY(-60%); } }
+#hm .sk-intro .in-f { transform: none; transition: opacity .45s .2s; }
+#hm .sk-intro.flip .in-f { transform: none; }
+#hm .sk-intro .in-f .in-flip { position: absolute; top: 4cqw; right: 4cqw; bottom: auto; margin: 0; z-index: 3; }
+.hm-card.small.sk-space .sm-sub { display: none; }
+#hm a.sm-inst, #hm a.sp-inst { text-decoration: none; color: inherit; }
+#hm .hm-card:not(.small).sk-space .hm-in { padding-bottom: 17cqw; }
