@@ -1365,12 +1365,17 @@
   var IRUK2 = null;
   /* the second one as the novel.global mark draws it: a box bell with its gut and ridges, two eyes, flecks, four beaded threads */
   var JM = null;
+  /* the jellyfish fades as it swims under the header's keys, so the keys stay clear */
+  var NAVX = { at: 0, l: 1e9, b: 0 };
+  function navFade(Q) { var n = performance.now(); if (n - NAVX.at > 1000) { NAVX.at = n; var tr = $('#hm-top').getBoundingClientRect(), nv = $$('#hm-top nav > :not([hidden])').map(function (e) { return e.getBoundingClientRect(); }).filter(function (r) { return r.width; });
+      NAVX.l = nv.length ? Math.min.apply(null, nv.map(function (r) { return r.left; })) - tr.left : 1e9; NAVX.b = nv.length ? Math.max.apply(null, nv.map(function (r) { return r.bottom; })) - tr.top : 0; }
+    if (Q.y > NAVX.b + 24) return 1; return Math.max(0, Math.min(1, (NAVX.l - 14 - Q.x) / 36)); }
   function drawJelly3(g, t, Q) {
     if (!JM) JM = { bell: new Path2D('M18.6 31.4C16.6 10.4 47.4 10.4 45.4 31.4l1.9 5.6Q32 41 16.7 37z'), gut: new Path2D('M28.6 22.6q3.4-2.6 6.8 0l.6 9.6q-4 2.2-8 0z'), ridge: new Path2D('M23.4 21q-1.6 8 .2 16.6M40.6 21q1.6 8-.2 16.6'),
       eyes: [[22.8, 32.4], [41.2, 32.4]], fl: [[25.4, 19.6], [30, 16.8], [35.6, 17.6], [39.2, 22.6], [27.4, 27.4], [37, 28.4], [24.6, 25.6], [32, 34.6], [38.4, 34], [26.2, 34.2]],
       th: ['M17.6 37.4q-2.6 6.4-.2 10.2t-1.6 8.6q-1.4 3.6.4 6.6', 'M25 39.6q-1.2 7.6 1.4 12.2t-.6 10.8', 'M39 39.6q1.2 7.6-1.4 12.2t.6 10.8', 'M46.4 37.4q2.6 6.4.2 10.2t1.6 8.6q1.4 3.6-.4 6.6'].map(function (q) { return new Path2D(q); }) };
     var m = RM.matches ? 0 : 1, a = (Q.p || 0) * m, s = 0.52, ink = 'rgba(178,222,246,.95)';
-    g.save(); g.translate(Q.x, Q.y); g.rotate(Q.a + Math.PI / 2 + Math.sin(t * 0.5 + 1) * 0.12 * m); g.scale(s, s); g.translate(-32, -30); g.lineCap = 'round'; g.lineJoin = 'round';
+    g.save(); g.globalAlpha *= navFade(Q); g.translate(Q.x, Q.y); g.rotate(Q.a + Math.PI / 2 + Math.sin(t * 0.5 + 1) * 0.12 * m); g.scale(s, s); g.translate(-32, -30); g.lineCap = 'round'; g.lineJoin = 'round';
     g.save(); g.translate(32, 30); g.scale(1 + a * 0.06, 1 - a * 0.08); g.translate(-32, -30);
     g.fillStyle = 'rgba(178,222,246,.16)'; g.fill(JM.bell); g.strokeStyle = ink; g.lineWidth = 1.6; g.stroke(JM.bell);
     g.globalAlpha *= 0.6; g.lineWidth = 0.8; g.stroke(JM.gut); g.stroke(JM.ridge); g.globalAlpha /= 0.6;
