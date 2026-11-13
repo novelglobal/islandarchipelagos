@@ -249,7 +249,7 @@
   function artSave(key, url) { var m = {}; try { m = JSON.parse(localStorage.getItem(ARTK) || '{}') || {}; } catch (e) { m = {}; } if (url) m[key] = url; else delete m[key];
     try { localStorage.setItem(ARTK, JSON.stringify(m)); return true; } catch (e) { return false; } }
   function panel(k, key, kind, x, y, w, h, sd) {
-    var g = k.g; x = R(x); y = R(y); w = R(w); h = R(h); if (k.hits) k.hits.push({ key: key, x: x, y: y, w: w, h: h });
+    var g = k.g; x = R(x); y = R(y); w = R(w); h = R(h); if (k.hits) k.hits.push({ key: key, x: x, y: y + (k.dy || 0), w: w, h: h });
     var im = ART[key];
     if (im) { var c = document.createElement('canvas'); c.width = w; c.height = h; var q = c.getContext('2d', { willReadFrequently: true }), s = Math.max(w / im.width, h / im.height);
       q.fillStyle = '#fff'; q.fillRect(0, 0, w, h); q.drawImage(im, (w - im.width * s) / 2, (h - im.height * s) / 2, im.width * s, im.height * s);
@@ -279,29 +279,14 @@
     var pw = w * (full ? 0.86 : 0.62), ph = h * (full ? 0.44 : 0.56), own = panel(k, 'c' + c, ['maze', 'spots', 'crack', 'worms'][st], x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, c + 11);
     if (!own) { disc(g, x + w / 2, y + h / 2, w * 0.2); suit(g, st, x + w / 2, y + h / 2, w * 0.12); }
   }
-  function bjSum(h) { var t = 0, a = 0; h.forEach(function (c) { var r = c % 13; if (r === 0) { a++; t += 11; } else t += r >= 10 ? 10 : r + 1; }); while (t > 21 && a) { t -= 10; a--; } return t; }
+  /* playing cards: the whole deck, thirteen to a print, four prints. DECK turns the page; PRINT sends all four */
   var cards = {
-    opts: [['deck', 'DECK'], ['one', 'ONE'], ['five', 'FIVE'], ['hit', '21'], ['again', 'AGAIN'], ['art', 'ART', false]],
+    opts: [['deck', 'DECK']], only: true,
     pages: 4, init: function (o) { o.deck = true; o.page = 0; },
-    act: function (a, s, o) { if (a === 'deck') { o.page = o.deck ? (o.page + 1) % 4 : 0; o.deck = true; o.bj = null; return true; } o.deck = false;
-      /* 21: a card at a time, one hand, until it passes 21; then the next press starts again */
-      if (a === 'hit') { if (!o.bj || bjSum(o.bj.h) >= 21) { var sh = []; for (var q = 0; q < 52; q++) sh.splice(Math.floor(Math.random() * (q + 1)), 0, q); o.bj = { left: sh, h: [] }; } o.bj.h.push(o.bj.left.pop()); if (o.bj.h.length === 1) o.bj.h.push(o.bj.left.pop()); return true; }
-      o.bj = null;
-      if (a === 'one') { o.n = 1; o.deal = null; } else if (a === 'five') { o.n = 5; o.deal = null; } else { var l = [], d = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < (o.n || 1); i++) d.push(l.splice(Math.floor(Math.random() * l.length), 1)[0]); o.deal = d; } return true; },
-    draw: function (k, d, s, o) {
-      if (o.deck) { var pg = o.page || 0, y0 = 8, cw = 156, ch = 218;
-        for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
-        return y0 + 5 * (ch + 10) + 6; }
-      if (o.bj) { var hh = o.bj.h, tw = 244, th = R(tw * 1.4), yb = 8; hh.forEach(function (c, i) { playCard(k, c, 8 + (i % 2) * (tw + 8), yb + Math.floor(i / 2) * (th + 8), tw, th, true); });
-        yb += Math.ceil(hh.length / 2) * (th + 8) + 10; var sm = bjSum(hh); k.fit(String(sm), W / 2, yb + 120, '700', 150, W - 40, SANS, 'center');
-        if (sm > 21) { k.g.save(); k.g.lineWidth = 14; k.g.lineCap = 'round'; k.g.beginPath(); k.g.moveTo(W / 2 - 130, yb + 140); k.g.lineTo(W / 2 + 130, yb + 10); k.g.stroke(); k.g.restore(); }
-        return yb + 160; }
-      var day = today(), n = o.n || 1, hand = o.deal || (function () { var l = [], h = []; for (var i = 0; i < 52; i++) l.push(i); for (i = 0; i < n; i++) h.push(l.splice(seed(day + s.id + i, l.length), 1)[0]); return h; })();
-      /* each card the paper's full width, a cut line between them */
-      var y = 8, cw = W - 12, ch = R(cw * 1.4);
-      hand.forEach(function (c, i) { if (i) { for (var x = M; x < W - M; x += 14) k.g.fillRect(x, y + 10, 7, 2); y += 24; } playCard(k, c, 6, y, cw, ch, true); y += ch; });
-      return y + 8;
-    }
+    act: function (a, s, o) { if (a === 'deck') { o.page = ((o.page || 0) + 1) % 4; o.deck = true; return true; } return false; },
+    draw: function (k, d, s, o) { var pg = o.page || 0, y0 = 8, cw = 156, ch = 218;
+      for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
+      return y0 + 5 * (ch + 10) + 6; }
   };
 
   /* ───────── the pass: today's mark and a one-use code, left by the printer ───────── */
@@ -353,8 +338,11 @@
   /* the prints with no art of their own take one at their head */
   ['week', 'news', 'events', 'book'].forEach(function (n) { var K = KINDS[n]; K.opts = (K.opts || []).concat([['art', 'ART', false]]); K.head = true; });
   function draw(cv, kind, data, stack, o) {
-    var K = KINDS[kind]; cv.width = W; cv.height = 4200; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
-    var top = 0, hw = W - 48; if (K.head && o && (o.art || ART.head)) { panel(k, 'head', 'spots', 24, 20, hw, Math.round(hw * 0.56), 5); top = 20 + Math.round(hw * 0.56) + 18; k.g.save(); k.g.translate(0, top); }
+    /* art at the head only when a picture is there: it pushes the paper down, and the sheet grows by as much, so nothing at the foot is lost.
+       With ART on and no picture, nothing is drawn; the head is only a place to tap */
+    var K = KINDS[kind], hw = W - 48, hh = Math.round(hw * 0.56), top = K.head && ART.head ? 20 + hh + 18 : 0;
+    cv.width = W; cv.height = 4200 + top; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
+    if (top) { panel(k, 'head', 'spots', 24, 20, hw, hh, 5); k.g.save(); k.g.translate(0, top); k.dy = top; } else if (K.head && o && o.art) k.hits.push({ key: 'head', x: 24, y: 0, w: hw, h: 90 });
     var hgt = K.draw(k, data || {}, stack, o || {}); if (top) k.g.restore();
     return oneBit(cv, Math.min(cv.height, hgt + top));
   }
@@ -425,7 +413,7 @@
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } return (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; });
   }
   function opts() {
-    var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o); if (QK) S.o.deck = false;
+    var el = $('#opts'), pk = $('#pick'), l = S.K.opts || []; S.o = {}; l.forEach(function (x) { if (x[2] !== undefined) S.o[x[0]] = x[2]; }); if (S.K.init) S.K.init(S.o); if (QK && !S.K.only) S.o.deck = false;
     /* a select (the book picker) stands above the paper; keys beside it */
     if (pk) pk.innerHTML = l.filter(function (x) { return x[3] === 'select'; }).map(function (x) { return '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; }).join('');
     el.innerHTML = l.map(function (x) { if (x[3] === 'select') return pk ? '' : '<select data-a="' + x[0] + '" aria-label="' + x[1] + '"><option>' + x[1] + '</option></select>'; return '<button type="button" data-a="' + x[0] + '"' + (x[2] !== undefined ? ' data-t="' + x[0] + '"' : '') + (x[0] === 'art' ? ' title="Your own art on the print"' : '') + '>' + (x[0] === 'art' ? '<svg class=\"ptr\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12V5.2a1.6 1.6 0 0 1 3.2 0V11m0-2.2a1.6 1.6 0 0 1 3.2 0V11.4m0-1.2a1.6 1.6 0 0 1 3.2 0v4.6c0 3.6-2.6 6.2-6.2 6.2h-.9c-2.1 0-3.5-.9-4.6-2.4l-3-4.3a1.6 1.6 0 0 1 2.6-1.9L9 15\"/></svg>' : '') + x[1] + '</button>'; }).join('');
