@@ -34,7 +34,7 @@
   async function show(t) {
     tab = t; document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
-    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
+    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'home') await home(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
   }
 
   /* ───────── species: every kind of life the devices have met, learned from their pulls. In the field list, a kind has its months,
@@ -546,6 +546,44 @@
     main.replaceChildren(...head('Pop-ups'), make, ...doc.pops.map(card), tcards);
   }
 
+  /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the WORDS AND BOARDS
+     page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
+  const HOME_CARDS = [['radio', 'DIRECT ACTION RADIO', 'full'], ['wish', 'CIRCULAR STRATEGY', 'full'], ['research', 'RESEARCH BOARD', 'full'], ['zine', 'DESIGN PRINT', 'full'], ['kit', 'ISLAND', 'full'], ['space', 'ISLAND ARCHIPELAGOS', 'full'],
+    ['weather', 'WEATHER', 'small'], ['news', 'NEWS', 'small'], ['events', 'EVENTS', 'small'], ['fiction', 'FICTION', 'small'], ['nonfiction', 'NON-FICTION', 'small'], ['survival', 'SURVIVAL', 'small'],
+    ['cards', 'PLAYING', 'small'], ['tarot', 'TAROT', 'small'], ['pl-pl-2uqn', 'SESAME', 'small'], ['portfolio', 'PORTFOLIO', 'small']];
+  async function home() {
+    const st = await (await api('settings')).json();
+    const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('home'); };
+    const hint = t => el('small', { class: 'hint', text: t });
+    const chk = (id, on, t) => el('label', { class: 'check' }, (() => { const c = el('input', { type: 'checkbox', id }); c.checked = on; return c; })(), t);
+    /* the cards text, as blocks */
+    const blocks = String(st.cards || '').split(/\n(?=\s*#)/).map(b => { const ls = b.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); return m ? { id: m[1].toLowerCase(), ls: ls.slice(1).filter(l => l.trim()) } : null; }).filter(Boolean);
+    const rows = []; blocks.forEach(b => { if (!rows.some(r => r.id === b.id)) rows.push(b); });
+    HOME_CARDS.forEach(([id]) => { if (!rows.some(r => r.id === id)) rows.push({ id, ls: [] }); });
+    rows.forEach(r => { const known = HOME_CARDS.find(c => c[0] === r.id), sz = r.ls.map(l => /^\s*size\s*:\s*(full|small)\s*$/i.exec(l)).filter(Boolean)[0];
+      r.name = known ? known[1] : r.id.toUpperCase(); r.size = sz ? sz[1].toLowerCase() : known ? known[2] : 'full'; r.own = known ? known[2] : 'full'; r.hide = r.ls.some(l => /^\s*hide\s*$/i.test(l)); r.rest = r.ls.filter(l => !/^\s*(hide|size\s*:.*)\s*$/i.test(l)); });
+    const list = el('div', { style: 'display:grid;gap:6px' });
+    const draw = () => list.replaceChildren(...rows.map((r, i) => { const sz = el('select', { style: 'width:110px' }, el('option', { value: 'full', text: 'BIG' }), el('option', { value: 'small', text: 'SMALL' })); sz.value = r.size; sz.onchange = () => { r.size = sz.value; };
+      const on = el('input', { type: 'checkbox' }); on.checked = !r.hide; on.onchange = () => { r.hide = !on.checked; };
+      const mv = d => () => { const j = i + d; if (j < 0 || j >= rows.length) return; rows.splice(j, 0, rows.splice(i, 1)[0]); draw(); };
+      return el('div', { style: 'display:grid;grid-template-columns:34px 34px 1fr 110px 90px;gap:8px;align-items:center' },
+        el('button', { type: 'button', text: '↑', title: 'Earlier', onclick: mv(-1) }), el('button', { type: 'button', text: '↓', title: 'Later', onclick: mv(1) }),
+        el('b', { text: r.name, style: 'font:600 12px var(--mono);letter-spacing:.08em' }), sz, el('label', { class: 'check' }, on, 'SHOWN')); }));
+    draw();
+    const text = () => rows.map(r => { const ls = r.rest.slice(); if (r.size !== r.own) ls.push('size: ' + r.size); if (r.hide) ls.push('hide'); return '# ' + r.id + (ls.length ? '\n' + ls.join('\n') : ''); }).join('\n');
+    const cardsEd = el('section', { class: 'ed' }, el('h3', { text: 'CARDS' }), list,
+      hint('The order they stand in on novel.global, top to bottom. BIG fills the screen; SMALL stands three to a screen, so small cards read best in threes. Untick SHOWN to take a card off the home.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cards: text() }) }),
+        el('button', { type: 'button', text: 'AS THEY STARTED', onclick: () => { if (confirm('Put every card back as it started? Words typed for the cards go too.')) save({ cards: '' }); } })));
+    const look = el('section', { class: 'ed' }, el('h3', { text: 'LOOK' }),
+      chk('hm-all', !!st.cartridges, 'EVERY CARD SMALL'), hint('On: the big cards stand small too, three to a screen, each with its title and one thing of its own.'),
+      chk('hm-one', st.oneIsland !== false, 'ISLAND ON ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS, which carries the ONE CLICK INSTALL key, the printer and its line. Off: ISLAND stands as its own card.'),
+      chk('hm-talk', !!st.smallTalk, 'TALK KEY ON SMALL CARDS'), chk('hm-find', !!st.smallFind, 'PRINTER KEY ON SMALL CARDS'), hint('Off: the small cards stand clean.'),
+      chk('hm-jel', !!st.jellyStamp, 'SECOND JELLYFISH AS A STAMP'), hint('Off: drawn like the novel.global mark. On: the round dotted one from the print pass.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#hm-all').checked, oneIsland: $('#hm-one').checked, smallTalk: $('#hm-talk').checked, smallFind: $('#hm-find').checked, jellyStamp: $('#hm-jel').checked }) })));
+    main.replaceChildren(...head('Home'), cardsEd, look);
+  }
+
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }
 
   /* ───────── the portfolio: posts written here, kept as drafts until published; a cover, a category, links ───────── */
@@ -788,8 +826,6 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ sendLive: $('#sd-live').checked }) })));
     const blog = el('section', { class: 'ed' }, el('h3', { text: 'BLOG' }), chk('bl-on', !!st.blogShow, 'SHOWN'), hint('Off: novel.global/blog.html sends visitors home.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ blogShow: $('#bl-on').checked }) })));
-    const keyz = el('section', { class: 'ed' }, el('h3', { text: 'SMALL CARDS' }), chk('sm-talk', !!st.smallTalk, 'TALK KEY'), chk('sm-find', !!st.smallFind, 'PRINTER KEY'), hint('The nine small cards: their talk and printer keys. Off: the cards stand clean. The big cards keep both.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ smallTalk: $('#sm-talk').checked, smallFind: $('#sm-find').checked }) })));
     /* making: the sandbox, this browser's code, and the ways back makers linked */
     let myWho = ''; try { myWho = JSON.parse(localStorage.getItem('da.who') || '""') || ''; } catch (e) { myWho = ''; }
     const mkSay = el('p', { class: 'hint' });
@@ -801,16 +837,10 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'MAKER', disabled: !myWho, onclick: async () => { try { await api('makers', { method: 'POST', body: JSON.stringify({ who: myWho }) }); mkSay.textContent = myWho + ' CAN PUT THINGS UP'; } catch (e) { mkSay.textContent = 'NOT DONE'; } } })), mkSay,
       hint('Linked: the ways back makers chose to leave with their code (mesh, email, mobile, Steam). Seen only here.'), lkList);
     lkLoad();
-    const crt = el('section', { class: 'ed' }, el('h3', { text: 'CARTRIDGES' }), chk('ct-all', !!st.cartridges, 'EVERY CARD'), hint('EVERY CARD: the big cards stand three to a screen too.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ cartridges: $('#ct-all').checked }) })));
-    const isl = el('section', { class: 'ed' }, el('h3', { text: 'ONE ISLAND' }), chk('one-on', !!st.oneIsland, 'ISLAND JOINS ISLAND ARCHIPELAGOS'), hint('On: the ISLAND card is folded into ISLAND ARCHIPELAGOS (its ONE CLICK INSTALL key opens the install and checklist), and the novel.global card shows the printer, a receipt feeding out, with the tap as a small banner at its top. Off: as now.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ oneIsland: $('#one-on').checked }) })));
-    const jel = el('section', { class: 'ed' }, el('h3', { text: 'SECOND JELLYFISH' }), chk('jl-st', !!st.jellyStamp, 'STAMP STYLE'), hint('Off: the second jellyfish is drawn like the novel.global mark (bell, eyes, beaded threads). On: the round dotted one from the print pass stamp.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ jellyStamp: $('#jl-st').checked }) })));
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'EVENTS' }), hint('One a line: when | what | where. Shown on the EVENTS card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
-    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, keyz, crt, isl, jel, notice, country, motion, cur, sources, reset);
+    main.replaceChildren(...head('Settings'), gates, start, printq, styles, sends, blog, events, making, notice, country, motion, cur, sources, reset);
   }
 
   /* ───────── data: everything as one file, the places and stories as sheets, places brought in by the hundred ───────── */

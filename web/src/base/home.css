@@ -721,7 +721,7 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14p
 @media (prefers-reduced-motion: reduce) { .zp .zp-p { transform: none; opacity: 1; transition: none; } .zp .zp-sp { animation: none; } .zp.gl .zp-sl { opacity: 0; } }
 /* ISLAND: the name in a plain black grotesk, big, and the line across it in a fuzzy yellow hand, as if lit; on crumpled receipt paper */
 #hm .sk-kit .hm-t { color: #141414; -webkit-text-stroke: 0; text-shadow: none; font: 400 27cqw/.82 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: -.05em; margin-left: -1cqw; white-space: nowrap; }
-#hm .sk-kit .kt-fz { position: relative; z-index: 1; margin: 1.2cqw 0 2cqw 1cqw; white-space: nowrap; font: 700 7.6cqw/1 'Snell Roundhand', 'Segoe Script', 'Brush Script MT', 'Apple Chancery', cursive; letter-spacing: -.02em; color: #E5262B; transform: rotate(-3deg); transform-origin: 0 50%; filter: blur(.05cqw); text-shadow: 0 0 .5cqw rgba(255, 70, 60, .7), 0 0 2cqw rgba(255, 60, 50, .4), 0 0 4.5cqw rgba(255, 60, 50, .22); pointer-events: none; }
+#hm .sk-kit .kt-fz, #hm .sk-space .sp-fz { position: relative; z-index: 1; margin: 1.2cqw 0 2cqw 1cqw; white-space: nowrap; font: 700 7.6cqw/1 'Snell Roundhand', 'Segoe Script', 'Brush Script MT', 'Apple Chancery', cursive; letter-spacing: -.02em; color: #E5262B; transform: rotate(-3deg); transform-origin: 0 50%; filter: blur(.05cqw); text-shadow: 0 0 .5cqw rgba(255, 70, 60, .7), 0 0 2cqw rgba(255, 60, 50, .4), 0 0 4.5cqw rgba(255, 60, 50, .22); pointer-events: none; }
 @media (prefers-contrast: more) { #hm .sk-kit .kt-fz { filter: none; } }
 /* RESEARCH BOARD: runes written by hand between the photographs and the name, rubbed out, written again */
 .sk-research .hm-rune { position: absolute; z-index: 2; left: 5cqw; width: 90cqw; height: auto; top: 58%; overflow: visible; fill: none; stroke: #0B0B0B; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
@@ -902,18 +902,6 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .hm-card.sk-wx { --c-bg: #F2F1EC; --c-ink: #111; cursor: pointer; }
 .sk-wx .hm-in { padding: 0; }
 .sk-wx .hm-art, .sk-wx .hm-fr { display: none; }
-.sk-wx .wx-f { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 5cqw 5cqw 4.5cqw; color: #111; pointer-events: none; }
-.sk-wx .wx-f p { margin: 0; }
-.sk-wx .wx-k { display: flex; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 3px solid #111; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; margin-right: 96px; }
-.sk-wx .wx-k span { font-weight: 500; opacity: .6; }
-#hm .sk-wx .wx-f .wx-k { margin-right: 88px; }
-#hm .hm-card.sk-wx .hm-keys { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-#hm .hm-card.sk-wx .hm-keys .hm-rk:not(.on) { color: #111111 !important; }
-.sk-wx .wx-v { display: flex; align-items: baseline; gap: .3em; font: 700 clamp(34px, min(30cqw, 34cqh), 96px)/.9 'Poppins', Arial, sans-serif; letter-spacing: -.04em; }
-.sk-wx .wx-l { font-weight: 600; font-size: .5em; letter-spacing: -.02em; }
-.sk-wx .wx-s { padding-top: 6px; border-top: 1px dashed #111; font: 600 11px/1.2 'IBM Plex Mono', monospace; letter-spacing: .08em; }
-.sk-wx.wx-wet .wx-s { align-self: flex-start; padding: 4px 6px; border: 0; background: #111; color: #F2F1EC; }
-.sk-wx.wx-txt .wx-v { display: block; font: 600 clamp(14px, min(6.4cqw, 9cqh), 22px)/1.22 'Poppins', Arial, sans-serif; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 /* the portfolio card, every size: a clear window, the kept print in it when there is one; the ad a slim banner along its foot */
 #hm .sk-portfolio .rc-tap, #hm .sk-portfolio .rc-888 { display: none; }
 #hm .sk-portfolio .hm-rc::before { content: none; }
@@ -926,63 +914,67 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 #hm .sk-portfolio .rc-tp .tp-go { top: 50%; bottom: auto; transform: translateY(-50%); }
 #hm .sk-portfolio .hm-rc.kept .rc-tp { display: grid; }
 
-/* the small cards, three themes three ways. THIS WEEK: a report cover, blue rules, a red title, line drawings between red hairlines */
-.hm-card.sk-wx.g-week { --c-bg: #EFE7D5; }
-.hm-card.sk-wx.g-week[data-id="news"] { --c-bg: #E7EBDD; }
-.hm-card.sk-wx.g-week[data-id="events"] { --c-bg: #F0DDCF; }
-.g-week .wx-f { color: #2342A8; padding: 4.5cqw 6cqw 4cqw; }
-#hm .g-week .wx-f .wx-k { display: block; margin-right: 80px; padding: 2.2cqh 0 0; border: 0; border-top: 1px solid #2342A8; }
-.g-week .wx-g { display: block; font: 400 clamp(10px, 3.4cqw, 13px)/1.1 'Poppins', Arial, sans-serif; font-style: normal; letter-spacing: -.01em; text-transform: lowercase; }
-.g-week .wx-g::first-letter, .g-week .wx-k b::first-letter { text-transform: uppercase; }
-.g-week .wx-k b { display: block; color: #E3261F; font: 700 clamp(15px, 6.4cqw, 24px)/1.05 'Poppins', Arial, sans-serif; letter-spacing: -.03em; text-transform: lowercase; }
-.g-week .wx-k span { display: none; }
-.sk-wx.g-week .wx-v { position: static; align-items: center; padding: 1.6cqh 26% 1.6cqh 0; border-top: 1px solid #E3261F; border-bottom: 1px solid #E3261F; color: #2342A8; font-size: clamp(28px, min(17cqw, 24cqh), 64px); }
-.sk-wx.g-week.wx-txt .wx-v { display: block; padding-right: 22%; color: #2342A8; font: 500 clamp(13px, min(4.6cqw, 7cqh), 17px)/1.25 'Poppins', Arial, sans-serif; letter-spacing: -.01em; -webkit-line-clamp: 4; }
-.g-week .wx-ic { position: absolute; right: 6cqw; top: 50%; width: min(20cqw, 24cqh); aspect-ratio: 1; transform: translateY(-30%); }
-.wx-ic svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
-.g-week .wx-ic svg { stroke: #2342A8; }
-.g-week .wx-s, .sk-wx.g-week.wx-wet .wx-s { align-self: stretch; padding: 1.4cqh 0 0; border: 0; background: none; color: #2342A8; font: 500 clamp(9px, 3cqw, 11px)/1.2 'Poppins', Arial, sans-serif; letter-spacing: .02em; }
+/* ───────── the nine small cards. One frame for all: the title top left, the thing itself, and room. They stand wide on a phone and tall on a
+   desk, so every measure is the card's own (cqw, cqh, cqmin) ───────── */
+#hm .hm-card.sk-wx .hm-keys { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sk-wx .wx-f { position: absolute; inset: 0; padding: 7cqmin; color: var(--ink); pointer-events: none; overflow: hidden; border-radius: inherit; }
+.sk-wx .wx-f p { margin: 0; }
+.sk-wx .wx-k { position: absolute; left: 7cqmin; top: 6.4cqmin; font: 700 clamp(17px, 9.5cqmin, 34px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; }
+#hm .hm-card.sk-wx .hm-keys .hm-rk:not(.on) { color: var(--ink) !important; }
 
-/* READ: flat colour, one big shape, the title large and tight, the shelf stacked small, the word READ on its side */
-.hm-card.sk-wx.g-read { --c-bg: #2F9B4E; }
-.hm-card.sk-wx.g-read.r-non { --c-bg: #E8E1C6; }
-.hm-card.sk-wx.g-read.r-how { --c-bg: #F3E12E; }
-.g-read .wx-f { isolation: isolate; overflow: hidden; border-radius: inherit; padding: 5cqw 12cqw 4.5cqw 5cqw; }
-.g-read .wx-f::before, .g-read .wx-f::after { content: ''; position: absolute; inset: 0; z-index: -1; }
-.r-fic .wx-f::before { background: #F07A3E; clip-path: polygon(28% 100%, 66% 12%, 100% 100%); }
-.r-fic .wx-f::after { background: #B9D63A; clip-path: polygon(0 74%, 100% 74%, 100% 80%, 0 80%); }
-.r-non .wx-f::before { background: #A99CE2; clip-path: circle(46% at 18% 62%); }
-.r-non .wx-f::after { background: #BDB8B0; clip-path: polygon(64% 0, 100% 0, 100% 100%, 64% 100%); }
-.r-how .wx-f::before { background: #F07A3E; clip-path: ellipse(44% 30% at 58% 80%); }
-.r-how .wx-f::after { background: #A99CE2; clip-path: polygon(0 0, 100% 0, 100% 13%, 0 13%); }
-#hm .g-read .wx-f .wx-k { display: block; margin: 0; padding: 0; border: 0; }
-.g-read .wx-k b { display: block; font: 700 clamp(10px, 3.6cqw, 14px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.01em; color: #111; }
-.g-read .wx-k span { display: none; }
-.g-read .wx-g { position: absolute; right: 4.5cqw; bottom: 4.5cqw; writing-mode: vertical-rl; font: 700 clamp(10px, 3.6cqw, 14px)/1 'Poppins', Arial, sans-serif; font-style: normal; letter-spacing: .02em; color: #111; }
-.sk-wx.g-read.wx-txt .wx-v { display: -webkit-box; color: #111; font: 500 clamp(20px, min(10.5cqw, 15cqh), 40px)/.94 'Poppins', Arial, sans-serif; letter-spacing: -.035em; text-transform: uppercase; -webkit-line-clamp: 3; }
-.g-read .wx-s { align-self: flex-start; padding: 0; border: 0; color: #111; font: 700 clamp(9px, 3cqw, 12px)/1.1 'Poppins', Arial, sans-serif; letter-spacing: .01em; }
+/* THIS WEEK: type alone, each on its own paper in its own ink. Weather in figures, the news in a book face, events in capitals */
+.hm-card.sk-wx.g-week { --c-bg: #EFE7D5; --ink: #2342A8; }
+.hm-card.sk-wx.g-week[data-id="news"] { --c-bg: #E4EADB; --ink: #1F4D3A; }
+.hm-card.sk-wx.g-week[data-id="events"] { --c-bg: #F0DDCF; --ink: #7A2E1C; }
+.g-week .wx-v { position: absolute; left: 7cqmin; right: 7cqmin; bottom: 15cqmin; display: flex; align-items: baseline; gap: .22em; font: 700 clamp(44px, 40cqmin, 150px)/.8 'Poppins', Arial, sans-serif; letter-spacing: -.055em; }
+.g-week .wx-l { font-size: .34em; font-weight: 600; letter-spacing: -.03em; opacity: .55; }
+.g-week .wx-s { position: absolute; left: 7cqmin; right: 7cqmin; bottom: 6.6cqmin; font: 600 clamp(9px, 3.6cqmin, 12px)/1.2 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+.g-week .wx-s:empty { display: none; }
+.g-week.wx-txt .wx-v { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; bottom: 7cqmin; font: 400 clamp(17px, 8.6cqmin, 30px)/1.16 Georgia, 'Times New Roman', serif; letter-spacing: -.012em; }
+.g-week[data-id="events"].wx-txt .wx-v { bottom: 15cqmin; -webkit-line-clamp: 3; font: 700 clamp(17px, 9cqmin, 32px)/1.04 'Poppins', Arial, sans-serif; letter-spacing: -.03em; }
 
-/* CARDS: a bright card with a hairline, the title, a pale plate with a line drawing, an italic line under it, the theme small */
-.hm-card.sk-wx.g-deck { --c-bg: #E6FF2E; }
-.g-deck .wx-f { box-shadow: inset 0 0 0 1px #111; border-radius: inherit; padding: 3.6cqw 4cqw 3.2cqw; gap: 1.6cqh; }
-#hm .g-deck .wx-f .wx-k { display: block; padding: 0; border: 0; margin-right: 80px; }
-.g-deck .wx-k b { font: 700 clamp(12px, 4.2cqw, 15px)/1.1 'Poppins', Arial, sans-serif; letter-spacing: -.01em; text-transform: lowercase; display: block; }
-.g-deck .wx-k b::first-letter { text-transform: uppercase; }
-.g-deck .wx-k span { display: none; }
-.g-deck .wx-g { position: absolute; right: 4cqw; bottom: 3.4cqw; font: 600 clamp(8px, 2.6cqw, 10px)/1 'IBM Plex Mono', monospace; font-style: normal; letter-spacing: .1em; }
-.sk-wx.g-deck .wx-v { position: relative; flex: 1; min-height: 0; display: block; background: #DCDAC0; }
-.g-deck .wx-h { position: absolute; left: 3cqw; top: 2.4cqh; font: 600 clamp(12px, 4.4cqw, 16px)/1 'Poppins', Arial, sans-serif; letter-spacing: 0; }
-.g-deck .wx-l { display: none; }
-.g-deck .wx-ic { position: absolute; left: 50%; top: 50%; width: min(56cqw, 50cqh); aspect-ratio: 1; transform: translate(-50%, -50%); }
-.g-deck .wx-ic svg { stroke: #111; stroke-width: .7; }
-.g-deck .wx-s { padding: 0 24% 0 0; border: 0; font: italic 400 clamp(10px, 3.4cqw, 13px)/1.2 'Poppins', Arial, sans-serif; letter-spacing: 0; text-transform: lowercase; }
-.g-deck .wx-s::first-letter { text-transform: uppercase; }
-#hm .hm-card.sk-wx.g-read:not(.r-non) .hm-keys .hm-rk:not(.on) { color: #111 !important; }
+/* READ: the genre, and a book stood out from its shelf, two more behind it. Only the title and the author, on the cover */
+.hm-card.sk-wx.g-read { --c-bg: #2F9B4E; --ink: #111; --bk: #F07A3E; --bk2: #B9D63A; --bk3: #14532A; }
+.hm-card.sk-wx.g-read.r-non { --c-bg: #E8E1C6; --bk: #A99CE2; --bk2: #F07A3E; --bk3: #BDB8B0; }
+.hm-card.sk-wx.g-read.r-how { --c-bg: #F3E12E; --bk: #F4F1E8; --bk2: #A99CE2; --bk3: #F07A3E; }
+.wx-bk { position: absolute; right: 13cqmin; bottom: -2cqmin; height: 84cqh; aspect-ratio: 2 / 3; transform: rotate(-3deg); transform-origin: 50% 100%; }
+.wx-bk > i { position: absolute; inset: 0; border-radius: 1.4cqmin 2.4cqmin 2.4cqmin 1.4cqmin; background: var(--bk3); transform: translate(34%, 5%) rotate(9deg); }
+.wx-bk > i:first-child { background: var(--bk2); transform: translate(17%, 2%) rotate(4.5deg); }
+.wx-bk > p { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 9% 8% 13% 15%; border-radius: 1.4cqmin 2.4cqmin 2.4cqmin 1.4cqmin; background: linear-gradient(90deg, rgba(0, 0, 0, .16) 0 5%, rgba(0, 0, 0, 0) 5.2% 7%, rgba(0, 0, 0, .08) 7.2% 7.8%, rgba(0, 0, 0, 0) 8%) var(--bk); box-shadow: 0 2.4cqmin 4cqmin -2cqmin rgba(0, 0, 0, .45); color: #111; }
+.wx-bk .wx-h { font: 700 clamp(10px, 5.9cqmin, 22px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; text-transform: uppercase; }
+.wx-bk .wx-s { font: 600 clamp(7px, 2.9cqmin, 10px)/1.25 'IBM Plex Mono', monospace; letter-spacing: .08em; }
+
+/* CARDS: a card, card-shaped whatever the card around it does, one more of its deck behind. Playing on yellow, tarot at night in gold,
+   SESAME in its print blue and pink */
+.hm-card.sk-wx.g-deck { --c-bg: #E6FF2E; --ink: #111; --pc: #F7F4EA; --pci: #111; --pcb: #111; }
+.hm-card.sk-wx.g-deck[data-id="tarot"] { --c-bg: #1C1B3A; --ink: #E7C873; --pc: #26254C; --pci: #E7C873; --pcb: #E7C873; }
+.hm-card.sk-wx.g-deck[data-id^="pl-"] { --c-bg: #17457F; --ink: #F4F1E8; --pc: #F2B6C6; --pci: #17457F; --pcb: #F4F1E8; }
+.wx-pc { position: absolute; right: 14cqmin; top: 50%; height: 78cqh; aspect-ratio: 5 / 7; transform: translateY(-50%) rotate(4deg); }
+.wx-pc > i { position: absolute; inset: 0; border-radius: 6%/4.3%; background: var(--pcb); transform: translate(-13%, 3%) rotate(-10deg); opacity: .9; }
+.wx-pc > p { position: absolute; inset: 0; border-radius: 6%/4.3%; background: var(--pc); color: var(--pci); box-shadow: 0 2.4cqmin 4cqmin -2cqmin rgba(0, 0, 0, .5); }
+.wx-pc .wx-h { position: absolute; left: 9%; top: 6%; font: 700 clamp(13px, 9cqmin, 30px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.04em; }
+.wx-pc .wx-ic { position: absolute; left: 50%; top: 54%; width: 64%; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.wx-pc .wx-ic svg { width: 100%; height: 100%; fill: currentColor; stroke: none; }
+.g-deck.wx-red .wx-pc > p { color: #D8261C; }
+.wx-pc .wx-s { position: absolute; left: 8%; right: 8%; bottom: 7%; text-align: center; font: 600 clamp(6px, 2.7cqmin, 10px)/1.2 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+.g-deck[data-id="tarot"] .wx-pc > p { box-shadow: inset 0 0 0 .5cqmin #26254C, inset 0 0 0 .8cqmin rgba(231, 200, 115, .7), 0 2.4cqmin 4cqmin -2cqmin rgba(0, 0, 0, .6); }
+.g-deck[data-id="tarot"] .wx-pc > i { background: #26254C; box-shadow: inset 0 0 0 .3cqmin rgba(231, 200, 115, .6); }
+.g-deck[data-id="tarot"] .wx-h { left: 0; right: 0; top: 50%; transform: translateY(-62%); text-align: center; font: 400 clamp(22px, 19cqmin, 64px)/1 Georgia, 'Times New Roman', serif; letter-spacing: 0; }
+.g-deck[data-id="tarot"] .wx-ic { display: none; }
+.g-deck[data-id^="pl-"] .wx-h, .g-deck[data-id^="pl-"] .wx-ic { display: none; }
+.g-deck[data-id^="pl-"] .wx-s { top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: .5em; font: italic 400 clamp(11px, 6.2cqmin, 21px)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; }
+.g-deck[data-id^="pl-"] .wx-s em { display: block; }
+
+/* tall, as they stand on a desk: the thing moves under the title and takes the width */
+@container (max-aspect-ratio: 1/1) {
+  .wx-bk { right: auto; left: 50%; bottom: -3cqmin; height: auto; width: 56cqw; transform: translateX(-56%) rotate(-3deg); }
+  .wx-pc { right: auto; left: 50%; top: 56%; height: auto; width: 54cqw; transform: translate(-46%, -50%) rotate(4deg); }
+  .g-week:not(.wx-txt) .wx-v { font-size: clamp(44px, 33cqmin, 150px); }
+}
 
 /* on a wide screen the small cards stand as cards, not strips: the same proportion as a phone's, centred in the page */
 @media (min-width: 900px) {
   .hm-trio .hm-card.small.sk-wx { height: auto; max-height: calc(100dvh - var(--hm-top) - var(--hm-peek) - 48px); aspect-ratio: 5 / 7; align-self: center; }
-  .g-read .wx-f { padding-right: 14cqw; }
 }
 
 /* the back key keeps its size; a wider touch around it, so a near miss is not the reef */
@@ -1048,44 +1040,6 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 .st-alert i { box-shadow: none; background: #C9654E; }
 .sk-wish .st-grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--grain); background-size: 180px; opacity: .3; mix-blend-mode: soft-light; }
 
-/* the nine, round 9: the group word gone from every face (READ, CARDS, This week); the sources in hover */
-.sk-wx .wx-g { display: none !important; }
-/* THIS WEEK: a broadsheet. Title alone over a full rule, each day's paper its own ink */
-#hm .g-week .wx-f .wx-k { margin-right: 0; padding-top: 2.6cqh; border-top: 2px solid currentColor; }
-.g-week .wx-k b { font-size: clamp(20px, 8.4cqw, 32px); letter-spacing: -.035em; }
-.g-week .wx-s { border-top: 1px solid currentColor !important; padding-top: 1.6cqh !important; opacity: .85; }
-.hm-card.sk-wx.g-week[data-id="news"] .wx-f { color: #1F4D3A; }
-.hm-card.sk-wx.g-week[data-id="news"] .wx-k b { color: #1F4D3A; }
-.hm-card.sk-wx.g-week[data-id="news"] .wx-v { color: #10261C; border-color: #1F4D3A; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: clamp(15px, min(5.4cqw, 8cqh), 20px); }
-.hm-card.sk-wx.g-week[data-id="news"] .wx-ic svg { stroke: #1F4D3A; }
-.hm-card.sk-wx.g-week[data-id="events"] .wx-f { color: #7A2E1C; }
-.hm-card.sk-wx.g-week[data-id="events"] .wx-k b { color: #7A2E1C; }
-.hm-card.sk-wx.g-week[data-id="events"] .wx-v { color: #7A2E1C; border-color: #7A2E1C; letter-spacing: .06em; }
-.hm-card.sk-wx.g-week[data-id="events"] .wx-ic svg { stroke: #7A2E1C; }
-/* READ: covers. The shelf as a small catalogue mark, the title the poster, room where READ stood */
-.g-read .wx-f { padding-right: 6cqw !important; }
-.g-read .wx-k b { font: 600 clamp(9px, 2.8cqw, 11px)/1 'IBM Plex Mono', monospace; letter-spacing: .18em; }
-.r-how .wx-f::after { clip-path: polygon(0 0, 3.2% 0, 3.2% 100%, 0 100%); }
-.r-how .wx-f { padding-left: 8cqw; }
-.r-fic .wx-f::after { clip-path: polygon(0 82%, 100% 82%, 100% 86%, 0 86%); }
-/* CARDS: one frame, three tables. Playing on its yellow, tarot at night in gold, SESAME in its own print blue and pink */
-.g-deck .wx-f { box-shadow: inset 0 0 0 1px currentColor; }
-.sk-wx.g-deck .wx-v { border-radius: 2px; background: #F4F1E8; }
-.g-deck .wx-s { padding-right: 0; }
-.hm-card.sk-wx.g-deck[data-id="tarot"] { --c-bg: #1C1B3A; }
-.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-f { color: #E7C873; }
-.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-v { background: #26254C; box-shadow: inset 0 0 0 1px rgba(231, 200, 115, .5); }
-.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-ic svg { stroke: #E7C873; }
-.hm-card.sk-wx.g-deck[data-id="tarot"] .wx-h { font-family: Georgia, serif; font-weight: 400; }
-.hm-card.sk-wx.g-deck[data-id^="pl-"] { --c-bg: #17457F; }
-.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-f { color: #F4F1E8; }
-.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-v { background: #123866; }
-.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-ic svg { stroke: #F4F1E8; }
-.hm-card.sk-wx.g-deck[data-id^="pl-"] .wx-s { color: #F2B6C6; font-family: Georgia, serif; }
-#hm .hm-card.sk-wx.g-deck[data-id="tarot"] .hm-keys .hm-rk:not(.on), #hm .hm-card.sk-wx.g-deck[data-id^="pl-"] .hm-keys .hm-rk:not(.on) { color: #F4F1E8 !important; }
-#hm .g-week .wx-s { color: inherit; }
-#hm .g-week .wx-s:empty { visibility: hidden; }
-
 /* W.I.S.H. on the circular strategy's four points, clockwise from the top: drawn in slowly, held, let go again */
 .st-orb .st-nd text { font: 700 8.6px/1 'Poppins', Arial, sans-serif; fill: #10223A; stroke: none; text-anchor: middle; dominant-baseline: central; letter-spacing: 0; }
 .st-orb .nd-in { animation: st-wish 18s cubic-bezier(.45, 0, .25, 1) infinite; animation-delay: calc(var(--k) * .5s); }
@@ -1095,3 +1049,61 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 /* the ten chairs turn on the loop again, under the letters: the ring and W I S H sit on top */
 .st-orb svg { z-index: 2; pointer-events: none; }
 .st-orb .st-th { z-index: 1; }
+/* ───────── a big card stood small: the nine's frame. The big art rests; the title, one thing of the card's own, and room ───────── */
+.hm-card.small.sm > .hm-art, .hm-card.small.sm > .hm-in, .hm-card.small.sm > .hm-rune, .hm-card.small.sm > .rd-nino, .hm-card.small.sm > .hm-fr { display: none; }
+.sm-f { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; color: var(--ink); pointer-events: none; }
+.sm-k { position: absolute; left: 7cqmin; top: 6.4cqmin; max-width: 44cqw; font: 700 clamp(17px, 9.5cqmin, 34px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; }
+.sm-o { position: absolute; right: 12cqmin; top: 50%; height: 76cqh; aspect-ratio: 1; transform: translateY(-50%); }
+.sm-o img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#hm .hm-card.small.sm .hm-keys { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#hm .hm-card.small.sm .hm-keys .hm-rk:not(.on) { color: var(--ink) !important; }
+.hm-card.small.sk-radio.sm { --c-bg: #17457F; --ink: #F4F1E8; }
+.hm-card.small.sk-wish.sm { --c-bg: #123866; --ink: #F4F1E8; }
+.hm-card.small.sk-research.sm { --c-bg: #F1F0EC; --ink: #111; }
+.hm-card.small.sk-zine.sm { --c-bg: #FF5436; --ink: #111; }
+.hm-card.small.sk-kit.sm { --c-bg: #F4F2EC; --ink: #111; }
+.hm-card.small.sk-space.sm { --c-bg: #0E3A6B; --ink: #F4F1E8; }
+.hm-card.small.sk-portfolio.sm { --c-bg: #143D71; --ink: #F4F1E8; }
+/* radio: the found radio in a round window, two rings going out from it */
+.sm-radio img { border-radius: 50%; box-shadow: 0 0 0 .8cqmin #F4F1E8; }
+.sm-radio i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(244, 241, 232, .55); animation: sm-ring 4.5s cubic-bezier(.2, .6, .3, 1) infinite; }
+.sm-radio i + i { animation-delay: 2.25s; }
+@keyframes sm-ring { from { transform: scale(1); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+/* the strategy: the loop and its four letters round one chair, the dashes going round */
+.sm-wish svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; fill: none; stroke: #F4F1E8; z-index: 1; }
+.sm-wish .r1 { stroke-width: .4; opacity: .3; }
+.sm-wish .r2 { stroke-width: .9; stroke-dasharray: 3 7.3; opacity: .6; transform-origin: 0 0; animation: sm-turn 40s linear infinite; }
+.sm-wish text { font: 700 9.6px/1 'Poppins', Arial, sans-serif; fill: #10223A; stroke: none; text-anchor: middle; dominant-baseline: central; }
+.sm-wish img { position: absolute; left: 21%; top: 21%; width: 58%; height: 58%; border-radius: 8%; box-shadow: 0 0 0 .5cqmin rgba(244, 241, 232, .9); }
+@keyframes sm-turn { to { transform: rotate(360deg); } }
+/* research: two prints pinned to the board */
+.sm-pins img { position: absolute; width: 64%; height: auto; aspect-ratio: 4 / 5; border: .9cqmin solid #FFF; box-shadow: 0 1.6cqmin 3cqmin -1.4cqmin rgba(0, 0, 0, .45); }
+.sm-pins img:first-child { right: 0; top: 2%; transform: rotate(4deg); }
+.sm-pins img:last-child { left: 0; bottom: 0; transform: rotate(-5deg); filter: grayscale(1) contrast(1.05); }
+.sm-pins::before, .sm-pins::after { content: ''; position: absolute; z-index: 1; width: 6%; aspect-ratio: 1; border-radius: 50%; background: #111; }
+.sm-pins::before { right: 30%; top: 0; } .sm-pins::after { left: 30%; bottom: 76%; background: #D9F24A; box-shadow: 0 0 0 1.5px #111; }
+/* design print: the poster on its wall */
+.sm-post { aspect-ratio: 3 / 4; transform: translateY(-50%) rotate(-3deg); background: #F4F1E8; box-shadow: 0 2cqmin 3.4cqmin -1.6cqmin rgba(0, 0, 0, .5); }
+.sm-post img { position: absolute; left: 7%; top: 6%; width: 86%; height: 62%; }
+.sm-post b { position: absolute; left: 7%; right: 7%; bottom: 6%; font: 700 clamp(12px, 8.6cqmin, 30px)/.9 'Poppins', Arial, sans-serif; letter-spacing: -.045em; color: #1B3FD0; }
+/* the island and the archipelagos: the printer itself, its lamp waiting, paper feeding */
+.sm-prn { aspect-ratio: 3 / 4; }
+.sm-prn .hm-prn { position: absolute; inset: 0; left: 0; bottom: 0; width: 100%; height: 100%; transform: none; aspect-ratio: auto; }
+/* portfolio: one print, torn off */
+.sm-slip { aspect-ratio: 5 / 8; height: 84cqh; transform: translateY(-46%) rotate(3deg); padding: 5% 5% 0; background: #FBFAF6; box-shadow: 0 2cqmin 3.4cqmin -1.6cqmin rgba(0, 0, 0, .55); -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 1.6cqmin) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 3.2cqmin 1.6cqmin repeat-x; mask: linear-gradient(#000 0 0) top / 100% calc(100% - 1.6cqmin) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 3.2cqmin 1.6cqmin repeat-x; }
+.sm-slip img { height: 74%; filter: grayscale(1) contrast(1.15); }
+.sm-slip b { display: block; margin-top: 7%; font: 600 clamp(7px, 3cqmin, 11px)/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: #111; }
+@container (max-aspect-ratio: 1/1) {
+  .sm-k { max-width: 80cqw; }
+  .sm-o { right: auto; left: 50%; top: 58%; height: auto; width: 62cqw; transform: translate(-50%, -50%); }
+  .sm-post { width: 50cqw; transform: translate(-50%, -50%) rotate(-3deg); }
+  .sm-prn { width: 50cqw; }
+  .sm-slip { width: 44cqw; height: auto; transform: translate(-50%, -46%) rotate(3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .sm-radio i, .sm-wish .r2 { animation: none; } }
+
+/* ISLAND ARCHIPELAGOS carries the island: the install key, the printer feeding, its line */
+.sk-space .sp-prn { position: absolute; right: 7cqw; top: 27cqh; width: 46cqw; aspect-ratio: 3 / 4; pointer-events: none; }
+.sk-space .sp-prn .hm-prn { position: absolute; inset: 0; left: 0; bottom: 0; width: 100%; height: 100%; transform: none; aspect-ratio: auto; }
+#hm .sk-space .sp-fz { position: absolute; left: 6cqw; top: 13.5cqh; margin: 0; font-size: 6.4cqw; line-height: 1.05; }
+@container (min-aspect-ratio: 1/1) { .sk-space .sp-prn { top: 12cqh; width: auto; height: 70cqh; } #hm .sk-space .sp-fz { top: 22cqh; font-size: 3.4cqw; } }

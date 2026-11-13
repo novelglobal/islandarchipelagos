@@ -3,6 +3,8 @@
   'use strict';
   var D = document, H = D.documentElement, $ = function (s, r) { return (r || D).querySelector(s); }, q = location.search;
   if (/[?&]in=1/.test(q)) H.classList.add('in');
+  /* inside novel.global the install key opens the island's own page there */
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('#inst'); if (a && parent !== window && /[?&]in=1/.test(q)) { e.preventDefault(); parent.postMessage({ hm: 'open', id: 'kit' }, location.origin); } });
   if (/[?&]night=1/.test(q)) H.classList.add('night');
   var NG = (function () { try { return window.parent !== window ? window.parent.NG : null; } catch (e) { return null; } })();
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
