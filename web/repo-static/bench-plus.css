@@ -169,8 +169,8 @@ html[data-m="page"] #pg, html[data-m="game"] #gm, html[data-m="card"] #cd { disp
 .lv-bar button:hover { transform: translateY(-2px); }
 .lv-bar button svg.i, #lv-send svg.i { width: 18px; height: 18px; }
 .lv-bar .up, #lv-send { background: #0B0B0B; color: #F4F1E8; border-color: #0B0B0B; }
-.lv-bar .ai { background: #C9C1F7; border-color: #0B0B0B; }
-#lv.empty .lv-bar .ai { animation: lv-pulse 1.8s ease-in-out infinite; }
+.lv-bar .brief { background: #C9C1F7; border-color: #0B0B0B; }
+#lv.empty .lv-bar .brief { animation: lv-pulse 1.8s ease-in-out infinite; }
 @keyframes lv-pulse { 50% { box-shadow: 0 0 0 7px rgba(201, 193, 247, .45); } }
 .lv-bar button.ok, #lv-send.ok { background: #1F7A3E; color: #F4F1E8; } .lv-bar button.no, #lv-send.no { background: #E5262B; color: #F4F1E8; animation: lv-no .3s; }
 @keyframes lv-no { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }

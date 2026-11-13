@@ -318,7 +318,7 @@
     if (!el.dataset.on) { el.dataset.on = 1;
       var B = function (id, tip, path, cls) { return '<button type="button" id="' + id + '" title="' + tip + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + I(path) + '</button>'; };
       el.innerHTML = '<div class="lv-ed"><div class="lv-bar">' +
-        B('lv-ai', 'Copy the brief', '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>', 'ai') +
+        B('lv-brief', 'Copy the brief', '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>', 'brief') +
         B('lv-paste', 'Paste code', '<path d="M8 4h8v3H8z"/><path d="M6 5.5H4.5v15h15v-15H18"/>') +
         B('lv-run', 'Run again', '<path d="M8 5l11 7-11 7z" class="f"/>') +
         B('lv-clr', 'Clear', '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>') +
@@ -338,7 +338,7 @@
   function flash(id, ok) { var b = $('#' + id); if (!b) return; b.classList.remove('ok', 'no'); void b.offsetWidth; b.classList.add(ok ? 'ok' : 'no'); setTimeout(function () { b.classList.remove('ok', 'no'); }, 1200); }
   var unfence = function (t) { t = String(t || ''); var m = /```[a-zA-Z]*\n([\s\S]*?)```/.exec(t); return m ? m[1] : t; };
   function liveClick(e) { var ls = liveState(), b, ta = $('#lv-src');
-    if (e.target.closest('#lv-ai')) { var t = PK.BRIEF + (ls.src.trim() ? '\n\nChange this:\n' + ls.src : ''); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { flash('lv-ai', 1); beep(990, 0.05); }, function () { ta.value = t; ta.select(); flash('lv-ai', 0); }); return; }
+    if (e.target.closest('#lv-brief')) { var t = PK.BRIEF + (ls.src.trim() ? '\n\nChange this:\n' + ls.src : ''); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { flash('lv-brief', 1); beep(990, 0.05); }, function () { ta.value = t; ta.select(); flash('lv-brief', 0); }); return; }
     if (e.target.closest('#lv-paste')) { (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(function (t) { t = unfence(t); if (!t.trim()) return; ta.value = t; ta.dispatchEvent(new Event('input')); liveRun(); flash('lv-paste', 1); }, function () { ta.focus(); flash('lv-paste', 0); }); return; }
     if (e.target.closest('#lv-run')) { ls.keep = {}; save(); liveRun(); beep(520, 0.05); return; }
     if (e.target.closest('#lv-clr')) { if (ls.src.trim() && !confirm('Clear it?')) return; ta.value = ''; ls.keep = {}; ta.dispatchEvent(new Event('input')); liveRun(); return; }
@@ -380,7 +380,7 @@
   }
 
   /* one tip for each bench's main thing, the first time it is opened here, and never again */
-  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-ai', 'copy the brief, paste code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
+  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-brief', 'copy the brief, paste code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
   function coach(m) { var seen = {}; try { seen = JSON.parse(localStorage.getItem('da.bench.tips') || '{}') || {}; } catch (e) { seen = {}; } if (seen[m] || !COACH[m] || navigator.webdriver) return;
     setTimeout(function () { if (P.m !== m) return; var t = $(COACH[m][0]); if (!t || !t.getBoundingClientRect().width) return; seen[m] = 1; try { localStorage.setItem('da.bench.tips', JSON.stringify(seen)); } catch (e) { /* this visit */ }
       var r = t.getBoundingClientRect(), c = D.createElement('div'); c.className = 'coach'; c.setAttribute('role', 'status'); c.textContent = COACH[m][1]; D.body.appendChild(c);

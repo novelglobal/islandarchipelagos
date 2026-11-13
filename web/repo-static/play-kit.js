@@ -73,7 +73,7 @@
     return { run: run, again: function (store) { run(last.src, last.th, store); }, paper: function () { return ops.length ? cv.toDataURL('image/png') : null; }, inked: function () { return ops.length; } };
   }
 
-  /* the brief to hand to any AI, so it writes for this kit */
+  /* the brief: what this kit offers, to copy and paste */
   var BRIEF = 'Write plain JavaScript (no HTML, no imports, no network) for a tiny experience that runs on a phone screen next to a thermal receipt printer. Top-level await works. Available functions:\n' +
     'print(text) big(text) small(text) line() qr(text) moon() cut()  -> put things on the paper\n' +
     'say(text) show(html) button(label, fn) await ask(label) await choose([..])  -> the screen\n' +
