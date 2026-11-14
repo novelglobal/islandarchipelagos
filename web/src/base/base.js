@@ -851,8 +851,10 @@ function raster(cv) { return TH.raster(cv, pq().heat); }
     return fetch0(s, o2).then(function (r) { return r.ok ? r : direct(); }).catch(direct); }; })();
 function api(path, opt) {
   opt = opt || {}; opt.headers = { 'content-type': 'application/json' };
-  return fetch(API + path, opt).then(function (r) { if (r.status === 204) return null; return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; throw e; } return j; }); });
+  return fetch(API + path, opt).then(function (r) { if (r.status === 204) return null; return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); });
 }
+/* a print refused for the minute between prints: WAIT and the seconds left */
+function waitSay(e) { return e && e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT'; }
 var PRN = null, PRN_AT = 0;
 /* the printers a piece can go to: novel.global's own and every one paired since (a partner's Pi), as heard in the last minute */
 /* a poster on the wall printed again, by whoever is looking at it: its picture on the printer's dots, sent as a record (no new
@@ -1339,7 +1341,7 @@ function radioSheet(way) {
       $('#r-pr').addEventListener('click', function () { var st = $('#r-pst'); st.innerHTML = pips('sending'); webArt({ S: 512, colour: false }).then(function (art) {
         var id = 'w' + Date.now().toString(36), body2 = { type: 'web', lat: +map.lat.toFixed(4), lng: +map.lng.toFixed(4) };
         return send({ kind: 'record', code: code(id), body: JSON.stringify(body2), lat: body2.lat, lng: body2.lng, dest: 'novelglobal', escpos: raster(art) }).then(function (j) { var n = { sent: { id: j.id, s: j.job ? j.job.status : j.status } }; st.innerHTML = pips(n.sent.s); follow(n, st); });
-      }).catch(function (e) { st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); }); });
+      }).catch(function (e) { if (e && e.wait) st.textContent = waitSay(e); else st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); }); });
       render(); return;
     }
     var all = everything().slice(0, 60);
@@ -1873,7 +1875,7 @@ function shopSheet() {
         var id = 'p' + Date.now().toString(36), body = { type: 'poster', lat: +map.lat.toFixed(4), lng: +map.lng.toFixed(4) };
         return send({ kind: 'record', code: code(id), body: JSON.stringify(body), lat: body.lat, lng: body.lng, dest: p.id, escpos: raster(cv) }).then(function (j) { var n = { sent: { id: j.id, s: j.job ? j.job.status : j.status } }; st.innerHTML = pips(n.sent.s); follow(n, st); b.disabled = false; });
       });
-    }).catch(function (e) { st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); b.disabled = false; });
+    }).catch(function (e) { if (e && e.wait) st.textContent = waitSay(e); else st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); b.disabled = false; });
   });
   mine.slice(0, 30).forEach(function (n, i) { if (n.sent && n.sent.id) follow(n, document.getElementById('s-st-' + i), 29); });
   mine.slice(0, 30).forEach(function (n, i) { if (!n.sent || !n.sent.id) return; api('/receipts/' + n.sent.id).then(function (j) { if (!j) return; n.sent.s = j.job ? j.job.status : j.status; saveNotes(); var el = document.getElementById('s-st-' + i); if (el) el.innerHTML = pips(n.sent.s); }).catch(function () { /* later */ }); });
@@ -1984,7 +1986,7 @@ function composer(el) {
     if (window.AURA) AURA.keepCanvas(o.c, 'A piece, ' + when(Date.now()).slice(0, 6));
     var id = 'k' + Date.now().toString(36), body = { type: 'piece', lat: +map.lat.toFixed(4), lng: +map.lng.toFixed(4), blocks: B.map(function (b) { return b.k; }) };
     return send({ kind: 'record', code: code(id), body: JSON.stringify(body), lat: body.lat, lng: body.lng, dest: 'novelglobal', escpos: raster(o.c) }).then(function (j) { var n = { sent: { id: j.id, s: j.job ? j.job.status : j.status } }; st.innerHTML = pips(n.sent.s); follow(n, st); });
-  }).catch(function (e) { st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); }); });
+  }).catch(function (e) { if (e && e.wait) st.textContent = waitSay(e); else st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); }); });
   /* to the showcase: kept here at once, and sent to be shown to everyone once approved */
   $('#c-show', el).addEventListener('click', function () { if (!B.length) return; compose(512).then(function (o) {
     var jpg = o.c.toDataURL('image/jpeg', 0.8); PIECES.unshift({ id: 'k' + Date.now().toString(36), at: Date.now(), src: jpg, blocks: B.map(function (b) { return b.k; }) }); while (PIECES.length > 8) PIECES.pop(); if (!store.set('da.base.pieces', PIECES)) { PIECES.pop(); store.set('da.base.pieces', PIECES); }
@@ -2598,7 +2600,7 @@ window.NG = { wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$,
   read: read, wishOptions: wishOptions, wishLines: wishLines, context: context, weather: weather, db: db, DB: function () { return DB; }, outlookNow: outlookNow, nowItems: nowItems, seasonNow: seasonNow,
   reveal: reveal, far: far, dist: dist, code: code, SIGN: SIGN, actions: actions, PHOTOS: PHOTOS, notes: function () { return NOTES; }, saveNotes: saveNotes, attend: attend,
   place: function (c) { cur = c; place(); var n = cur.note; cur = null; return n; },
-  slip: slip, wav: wav, sendNote: sendNote, human: human, lite: LITE, newAC: newAC, sendMesh: sendMesh, forPrint: forPrint, pq: pq, pqSets: PQ_SETS, styles: stylesAll, styleBy: styleBy, styleOn: styleOn, setStyle: function (id) { store.set('da.style', id); }, styleKeep: styleKeep, styleDrop: styleDrop, printStyle: printStyle, raster: raster, inkPass: inkPass, ditherLib: ditherLib, printers: printers, prnPick: prnPick, prnWord: prnWord, printAgain: printAgain, prnSet: function (id) { store.set('da.base.printer', id); }, pips: pips, follow: follow, download: download, pieces: function () { return PIECES.concat(PIECES_SHARED); }, boothWith: boothWith, useCode: useCode, proof: proof, kin: kin, mine: mine, brief: brief, me: me, setMe: setMe, mine: mine, dropMine: dropMine, meUsed: meUsed, moon: moon, moonPath: moonPath, moonTip: moonTip, moonMark: moonMark, moonsAgo: moonsAgo, moonTag: moonTag, minePiece: function (id) { return PIECES.some(function (p) { return p.id === id; }); }, dropPiece: function (id) { PIECES = PIECES.filter(function (p) { return p.id !== id; }); store.set('da.base.pieces', PIECES); },
+  slip: slip, wav: wav, sendNote: sendNote, human: human, lite: LITE, newAC: newAC, sendMesh: sendMesh, forPrint: forPrint, pq: pq, pqSets: PQ_SETS, styles: stylesAll, styleBy: styleBy, styleOn: styleOn, setStyle: function (id) { store.set('da.style', id); }, styleKeep: styleKeep, styleDrop: styleDrop, printStyle: printStyle, raster: raster, inkPass: inkPass, ditherLib: ditherLib, printers: printers, prnPick: prnPick, prnWord: prnWord, printAgain: printAgain, prnSet: function (id) { store.set('da.base.printer', id); }, pips: pips, waitSay: waitSay, follow: follow, download: download, pieces: function () { return PIECES.concat(PIECES_SHARED); }, boothWith: boothWith, useCode: useCode, proof: proof, kin: kin, mine: mine, brief: brief, me: me, setMe: setMe, mine: mine, dropMine: dropMine, meUsed: meUsed, moon: moon, moonPath: moonPath, moonTip: moonTip, moonMark: moonMark, moonsAgo: moonsAgo, moonTag: moonTag, minePiece: function (id) { return PIECES.some(function (p) { return p.id === id; }); }, dropPiece: function (id) { PIECES = PIECES.filter(function (p) { return p.id !== id; }); store.set('da.base.pieces', PIECES); },
   icons: function () { return ICONS; }, qrLib: qrLib, noteURL: noteURL, ac: ac, bus: bus, INS: INS, soundLibs: soundLibs, pixelArt: pixelArt, printReady: printReady, map: map, toneOf: toneOf, KINDS: KINDS };
 window.__base = { room: function () { return AC && AC.__room; }, iruk: function (ns) { return irukandji(ns).map(function (j) { return j.ns.length; }); }, icons: function () { return ICONS; }, qrLib: qrLib, noteURL: noteURL, drone: function () { return { on: DRONE.on, voices: Object.keys(DRONE.v).length }; }, undo: function () { return UNDO.length; }, poster: boothPoster, hits: function () { return hits; }, song: function () { return SONG; }, seq: function () { return SEQ; }, wish: function () { var n = NOTES[0]; return n ? wishLines(n, read({ id: n.id, say: n.say, tags: n.tags, spId: n.sp, lat: n.lat, lng: n.lng, wx: n.wx })) : []; }, read: read, guess: guess, issueOf: issueOf, related: related, nowItems: nowItems, exif: exif, notes: function () { return NOTES; }, db: db, map: map, code: code, pixelArt: pixelArt, slip: slip, set: function (n) { cur = n; } };
 })();

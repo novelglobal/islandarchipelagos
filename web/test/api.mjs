@@ -12,8 +12,11 @@ const KEY = 'test-admin-key-not-a-real-one';
 const results = []; const check = (name, cond, info = '') => results.push(`${cond ? 'PASS' : 'FAIL'}  ${name}${info ? ' — ' + info : ''}`);
 const server = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY: KEY } }] });
 const { url } = await server.listen(); const O = url.origin;
-const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip } = {}) => {
-  const headers = { origin }; if (ip) headers['cf-connecting-ip'] = ip; if (body !== undefined) headers['content-type'] = 'application/json'; if (key) headers.authorization = `Bearer ${key}`; if (token) headers.authorization = `Bearer ${token}`;
+let GAPN = 0;
+const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip, gap } = {}) => {
+  const headers = { origin }; if (ip) headers['cf-connecting-ip'] = ip;
+  /* one print a minute for each person: each test print comes from a person of its own, unless the test is about that minute */
+  if (!gap && method === 'POST' && p === '/api/stories' && body && body.dest) headers['cf-connecting-ip'] = (ip || '10.77.0') + '.' + (++GAPN); if (body !== undefined) headers['content-type'] = 'application/json'; if (key) headers.authorization = `Bearer ${key}`; if (token) headers.authorization = `Bearer ${token}`;
   const r = await server.fetch(new URL(p, O), { method, headers, body: raw != null ? raw : body !== undefined ? JSON.stringify(body) : undefined });
   const t = r.headers.get('content-type') || ''; return { status: r.status, type: t, island: r.headers.get('x-island'), json: /json/.test(t) ? await r.json() : null, text: /text/.test(t) ? await r.text() : null, bin: /image/.test(t) ? Buffer.from(await r.arrayBuffer()) : null };
 };
@@ -185,6 +188,15 @@ try {
   await call('/api/admin/printers/kines', { method: 'POST', key: KEY, body: { action: 'touch', on: false } }); const tl3 = await call('/api/touch/kines', { token: TT });
   check('one press prints (queued), a long press squashes (gone); turned off, the token stops at once', pr.status === 200 && sq.status === 200 && rA.json.job.status === 'queued' && !rB.json.job && tl2.json.held.every(h => h.job !== tA.json.job.id && h.job !== tB.json.job.id) && tl3.status === 401,
     JSON.stringify({ pr: pr.status, sq: sq.status, a: rA.json.job, b: rB.json.job, tl3: tl3.status }));
+  /* one print a minute for each person: a second print inside the minute is asked to wait, and told how long */
+  const g1 = await call('/api/stories', { method: 'POST', ip: '10.66.0.1', gap: true, body: { kind: 'record', code: 'DA-G4P1', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
+  const g2 = await call('/api/stories', { method: 'POST', ip: '10.66.0.1', gap: true, body: { kind: 'record', code: 'DA-G4P2', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
+  const g3 = await call('/api/stories', { method: 'POST', ip: '10.66.0.2', gap: true, body: { kind: 'record', code: 'DA-G4P3', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
+  check('one print a minute for each person; someone else prints at once', g1.status === 201 && g2.status === 429 && g2.json.wait > 50 && g2.json.wait <= 60 && g3.status === 201, JSON.stringify([g1.status, g2.status, g2.json, g3.status]));
+  /* the pages of one deck go together: the first waits its minute, the rest follow; a new deck inside the minute waits */
+  const dk = i => call('/api/stories', { method: 'POST', ip: '10.66.0.3', gap: true, body: { kind: 'record', code: 'DA-GDK' + 'ABCE'[i], body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=', set: i < 3 ? 'deckAB12cd' : 'deckZZ99yy' } });
+  const d1 = await dk(0), d2 = await dk(1), d3 = await dk(2), d4 = await dk(3);
+  check('a deck prints all its pages; a new one inside the minute waits', [d1, d2, d3].every(r => r.status === 201) && d4.status === 429, JSON.stringify([d1.status, d2.status, d3.status, d4.status]));
 
   /* a pack of cells: waits like any story, then everyone has it */
   const PACK = JSON.stringify({ title: 'Fruit and radios', by: 'neighbours', cells: [{ k: 'fruit', n: 'Lemon tree', lat: -37.7701, lng: 144.9602 }, { k: 'node', n: 'Rooftop repeater', lat: -37.7664, lng: 144.9731 }] });

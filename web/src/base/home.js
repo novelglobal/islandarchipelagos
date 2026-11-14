@@ -579,7 +579,7 @@
     tr.addEventListener('touchend', function (e) { if (e.touches.length < 2) d0 = 0; }, { passive: true });
     wall.querySelector('.wl-op').addEventListener('click', function (e) { var b = e.target.closest('[data-wl]'); if (!b) return; var k = b.dataset.wl, a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0] || {}, msg = wall.querySelector('.wl-msg');
       if (k === 'save') return; e.preventDefault();
-      if (k === 'print') { msg.textContent = 'Sending'; ((NG && NG.printAgain) ? NG.printAgain(a.src, a.name) : Promise.reject(new Error('none'))).then(function (st) { msg.textContent = st === 'queued' ? 'Printing' : 'Waiting for a printer'; }, function () { msg.textContent = 'No printer nearby'; }); }
+      if (k === 'print') { msg.textContent = 'Sending'; ((NG && NG.printAgain) ? NG.printAgain(a.src, a.name) : Promise.reject(new Error('none'))).then(function (st) { msg.textContent = st === 'queued' ? 'Printing' : 'Waiting for a printer'; }, function (e) { msg.textContent = e && e.wait ? 'Wait ' + e.wait + 's' : 'No printer nearby'; }); }
       if (k === 'play' && a.play) { if (WL.au) { wlStop(); return; } WL.au = new Audio(a.play); WL.au.play().catch(function () { wlStop(); }); WL.au.onended = wlStop; b.textContent = 'STOP'; } });
   }
   function logosOf(c) { var l = c.logos || []; if (!l.length) return '';
@@ -1241,7 +1241,7 @@
       li.addEventListener('click', function (e) { if (!e.target.closest('a')) flip(); }); li.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); } }); });
     $('#hm-kbench', body).addEventListener('click', function () { SH.swap = true; open('space'); });
     $('#hm-kprint', body).addEventListener('click', function () { var say = $('.hm-say', body), ticks = store.get('da.isle.v1', []) || [];
-      var cv = window.SLIPS && SLIPS.checklist ? SLIPS.checklist(ticks, 512) : listSlip(list, ticks); say.textContent = '· · ·'; printCanvas(cv, 'kit').then(function (s) { say.textContent = s === 'held' ? 'WAITING' : s ? 'PRINTING' : '×'; say.title = s === 'held' ? 'Waiting for the printer’s yes' : ''; }, function () { say.textContent = '× NO PRINTER ONLINE'; }); });
+      var cv = window.SLIPS && SLIPS.checklist ? SLIPS.checklist(ticks, 512) : listSlip(list, ticks); say.textContent = '· · ·'; printCanvas(cv, 'kit').then(function (s) { say.textContent = s === 'held' ? 'WAITING' : s ? 'PRINTING' : '×'; say.title = s === 'held' ? 'Waiting for the printer’s yes' : ''; }, function (e) { say.textContent = e && e.wait ? NG.waitSay(e) : '× NO PRINTER ONLINE'; }); });
   }
   function listSlip(list, ticks) {
     var W = 512, rows = list.filter(Boolean), c = D.createElement('canvas'); c.width = W; c.height = 120 + rows.length * 58; var g = c.getContext('2d');
@@ -1312,7 +1312,7 @@
   function quickPrint() { careEarn('print');
     filePick(true, function (file) { find('booth'); var u = URL.createObjectURL(file), im = new Image();
       im.onload = function () { var W = 512, c; if (window.SLIPS && SLIPS.quick) c = SLIPS.quick(im, W); else { c = D.createElement('canvas'); c.width = W; c.height = Math.round(W * im.naturalHeight / im.naturalWidth); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); }
-        URL.revokeObjectURL(u); horn(0.6); printCanvas(c, 'quick').then(function () { if (NG.toast) NG.toast('PRINTING'); }, function () { if (NG.toast) NG.toast('NO PRINTER ONLINE'); }); };
+        URL.revokeObjectURL(u); horn(0.6); printCanvas(c, 'quick').then(function () { if (NG.toast) NG.toast('PRINTING'); }, function (e) { if (NG.toast) NG.toast(e && e.wait ? NG.waitSay(e) : 'NO PRINTER ONLINE'); }); };
       im.src = u; });
   }
 

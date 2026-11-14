@@ -331,7 +331,7 @@
     try { key = JSON.parse(localStorage.getItem('da.hm.key') || '""') || ''; } catch (e) { /* none */ }
     var url = adm && pr ? '/api/admin/printers/' + pr : key ? '/api/island' : ''; if (!url) return Promise.reject(new Error('key'));
     return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (adm && pr ? adm : key) }, body: b })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); });
   }
 
   var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass };
@@ -352,7 +352,7 @@
   if (!T) return;
   var CROCK = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   var code = function () { var s = 'DA-', r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += CROCK[r[i] % 32]; return s; };
-  var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); }); };
+  var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); }); };
   var word = function (p) { return String(p.name || p.id).trim().split(/\s+/)[0].toUpperCase(); };
   var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false, code: '' }, cv = null, IN = /[?&]in=1/.test(location.search), QK = /[?&]quick=1/.test(location.search);
   var FONTS = ['400 40px VT323', '700 40px Poppins', '600 40px Poppins', '400 40px Poppins', '600 20px "IBM Plex Mono"', '500 20px "IBM Plex Mono"'];
@@ -402,14 +402,14 @@
     st.textContent = '· · ·';
     if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
       return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'FULL' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
-    if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, 0)).then(all); };
-      return all().then(function () { S.o.page = pg0; paint(); st.textContent = 'SENT · ' + S.K.pages; }, function (e) { S.o.page = pg0; paint(); st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
-    send(T.raster(cv, 0)).then(function (c) { st.textContent = c; }, function (e) { st.textContent = /429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
+    if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, set = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, 0), set).then(all); };
+      return all().then(function () { S.o.page = pg0; paint(); st.textContent = 'SENT · ' + S.K.pages; }, function (e) { S.o.page = pg0; paint(); st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
+    send(T.raster(cv, 0)).then(function (c) { st.textContent = c; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
   }
-  function send(escpos) {
+  function send(escpos, set) {
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
     try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
-    return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: escpos, from: S.stack.id, stage: 'stack', pass: ps ? ps.code : undefined }) })
+    return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: escpos, from: S.stack.id, stage: 'stack', set: set, pass: ps ? ps.code : undefined }) })
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } return (j && j.passed ? 'PRINTING · ' : 'SENT · ') + c; });
   }
   function opts() {

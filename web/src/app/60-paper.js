@@ -321,7 +321,7 @@ $('#s-send').addEventListener('click', async e => {
   const b = e.target.closest('[data-dest]'); const s = S.issued || S.signals.find(x => x.key === S.sig); if (!b || !s) return;
   const el = $('#s-send'); el.hidden = true; snd.printer(900); buzz([12, 40, 18]);
   try { const v = await directAction(s, b.dataset.dest); fillSentLine(s); toast(v.status === 'outbox' ? 'NO SIGNAL · IT WILL SEND' : 'SENT · WAITING FOR APPROVAL'); refreshPanel(); }
-  catch (err) { toast(err.status === 429 ? 'TOO MANY · TRY SOON' : err.status === 503 ? 'BUSY · TRY SOON' : 'NOT SENT'); fillSentLine(s); }
+  catch (err) { toast(err.status === 429 ? (err.wait ? 'WAIT ' + err.wait + 's' : 'TOO MANY · TRY SOON') : err.status === 503 ? 'BUSY · TRY SOON' : 'NOT SENT'); fillSentLine(s); }
 });
 $('#s-out').addEventListener('click', e => { const b = e.target.closest('[data-out]'); const s = S.issued || S.signals.find(x => x.key === S.sig); if (b && s) output(b.dataset.out, s, b); });
 $('#s-acts').addEventListener('click', async e => {

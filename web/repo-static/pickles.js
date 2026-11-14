@@ -27,7 +27,7 @@
       echidna: 'Echidnas cannot sweat or pant, so they hide from heat. A shallow dish of water on the ground, with a stone to climb out, helps them and bees.' } } };
   var S = { a: -1, an: null, img: null, x: 0, y: 0, s: 1, r: 0, hole: null, to: null, busy: false, key: '', IM: {}, drag: false, pen: 0, lines: [] };
   var store = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* this visit */ } } };
-  var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; throw e; } return j; }); }); };
+  var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); }); };
   function rnd(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function canvas(sc) { var c = D.createElement('canvas'); c.width = AW * sc; c.height = AH * sc; var g = c.getContext('2d'); g.scale(sc, sc); return [c, g]; }
 
@@ -142,7 +142,7 @@
     fonts().then(function () { var c = paper(who);
       return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: 'pickles', lat: WHERE[0], lng: WHERE[1] }), lat: WHERE[0], lng: WHERE[1], dest: S.to, escpos: T.raster(c, 0), from: 'pop', stage: 'stack', who: who, pop: S.key, popId: CFG.id, pass: ps ? ps.code : undefined }) }); })
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } say(''); done(!!(j && (j.passed || j.straight || (j.job && j.job.status === 'queued')))); },
-        function (e) { say(e.status === 429 ? 'WAIT' : e.status === 403 ? 'CLOSED' : e.status === 503 ? 'BUSY' : 'UNSENT'); })
+        function (e) { say(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : e.status === 403 ? 'CLOSED' : e.status === 503 ? 'BUSY' : 'UNSENT'); })
       .then(function () { S.busy = false; $('#go').disabled = false; }); }
 
   /* the print in colour, as it comes out: the picture, a wavy rule, novel.global and the logos */

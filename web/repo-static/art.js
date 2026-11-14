@@ -10,7 +10,7 @@
   var S = { list: [], at: 0, col: 0, z: 1, x: 0, y: 0, busy: false };
 
   function say(t) { $('#st').textContent = t || ''; }
-  function api(p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); }); }
+  function api(p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); }); }
 
   function build() {
     var tr = $('#track');
@@ -77,7 +77,7 @@
       var cd = code(), w = [-37.8136, 144.9631];
       api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: cd, body: JSON.stringify({ type: 'stack', stack: 'art', lat: w[0], lng: w[1] }), lat: w[0], lng: w[1], dest: 'novelglobal', escpos: T.raster(c, 0), from: 'art', stage: 'stack', pass: ps ? ps.code : undefined }) })
         .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } say((j && j.passed ? 'PRINTING · ' : 'SENT · ') + cd); },
-          function (e) { say(/429|too many/i.test(e.message) ? 'WAIT' : 'UNSENT'); })
+          function (e) { say(e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'); })
         .then(function () { S.busy = false; });
     });
   }

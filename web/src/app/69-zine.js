@@ -685,7 +685,7 @@ async function pressOut(k, given) {
     const btn = document.querySelector('#view .print-k'); if (btn) btn.classList.add('busy');
     const first = simple();
     try { const to = prnNow(); const v = await directAction(sg, to ? to.id : '', PRESS.fmt === 'zine' ? null : await bytesOf()); ptPrint(url, sg.code, v && v.status); await new Promise(r => setTimeout(r, Math.max(0, tearAt - performance.now()))); tie(2); store.set('da.printed.v1', Date.now()); snd.tear(); if (!first) toast(v.status === 'outbox' ? 'NO SIGNAL · SENDS WHEN THERE IS ONE' : 'SENT · WAITING FOR APPROVAL'); await kept; if (!given) pressDone(sg); refreshPanel(); }
-    catch (e) { toast(e.status === 429 ? 'TOO MANY · TRY AGAIN SOON' : e.status === 503 ? 'THE QUEUE IS FULL' : /escpos|story/.test(e.message || '') ? 'TOO LONG TO SEND' : 'NOT SENT'); }
+    catch (e) { toast(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'TOO MANY · TRY AGAIN SOON') : e.status === 503 ? 'THE QUEUE IS FULL' : /escpos|story/.test(e.message || '') ? 'TOO LONG TO SEND' : 'NOT SENT'); }
     finally { if (btn) btn.classList.remove('busy'); }
     /* a first visit: printed, or waiting to, it is the showcase's hero, and everything opens (43-journey.js) */
     if (first && !given) jPrinted(await kept);

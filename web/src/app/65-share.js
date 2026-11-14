@@ -17,7 +17,7 @@ const saveSent = () => store.set('da.sent.v1', SENT);
 async function apiJSON(path, opt = {}) {
   const r = await fetch(API + path, { ...opt, headers: { 'content-type': 'application/json', ...(opt.headers || {}) } });
   if (r.status === 204) return null; const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(j.error || String(r.status)), { status: r.status }); return j;
+  if (!r.ok) throw Object.assign(new Error(j.error || String(r.status)), { status: r.status, wait: j.wait }); return j;
 }
 const b64bytes = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
 

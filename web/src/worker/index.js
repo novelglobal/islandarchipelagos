@@ -17,7 +17,7 @@ const json = (o, status = 200) => new Response(JSON.stringify(o), { status, head
 const fail = (status, error) => json({ error }, status);
 const now = () => Date.now();
 const H = 3600e3, DAY = 24 * H;
-const LIMIT = { example: 700e3, body: 4.2e6, sig: 9000, record: 20e3, cells: 60e3, cellsN: 200, photo: 420e3, full: 14e6, bodyBig: 20e6, escpos: 900e3, mesh: 240, waiting: 2000, perPrinter: 20, sends: 20 };
+const LIMIT = { example: 700e3, body: 4.2e6, sig: 9000, record: 20e3, cells: 60e3, cellsN: 200, photo: 420e3, full: 14e6, bodyBig: 20e6, escpos: 900e3, mesh: 240, waiting: 2000, perPrinter: 10, sends: 20, gap: 60e3 };
 /* a pack of cells: up to 200, each with a place on the ground and a short name */
 const cellsOk = t => { if (typeof t !== 'string' || t.length > LIMIT.cells) return false; let d; try { d = JSON.parse(t); } catch (e) { return false; }
   return !!d && Array.isArray(d.cells) && d.cells.length >= 1 && d.cells.length <= LIMIT.cellsN && d.cells.every(c => c && Number.isFinite(c.lat) && Number.isFinite(c.lng) && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180 && typeof c.n === 'string' && c.n.length <= 80); };
@@ -189,6 +189,13 @@ async function body(req, max = LIMIT.body) {
   const t = await req.text(); if (t.length > max) throw Object.assign(new Error('too large'), { status: 413 });
   try { return JSON.parse(t || '{}'); } catch (e) { throw Object.assign(new Error('not json'), { status: 400 }); }
 }
+/* one print a minute for each person: it takes time to make, and the paper is for art. Their code if they have one, else their address under the daily hash. The seconds left, or 0 */
+async function printGap(db, env, req, who, set) { const ip = req.headers.get('cf-connecting-ip') || 'local'; const day = new Date().toISOString().slice(0, 10); const t0 = now();
+  const sk = typeof set === 'string' && /^[A-Za-z0-9]{6,24}$/.test(set) ? `gapset:${set}` : null;
+  if (sk) { const g = await db.prepare('SELECT count(*) AS n, min(t) AS t FROM hits WHERE k = ? AND t > ?').bind(sk, t0 - 600e3).first(); if (g && g.n > 0 && g.n < 12 && g.t > t0 - 180e3) { await db.prepare('INSERT INTO hits (k, t) VALUES (?, ?)').bind(sk, t0).run(); return 0; } }
+  const ks = [`gap:${(await sha256(`${ip}|${day}|${env.ADMIN_KEY || ''}|gap`)).slice(0, 24)}`]; if (who) ks.push(`gap:${who}`); const t = now();
+  const r = await db.prepare(`SELECT max(t) AS t FROM hits WHERE k IN (${ks.map(() => '?').join(',')}) AND t > ?`).bind(...ks, t - LIMIT.gap).first(); if (r && r.t) return Math.ceil((r.t + LIMIT.gap - t) / 1000);
+  if (sk) ks.push(sk); await db.batch(ks.map(k => db.prepare('INSERT INTO hits (k, t) VALUES (?, ?)').bind(k, t))); return 0; }
 /* how often a visitor has asked: counted under a hash that changes daily, kept an hour */
 async function tooMany(db, env, req, kind, max, windowMs) {
   const ip = req.headers.get('cf-connecting-ip') || 'local'; const day = new Date().toISOString().slice(0, 10);
@@ -396,6 +403,7 @@ async function send(db, env, req) {
   let job = null;
   if (P && (b.escpos || b.mesh)) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
+    const gap = await printGap(db, env, req, who, b.set); if (gap) return json({ error: 'one print a minute', wait: gap }, 429);
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
     /* touch screens are off unless the owner turns them on (touchOn): then nothing waits on one */
     const touchOn = !!(await settingsOf(db)).touchOn, screenGone = P.touch && (!touchOn || !P.touch_seen || t - P.touch_seen > 150e3);
@@ -403,7 +411,7 @@ async function send(db, env, req) {
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
   }
-  if (toMesh) {
+  if (toMesh) { const gm = await printGap(db, env, req, who); if (gm) return json({ error: 'one print a minute', wait: gm }, 429);
     const { results: radios } = await db.prepare(`SELECT p.id, p.auto, (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('held', 'queued', 'printing')) AS q
       FROM printers p WHERE p.mesh = 1 AND p.token IS NOT NULL`).all();
     for (const r of radios) { if (r.q >= LIMIT.perPrinter) continue; const jb = { id: rid(), status: 'queued' }; job = job || jb;
