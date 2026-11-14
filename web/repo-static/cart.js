@@ -374,7 +374,7 @@
   }
   /* playing cards: the whole deck, thirteen to a print, four prints. DECK turns the page; PRINT sends all four */
   var cards = {
-    opts: [['deck', 'DECK']], only: true,
+    opts: [['deck', 'DECK'], ['art', 'ART', false]], only: true,
     pages: 4, init: function (o) { o.deck = true; o.page = 0; },
     act: function (a, s, o) { if (a === 'deck') { o.page = ((o.page || 0) + 1) % 4; o.deck = true; return true; } return false; },
     draw: function (k, d, s, o) { var pg = o.page || 0, y0 = 8, cw = 156, ch = 218;

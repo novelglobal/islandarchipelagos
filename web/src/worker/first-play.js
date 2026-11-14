@@ -16,7 +16,10 @@ const plates = [
 ];
 
 const no = (i) => String(i + 1).padStart(2, "0");
-const N = plates.length;
+/* plates a visitor adds, three things each, kept on their phone after the twelve */
+const own = () => keep("sesame_own") || [];
+const all = () => plates.concat(own().map((o) => o.x));
+const T = plates.length;
 const names = () => keep("sesame_names") || {};
 const nameOf = (i) => names()[i] || "";
 const saved = () => keep("sesame_kept") || [];
@@ -26,7 +29,7 @@ const on = (s, fn) => { const b = document.querySelector(s); if (b) b.onclick = 
 function plate(i) {
   print(no(i));
   if (nameOf(i)) big(nameOf(i).toUpperCase());
-  plates[i].forEach((x) => big(x));
+  all()[i].forEach((x) => big(x));
   line();
 }
 function foot(all) {
@@ -41,7 +44,7 @@ const CSS = "<style>" +
   "#k{padding:0;gap:0;align-items:stretch;font-family:ui-monospace,Menlo,Consolas,monospace}" +
   ".ss{display:flex;flex-direction:column;min-height:100vh;box-sizing:border-box;padding:16px 14px 18px;width:100%;max-width:600px;margin:0 auto}" +
   ".hd{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(244,241,232,.35)}" +
-  ".hd h1{margin:0;font:700 clamp(34px,11vw,54px)/.9 Georgia,serif;letter-spacing:-.01em}" +
+  ".hd h1{margin:0;font:700 clamp(30px,9.5vw,46px)/1 Poppins,'Helvetica Neue',Arial,sans-serif;letter-spacing:-.02em}" +
   ".row{display:flex;gap:6px;flex-wrap:wrap}" +
   "button{padding:8px 13px;font-size:11px;letter-spacing:.14em}" +
   "button.on{background:#F2B6C6;border-color:#F2B6C6;color:#17457F}" +
@@ -62,27 +65,46 @@ const CSS = "<style>" +
   ".x{margin:0;padding:12px 0;font:700 clamp(28px,9.6vw,50px)/1.04 Georgia,serif;border-top:1px solid rgba(244,241,232,.3)}" +
   ".x:last-child{border-bottom:1px solid rgba(244,241,232,.3)}" +
   ".bar{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}" +
+  ".tile.mine{border-style:dashed}.tile.add{align-items:center;justify-content:center;font:400 28px/1 Georgia,serif;border-style:dashed;opacity:.8}" +
+  ".ed{display:flex;flex-direction:column;gap:14px;flex:1;justify-content:center}.ed input{flex:none;height:auto;min-height:0;box-sizing:border-box;width:100%;font:700 clamp(20px,6vw,30px) Georgia,serif;padding:10px 4px;background:none;color:inherit;border:0;border-bottom:1px solid rgba(244,241,232,.45);border-radius:0}" +
+  ".ed input::placeholder{color:rgba(244,241,232,.35)}" +
   "</style>";
 
 function cover() {
   const k = saved();
-  show(CSS + '<div class="ss"><div class="hd"><h1>SESAME</h1></div><div class="grid">' +
-    plates.map((p, i) => '<button class="tile' + (k.includes(i) ? " kept" : "") + '" data-p="' + i + '"><b>' + no(i) + "</b>" +
+  show(CSS + '<div class="ss"><div class="hd"><h1>Sesame</h1></div><div class="grid">' +
+    all().map((p, i) => '<button class="tile' + (k.includes(i) ? " kept" : "") + (i >= T ? " mine" : "") + '" data-p="' + i + '"><b>' + no(i) + "</b>" +
       (nameOf(i) ? "<u>" + esc(nameOf(i)) + "</u>" : "") + "<i>" + p.map(esc).join("<br>") + "</i></button>").join("") +
-    "</div></div>");
+    '<button class="tile add" data-add title="Add your own three" aria-label="Add your own three">+</button></div></div>');
   document.querySelectorAll("[data-p]").forEach((b) => { b.onclick = () => view(+b.dataset.p); });
+  on("[data-add]", add);
+  document.onkeydown = null;
+}
+
+/* three things of your own: one a line, a name if you like */
+function add() {
+  show(CSS + '<div class="ss"><div class="top"><button class="ar" data-b aria-label="All" title="All">&#8592;</button><b>' + no(all().length) + '</b></div>' +
+    '<div class="ed"><input data-f maxlength="32" placeholder="one" aria-label="First" autocomplete="off"><input data-f maxlength="32" placeholder="two" aria-label="Second" autocomplete="off"><input data-f maxlength="32" placeholder="three" aria-label="Third" autocomplete="off"></div>' +
+    '<div class="bar"><span></span><div class="row"><button class="on" data-s title="Keep it with the twelve">ADD</button></div></div></div>');
+  const f = [...document.querySelectorAll("[data-f]")]; f[0].focus();
+  f.forEach((x, j) => { x.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") { if (j < 2) f[j + 1].focus(); else document.querySelector("[data-s]").click(); } if (e.key === "Escape") cover(); }; });
+  on("[data-b]", cover);
+  on("[data-s]", () => { const x = f.map((y) => y.value.trim().toLowerCase().slice(0, 32)); const gap = x.findIndex((y) => !y); if (gap >= 0) { f[gap].focus(); return; }
+    const o = own(); o.push({ x }); keep("sesame_own", o.slice(-27)); view(T + Math.min(o.length, 27) - 1); });
   document.onkeydown = null;
 }
 
 function view(i) {
+  const P = all(), N = P.length; if (i >= N) i = 0;
   const kept = saved().includes(i);
   show(CSS + '<div class="ss"><div class="top"><button class="ar" data-b aria-label="All twelve" title="All twelve">&#8592;</button><b>' + no(i) + " / " + N + "</b></div>" +
-    '<div class="pl"><p class="nm">' + esc(nameOf(i)) + "</p>" + plates[i].map((x) => '<p class="x">' + esc(x) + "</p>").join("") + "</div>" +
+    '<div class="pl"><p class="nm">' + esc(nameOf(i)) + "</p>" + P[i].map((x) => '<p class="x">' + esc(x) + "</p>").join("") + "</div>" +
     '<div class="bar"><div class="row"><button class="ar" data-v aria-label="Before" title="Before">&#8249;</button><button class="ar" data-n aria-label="Next" title="Next">&#8250;</button></div>' +
     '<div class="row"><button data-k' + (kept ? ' class="on"' : "") + ' title="Keep it on this phone">' + (kept ? "KEPT" : "KEEP") + "</button>" +
-    '<button data-m title="Give this plate a name">NAME</button><button class="on" data-pr title="Print this plate">PRINT</button></div></div></div>');
+    '<button data-m title="Give this plate a name">NAME</button>' + (i >= T ? '<button data-x title="Take this one off">OFF</button>' : "") + '<button class="on" data-pr title="Print this plate">PRINT</button></div></div></div>');
   const go = (d) => view((i + d + N) % N);
   on("[data-b]", cover);
+  on("[data-x]", () => { const o = own(); o.splice(i - T, 1); keep("sesame_own", o); const nm = names(), kp = saved().filter((q) => q !== i).map((q) => (q > i ? q - 1 : q)); Object.keys(nm).map(Number).sort((a, b) => a - b).forEach((q) => { if (q === i) delete nm[q]; else if (q > i) { nm[q - 1] = nm[q]; delete nm[q]; } }); keep("sesame_names", nm); keep("sesame_kept", kp); cover(); });
   on("[data-v]", () => go(-1));
   on("[data-n]", () => go(1));
   on("[data-pr]", () => { big("SESAME"); line(); plate(i); foot(); });
@@ -100,5 +122,5 @@ function view(i) {
   document.onkeydown = (e) => { if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); if (e.key === "Escape") cover(); };
 }
 
-if (QUICK) { const i = Math.floor(Math.random() * N); view(i); big("SESAME"); line(); plate(i); foot(); } else cover();
+if (QUICK) { const i = Math.floor(Math.random() * all().length); view(i); big("SESAME"); line(); plate(i); foot(); } else cover();
 ` };
