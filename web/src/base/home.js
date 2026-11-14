@@ -62,15 +62,15 @@
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', off: true, size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-ghost', size: 'small', title: 'GHOST CAPTURE', p: 1, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-armband', size: 'small', title: 'ARMBAND', p: 2, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-textgame', size: 'small', title: 'TEXT GAME', p: 3, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-comics', size: 'small', title: 'COMICS', p: 4, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-speech', size: 'small', title: 'SPEECH PRINT', p: 5, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-pobox', size: 'small', title: 'PO BOX', p: 6, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-photosend', size: 'small', title: 'PHOTO SEND', p: 7, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-link', size: 'small', title: 'LINK PLAY', p: 8, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-horoscope', size: 'small', title: 'HOROSCOPE', p: 9, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'soon-ghost', make: 'A GHOST CAPTURE', size: 'small', title: 'GHOST CAPTURE', p: 1, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-armband', make: 'AN ARMBAND', size: 'small', title: 'ARMBAND', p: 2, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-textgame', make: 'A TEXT GAME', size: 'small', title: 'TEXT GAME', p: 3, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-comics', make: 'A COMIC STRIP', size: 'small', title: 'COMICS', p: 4, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-speech', make: 'A SPEECH PRINT', size: 'small', title: 'SPEECH PRINT', p: 5, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-pobox', make: 'A POEM FOR A PO BOX', size: 'small', title: 'PO BOX', p: 6, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-photosend', make: 'A PHOTO SEND', size: 'small', title: 'PHOTO SEND', p: 7, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-link', make: 'A LINKED GAME', size: 'small', title: 'LINK PLAY', p: 8, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-astronomy', make: 'A STAR MAP', size: 'small', title: 'ASTRONOMY', p: 9, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
@@ -938,7 +938,7 @@
   /* a card still to be built: start one from it? yes opens the maker on its kind */
   function soonAsk(c) { var old = document.querySelector('.sn-ask'); if (old) old.remove();
     var d = document.createElement('div'); d.className = 'sn-ask'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', c.title);
-    d.innerHTML = '<div class="sn-box"><p>Start a card with this base template?</p><div class="sn-yn"><button type="button" data-a="1" aria-label="Yes">\uD83D\uDC4D</button><button type="button" data-a="0" aria-label="No">\uD83D\uDC4E</button></div></div>';
+    d.innerHTML = '<div class="sn-box">' + MARK + '<p><span>THIS CARD HASN\u2019T BEEN MADE.</span><span>YOU CAN BUILD IT.</span><span>FIND THE BLUEPAPER CARD TO INCREASE THE QUALITY OF YOUR IDEAS.</span><span class="sn-q">DO YOU WANT TO SEE THE TOOL TO CREATE ' + esc(c.make || c.title) + '?</span></p><div class="sn-yn"><button type="button" data-a="1" aria-label="Yes">\uD83D\uDC4D</button><button type="button" data-a="0" aria-label="No">\uD83D\uDC4E</button></div></div>';
     var esc1 = function (e) { if (e.key === 'Escape') shut(); }, shut = function () { d.remove(); removeEventListener('keydown', esc1); };
     d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-box')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
     addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }

@@ -1581,9 +1581,13 @@ html.hm-up #hm-top nav #hm-snd { margin-right: 48px; }
 .sn-f[data-p="8"] { background-image: radial-gradient(circle at 37% 72%, transparent 11cqmin, var(--ln) 11cqmin calc(11cqmin + 1px), transparent calc(11cqmin + 1.5px)), radial-gradient(circle at 63% 72%, transparent 11cqmin, var(--ln) 11cqmin calc(11cqmin + 1px), transparent calc(11cqmin + 1.5px)); }
 .sn-f[data-p="9"] { background-image: radial-gradient(circle at 22% 64%, var(--ln) 1.6px, transparent 2.2px), radial-gradient(circle at 41% 80%, var(--ln) 1.2px, transparent 1.8px), radial-gradient(circle at 63% 58%, var(--ln) 2px, transparent 2.6px), radial-gradient(circle at 78% 86%, var(--ln) 1.2px, transparent 1.8px), radial-gradient(circle at 54% 92%, var(--ln) 1.6px, transparent 2.2px), radial-gradient(circle at 30% 90%, var(--ln) 1px, transparent 1.6px); }
 .sn-ask { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(10, 10, 10, .42); }
-.sn-ask .sn-box { max-width: 300px; padding: 22px 22px 18px; border-radius: 16px; background: #F2F1EC; color: #161616; text-align: center; box-shadow: 0 18px 50px rgba(0, 0, 0, .25); }
-.sn-ask p { margin: 0 0 16px; font: 500 16px/1.35 'Poppins', Arial, sans-serif; }
-.sn-ask .sn-yn { display: flex; justify-content: center; gap: 12px; }
-.sn-ask button { width: 56px; height: 48px; border: 0; border-radius: 12px; background: #E2E0D8; font-size: 24px; line-height: 1; cursor: pointer; }
-.sn-ask button:hover, .sn-ask button:focus-visible { background: #D4D2C9; outline: none; }
+.sn-ask .sn-box { position: relative; max-width: 640px; padding: 24px 24px 20px; background: #F4F1E8; color: #1C1C1A; text-align: center; border: 1.5px solid #1C1C1A; border-radius: 22px 6px 18px 8px / 8px 18px 6px 22px; box-shadow: 4px 5px 0 rgba(28, 28, 26, .2); transform: rotate(-.7deg); }
+.sn-ask .ng-mark { display: block; width: 38px; height: auto; margin: 0 auto 14px; color: #1C1C1A; }
+.sn-ask p { margin: 0 0 18px; font: 400 clamp(11.5px, 3.3vw, 14px)/1.55 'Playfair Display', Georgia, 'Times New Roman', serif; letter-spacing: .05em; }
+.sn-ask p span { display: block; }
+.sn-ask p .sn-q { margin-top: 12px; font-style: italic; }
+.sn-ask .sn-yn { display: flex; justify-content: center; gap: 14px; }
+.sn-ask button { width: 54px; height: 50px; border: 1.5px solid #1C1C1A; border-radius: 52% 48% 50% 46% / 48% 54% 46% 52%; background: transparent; font-size: 23px; line-height: 1; cursor: pointer; transition: background .2s, transform .2s; }
+.sn-ask button + button { border-radius: 47% 53% 45% 55% / 55% 45% 53% 47%; }
+.sn-ask button:hover, .sn-ask button:focus-visible { background: #E6E2D6; transform: rotate(-4deg); outline: none; }
 .sk-soon .hm-keys, .sk-soon .hm-l { display: none; }
