@@ -611,7 +611,15 @@
       el('label', {}, 'HEADLINE', ofs[0]), el('label', {}, 'LEDE', ofs[1]), el('label', {}, 'WORDS', ofs[2]), hint('A blank line starts a new paragraph.'), el('label', {}, 'SIGNED', ofs[3]), el('label', {}, 'BLACK BAR', ofs[4]),
       hint('Empty: the words shown in grey stay.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; ofs.forEach(t => { if (t.value.trim()) o[t.dataset.k] = t.value.trim(); }); save({ opener: JSON.stringify(o) }); } })));
-    main.replaceChildren(...head('Home'), opener, cardsEd, look);
+    /* the novel.global business card: what it made, and its partners; one a line */
+    let bz = {}; try { bz = st.bizcard ? JSON.parse(st.bizcard) : {}; } catch (e) { bz = {}; }
+    const bzl = el('textarea', { rows: 7, style: 'width:100%', placeholder: 'I W.I.S.H.™ framework\nPoP™ Proof of Presence\nIsland Archipelagos OS\nLAN · local area network\nbluepaper strategic storytelling\nsolar thermal printer from e-waste' }), bzp = el('textarea', { rows: 5, style: 'width:100%', placeholder: '/logos/rmit.png\n/logos/inaturalist.png\n/logos/blue4est.png\nRaspberry Pi' });
+    bzl.value = (bz.list || []).join('\n'); bzp.value = (bz.partners || []).join('\n');
+    const lines = t => t.value.split('\n').map(x => x.trim()).filter(Boolean);
+    const bizEd = el('section', { class: 'ed' }, el('h3', { text: 'BUSINESS CARD' }), el('label', {}, 'MADE BY NOVEL.GLOBAL', bzl), hint('One a line, up to seven, numbered on the card.'), el('label', {}, 'PARTNERS', bzp),
+      hint('One a line, up to five: a logo on the site such as /logos/rmit.png, or a name set in type. Empty: the words shown in grey stay. Hold BUSINESS on the playing cards to see it.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; if (lines(bzl).length) o.list = lines(bzl).slice(0, 7); if (lines(bzp).length) o.partners = lines(bzp).slice(0, 5); save({ bizcard: JSON.stringify(o) }); } })));
+    main.replaceChildren(...head('Home'), opener, bizEd, cardsEd, look);
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }

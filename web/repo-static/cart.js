@@ -399,23 +399,25 @@
       k.fit(nm, 20, ph + 64, '700', 22, pw, SANS); k.fit(ro, 28 + pw, ph + 64, '500', 18, pw, SANS); k.fit(ct, 36 + 2 * pw, ph + 64, '500', 15, pw, MONO);
       k.box(20, ph + 84, w - 40, 1); }
   }
-  /* the novel.global card: the mark and the name, what it does, the two marks it holds, and what it is made with */
+  /* the novel.global card: the mark and the name; on the left what novel.global made, numbered; on the right its partners.
+     Both lists from admin (settings 'bizcard'); a partner starting with / is a logo on the site, anything else is set in type */
+  var NGB = { list: ['I W.I.S.H.™ framework', 'PoP™ Proof of Presence', 'Island Archipelagos OS', 'LAN · local area network', 'bluepaper strategic storytelling', 'solar thermal printer from e-waste'],
+    partners: ['/logos/rmit.png', '/logos/inaturalist.png', '/logos/blue4est.png', 'Raspberry Pi'] }, NGL = {}, NGF = false;
+  function ngLoad() { if (NGF) return; NGF = true;
+    var pics = function () { NGB.partners.forEach(function (p) { if (p[0] !== '/' || NGL[p]) return; var im = new Image(); NGL[p] = 1; im.onload = function () { NGL[p] = im; if (S.ready) paint(); }; im.onerror = function () { NGL[p] = 0; }; im.src = p; }); };
+    fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { try { var b = JSON.parse(j.bizcard || '{}'); if (b.list && b.list.length) NGB.list = b.list.slice(0, 7); if (b.partners && b.partners.length) NGB.partners = b.partners.slice(0, 5); } catch (e) { /* the defaults */ } pics(); if (S.ready) paint(); }, pics); }
   function ngCard(k) {
-    var g = k.g, w = BZ.w, h = BZ.h, B = '700 19px ' + SANS, N = '500 19px ' + SANS, TM = '700 13px ' + SANS;
-    g.save(); g.translate(28, 18); g.strokeStyle = '#000'; g.lineWidth = 2.4; g.lineCap = 'round'; g.lineJoin = 'round';
-    IRUK.forEach(function (q, i) { g.setLineDash(i > 4 ? [0.2, 3.6] : []); g.stroke(new Path2D(q)); }); g.restore(); g.setLineDash([]);
-    k.txt('novel.global', 104, 68, '700 50px ' + SANS); k.box(24, 92, w - 48, 3);
-    var line = function (p, y) { var x = 26; p.forEach(function (q) { x += k.txt(q[0], x, q[0] === '™' ? y - 7 : y, q[1]); }); };
-    [[['solar thermal printer', B], [' from e-waste', N]], [['on a ', N], ['LAN', B], [' — Local Area Network', N]], [['running the ', N], ['Island Archipelagos OS', B]],
-      [['with ', N], ['bluepaper', B], [' strategic storytelling', N]]].forEach(function (p, i) { line(p, 128 + i * 31); });
-    k.dots(26, 236, 360, 2);
-    line([['I W.I.S.H.', B], ['™', TM], [' framework', N]], 274); line([['PoP', B], ['™', TM], [' — Proof of Presence', N]], 306);
-    var sx = 418, sw = w - 24 - sx, sy = 122;
-    k.txt('MADE WITH', sx, sy, '600 13px ' + MONO);
-    [['RMIT', 0], ['EPSON', 1], ['receipt paper', 2], ['iNaturalist', 0]].forEach(function (q, i) { var y = sy + 10 + i * 52, hh = 44;
-      if (q[1] === 0) { k.box(sx, y, sw, hh); g.fillStyle = '#fff'; g.font = '700 22px ' + SANS; g.textAlign = 'center'; g.fillText(q[0], sx + sw / 2, y + 30); g.textAlign = 'left'; }
-      else if (q[1] === 1) { k.box(sx, y, sw, hh); g.fillStyle = '#fff'; g.fillRect(sx + 2, y + 2, sw - 4, hh - 4); k.txt(q[0], sx + sw / 2, y + 30, '700 22px ' + SANS, 'center'); }
-      else { k.dots(sx, y, sw, hh); g.fillStyle = '#fff'; g.fillRect(sx + 10, y + 9, sw - 20, hh - 18); k.fit(q[0], sx + sw / 2, y + 28, '600', 16, sw - 28, MONO, 'center'); } });
+    ngLoad(); var g = k.g, w = BZ.w, h = BZ.h, L = NGB.list, P = NGB.partners;
+    /* the mark: the square and the sun, black on the thermal paper */
+    g.save(); g.translate(26, 26); g.scale(0.4, 0.4); g.fillStyle = '#000'; g.fillRect(10, 10, 91.6, 92); g.beginPath(); g.arc(178.3, 56.5, 48.8, 0, 7); g.fill(); g.restore();
+    k.txt('novel.global', 134, 64, '700 40px ' + SANS); k.box(26, 90, w - 52, 3);
+    var dx = 404, top = 112, rows = Math.max(L.length, 1), lh = Math.min(36, Math.floor((h - top - 24) / rows));
+    L.forEach(function (t, i) { var y = top + lh * (i + 0.5) + 6; k.txt(String(i + 1).padStart(2, '0'), 26, y, '600 13px ' + MONO); k.fit(t, 58, y, '500', 18, dx - 76, SANS); });
+    k.box(dx, top + 4, 1, h - top - 28);
+    var px = dx + 22, pw = w - 26 - px, n = Math.max(P.length, 1), sh = Math.floor((h - top - 24) / n);
+    P.forEach(function (p, i) { var y = top + i * sh, im = NGL[p], bh = Math.min(30, sh - 14);
+      if (im && im.width) { var s = Math.min(bh / im.height, pw / im.width); g.drawImage(im, px, R(y + (sh - im.height * s) / 2), R(im.width * s), R(im.height * s)); }
+      else if (p[0] !== '/') k.fit(p, px, R(y + sh / 2 + 7), '700', 20, pw, SANS); });
   }
   /* playing cards: the whole deck, thirteen to a print, four prints. DECK turns the page; PRINT sends all four. BUSINESS: three cards in a row; hold it for the novel.global card */
   var cards = {
