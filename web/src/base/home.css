@@ -152,7 +152,7 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 @keyframes zn-one { 0% { stroke-dashoffset: 1; opacity: 0; } 1% { opacity: 1; } 14% { stroke-dashoffset: 0; } 28% { stroke-dashoffset: 0; opacity: 1; } 33%, 100% { stroke-dashoffset: 0; opacity: 0; } }
 @keyframes zn-bz1 { 0% { opacity: 0; transform: scale(.4) rotate(-90deg); } 3% { opacity: 1; transform: scale(1.14) rotate(6deg); } 5% { transform: scale(1) rotate(0); } 28% { opacity: 1; transform: none; } 33%, 100% { opacity: 0; } }
 .zn-draw .fr { opacity: 1; }
-.zn-draw .o { stroke: #FF5436; stroke-width: .9; }
+.zn-draw .o { stroke: #FF5436; stroke-width: .75; }
 .zn-draw .b { stroke-width: 1.3; }
 .zn-draw .dm { stroke-width: 1.25; stroke-linejoin: miter; stroke-linecap: square; }
 .zn-draw .mk { stroke: #0A0A0A; stroke-width: 2.7; opacity: .94; }
@@ -1565,15 +1565,19 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 html.hm-up #hm-top nav #hm-snd { margin-right: 48px; }
 /* cover words measured inside the cover (wordFit) */
 .wx-bk .wx-h, .g-deck[data-id^="pl-"] .wx-s em { min-width: 0; max-width: 100%; overflow: visible; }
-/* SOON: the next nine, still being built. Greys, one amber band, a line drawing of the thing */
-.hm-card.sk-soon { --c-bg: #DCDBD6; --ink: #2A2A29; cursor: pointer; }
-.sk-soon .sn-f { position: absolute; inset: -1px; color: var(--ink); overflow: hidden; border-radius: inherit; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, transparent 0 11cqmin, rgba(0, 0, 0, .05) 11cqmin calc(11cqmin + 1px)) var(--c-bg); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
+/* SOON: the next nine as records in an archive: a catalogue card, its file number, the thing drawn as a plate, a draft stamp, the rod hole */
+.hm-card.sk-soon { --c-bg: #E6E4DC; --ink: #262624; --st: #2F5D46; cursor: pointer; }
+.sk-soon .sn-f { position: absolute; inset: -1px; color: var(--ink); overflow: hidden; border-radius: inherit; pointer-events: none; z-index: 1; background: linear-gradient(var(--ink), var(--ink)) 0 21cqmin / 100% 1px no-repeat, linear-gradient(var(--ink), var(--ink)) 0 calc(21cqmin + 3px) / 100% 1px no-repeat, repeating-linear-gradient(0deg, transparent 0 7.4cqmin, rgba(38, 38, 36, .07) 7.4cqmin calc(7.4cqmin + 1px)) var(--c-bg); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
 .sk-soon .sn-k { position: absolute; left: 7cqmin; top: 6.4cqmin; font: 700 clamp(17px, 9.5cqmin, 34px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; }
-.sk-soon .sn-i { position: absolute; left: 50%; top: 50%; width: 42cqmin; height: 42cqmin; transform: translate(-50%, -50%); fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; opacity: .78; stroke-dasharray: 2.2 1.4; }
-.sk-soon .sn-b { position: absolute; left: -10%; right: -10%; bottom: 9cqmin; height: 9cqmin; display: grid; place-items: center; transform: rotate(-4deg); background: repeating-linear-gradient(-45deg, #F2B705 0 4cqmin, #2A2A29 4cqmin 8cqmin); }
-.sk-soon .sn-b span { padding: .3em .9em; background: #2A2A29; color: #F2B705; font: 600 clamp(8px, 3.6cqmin, 12px)/1 'IBM Plex Mono', monospace; letter-spacing: .2em; }
+.sk-soon .sn-no, .sk-soon .sn-fg { position: absolute; font: 500 clamp(7px, 3.1cqmin, 11px)/1 'IBM Plex Mono', monospace; letter-spacing: .16em; font-style: normal; opacity: .7; }
+.sk-soon .sn-no { left: 7cqmin; top: calc(21cqmin + 4cqmin); }
+.sk-soon .sn-i { position: absolute; left: 50%; top: 52%; width: 48cqmin; height: 48cqmin; padding: 7cqmin; box-sizing: content-box; transform: translate(-50%, -50%); fill: none; stroke: currentColor; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; outline: 1px solid rgba(38, 38, 36, .45); outline-offset: -1px; background: rgba(255, 255, 255, .28); }
+.sk-soon .sn-fg { left: calc(50% - 31cqmin); top: calc(52% + 33.5cqmin); }
+.sk-soon .sn-st { position: absolute; right: 8cqmin; bottom: 13cqmin; padding: .45em .8em .4em; border: 1.5px solid var(--st); border-radius: 2px; color: var(--st); font: 600 clamp(8px, 3.6cqmin, 12px)/1 'IBM Plex Mono', monospace; letter-spacing: .28em; font-style: normal; transform: rotate(-5deg); opacity: .82; mix-blend-mode: multiply; }
+.sk-soon .sn-hole { position: absolute; left: 50%; bottom: 4.5cqmin; width: 5cqmin; height: 5cqmin; border-radius: 50%; transform: translateX(-50%); background: var(--hm-bg, #E9E7E1); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25); }
 .hm-card.sk-soon.sn-nu { animation: sn-nu .42s ease; }
-@keyframes sn-nu { 25% { transform: rotate(-1.5deg); } 60% { transform: rotate(1deg); } }
-#hm.night .hm-card.sk-soon { --c-bg: #3A3A39; --ink: #D8D7D2; }
+@keyframes sn-nu { 25% { transform: rotate(-1deg); } 60% { transform: rotate(.6deg); } }
+#hm.night .hm-card.sk-soon { --c-bg: #34342F; --ink: #DAD8D0; --st: #8FC1A4; }
+#hm.night .sk-soon .sn-st { mix-blend-mode: normal; }
 @media (max-width: 767px) { .sk-soon .sn-k { font-size: clamp(12px, 13cqw, 17px); top: 6cqw; left: 7cqw; } }
 .sk-soon .hm-keys, .sk-soon .hm-l { display: none; }
