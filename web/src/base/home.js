@@ -62,15 +62,15 @@
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', off: true, size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-ghost', size: 'small', title: 'GHOST', hint: 'Timed photographs, printed as found', icon: '<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><path d="M9 16v-5a3 3 0 0 1 6 0v5l-1-1-1 1-1-1-1 1-1-1z"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-armband', size: 'small', title: 'ARMBAND', hint: 'An 80 mm band, printed to wear', icon: '<path d="M3 9.5c3-1.2 15-1.2 18 0v5c-3 1.2-15 1.2-18 0z"/><path d="M12 10.2v3.6M10.2 12h3.6"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-adventure', size: 'small', title: 'ADVENTURE', hint: 'Text games, played on paper', icon: '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M7 10l2.5 2L7 14M11.5 14.5h4"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-comics', size: 'small', title: 'COMICS', hint: 'Panels, printed in a strip', icon: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 10h16M12 3v7M4 15.5h16"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-speak', size: 'small', title: 'SPEAK', hint: 'Say it and it prints', icon: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-post', size: 'small', title: 'POST', hint: 'A poem to a three-letter box', icon: '<rect x="3.5" y="6" width="17" height="12" rx="1"/><path d="M3.5 7l8.5 6 8.5-6"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-send', size: 'small', title: 'SEND', hint: 'A photo to any printer', icon: '<rect x="3" y="6" width="7" height="12" rx="1.5"/><path d="M13 12h7M17 9l3 3-3 3"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-link', size: 'small', title: 'LINK', hint: 'Two islands, one game', icon: '<rect x="2.5" y="8" width="6" height="8" rx="1"/><rect x="15.5" y="8" width="6" height="8" rx="1"/><path d="M8.5 12c2.5-3 4.5 3 7 0"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-stars', size: 'small', title: 'STARS', hint: 'The sky for this moon', icon: '<path d="M5 17l5-6 4 3 5-8"/><circle cx="5" cy="17" r="1.2"/><circle cx="10" cy="11" r="1.2"/><circle cx="14" cy="14" r="1.2"/><circle cx="19" cy="6" r="1.2"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'soon-ghost', size: 'small', title: 'GHOST CAPTURE', p: 1, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-armband', size: 'small', title: 'ARMBAND', p: 2, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-textgame', size: 'small', title: 'TEXT GAME', p: 3, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-comics', size: 'small', title: 'COMICS', p: 4, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-speech', size: 'small', title: 'SPEECH PRINT', p: 5, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-pobox', size: 'small', title: 'PO BOX', p: 6, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-photosend', size: 'small', title: 'PHOTO SEND', p: 7, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-link', size: 'small', title: 'LINK PLAY', p: 8, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-horoscope', size: 'small', title: 'HOROSCOPE', p: 9, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
@@ -729,7 +729,7 @@
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
     else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
-    else if (sk === 'soon') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="sn-f"><b class="sn-k">' + t.charAt(0) + t.slice(1).toLowerCase() + '</b><svg class="sn-i" viewBox="0 0 24 24" aria-hidden="true">' + (c.icon || '') + '</svg><i class="sn-no" aria-hidden="true">FILE 06·' + ('0' + (CARDS.filter(function (x) { return x.opens === 'soon'; }).indexOf(c) + 1)).slice(-2) + '</i><i class="sn-fg" aria-hidden="true">FIG.</i><i class="sn-st" aria-hidden="true">DRAFT</i><i class="sn-hole" aria-hidden="true"></i></div>';
+    else if (sk === 'soon') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="sn-f" data-p="' + (c.p || 1) + '"><b class="sn-k">' + (t.charAt(0) + t.slice(1).toLowerCase()).replace(/\bpo\b/i, 'PO') + '</b></div>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">strategic storytelling</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
@@ -935,10 +935,17 @@
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
+  /* a card still to be built: start one from it? yes opens the maker on its kind */
+  function soonAsk(c) { var old = document.querySelector('.sn-ask'); if (old) old.remove();
+    var d = document.createElement('div'); d.className = 'sn-ask'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', c.title);
+    d.innerHTML = '<div class="sn-box"><p>Start a card with this base template?</p><div class="sn-yn"><button type="button" data-a="1" aria-label="Yes">\uD83D\uDC4D</button><button type="button" data-a="0" aria-label="No">\uD83D\uDC4E</button></div></div>';
+    var esc1 = function (e) { if (e.key === 'Escape') shut(); }, shut = function () { d.remove(); removeEventListener('keydown', esc1); };
+    d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-box')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
+    addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }
   function open(id, opt) {
     var c = byId(id); if (!c) return;
     /* a card still being built: a small nudge, nothing opens */
-    if (c.opens === 'soon') { var sc = col.querySelector('.hm-card[data-id="' + id + '"]'); if (sc) { sc.classList.remove('sn-nu'); void sc.offsetWidth; sc.classList.add('sn-nu'); } beep(330, 0.05); return; } H.classList.toggle('hm-nosea', c.sea === 'off'); careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
+    if (c.opens === 'soon') { beep(520, 0.04); return soonAsk(c); }
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
