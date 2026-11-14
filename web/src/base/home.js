@@ -534,37 +534,44 @@
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
-  function wallArt() { return [{ src: '/wall/poster-01.webp', name: 'poster-01', island: 'novelglobal', where: 'Melbourne' }]; }
-  function wallHTML() { return '<section class="hm-wall" aria-label="Wall"><div class="wl-tr' + (wallArt().length > 1 ? ' many' : '') + '">' + wallArt().map(function (a, k) { return '<figure class="wl-it" data-k="' + k + '"><img class="wl-im" alt="" decoding="async" loading="lazy" draggable="false" src="' + esc(a.src) + '"></figure>'; }).join('') +
-    '</div><div class="wl-op" hidden><button type="button" data-wl="play">PLAY</button><button type="button" data-wl="where">WHERE</button><button type="button" data-wl="print">PRINT</button><a data-wl="save" download>SAVE</a><p class="wl-msg" aria-live="polite"></p></div></section>'; }
-  var WL = { s: 1, x: 0, y: 0, pts: {}, play: 0 };
-  function wlSize() { var cs = getComputedStyle(col), top = parseFloat(cs.scrollPaddingTop) || 0; $$('.hm-wall', col).forEach(function (w) { w.style.height = (col.clientHeight - top) + 'px'; w.style.marginLeft = '-' + cs.paddingLeft; w.style.marginRight = '-' + cs.paddingRight; }); }
+  /* THE WALL: each artwork whole on the screen, never cropped; swipe for the next, pinch or double tap to look closer.
+     The only thing over it is its keys, and only the ones it has: PLAY (sound or motion), PRINT, SAVE */
+  function wallArt() { return [{ src: '/wall/poster-01.webp', name: 'poster-01', print: true, save: true, play: '' }]; }
+  function wallHTML() { return '<section class="hm-wall" aria-label="Wall"><div class="wl-tr">' + wallArt().map(function (a, k) { return '<figure class="wl-it" data-k="' + k + '"><img class="wl-im" alt="" decoding="async" draggable="false" src="' + esc(a.src) + '"></figure>'; }).join('') +
+    '</div><div class="wl-op"><button type="button" data-wl="play" hidden>PLAY</button><button type="button" data-wl="print" hidden>PRINT</button><a data-wl="save" download hidden>SAVE</a><p class="wl-msg" aria-live="polite"></p></div></section>'; }
+  var WL = { s: 1, pts: {}, au: null };
+  function wlSize() { var cs = getComputedStyle(col), top = parseFloat(cs.scrollPaddingTop) || 0; $$('.hm-wall', col).forEach(function (w) { w.style.height = (col.clientHeight - top) + 'px'; w.style.marginLeft = '-' + cs.paddingLeft; w.style.marginRight = '-' + cs.paddingRight; $$('.wl-it', w).forEach(function (f) { wlFit(f, f === wlFig() ? WL.s : 1); }); }); }
   function wlFig() { var tr = col.querySelector('.wl-tr'); if (!tr) return null; var f0 = tr.children[0], k = Math.round(tr.scrollLeft / Math.max(1, f0 ? f0.offsetWidth : tr.clientWidth)); return tr.children[k] || f0; }
-  /* an artwork fills the width and scrolls by itself; zoomed, it is wider, and the point under the fingers stays under them */
+  /* the piece sized to fit the screen whole, times the zoom; zoomed past the screen, the figure scrolls */
+  function wlFit(fig, z) { var im = fig && fig.querySelector('.wl-im'); if (!im || !im.naturalWidth) return; var W0 = fig.clientWidth, H0 = fig.clientHeight, f = Math.min(W0 / im.naturalWidth, H0 / im.naturalHeight) * z;
+    im.style.width = Math.round(im.naturalWidth * f) + 'px'; im.style.height = Math.round(im.naturalHeight * f) + 'px'; fig.classList.toggle('zm', z > 1.01); }
+  /* zoom about a point: the spot under the fingers stays under them */
   function wlSet(fig, s, cx, cy) { var im = fig && fig.querySelector('.wl-im'); if (!im) return; var r = fig.getBoundingClientRect(); if (cx == null) cx = r.left + r.width / 2; if (cy == null) cy = r.top + r.height / 2;
-    var a = im.getBoundingClientRect(), u = a.width ? (cx - a.left) / a.width : 0.5, v = a.height ? (cy - a.top) / a.height : 0.5; WL.s = Math.max(1, Math.min(6, s)); im.style.setProperty('--z', WL.s.toFixed(3));
-    var b = im.getBoundingClientRect(); fig.scrollLeft += b.left + u * b.width - cx; fig.scrollTop += b.top + v * b.height - cy; fig.classList.toggle('zm', WL.s > 1.01); }
-  function wlStop() { cancelAnimationFrame(WL.play); WL.play = 0; }
-  function wlOps(show) { var o = col.querySelector('.wl-op'); if (!o) return; if (show == null) show = o.hidden; o.hidden = !show; if (show) { var a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0]; var sv = o.querySelector('[data-wl="save"]'); sv.href = a.src; sv.setAttribute('download', a.name + a.src.replace(/^.*(\.[a-z0-9]+)$/i, '$1')); o.querySelector('.wl-msg').textContent = ''; } }
-  function wlWire() { var wall = col.querySelector('.hm-wall'); if (!wall || wall.dataset.on) return; wall.dataset.on = 1; wlSize();
-    var tr = wall.querySelector('.wl-tr'), down = null, moved = 0, d0 = 0, s0 = 1, c0 = null;
-    var cur = null; tr.addEventListener('scroll', function () { var f = wlFig(); if (f === cur) return; if (cur) { var im = cur.querySelector('.wl-im'); if (im) im.style.removeProperty('--z'); cur.classList.remove('zm'); } cur = f; WL.s = 1; wlStop(); }, { passive: true }); cur = wlFig();
-    tr.addEventListener('pointerdown', function (e) { wlStop(); WL.pts[e.pointerId] = 1; down = Object.keys(WL.pts).length === 1 ? [e.clientX, e.clientY] : null; moved = down ? 0 : 99; });
+    var a = im.getBoundingClientRect(), u = a.width ? (cx - a.left) / a.width : 0.5, v = a.height ? (cy - a.top) / a.height : 0.5; WL.s = Math.max(1, Math.min(6, s)); wlFit(fig, WL.s);
+    var c = im.getBoundingClientRect(); fig.scrollLeft += c.left + u * c.width - cx; fig.scrollTop += c.top + v * c.height - cy; }
+  /* the keys this piece has, and nothing else */
+  function wlKeys() { var wall = col.querySelector('.hm-wall'); if (!wall) return; var a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0] || {}, o = wall.querySelector('.wl-op'), sv = o.querySelector('[data-wl="save"]');
+    o.querySelector('[data-wl="play"]').hidden = !a.play; o.querySelector('[data-wl="print"]').hidden = !a.print; sv.hidden = !a.save;
+    if (a.save) { sv.href = a.src; sv.setAttribute('download', a.name + a.src.replace(/^.*(\.[a-z0-9]+)$/i, '$1')); } o.hidden = !(a.play || a.print || a.save); o.querySelector('.wl-msg').textContent = ''; }
+  function wlStop() { if (WL.au) { WL.au.pause(); WL.au = null; } var p = col.querySelector('[data-wl="play"]'); if (p) p.textContent = 'PLAY'; }
+  function wlWire() { var wall = col.querySelector('.hm-wall'); if (!wall || wall.dataset.on) return; wall.dataset.on = 1; wlSize(); wlKeys(); if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (x) { root.classList.toggle('wl-on', x.intersectionRatio > 0.55); }); }, { threshold: [0, 0.55, 1] }).observe(wall);
+    $$('.wl-im', wall).forEach(function (im) { var f = function () { wlFit(im.parentElement, 1); }; if (im.complete) f(); else im.addEventListener('load', f); });
+    var tr = wall.querySelector('.wl-tr'), down = null, moved = 0, d0 = 0, s0 = 1, cur = wlFig();
+    tr.addEventListener('scroll', function () { var f = wlFig(); if (f === cur) return; if (cur) wlFit(cur, 1); cur = f; WL.s = 1; wlStop(); wlKeys(); }, { passive: true });
+    tr.addEventListener('pointerdown', function (e) { WL.pts[e.pointerId] = 1; down = Object.keys(WL.pts).length === 1 ? [e.clientX, e.clientY] : null; moved = down ? 0 : 99; });
     tr.addEventListener('pointermove', function (e) { if (down && WL.pts[e.pointerId]) moved = Math.max(moved, Math.hypot(e.clientX - down[0], e.clientY - down[1])); }, { passive: true });
-    var up = function (e) { var was = WL.pts[e.pointerId]; delete WL.pts[e.pointerId]; if (!Object.keys(WL.pts).length) { if (was && down && moved < 8 && e.type === 'pointerup') { if (WL.tap && performance.now() - WL.tap < 300) { WL.tap = 0; clearTimeout(WL.tt); wlSet(wlFig(), WL.s > 1.01 ? 1 : 2.5, e.clientX, e.clientY); } else { WL.tap = performance.now(); WL.tt = setTimeout(function () { WL.tap = 0; wlOps(); }, 300); } } down = null; } };
+    var up = function (e) { var was = WL.pts[e.pointerId]; delete WL.pts[e.pointerId]; if (!Object.keys(WL.pts).length) { if (was && down && moved < 8 && e.type === 'pointerup') { if (WL.tap && performance.now() - WL.tap < 320) { WL.tap = 0; wlSet(wlFig(), WL.s > 1.01 ? 1 : 2.5, e.clientX, e.clientY); } else WL.tap = performance.now(); } down = null; } };
     tr.addEventListener('pointerup', up); tr.addEventListener('pointercancel', up);
-    tr.addEventListener('wheel', function (e) { if (!e.ctrlKey) return; e.preventDefault(); wlStop(); wlSet(wlFig(), WL.s * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY); }, { passive: false });
+    tr.addEventListener('wheel', function (e) { if (!e.ctrlKey) return; e.preventDefault(); wlSet(wlFig(), WL.s * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY); }, { passive: false });
     /* two fingers: closer or wider is the zoom, about the point between them */
     var tm = function (t) { return [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2, Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)]; };
-    tr.addEventListener('touchstart', function (e) { if (e.touches.length === 2) { wlStop(); d0 = tm(e.touches)[2]; s0 = WL.s; moved = 99; } }, { passive: true });
+    tr.addEventListener('touchstart', function (e) { if (e.touches.length === 2) { d0 = tm(e.touches)[2]; s0 = WL.s; moved = 99; } }, { passive: true });
     tr.addEventListener('touchmove', function (e) { if (e.touches.length !== 2 || !d0) return; e.preventDefault(); var m = tm(e.touches); wlSet(wlFig(), s0 * m[2] / d0, m[0], m[1]); }, { passive: false });
     tr.addEventListener('touchend', function (e) { if (e.touches.length < 2) d0 = 0; }, { passive: true });
-    wall.querySelector('.wl-op').addEventListener('click', function (e) { var b = e.target.closest('[data-wl]'); if (!b) { wlOps(false); return; } var k = b.dataset.wl, a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0], msg = wall.querySelector('.wl-msg');
+    wall.querySelector('.wl-op').addEventListener('click', function (e) { var b = e.target.closest('[data-wl]'); if (!b) return; var k = b.dataset.wl, a = wallArt()[+((wlFig() || {}).dataset || {}).k || 0] || {}, msg = wall.querySelector('.wl-msg');
       if (k === 'save') return; e.preventDefault();
-      if (k === 'where') msg.textContent = a.island ? 'On ' + a.island + (a.where ? ', ' + a.where : '') : 'Not on an island yet';
       if (k === 'print') { msg.textContent = 'Sending'; ((NG && NG.printAgain) ? NG.printAgain(a.src, a.name) : Promise.reject(new Error('none'))).then(function (st) { msg.textContent = st === 'queued' ? 'Printing' : 'Waiting for a printer'; }, function () { msg.textContent = 'No printer nearby'; }); }
-      if (k === 'play') { wlOps(false); var fig = wlFig(); if (!fig) return; if (fig.scrollHeight - fig.clientHeight < 8) wlSet(fig, 2, null, null); var t0 = performance.now();
-        (function go(now) { var p = ((now - t0) / 22000) % 1, e2 = 0.5 - 0.5 * Math.cos(p * Math.PI * 2); fig.scrollTop = e2 * (fig.scrollHeight - fig.clientHeight); WL.play = requestAnimationFrame(go); })(t0); } });
+      if (k === 'play' && a.play) { if (WL.au) { wlStop(); return; } WL.au = new Audio(a.play); WL.au.play().catch(function () { wlStop(); }); WL.au.onended = wlStop; b.textContent = 'STOP'; } });
   }
   function logosOf(c) { var l = c.logos || []; if (!l.length) return '';
     return '<span class="hm-pl" aria-label="Made with">' + l.map(function (u) { return u === 'mark' ? '<i class="pl-ng">' + MARK + '<b>novel.global</b></i>' : '<img alt="" decoding="async" loading="lazy" class="pl-' + esc(u.replace(/^.*\//, '').replace(/\..*$/, '')) + '" src="' + esc(u) + '">'; }).join('') + '</span>'; }
