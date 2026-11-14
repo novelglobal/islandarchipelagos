@@ -1561,3 +1561,19 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 /* on the wall nothing else sits over the art: the page dots and the ghost key step aside */
 #hm .hm-dots, #hm .hm-ghost { transition: opacity .3s; }
 #hm.wl-on .hm-dots, #hm.wl-on .hm-ghost { opacity: 0; pointer-events: none; }
+/* in a sheet the talk key takes the corner: the sound key steps left beside it, never under it */
+html.hm-up #hm-top nav #hm-snd { margin-right: 48px; }
+/* cover words measured inside the cover (wordFit) */
+.wx-bk .wx-h, .g-deck[data-id^="pl-"] .wx-s em { min-width: 0; max-width: 100%; overflow: visible; }
+/* SOON: the next nine, still being built. Greys, one amber band, a line drawing of the thing */
+.hm-card.sk-soon { --c-bg: #DCDBD6; --ink: #2A2A29; cursor: pointer; }
+.sk-soon .sn-f { position: absolute; inset: -1px; color: var(--ink); overflow: hidden; border-radius: inherit; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, transparent 0 11cqmin, rgba(0, 0, 0, .05) 11cqmin calc(11cqmin + 1px)) var(--c-bg); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
+.sk-soon .sn-k { position: absolute; left: 7cqmin; top: 6.4cqmin; font: 700 clamp(17px, 9.5cqmin, 34px)/1 'Poppins', Arial, sans-serif; letter-spacing: -.035em; }
+.sk-soon .sn-i { position: absolute; left: 50%; top: 50%; width: 42cqmin; height: 42cqmin; transform: translate(-50%, -50%); fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; opacity: .78; stroke-dasharray: 2.2 1.4; }
+.sk-soon .sn-b { position: absolute; left: -10%; right: -10%; bottom: 9cqmin; height: 9cqmin; display: grid; place-items: center; transform: rotate(-4deg); background: repeating-linear-gradient(-45deg, #F2B705 0 4cqmin, #2A2A29 4cqmin 8cqmin); }
+.sk-soon .sn-b span { padding: .3em .9em; background: #2A2A29; color: #F2B705; font: 600 clamp(8px, 3.6cqmin, 12px)/1 'IBM Plex Mono', monospace; letter-spacing: .2em; }
+.hm-card.sk-soon.sn-nu { animation: sn-nu .42s ease; }
+@keyframes sn-nu { 25% { transform: rotate(-1.5deg); } 60% { transform: rotate(1deg); } }
+#hm.night .hm-card.sk-soon { --c-bg: #3A3A39; --ink: #D8D7D2; }
+@media (max-width: 767px) { .sk-soon .sn-k { font-size: clamp(12px, 13cqw, 17px); top: 6cqw; left: 7cqw; } }
+.sk-soon .hm-keys, .sk-soon .hm-l { display: none; }

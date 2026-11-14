@@ -36,6 +36,8 @@
   var hd = $('header'), bar = D.createElement('nav'); bar.id = 'modes'; bar.setAttribute('aria-label', 'What to make');
   bar.innerHTML = MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '" title="' + m[2] + '">' + m[3] + '<span>' + m[1] + '</span></button>'; }).join('') + '<i class="mb-ink" aria-hidden="true"></i>';
   hd.insertBefore(bar, $('#starts'));
+  /* one hand-written line over the tabs: there each time the card opens, gone after a few seconds, never back on a tab switch */
+  var hand = D.createElement('p'); hand.id = 'hand'; hand.textContent = 'Make cards. Print them on any island.'; hd.insertBefore(hand, bar);
   var host = D.createElement('div'); host.id = 'plus'; $('main').after(host);
   host.innerHTML = '<section id="pg" class="mode" aria-label="Page"></section><section id="gm" class="mode" aria-label="Game"></section><section id="cd" class="mode" aria-label="Card"></section><section id="st" class="mode" aria-label="Set-up"></section><section id="lv" class="mode" aria-label="Live"></section>';
   function mode(m, quiet) { P.m = m; save(); H.dataset.m = m; $$('#modes [data-m]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });

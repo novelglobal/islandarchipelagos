@@ -61,7 +61,16 @@
     { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', off: true, size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-ghost', size: 'small', title: 'GHOST', hint: 'Timed photographs, printed as found', icon: '<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><path d="M9 16v-5a3 3 0 0 1 6 0v5l-1-1-1 1-1-1-1 1-1-1z"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-armband', size: 'small', title: 'ARMBAND', hint: 'An 80 mm band, printed to wear', icon: '<path d="M3 9.5c3-1.2 15-1.2 18 0v5c-3 1.2-15 1.2-18 0z"/><path d="M12 10.2v3.6M10.2 12h3.6"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-adventure', size: 'small', title: 'ADVENTURE', hint: 'Text games, played on paper', icon: '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M7 10l2.5 2L7 14M11.5 14.5h4"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-comics', size: 'small', title: 'COMICS', hint: 'Panels, printed in a strip', icon: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 10h16M12 3v7M4 15.5h16"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-speak', size: 'small', title: 'SPEAK', hint: 'Say it and it prints', icon: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-post', size: 'small', title: 'POST', hint: 'A poem to a three-letter box', icon: '<rect x="3.5" y="6" width="17" height="12" rx="1"/><path d="M3.5 7l8.5 6 8.5-6"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-send', size: 'small', title: 'SEND', hint: 'A photo to any printer', icon: '<rect x="3" y="6" width="7" height="12" rx="1.5"/><path d="M13 12h7M17 9l3 3-3 3"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-link', size: 'small', title: 'LINK', hint: 'Two islands, one game', icon: '<rect x="2.5" y="8" width="6" height="8" rx="1"/><rect x="15.5" y="8" width="6" height="8" rx="1"/><path d="M8.5 12c2.5-3 4.5 3 7 0"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-stars', size: 'small', title: 'STARS', hint: 'The sky for this moon', icon: '<path d="M5 17l5-6 4 3 5-8"/><circle cx="5" cy="17" r="1.2"/><circle cx="10" cy="11" r="1.2"/><circle cx="14" cy="14" r="1.2"/><circle cx="19" cy="6" r="1.2"/>', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
@@ -606,12 +615,14 @@
   /* the moon as it is this week, drawn: lit from the right while it waxes, the left while it wanes */
   function moonSVG() { var ph = (((Date.now() / 864e5 - 10962.76) / 29.530588853) % 1 + 1) % 1, a = Math.cos(ph * 2 * Math.PI), sw = ph < 0.5 ? 1 : 0, rx = (Math.abs(a) * 10).toFixed(2);
     return '<svg viewBox="0 0 24 24"><circle class="mo-d" cx="12" cy="12" r="10"/><path class="mo-l" d="M12 2A10 10 0 0 ' + sw + ' 12 22A' + rx + ' 10 0 0 ' + (a > 0 ? 1 - sw : sw) + ' 12 2Z"/></svg>'; }
+  /* a cover's words stay on the cover: the type steps down until the longest word fits */
+  function wordFit(box) { if (!box) return; var bits = box.children.length ? [].slice.call(box.children) : [box]; box.style.fontSize = ''; requestAnimationFrame(function () { var n = 0; while (n++ < 14 && bits.some(function (b) { return b.scrollWidth > b.clientWidth + 1; })) box.style.fontSize = (parseFloat(getComputedStyle(box).fontSize) * 0.93) + 'px'; }); }
   function cartFace(el, k) {
     var set = function (h, l, s, tx) { $('.wx-h', el).textContent = h; var L = $('.wx-l', el); if (L) L.textContent = l || ''; $('.wx-s', el).textContent = s || ''; el.classList.toggle('wx-txt', !!tx); };
     var day = cartDay();
     if (k === 'events') { var mk = $('.wx-wk', el); if (mk && !mk.firstChild) mk.innerHTML = moonSVG(); }
-    if (k === 'read') { var sh = SHELF1[el.classList.contains('r-fic') ? 'fic' : el.classList.contains('r-how') ? 'how' : 'non']; return set(sh[0], '', sh[1]); }
-    if (k === 'recipes') { $('.wx-s', el).innerHTML = '<em>strawberry</em><em>black olive</em><em>chilli</em>'; return; }
+    if (k === 'read') { var sh = SHELF1[el.classList.contains('r-fic') ? 'fic' : el.classList.contains('r-how') ? 'how' : 'non']; set(sh[0], '', sh[1]); return wordFit($('.wx-h', el)); }
+    if (k === 'recipes') { $('.wx-s', el).innerHTML = '<em>strawberry</em><em>black olive</em><em>chilli</em>'; return wordFit($('.wx-s', el)); }
     if (k === 'events') { if (EVT === null) return set('', '', '');
       var e1 = String(EVT).split('\n').map(function (x) { return x.split('|').map(function (q) { return q.trim(); }); }).filter(function (x) { return x[1]; })[0];
       return e1 ? set(e1[1], '', [e1[0], e1[2]].filter(Boolean).join(' · ').toUpperCase(), true) : set('Soon', '', '', true); }
@@ -718,6 +729,7 @@
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
     else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
+    else if (sk === 'soon') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="sn-f"><b class="sn-k">' + t.charAt(0) + t.slice(1).toLowerCase() + '</b><svg class="sn-i" viewBox="0 0 24 24" aria-hidden="true">' + (c.icon || '') + '</svg><i class="sn-b" aria-hidden="true"><span>SOON</span></i></div>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">strategic storytelling</p></div><span class="hm-lamps"></span>';
     else inner = '<h2 class="hm-t">' + t + '</h2>' + (c.line ? '<p class="hm-line">' + esc(c.line) + '</p>' : '') + '<span class="hm-sp"></span><span class="hm-lamps"></span>';
     var extra = sk === 'wish' ? DRIFT + ORBIT + '<canvas class="st-hud" aria-hidden="true"></canvas><i class="st-grain" aria-hidden="true"></i>' : c.art === 'photos' ? '<div class="hm-pics"></div>' : sk === 'radio' ? '<div class="hm-bgimg"></div><canvas class="rd-sea" aria-hidden="true"></canvas><canvas class="rd-topo" aria-hidden="true"></canvas>' + SWEEP : sk === 'zine' ? '<div class="hm-bgimg"></div>' + ZPOST + ZHERO : sk === 'research' ? refs() : sk === 'space' ? SEA + '<b class="sp-lan" aria-hidden="true"><i></i>LOCAL AREA NETWORK<i></i></b>' : '';
@@ -725,7 +737,7 @@
     var smf = sizeOf(c) === 'small' && SMALL[sk] != null ? '<div class="sm-f" aria-hidden="true"><b class="sm-k"><span>' + SMALL_T[sk] + '</span></b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (g1 ? ' g1' : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
       '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
-      '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"></button>' +
+      '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"' + (c.hint ? ' title="' + esc(c.hint) + '"' : '') + '></button>' +
       '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div>' + smf + '<div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i>' + logosOf(c) + '</article></section>';
   }
   /* the street poster on DESIGN PRINT pastes itself up a piece at a time, holds with a glitch now and then, is painted over and goes up again.
@@ -861,8 +873,12 @@
   var PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
   function playCards(l) { var add = false;
     (l || []).slice(0, 12).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
-      var at = CARDS.findIndex(function (c) { return c.ph; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: id, size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
-    if (!add) return; var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
+      var at = CARDS.findIndex(function (c) { return c.opens === 'soon'; }); if (at < 0) at = CARDS.findIndex(function (c) { return c.ph; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: id, g: 'soon', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
+    if (!add) return;
+    /* the made nine: each card made takes a SOON place, newest first */
+    var made = CARDS.filter(function (c) { return c.g === 'soon' && c.opens !== 'soon'; }).length, room = Math.max(0, 9 - made);
+    for (var q = CARDS.length - 1, sn = CARDS.filter(function (c) { return c.opens === 'soon'; }).length; q >= 0 && sn > room; q--) if (CARDS[q].opens === 'soon') { CARDS.splice(q, 1); sn--; }
+    var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
     for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
     applyCards(''); }
   fetch('/api/plays').then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { playCards(j.plays); }).catch(function () { /* none yet */ });
@@ -920,7 +936,9 @@
   setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   function open(id, opt) {
-    var c = byId(id); if (!c) return; H.classList.toggle('hm-nosea', c.sea === 'off'); careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
+    var c = byId(id); if (!c) return;
+    /* a card still being built: a small nudge, nothing opens */
+    if (c.opens === 'soon') { var sc = col.querySelector('.hm-card[data-id="' + id + '"]'); if (sc) { sc.classList.remove('sn-nu'); void sc.offsetWidth; sc.classList.add('sn-nu'); } beep(330, 0.05); return; } H.classList.toggle('hm-nosea', c.sea === 'off'); careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
