@@ -399,7 +399,7 @@
       k.fit(nm, 20, ph + 64, '700', 22, pw, SANS); k.fit(ro, 28 + pw, ph + 64, '500', 18, pw, SANS); k.fit(ct, 36 + 2 * pw, ph + 64, '500', 15, pw, MONO);
       k.box(20, ph + 84, w - 40, 1); }
   }
-  /* the novel.global card: the mark and the name; on the left what novel.global made, numbered; on the right its partners.
+  /* the novel.global card: the mark and the name; on the left what novel.global made; on the right its partners.
      Both lists from admin (settings 'bizcard'); a partner starting with / is a logo on the site, anything else is set in type */
   var NGB = { list: ['I W.I.S.H.™ framework', 'PoP™ Proof of Presence', 'Island Archipelagos OS', 'LAN · local area network', 'bluepaper strategic storytelling', 'solar thermal printer from e-waste'],
     partners: ['/logos/rmit.png', '/logos/inaturalist.png', '/logos/blue4est.png', 'Raspberry Pi'] }, NGL = {}, NGF = false;
@@ -409,10 +409,10 @@
   function ngCard(k) {
     ngLoad(); var g = k.g, w = BZ.w, h = BZ.h, L = NGB.list, P = NGB.partners;
     /* the mark: the square and the sun, black on the thermal paper */
-    g.save(); g.translate(26, 26); g.scale(0.4, 0.4); g.fillStyle = '#000'; g.fillRect(10, 10, 91.6, 92); g.beginPath(); g.arc(178.3, 56.5, 48.8, 0, 7); g.fill(); g.restore();
+    k.dots(30, 30, 37, 37); g.fillStyle = '#000'; for (var my = 30; my <= 68; my += 2) for (var mx = 78; mx <= 117; mx += 2) if ((mx + my) % 4 === 0 && (mx - 97.3) * (mx - 97.3) + (my - 48.6) * (my - 48.6) <= 380) g.fillRect(mx, my, 2, 1);
     k.txt('novel.global', 134, 64, '700 40px ' + SANS); k.box(26, 90, w - 52, 3);
     var dx = 404, top = 112, rows = Math.max(L.length, 1), lh = Math.min(36, Math.floor((h - top - 24) / rows));
-    L.forEach(function (t, i) { var y = top + lh * (i + 0.5) + 6; k.txt(String(i + 1).padStart(2, '0'), 26, y, '600 13px ' + MONO); k.fit(t, 58, y, '500', 18, dx - 76, SANS); });
+    L.forEach(function (t, i) { var y = top + lh * (i + 0.5) + 6; k.fit(t, 26, y, '500', 18, dx - 48, SANS); });
     k.box(dx, top + 4, 1, h - top - 28);
     var px = dx + 22, pw = w - 26 - px, n = Math.max(P.length, 1), sh = Math.floor((h - top - 24) / n);
     P.forEach(function (p, i) { var y = top + i * sh, im = NGL[p], bh = Math.min(30, sh - 14);
