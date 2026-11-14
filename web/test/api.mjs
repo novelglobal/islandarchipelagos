@@ -168,6 +168,7 @@ try {
   await call(`/api/printers/pickles/jobs/${mj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
 
   /* a touch screen beside a printer: its own token, shown once; every slip waits for it; a press prints, a long press squashes */
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchOn: true } });   // touch screens are off unless turned on
   const tc = await call('/api/admin/printers/kines', { method: 'POST', key: KEY, body: { action: 'touch', on: true } }); const TT = tc.json && tc.json.token;
   const tcx = await call('/api/admin/printers/kines', { method: 'POST', body: { action: 'touch', on: true } });
   await call('/api/touch/kines', { token: TT });   // the screen checks in (it asks every two seconds); a screen not heard from is passed by

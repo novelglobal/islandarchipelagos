@@ -38,6 +38,8 @@
   hd.insertBefore(bar, $('#starts'));
   /* one hand-written line over the tabs: there each time the card opens, gone after a few seconds, never back on a tab switch */
   var hand = D.createElement('p'); hand.id = 'hand'; hand.textContent = 'Make cards. Print them on any island.'; hd.insertBefore(hand, bar);
+  /* on a desk the tabs sit off centre: the line follows them */
+  var handAt = function () { if (!matchMedia('(min-width: 760px)').matches) { hand.style.marginLeft = ''; return; } var r = bar.getBoundingClientRect(), h = hd.getBoundingClientRect(); hand.style.marginLeft = Math.round((r.left + r.width / 2 - h.left - h.width / 2) * 2) + 'px'; }; requestAnimationFrame(handAt); addEventListener('resize', handAt);
   var host = D.createElement('div'); host.id = 'plus'; $('main').after(host);
   host.innerHTML = '<section id="pg" class="mode" aria-label="Page"></section><section id="gm" class="mode" aria-label="Game"></section><section id="cd" class="mode" aria-label="Card"></section><section id="st" class="mode" aria-label="Set-up"></section><section id="lv" class="mode" aria-label="Live"></section>';
   function mode(m, quiet) { P.m = m; save(); H.dataset.m = m; $$('#modes [data-m]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });

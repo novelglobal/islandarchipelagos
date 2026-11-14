@@ -397,7 +397,8 @@ async function send(db, env, req) {
   if (P && (b.escpos || b.mesh)) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
-    const screenGone = P.touch && (!P.touch_seen || t - P.touch_seen > 150e3);
+    /* touch screens are off unless the owner turns them on (touchOn): then nothing waits on one */
+    const touchOn = !!(await settingsOf(db)).touchOn, screenGone = P.touch && (!touchOn || !P.touch_seen || t - P.touch_seen > 150e3);
     job = { id: rid(), status: free || P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
@@ -447,7 +448,7 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: false, freePrint: true };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: false, freePrint: true, touchOn: false };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -505,7 +506,7 @@ async function next(db, req, id) {
   if (p.off) { await db.prepare('UPDATE printers SET off = NULL WHERE id = ?').bind(id).run(); if (t - p.off < 2 * 60e3 && /\boff\b/.test(can)) return json({ off: true }); }
   /* the oldest job waiting, or one whose printer went quiet while printing it: taken for a minute. Paper always first: a line for the
      mesh alone waits until no print does, since the radio can take most of a minute to answer and a print should never wait on it */
-  if (p.touch && (!p.touch_seen || t - p.touch_seen > 150e3)) await db.prepare("UPDATE jobs SET status = 'queued' WHERE printer = ? AND status = 'held' AND created < ?").bind(id, t - 20e3).run();
+  if (p.touch && (!(await settingsOf(db)).touchOn || !p.touch_seen || t - p.touch_seen > 150e3)) await db.prepare("UPDATE jobs SET status = 'queued' WHERE printer = ? AND status = 'held' AND created < ?").bind(id, t - 20e3).run();
   const j = await db.prepare("SELECT * FROM jobs WHERE printer = ? AND (status = 'queued' OR (status = 'printing' AND lease < ?)) ORDER BY (escpos IS NULL), created LIMIT 1").bind(id, t).first();
   const hint = { 'x-wait': String(waitOf(p, !!j)), 'x-island': String(p.number || '') };
   if (!j) return new Response(null, { status: 204, headers: { ...TEXT_H, ...hint } });

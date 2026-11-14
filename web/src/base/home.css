@@ -1591,3 +1591,18 @@ html.hm-up #hm-top nav #hm-snd { margin-right: 48px; }
 .sn-ask button + button { border-radius: 47% 53% 45% 55% / 55% 45% 53% 47%; }
 .sn-ask button:hover, .sn-ask button:focus-visible { background: #E6E2D6; transform: rotate(-4deg); outline: none; }
 .sk-soon .hm-keys, .sk-soon .hm-l { display: none; }
+/* the talk key is drawn like the other keys in the top bar: the mark alone, no disc behind it */
+#hm #hm-tk { background: transparent; box-shadow: none; padding: 0 6px; color: #F4F1E8; }
+#hm #hm-tk svg { width: 20px; height: 20px; }
+#hm #hm-tk.open { background: transparent; color: #FF5436; }
+#hm #hm-tk.open i { background: #FF5436; color: #0B0B0B; }
+/* the island tags point right, at the printer: their light sits on that side */
+#hm .sm-prn .sm-inst, #hm .sk-space .sp-prn .sp-inst { flex-direction: row-reverse; }
+/* the shelf cards' ruled lines start under the heading, never through it */
+.g-read .wx-a { -webkit-mask: linear-gradient(transparent 0 max(21cqmin, 34px), #000 max(21cqmin, 34px)); mask: linear-gradient(transparent 0 max(21cqmin, 34px), #000 max(21cqmin, 34px)); }
+/* THE OPENER, big: the whole photograph laid on a lit box, a margin all round; its lights and the print stay where they are on it */
+#hm .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #FFFFFF 0%, #F3F2EE 55%, #E2E1DC 100%); }
+#hm.night .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #2A2A28 0%, #191918 60%, #0E0E0D 100%); }
+#hm .hm-card.sk-intro:not(.small) .in-prn { top: 47%; left: 50%; width: auto; height: min(82cqh, 82cqw * 4 / 3); aspect-ratio: 900 / 1200; transform: translate(-50%, -50%); }
+#hm .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #FFFFFF, 0 18px 34px -16px rgba(0, 0, 0, .45); border-radius: 1px; }
+#hm.night .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #F2F1EC, 0 18px 40px -14px rgba(0, 0, 0, .8); }

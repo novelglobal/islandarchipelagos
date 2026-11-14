@@ -942,10 +942,13 @@
     var esc1 = function (e) { if (e.key === 'Escape') shut(); }, shut = function () { d.remove(); removeEventListener('keydown', esc1); };
     d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-box')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
     addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }
+  /* a card opened is a print on its way: the printers are told to ask every few seconds for a while (one small call, at most every 90 s) */
+  var WARMED = 0; function warmUp() { if (Date.now() - WARMED < 90e3) return; WARMED = Date.now(); try { fetch('/api/warm', { method: 'POST', keepalive: true }).catch(function () { /* none */ }); } catch (e) { /* none */ } }
   function open(id, opt) {
     var c = byId(id); if (!c) return;
     /* a card still being built: a small nudge, nothing opens */
     if (c.opens === 'soon') { beep(520, 0.04); return soonAsk(c); }
+    H.classList.toggle('hm-nosea', c.sea === 'off'); careEarn(id); beep(660, 0.06); intro(false); IN.id = id; IN.quiet = !!(opt && opt.talk); tkHide(); IN.run = null; TKH.card = c.opens === 'aura' ? null : id; if (TKH.card) tkCount(); warmUp();
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
