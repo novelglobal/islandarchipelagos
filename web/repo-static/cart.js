@@ -372,32 +372,39 @@
     var pw = w * (full ? 0.86 : 0.62), ph = h * (full ? 0.44 : 0.56), own = panel(k, 'c' + c, ['maze', 'spots', 'crack', 'worms'][st], x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, c + 11);
     if (!own) { disc(g, x + w / 2, y + h / 2, w * 0.2); suit(g, st, x + w / 2, y + h / 2, w * 0.12); }
   }
-  /* business: a card 89 x 51 mm, printed sideways, three in a row to cut; three lines, art for the back and a logo. Held: the novel.global card */
-  var BZ = { w: 630, h: 360 }, BZP = null;
+  /* business: the card is the receipt. 80 mm across, cut 55 mm long: the printer leaves about 15 mm above the first line (head to cutter),
+     so the picture is 30 mm of card and 10 mm of paper, then a cut straight after; PRINT sends three, each cut on its own */
+  var BZ = { w: 512, h: 213, foot: 71 };
   function bizText() { try { return JSON.parse(localStorage.getItem('da.biz') || '[]') || []; } catch (e) { return []; } }
+  /* a picture as solid ink at the size it prints: drawn smooth, then every dot a fifth covered or more is black, so thin lines hold */
+  function inkImg(g, im, x, y, w, h) { w = R(w); h = R(h); if (w < 1 || h < 1) return; var c = document.createElement('canvas'); c.width = w; c.height = h; var q = c.getContext('2d', { willReadFrequently: true });
+    q.imageSmoothingEnabled = true; q.imageSmoothingQuality = 'high'; q.drawImage(im, 0, 0, w, h); var d = q.getImageData(0, 0, w, h).data; g.fillStyle = '#000';
+    for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var i = (yy * w + xx) * 4, l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; if (d[i + 3] / 255 * (255 - l) / 255 > 0.2) g.fillRect(R(x) + xx, R(y) + yy, 1, 1); } }
   function bzArt(k, key, x, y, w, h, light) {
-    if (k.hits && k.bz) k.hits.push({ key: key, x: k.bz.x + BZ.h - y - h, y: k.bz.y + x, w: h, h: w });
+    if (k.hits) k.hits.push({ key: key, x: R(x), y: R(y), w: R(w), h: R(h) });
     if (!ART[key]) return false; var hs = k.hits; k.hits = null; panel(k, key, 'spots', x, y, w, h, 3); k.hits = hs;
-    if (light) { if (!BZP) { var c = document.createElement('canvas'); c.width = c.height = 2; var q = c.getContext('2d'); q.fillStyle = '#fff'; q.fillRect(0, 0, 2, 2); q.clearRect(0, 0, 1, 1); BZP = c; }
-      k.g.fillStyle = k.g.createPattern(BZP, 'repeat'); k.g.fillRect(R(x), R(y), R(w), R(h)); }
+    if (light) { var g = k.g; g.fillStyle = '#fff'; for (var yy = R(y); yy < R(y + h); yy++) for (var xx = R(x); xx < R(x + w); xx++) if (xx % 2 || yy % 2) g.fillRect(xx, yy, 1, 1); }
     return true;
   }
-  function bzFit(g, s, wt, px, max, fam) { g.font = wt + ' ' + px + 'px ' + fam; while (px > 14 && g.measureText(s).width > max) { px--; g.font = wt + ' ' + px + 'px ' + fam; } return px; }
+  function bzFit(g, s, wt, px, max, fam) { g.font = wt + ' ' + px + 'px ' + fam; while (px > 12 && g.measureText(s).width > max) { px--; g.font = wt + ' ' + px + 'px ' + fam; } return px; }
+  /* the novel.global mark in two greys: the square half ink, the sun in light lines */
+  function ngMark(k, x, y, s) { var g = k.g; k.dots(x, y, s, s); g.fillStyle = '#000'; var cx = x + s * 1.95, cy = y + s / 2, r = s * 0.53;
+    for (var my = R(cy - r); my <= cy + r; my += 2) for (var mx = R(cx - r); mx <= cx + r; mx += 2) if (((mx >> 1) + (my >> 1)) % 2 === 0 && (mx - cx) * (mx - cx) + (my - cy) * (my - cy) <= r * r) g.fillRect(mx, my, 2, 1); }
   function bizCard(k, o) {
     var g = k.g, w = BZ.w, h = BZ.h, t = bizText(), nm = t[0] || 'your name', ro = t[1] || 'what you do', ct = t[2] || 'where to find you', L = o.bl || 0;
-    if (L === 0) { var bh = R(h * 0.52); if (!bzArt(k, 'bg', 0, 0, w, bh)) k.box(0, 0, w, bh);
-      var px = bzFit(g, nm, '700', 52, w - 190, SANS), nw = g.measureText(nm).width; k.box(18, bh - 30 - px, nw + 24, px + 18); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(nm, 30, bh - 24);
-      bzArt(k, 'logo', w - 126, 24, 100, 100);
-      k.dots(30, bh + 22, w - 60, 4); k.fit(ro.toUpperCase(), 30, bh + 70, '600', 22, w - 60, MONO); k.fit(ct, 30, h - 34, '500', 20, w - 60, MONO); }
+    if (L === 0) { var bh = 104; if (!bzArt(k, 'bg', 0, 0, w, bh)) k.box(0, 0, w, bh);
+      var px = bzFit(g, nm, '700', 36, w - 140, SANS), nw = g.measureText(nm).width; k.box(8, bh - 24 - px, nw + 20, px + 14); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(nm, 18, bh - 20);
+      bzArt(k, 'logo', w - 96, 12, 84, 80);
+      k.dots(12, bh + 12, w - 24, 4); k.fit(ro.toUpperCase(), 12, bh + 50, '700', 18, w - 24, MONO); k.fit(ct, 12, h - 12, '600', 17, w - 24, MONO); }
     if (L === 1) { bzArt(k, 'bg', 0, 0, w, h, true);
-      k.fit(nm, 262, 78, '700', 40, w - 290, SANS); k.fit(ro, 262, 116, '500', 26, w - 290, SANS); k.fit(ct, 262, h - 38, '500', 19, w - 290, MONO);
-      if (!bzArt(k, 'logo', 30, h - 128, 200, 96)) { k.box(30, h - 82, 46, 46); g.fillStyle = '#fff'; g.beginPath(); g.arc(53, h - 59, 12, 0, 7); g.fill(); } }
-    if (L === 2) { var ph = R(h * 0.62), pw = R((w - 56) / 3);
-      if (!bzArt(k, 'bg', 20, 20, w - 40, ph)) for (var i = 0; i < 3; i++) k.dots(20 + i * (pw + 8), 20, pw, ph);
-      else { g.fillStyle = '#fff'; g.fillRect(20 + pw, 20, 8, ph); g.fillRect(28 + 2 * pw, 20, 8, ph); }
-      bzArt(k, 'logo', R(w / 2 - 45), R(20 + ph / 2 - 45), 90, 90);
-      k.fit(nm, 20, ph + 64, '700', 22, pw, SANS); k.fit(ro, 28 + pw, ph + 64, '500', 18, pw, SANS); k.fit(ct, 36 + 2 * pw, ph + 64, '500', 15, pw, MONO);
-      k.box(20, ph + 84, w - 40, 1); }
+      k.fit(nm, 196, 46, '700', 30, w - 208, SANS); k.fit(ro, 196, 78, '600', 20, w - 208, SANS); k.fit(ct, 196, h - 14, '600', 16, w - 208, MONO);
+      if (!bzArt(k, 'logo', 12, h - 96, 160, 84)) ngMark(k, 12, h - 40, 26); }
+    if (L === 2) { var ph = 124, pw = R((w - 40) / 3);
+      if (!bzArt(k, 'bg', 12, 8, w - 24, ph)) for (var i = 0; i < 3; i++) k.dots(12 + i * (pw + 8), 8, pw, ph);
+      else { g.fillStyle = '#fff'; g.fillRect(12 + pw, 8, 8, ph); g.fillRect(20 + 2 * pw, 8, 8, ph); }
+      bzArt(k, 'logo', R(w / 2 - 40), R(8 + ph / 2 - 40), 80, 80);
+      k.fit(nm, 12, ph + 50, '700', 20, pw, SANS); k.fit(ro, 20 + pw, ph + 50, '600', 16, pw, SANS); k.fit(ct, 28 + 2 * pw, ph + 50, '600', 14, pw, MONO);
+      k.box(12, ph + 66, w - 24, 2); }
   }
   /* the novel.global card: the mark and the name; on the left what novel.global made; on the right its partners.
      Both lists from admin (settings 'bizcard'); a partner starting with / is a logo on the site, anything else is set in type */
@@ -408,18 +415,16 @@
     fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { try { var b = JSON.parse(j.bizcard || '{}'); if (b.list && b.list.length) NGB.list = b.list.slice(0, 7); if (b.partners && b.partners.length) NGB.partners = b.partners.slice(0, 5); } catch (e) { /* the defaults */ } pics(); if (S.ready) paint(); }, pics); }
   function ngCard(k) {
     ngLoad(); var g = k.g, w = BZ.w, h = BZ.h, L = NGB.list, P = NGB.partners;
-    /* the mark: the square and the sun, black on the thermal paper */
-    k.dots(30, 30, 37, 37); g.fillStyle = '#000'; for (var my = 30; my <= 68; my += 2) for (var mx = 78; mx <= 117; mx += 2) if ((mx + my) % 4 === 0 && (mx - 97.3) * (mx - 97.3) + (my - 48.6) * (my - 48.6) <= 380) g.fillRect(mx, my, 2, 1);
-    k.txt('novel.global', 134, 64, '700 40px ' + SANS); k.box(26, 90, w - 52, 3);
-    var dx = 404, top = 112, rows = Math.max(L.length, 1), lh = Math.min(36, Math.floor((h - top - 24) / rows));
-    L.forEach(function (t, i) { var y = top + lh * (i + 0.5) + 6; k.fit(t, 26, y, '500', 18, dx - 48, SANS); });
-    k.box(dx, top + 4, 1, h - top - 28);
-    var px = dx + 22, pw = w - 26 - px, n = Math.max(P.length, 1), sh = Math.floor((h - top - 24) / n);
-    P.forEach(function (p, i) { var y = top + i * sh, im = NGL[p], bh = Math.min(30, sh - 14);
-      if (im && im.width) { var s = Math.min(bh / im.height, pw / im.width); g.drawImage(im, px, R(y + (sh - im.height * s) / 2), R(im.width * s), R(im.height * s)); }
-      else if (p[0] !== '/') k.fit(p, px, R(y + sh / 2 + 7), '700', 20, pw, SANS); });
+    ngMark(k, 10, 6, 24); k.txt('novel.global', 82, 28, '700 27px ' + SANS); k.box(10, 40, w - 20, 2);
+    var dx = 312, top = 50, lh = Math.min(28, Math.floor((h - top) / Math.max(L.length, 1)));
+    L.forEach(function (t, i) { k.fit(t, 10, R(top + lh * (i + 0.5) + 6), '600', 16, dx - 22, SANS); });
+    k.box(dx, top + 6, 1, h - top - 8);
+    var px = dx + 16, pw = w - 10 - px, n = Math.max(P.length, 1), sh = Math.floor((h - top) / n);
+    P.forEach(function (p, i) { var y = top + i * sh, im = NGL[p], bh = Math.min(/blue4est/.test(p) ? 36 : 28, sh - 6);
+      if (im && im.width) { var sc = Math.min(bh / im.height, pw / im.width); inkImg(g, im, px, y + (sh - im.height * sc) / 2, im.width * sc, im.height * sc); }
+      else if (p[0] !== '/') k.fit(p, px, R(y + sh / 2 + 7), '700', 19, pw, SANS); });
   }
-  /* playing cards: the whole deck, thirteen to a print, four prints. DECK turns the page; PRINT sends all four. BUSINESS: three cards in a row; hold it for the novel.global card */
+  /* playing cards: the whole deck, thirteen to a print, four prints. DECK turns the page; PRINT sends all four. BUSINESS: one card, three cut; hold it for the novel.global card */
   var cards = {
     opts: [['deck', 'DECK'], ['biz', 'BUSINESS'], ['art', 'ART', false]], only: true,
     pages: 4, init: function (o) { o.deck = true; o.page = 0; },
@@ -427,11 +432,7 @@
       if (a === 'biz') { o.bl = o.biz && !o.ng ? (o.bl + 1 + Math.floor(Math.random() * 2)) % 3 : Math.floor(Math.random() * 3); o.biz = true; o.ng = o.deck = false; return true; } return false; },
     hold: { biz: function (o) { o.biz = o.ng = true; o.deck = false; } },
     draw: function (k, d, s, o) {
-      if (o.biz) { var g = k.g, ox = R((W - BZ.h) / 2), gap = 28, hs = k.hits;
-        for (var j = 0; j < 3; j++) { var oy = 10 + j * (BZ.w + gap); k.hits = j ? null : hs; g.save(); g.translate(ox + BZ.h, oy); g.rotate(Math.PI / 2); k.bz = { x: ox, y: oy };
-          g.fillStyle = '#fff'; g.fillRect(0, 0, BZ.w, BZ.h); if (o.ng) ngCard(k); else bizCard(k, o); g.strokeStyle = '#000'; g.lineWidth = 2; g.strokeRect(1, 1, BZ.w - 2, BZ.h - 2); g.restore();
-          if (j < 2) { g.fillStyle = '#000'; for (var x = M; x < W - M; x += 12) g.fillRect(x, oy + BZ.w + gap / 2 - 1, 6, 2); } }
-        k.hits = hs; k.bz = null; return 10 + 3 * BZ.w + 2 * gap + 16; }
+      if (o.biz) { if (o.ng) ngCard(k); else bizCard(k, o); return BZ.h + BZ.foot; }
       var pg = o.page || 0, y0 = 8, cw = 156, ch = 218;
       for (var c = 0; c < 13; c++) playCard(k, pg * 13 + c, 12 + (c % 3) * (cw + 10), y0 + Math.floor(c / 3) * (ch + 10), cw, ch);
       return y0 + 5 * (ch + 10) + 6; }
@@ -557,6 +558,8 @@
     st.textContent = '· · ·';
     if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
       return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'FULL' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
+    if (S.o.biz) { var bset = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), bh = atob(T.raster(cv, 0)), one = btoa(bh.slice(0, -7) + String.fromCharCode(0x1D, 0x56, 0x42, 0x00)), bn = 0, three = function () { if (bn >= 3) return Promise.resolve(); bn++; return send(one, bset).then(three); };
+      return three().then(function () { st.textContent = 'SENT · 3'; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
     if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, set = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, 0), set).then(all); };
       return all().then(function () { S.o.page = pg0; paint(); st.textContent = 'SENT · ' + S.K.pages; }, function (e) { S.o.page = pg0; paint(); st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
     send(T.raster(cv, 0)).then(function (c) { st.textContent = c; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
