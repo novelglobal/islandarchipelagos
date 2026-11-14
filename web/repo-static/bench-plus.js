@@ -317,6 +317,16 @@
 
   /* ───────── LIVE ───────── */
   var LV = null;
+  /* a picture made ready for a card: at most 640 across, a jpeg under 190 kB */
+  function picPrep(src, cb) { var u = typeof src === 'string' ? src : URL.createObjectURL(src), im = new Image();
+    im.onload = function () { var k = Math.min(1, 640 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height); if (typeof src !== 'string') URL.revokeObjectURL(u);
+      var q = 0.82, d = c.toDataURL('image/jpeg', q); while (d.length > 190e3 && q > 0.3) { q -= 0.1; d = c.toDataURL('image/jpeg', q); } cb(d.length <= 190e3 ? d : null); };
+    im.onerror = function () { cb(null); }; im.src = u; }
+  var designs = function () { var l = []; try { l = JSON.parse(localStorage.getItem('da.base.pieces') || '[]') || []; } catch (e) { l = []; } return l.filter(function (p) { return p && /^data:image\//.test(p.src || ''); }).slice(0, 6); };
+  /* the card it will stand as: its colours, its frame, its picture, its name; small, or big if novel.global gives it */
+  function cardPrev() { var ls = liveState(), cv = $('#lv .lv-cd'); if (!cv) return; var t = (PK.TH[ls.th] || PK.TH.print); cv.style.background = t[0]; cv.style.color = t[1]; cv.className = 'lv-cd fr-' + (P.fr || 'none') + (ls.sz === 'big' ? ' big' : '');
+    cv.innerHTML = (ls.art ? '<img alt="" src="' + ls.art + '">' : '') + '<b>' + esc(String(ls.n || 'NAME').toUpperCase()) + '</b>'; $$('#lv [data-lsz]').forEach(function (b) { b.setAttribute('aria-pressed', String((ls.sz || 'small') === b.dataset.lsz)); }); var x = $('#lv [data-lpk="x"]'); if (x) x.hidden = !ls.art; }
   function liveState() { if (!P.live) P.live = { src: '', th: 'print', n: '', keep: {} }; return P.live; }
   function live() { var ls = liveState(), el = $('#lv');
     if (!el.dataset.on) { el.dataset.on = 1;
@@ -330,13 +340,15 @@
         B('lv-pr', 'Print its paper', '<path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/>') +
         B('lv-up', 'Make it a small card', '<path d="M5 3h14v18H5z"/><path d="M12 16V8M8.5 11.5L12 8l3.5 3.5"/>', 'up') + '</div>' +
         '<textarea id="lv-src" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code"></textarea><p class="lv-err" aria-live="polite"></p>' +
-        '<div class="lv-pub" hidden><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div>' + frameRow() + '<button type="button" id="lv-send" title="Put it up">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
+        '<div class="lv-pub" hidden><div class="lv-cd" aria-label="Its card"></div><div class="lv-cs"><input data-ln maxlength="24" aria-label="Name" placeholder="NAME"><div class="lv-th">' + swatches(ls.th, 'data-lth') + '</div>' + frameRow() +
+        '<div class="lv-row"><button type="button" data-lpk="up" title="A picture from this phone">PICTURE</button><button type="button" data-lpk="ds" title="One of your design prints">DESIGN</button><button type="button" data-lpk="x" title="Take the picture off" hidden>×</button></div><div class="lv-dsr" hidden></div>' +
+        '<div class="lv-row"><button type="button" data-lsz="small" title="Small, in the showcase">SMALL</button><button type="button" data-lsz="big" title="Ask for a big card: novel.global says yes">BIG</button></div></div><button type="button" id="lv-send" title="Put it up">' + I('<path d="M4 12l16-8-6 16-3-7z"/>') + '</button><p class="lv-say" aria-live="polite"></p></div></div>' +
         '<div class="lv-dev"><div id="lv-kit"></div></div>';
       LV = PK.mount($('#lv-kit'), { keep: function (k, v) { try { ls.keep[k] = JSON.parse(v); save(); } catch (e) { /* skipped */ } }, err: function (s) { $('#lv .lv-err').textContent = s; }, ink: function () { beep(1400 + Math.random() * 300, 0.012); } });
       var ta = $('#lv-src'), t0 = 0; ta.value = ls.src;
       ta.addEventListener('input', function () { ls.src = ta.value.slice(0, 40000); save(); el.classList.toggle('empty', !ls.src.trim()); clearTimeout(t0); t0 = setTimeout(liveRun, 900); });
       ta.addEventListener('keydown', function (e) { if (e.key === 'Tab') { e.preventDefault(); var a = ta.selectionStart; ta.setRangeText('  ', a, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); } if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') liveRun(); });
-      el.addEventListener('click', liveClick); el.addEventListener('input', function (e) { if (e.target.hasAttribute('data-ln')) { ls.n = e.target.value; save(); } }); }
+      el.addEventListener('click', liveClick); el.addEventListener('input', function (e) { if (e.target.hasAttribute('data-ln')) { ls.n = e.target.value; save(); cardPrev(); } }); }
     el.classList.toggle('empty', !ls.src.trim()); $('[data-ln]', el).value = ls.n || ''; $$('[data-lth]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lth === ls.th)); }); liveRun(); }
   function liveRun() { var ls = liveState(); if (LV) LV.run(ls.src, ls.th, ls.keep); }
   function flash(id, ok) { var b = $('#' + id); if (!b) return; b.classList.remove('ok', 'no'); void b.offsetWidth; b.classList.add(ok ? 'ok' : 'no'); setTimeout(function () { b.classList.remove('ok', 'no'); }, 1200); }
@@ -347,11 +359,17 @@
     if (e.target.closest('#lv-run')) { ls.keep = {}; save(); liveRun(); beep(520, 0.05); return; }
     if (e.target.closest('#lv-clr')) { if (ls.src.trim() && !confirm('Clear it?')) return; ta.value = ''; ls.keep = {}; ta.dispatchEvent(new Event('input')); liveRun(); return; }
     if (e.target.closest('#lv-pr')) { var u = LV && LV.paper(); if (!u || !NG || !NG.printAgain) { flash('lv-pr', 0); return; } NG.printAgain(u, 'play').then(function () { flash('lv-pr', 1); beep(880, 0.06); }, function () { flash('lv-pr', 0); }); return; }
-    if (e.target.closest('#lv-up')) { var pb = $('#lv .lv-pub'); pb.hidden = !pb.hidden; if (!pb.hidden) $('[data-ln]', pb).focus(); return; }
-    if ((b = e.target.closest('[data-lth]'))) { ls.th = b.dataset.lth; save(); $$('[data-lth]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); liveRun(); beep(660, 0.04); return; }
+    if (e.target.closest('#lv-up')) { var pb = $('#lv .lv-pub'); pb.hidden = !pb.hidden; if (!pb.hidden) { cardPrev(); $('[data-ln]', pb).focus(); } return; }
+    if ((b = e.target.closest('[data-lsz]'))) { ls.sz = b.dataset.lsz; save(); cardPrev(); beep(600, 0.04); return; }
+    if ((b = e.target.closest('[data-lpk]'))) { var k = b.dataset.lpk, dr = $('#lv .lv-dsr'), put = function (d) { if (!d) { flash('lv-send', 0); return; } ls.art = d; save(); dr.hidden = true; cardPrev(); beep(880, 0.05); };
+      if (k === 'up') { var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = function () { if (f.files[0]) picPrep(f.files[0], put); }; f.click(); return; }
+      if (k === 'x') { ls.art = ''; save(); cardPrev(); return; }
+      if (k === 'ds') { var ds = designs(); dr.hidden = !dr.hidden; dr.innerHTML = ds.length ? ds.map(function (d, i) { return '<button type="button" data-lpk="d' + i + '" title="This design print"><img alt="" src="' + d.src + '"></button>'; }).join('') : '<p>MAKE ONE IN DESIGN PRINT</p>'; return; }
+      if (/^d\d$/.test(k)) { var dd = designs()[+k.slice(1)]; if (dd) picPrep(dd.src, put); return; } }
+    if ((b = e.target.closest('[data-lth]'))) { ls.th = b.dataset.lth; save(); $$('[data-lth]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); liveRun(); cardPrev(); beep(660, 0.04); return; }
     if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = whoNow(), pub = $('#lv .lv-pub'), again = function () { $('#lv-send').click(); };
       if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'CODE'; codeAsk(pub, again); return; }
-      say.textContent = '···'; fetch(ls.edit ? '/api/plays/' + ls.edit + '/edit' : '/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src }) })
+      say.textContent = '···'; fetch(ls.edit ? '/api/plays/' + ls.edit + '/edit' : '/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src, art: ls.art || '', sz: ls.sz || 'small' }) })
         .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : r.status === 401 ? 'CODE' : r.status === 503 ? 'FULL' : 'NOT SENT'; if (r.status === 503) say.title = 'Full for now: more open as the month turns'; say.title = r.status === 401 ? 'A code from a print puts it up' : ''; if (r.status === 401) codeAsk(pub, again); flash('lv-send', 0); return; }
           r.json().then(function (j) { if (j.ok) { say.textContent = 'SAVED · ' + j.code; say.title = 'Changed in place'; return; } say.textContent = j.shown ? 'UP · ' + j.code : 'WAITING · ' + j.code; say.title = j.shown ? 'On novel.global now, as a small card' : 'Waiting for approval'; }, function () { say.textContent = 'SENT'; }); linkAsk(pub); flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
         .catch(function () { say.textContent = 'OFFLINE'; flash('lv-send', 0); }); } }
@@ -366,7 +384,7 @@
     ['bare', 'BARE', 'Nothing joined', []]];
   var FRAMES = [['none', 'NONE'], ['dots', 'DOTS'], ['steps', 'LILAC'], ['stripe', 'CYAN'], ['coral', 'CORAL'], ['lunch', 'PINK'], ['print', 'BLUEPRINT']];
   var frameRow = function () { return '<div class="bf-row" role="group" aria-label="Frame">' + FRAMES.map(function (f) { return '<button type="button" data-bfr="' + f[0] + '" class="fr-' + f[0] + '" title="' + f[1].toLowerCase() + ' frame" aria-pressed="' + (f[0] === (P.fr || 'none')) + '"><i></i></button>'; }).join('') + '</div>'; };
-  var frameSet = function (f) { P.fr = f; save(); FRAMES.forEach(function (x) { H.classList.toggle('bf-' + x[0], x[0] === f); }); $$('[data-bfr]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.bfr === f)); }); };
+  var frameSet = function (f) { P.fr = f; save(); if (typeof cardPrev === 'function') cardPrev(); FRAMES.forEach(function (x) { H.classList.toggle('bf-' + x[0], x[0] === f); }); $$('[data-bfr]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.bfr === f)); }); };
   D.addEventListener('click', function (e) { var b = e.target.closest('[data-bfr]'); if (b) { frameSet(b.dataset.bfr); beep(560, 0.04); } });
   frameSet(P.fr || 'none');
   var NAMES = { radio: 'RADIO', wish: 'STRATEGY', research: 'RESEARCH', zine: 'PRINT', kit: 'ISLAND', space: 'BUILDER', portfolio: 'STORIES', reef: 'REEF', eye: 'EYE' };

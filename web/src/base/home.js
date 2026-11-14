@@ -736,7 +736,7 @@
     var front = sk === 'kit' ? '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' : '';
     var smf = sizeOf(c) === 'small' && SMALL[sk] != null ? '<div class="sm-f" aria-hidden="true"><b class="sm-k"><span>' + SMALL_T[sk] + '</span></b>' + SMALL[sk] + '</div>' : ''; if (smf) sk += ' sm';
     return '<section class="hm-slot su-' + sk + '"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' ' + mo + ' sk-' + sk + (c.ph || c.pal ? ' pl-' + (((c.pal || c.ph) - 1) % 6 + 1) : '') + (c.fr ? ' fr-' + c.fr : '') + (g1 ? ' g1' : '') + (c.g ? ' g-' + c.g + (c.shelf ? ' r-' + c.shelf : '') : '') + '" data-id="' + c.id + '" data-i="' + i + '" aria-label="' + t + '">' +
-      '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div></div>' +
+      '<div class="hm-art">' + extra + '<div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas>' + front + '</div>' + (c.pic ? '<img class="hm-pic" alt="" decoding="async" src="' + esc(c.pic) + '">' : '') + '</div>' +
       '<button class="hm-open" data-open="' + c.id + '" aria-label="Open ' + t + '"' + (c.hint ? ' title="' + esc(c.hint) + '"' : '') + '></button>' +
       '<div class="hm-keys">' + keys + '</div>' + (sk === 'radio' ? '<button class="rd-nino" aria-pressed="false" aria-label="El Niño" title="El Niño"></button>' : '') + (sk === 'research' ? '<svg class="hm-rune" viewBox="0 0 160 40" aria-hidden="true"><g class="rn-w"></g><g class="rn-fx"></g><rect class="rn-er" x="-30" y="4" width="14" height="32" rx="3"/></svg>' : '') + '<div class="hm-in">' + inner + '</div>' + smf + '<div class="hm-bcn" hidden></div><i class="hm-fr" aria-hidden="true"></i>' + logosOf(c) + '</article></section>';
   }
@@ -874,12 +874,14 @@
   /* the showcase: what people made, nine at a time in one 3x3 under the unmade nine; its order LIKED, FRESH or ARCHIVE, NEXT swaps the nine in place */
   var DEV = { o: /^(liked|fresh|archive)$/.test(store.get('da.hm.dev', 'fresh')) ? store.get('da.hm.dev', 'fresh') : 'fresh', pg: 0, more: false, keep: null };
   function playCards(j) { j = j || {}; DEV.more = !!j.more;
-    for (var q = CARDS.length - 1; q >= 0; q--) if (CARDS[q].g === 'dev') CARDS.splice(q, 1);
+    for (var q = CARDS.length - 1; q >= 0; q--) if (CARDS[q].g === 'dev' || CARDS[q].dvBig) CARDS.splice(q, 1); var bigs = [];
     var last = -1; CARDS.forEach(function (c, i) { if (c.g === 'soon') last = i; }); var at = last < 0 ? CARDS.length : last + 1, add = [];
     (j.plays || []).slice(0, 9).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
-      add.push({ id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', motion: 'shadow', where: [-37.8136, 144.9631] }); });
+      var o = { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', motion: 'shadow', where: [-37.8136, 144.9631] };
+      /* a play novel.global made big stands with the big cards, before the nine */
+      if (p.big) { o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); } else add.push(o); });
     for (var k = 0; add.length < 9; k++) add.push({ id: 'dev-mk-' + (k ? k : 'a'), g: 'dev', size: 'small', title: 'MAKE', skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] });
-    CARDS.splice.apply(CARDS, [at, 0].concat(add)); applyCards(''); }
+    CARDS.splice.apply(CARDS, [at, 0].concat(add)); if (bigs.length) { var s0 = -1; CARDS.forEach(function (c, i) { if (s0 < 0 && c.g === 'soon') s0 = i; }); CARDS.splice.apply(CARDS, [s0 < 0 ? at : s0, 0].concat(bigs)); } applyCards(''); }
   function devLoad() { fetch('/api/plays?o=' + DEV.o + '&pg=' + DEV.pg).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(playCards).catch(function () { /* none yet */ }); }
   function devBar() { var d0 = CARDS.filter(function (c) { return c.g === 'dev'; })[0], f = d0 && col.querySelector('.hm-card[data-id="' + d0.id + '"]'), sec = f && f.closest('.hm-trio'); if (!sec) return;
     var nv = D.createElement('nav'); nv.className = 'dv-bar'; nv.setAttribute('aria-label', 'Showcase');
@@ -893,13 +895,33 @@
     if (DEV.keep != null) { var d = nv.getBoundingClientRect().top - DEV.keep; DEV.keep = null; if (Math.abs(d) > 1) { var x = col; while (x && x !== D.body && !(x.scrollHeight > x.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(x).overflowY))) x = x.parentElement; (x && x !== D.body ? x : D.scrollingElement).scrollTop += d; } } }
   devLoad();
   /* a maker's own cards in HOME: opened and liked counts, EDIT back into the maker, ART turns its colours */
+  /* a picture made ready for a card: at most 640 across, a jpeg under 190 kB */
+  function picPrep(src, cb) { var u = typeof src === 'string' ? src : URL.createObjectURL(src), im = new Image();
+    im.onload = function () { var k = Math.min(1, 640 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height); if (typeof src !== 'string') URL.revokeObjectURL(u);
+      var q = 0.82, d = c.toDataURL('image/jpeg', q); while (d.length > 190e3 && q > 0.3) { q -= 0.1; d = c.toDataURL('image/jpeg', q); } cb(d.length <= 190e3 ? d : null); };
+    im.onerror = function () { cb(null); }; im.src = u; }
+  /* the design prints kept on this phone (DESIGN PRINT's showcase), newest first */
+  function designs() { return (store.get('da.base.pieces', []) || []).filter(function (p) { return p && /^data:image\//.test(p.src || ''); }).slice(0, 6); }
   function madeFill(el) { var who = tkWho(); if (!el || !who) return;
     fetch('/api/plays/mine?who=' + encodeURIComponent(who)).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { var l = j.plays || []; if (!l.length) { el.innerHTML = ''; return; }
-      el.innerHTML = '<p class="hm-h">MADE</p><ol class="hm-list hm-made">' + l.map(function (p, i) { return '<li><b>' + esc(p.n || p.c) + '</b><span title="' + (p.up ? 'Opened ' + p.op + ' · liked ' + p.lk : 'Waiting for approval') + '">' + (p.up ? p.op + ' · ' + p.lk : 'WAITING') + '</span><button class="hm-btn" data-ed="' + i + '" title="Change it in the maker">EDIT</button><button class="hm-btn" data-art="' + i + '" title="Its colours">ART</button></li>'; }).join('') + '</ol>';
-      el.onclick = function (e) { var b = e.target.closest('[data-ed],[data-art]'); if (!b) return; var p = l[+(b.dataset.ed || b.dataset.art)];
+      var thumb = function (p) { var n = PLAY_TH.indexOf(p.th) + 1 || 6; return '<i class="mk-th pl-' + ((n - 1) % 6 + 1) + '" aria-hidden="true">' + (p.pic && p.up ? '<img alt="" src="/api/plays/' + esc(p.c) + '/art?v=' + encodeURIComponent(p.pic) + '">' : '') + '</i>'; };
+      var szw = function (p) { return p.big === 'yes' ? 'BIG' : p.big === 'ask' ? 'ASKED' : 'SMALL'; };
+      el.innerHTML = '<p class="hm-h">MADE</p><ol class="hm-list hm-made">' + l.map(function (p, i) { return '<li data-mi="' + i + '">' + thumb(p) + '<b>' + esc(p.n || p.c) + '</b><span title="' + (p.up ? 'Opened ' + p.op + ' · liked ' + p.lk : 'Waiting for approval') + '">' + (p.up ? p.op + ' · ' + p.lk : 'WAITING') + '</span>' +
+        '<span class="mk-k"><button class="hm-btn" data-ed="' + i + '" title="Change it in the maker">EDIT</button><button class="hm-btn" data-art="' + i + '" title="Its colours">ART</button><button class="hm-btn" data-pic="' + i + '" title="A picture for its card">PICTURE</button><button class="hm-btn" data-sz="' + i + '" title="Small in the showcase, or ask for a big card">' + szw(p) + '</button></span><div class="mk-pick" hidden></div></li>'; }).join('') + '</ol>';
+      var edit = function (p, b, body, done) { b.disabled = true; body.who = who; fetch('/api/plays/' + p.c + '/edit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { b.disabled = false; if (!r.ok) { beep(220, 0.08); return; } done(); beep(880, 0.05); }, function () { b.disabled = false; }); };
+      var setPic = function (p, b, d) { if (!d) { beep(220, 0.08); return; } edit(p, b, { art: d }, function () { p.pic = String(d.length % 100000); madeFill(el); devLoad(); }); };
+      el.onclick = function (e) { var b = e.target.closest('[data-ed],[data-art],[data-pic],[data-sz],[data-pk]'); if (!b) return; var li = b.closest('li'), p = l[+li.dataset.mi];
         if (b.dataset.ed) { var K = 'da.bench.plus.v2', P = store.get(K, {}) || {}; P.m = 'live'; P.live = { src: p.src || '', th: p.th || 'print', n: p.n || '', keep: {}, edit: p.c }; store.set(K, P); beep(660, 0.05); shut(true); setTimeout(function () { open('space', { mode: 'live' }); }, 480); return; }
-        var th = PLAY_TH[(PLAY_TH.indexOf(p.th) + 1) % PLAY_TH.length]; b.disabled = true;
-        fetch('/api/plays/' + p.c + '/edit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, th: th }) }).then(function (r) { b.disabled = false; if (!r.ok) return; p.th = th; var c = byId('pl-' + p.c.toLowerCase()); if (c) { c.pal = PLAY_TH.indexOf(th) + 1; applyCards(''); } beep(880, 0.05); }, function () { b.disabled = false; }); }; }).catch(function () { /* none */ }); }
+        if (b.dataset.art) { var th = PLAY_TH[(PLAY_TH.indexOf(p.th) + 1) % PLAY_TH.length]; edit(p, b, { th: th }, function () { p.th = th; var c = byId('pl-' + p.c.toLowerCase()); if (c) { c.pal = PLAY_TH.indexOf(th) + 1; applyCards(''); } li.querySelector('.mk-th').className = 'mk-th pl-' + ((PLAY_TH.indexOf(th)) % 6 + 1); }); return; }
+        if (b.dataset.sz) { edit(p, b, { sz: p.big ? 'small' : 'big' }, function () { p.big = p.big ? '' : 'ask'; b.textContent = szw(p); if (!p.big) devLoad(); }); return; }
+        if (b.dataset.pic) { var pk = li.querySelector('.mk-pick'), ds = designs(); pk.hidden = !pk.hidden; if (pk.hidden) return;
+          pk.innerHTML = '<button class="hm-btn" data-pk="up" title="A picture from this phone">UPLOAD</button>' + ds.map(function (d, k) { return '<button class="mk-ds" data-pk="d' + k + '" title="A design print"><img alt="" src="' + d.src + '"></button>'; }).join('') +
+            (ds.length ? '' : '<button class="hm-btn" data-pk="mk" title="Make a poster in DESIGN PRINT, then come back">DESIGN</button>') + (p.pic ? '<button class="hm-btn" data-pk="x" title="Take the picture off">×</button>' : ''); return; }
+        if (b.dataset.pk === 'up') { var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = function () { if (f.files[0]) picPrep(f.files[0], function (d) { setPic(p, b, d); }); }; f.click(); return; }
+        if (b.dataset.pk === 'mk') { shut(true); setTimeout(function () { var z = col.querySelector('.hm-card[data-id="zine"] .hm-open'); if (z) z.click(); }, 480); return; }
+        if (b.dataset.pk === 'x') { edit(p, b, { art: '' }, function () { p.pic = ''; madeFill(el); devLoad(); }); return; }
+        if (/^d\d$/.test(b.dataset.pk || '')) picPrep(designs()[+b.dataset.pk.slice(1)].src, function (d) { setPic(p, b, d); }); }; }).catch(function () { /* none */ }); }
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();

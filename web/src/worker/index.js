@@ -703,6 +703,8 @@ async function admin(db, env, req, parts) {
     const b = await body(req); const t = now();
     if (b.action === 'show') { await db.batch([db.prepare("UPDATE stories SET status = 'shown', decided = ? WHERE id = ?").bind(t, id), db.prepare("UPDATE jobs SET status = 'queued' WHERE story = ? AND status = 'held'").bind(id), db.prepare('UPDATE printers SET warm = ? WHERE id IN (SELECT printer FROM jobs WHERE story = ?)').bind(t, id)]); return json({ ok: true }); }
     if (b.action === 'refuse') { await db.batch([db.prepare("UPDATE stories SET status = 'refused', decided = ? WHERE id = ?").bind(t, id), db.prepare("DELETE FROM jobs WHERE story = ? AND status IN ('held', 'queued')").bind(id)]); return json({ ok: true }); }
+    if (b.action === 'big' || b.action === 'small') { const r = await db.prepare("SELECT body FROM stories WHERE id = ? AND kind = 'play'").bind(id).first(); if (!r) return fail(404, 'not found'); let j = {}; try { j = JSON.parse(r.body) || {}; } catch (e) { return fail(400, 'play'); }
+      if (b.action === 'big') j.big = 'yes'; else delete j.big; await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), id).run(); return json({ ok: true, big: j.big || '' }); }
     if (b.action === 'ungone') { await db.prepare('UPDATE stories SET gone = NULL WHERE id = ?').bind(id).run(); return json({ ok: true }); }   // taken down by its maker, put back
     /* its words changed on the approval page (a record's words; a packed story is left as it was sent) */
     if (b.action === 'edit') { const text = typeof b.text === 'string' ? b.text.trim().slice(0, 280) : null; const r = await db.prepare('SELECT kind, body FROM stories WHERE id = ?').bind(id).first(); if (text == null || !r || r.kind === 'story' || r.kind === 'message') return fail(400, 'edit');
@@ -1113,9 +1115,20 @@ async function savePost(db, env, req) {
 /* plays: small things made in the builder's LIVE bench; they wait for approval, then stand as small cards. Their code runs only in a
    sandbox with no network, on the phone that opens it */
 const PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'], PLAY_OPEN = 40, PLAY_MONTH = 150, PLAY_CODE = 5;
+/* a play's card art: one picture kept with it (jpeg, webp or png, as a data URL under 200 kB); big is asked for by its maker and given by novel.global */
+const playArt = v => typeof v === 'string' && v.length <= 200e3 && /^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : null;
+const playPicV = j => j && j.art ? String(j.art.length % 100000) : '';
+async function playPic(db, c) {
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code');
+  const r = await db.prepare("SELECT body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
+  let j = {}; try { j = JSON.parse(r.body); } catch (e) { return fail(404, 'not found'); }
+  const m = /^data:(image\/(?:jpeg|webp|png));base64,(.+)$/.exec(j.art || ''); if (!m) return fail(404, 'none');
+  const bin = atob(m[2]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Response(u, { headers: { 'content-type': m[1], 'cache-control': 'public, max-age=600', 'x-content-type-options': 'nosniff' } });
+}
 async function playSend(db, env, req) {
   if (await tooMany(db, env, req, 'play', 6, 10 * 60e3)) return fail(429, 'slow down');
-  const b = await body(req, 80e3); const n = typeof b.n === 'string' ? b.n.trim().toUpperCase().slice(0, 24) : '', src = typeof b.src === 'string' ? b.src : '';
+  const b = await body(req, 300e3); const n = typeof b.n === 'string' ? b.n.trim().toUpperCase().slice(0, 24) : '', src = typeof b.src === 'string' ? b.src : '';
   if (!n || !src.trim() || src.length > 40e3) return fail(400, 'play');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
   /* only a code a print gave (proof a person stood at a printer), or the owner's own key; while the sandbox is on, it goes up at once */
@@ -1131,7 +1144,7 @@ async function playSend(db, env, req) {
   const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (!up && w >= 200) return fail(503, 'full');
   const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
   const t = now();
-  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src }), t, up ? t : null, who).run();
+  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src, ...(playArt(b.art) ? { art: playArt(b.art) } : {}), ...(b.sz === 'big' ? { big: 'ask' } : {}) }), t, up ? t : null, who).run();
   return json({ code, shown: up }, 201);
 }
 /* a pass from a printer's slip makes this phone's code a printed one: one use, the day it was printed */
@@ -1167,7 +1180,7 @@ async function playList(db, url) {
   await playTable(db); const o = PLAY_ORDER[url.searchParams.get('o')] ? url.searchParams.get('o') : 'fresh', pg = Math.max(0, Math.min(500, Math.round(+url.searchParams.get('pg') || 0)));
   const off = Math.max(0, pg * 9 - 1), lim = (pg ? 9 : 8) + 1;
   const { results } = await db.prepare(`SELECT s.code, s.body, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk FROM stories s WHERE s.kind = 'play' AND s.status = 'shown' AND s.gone IS NULL AND s.code != ? ORDER BY ${PLAY_ORDER[o]} LIMIT ? OFFSET ?`).bind(FIRST_PLAY.code, lim, off).all();
-  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', lk: r.lk }; } catch (e) { return null; } }).filter(Boolean);
+  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', lk: r.lk, pic: playPicV(j), big: j.big === 'yes' }; } catch (e) { return null; } }).filter(Boolean);
   const more = l.length > lim - 1; l.length = Math.min(l.length, lim - 1);
   if (!pg) { const fl = await db.prepare('SELECT count(*) AS n FROM play_likes WHERE code = ?').bind(FIRST_PLAY.code).first(); l.unshift({ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true, lk: fl ? fl.n : 0 }); }
   return json({ plays: l, o, pg, more });
@@ -1184,17 +1197,19 @@ async function playLike(db, env, req, c) {
 async function playMine(db, url) {
   const who = url.searchParams.get('who') || ''; if (!WHO.test(who)) return fail(400, 'who'); await playTable(db);
   const { results } = await db.prepare("SELECT s.code, s.body, s.status, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk, (SELECT opens FROM play_stats t WHERE t.code = s.code) AS op FROM stories s WHERE s.kind = 'play' AND s.who = ? AND s.gone IS NULL ORDER BY s.created DESC LIMIT 20").bind(who).all();
-  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', src: j.src, up: r.status === 'shown', lk: r.lk || 0, op: r.op || 0 }; } catch (e) { return null; } }).filter(Boolean) });
+  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', src: j.src, up: r.status === 'shown', lk: r.lk || 0, op: r.op || 0, pic: playPicV(j), big: j.big || '' }; } catch (e) { return null; } }).filter(Boolean) });
 }
 async function playEdit(db, env, req, c) {
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (await tooMany(db, env, req, 'play', 20, 10 * 60e3)) return fail(429, 'slow down');
-  const b = await body(req, 80e3); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
+  const b = await body(req, 300e3); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
   const r = await db.prepare("SELECT id, body FROM stories WHERE kind = 'play' AND code = ? AND who = ? AND gone IS NULL").bind(c, who).first(); if (!r) return fail(404, 'not found');
   const j = JSON.parse(r.body);
   if (typeof b.n === 'string' && b.n.trim()) j.n = b.n.trim().toUpperCase().slice(0, 24);
   if (PLAY_TH.includes(b.th)) j.th = b.th;
   if (typeof b.fr === 'string' && ['', 'dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr)) j.fr = b.fr;
   if (typeof b.src === 'string') { if (!b.src.trim() || b.src.length > 40e3) return fail(400, 'play'); j.src = b.src; }
+  if (b.art === '') delete j.art; else if (b.art !== undefined) { if (!playArt(b.art)) return fail(400, 'art'); j.art = b.art; }
+  if (b.sz === 'small') delete j.big; else if (b.sz === 'big' && j.big !== 'yes') j.big = 'ask';
   await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), r.id).run(); return json({ code: c, ok: true }, 201);
 }
 async function playOne(db, c) {
@@ -1202,7 +1217,7 @@ async function playOne(db, c) {
   const r = await db.prepare("SELECT body, created FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
   try { await playTable(db); await db.prepare('INSERT INTO play_stats (code, opens) VALUES (?, 1) ON CONFLICT(code) DO UPDATE SET opens = opens + 1').bind(c).run(); } catch (e) { /* counted next time */ }
   const j = JSON.parse(r.body), nm = String(j.n || '').toLowerCase().replace(/(^|\s)\S/g, x => x.toUpperCase()), a = ((r.created / 864e5 - Date.UTC(2000, 0, 6, 18, 14) / 864e5) / 29.530588853 % 1 + 1) % 1, ph = a < 0.03 || a > 0.97 ? 'new moon' : a < 0.22 ? 'waxing crescent' : a < 0.28 ? 'first quarter' : a < 0.47 ? 'waxing gibbous' : a < 0.53 ? 'full moon' : a < 0.72 ? 'waning gibbous' : a < 0.78 ? 'last quarter' : 'waning crescent';
-  return json({ ...j, by: `${nm ? nm + '. ' : ''}${ph[0].toUpperCase() + ph.slice(1)}, ${new Date(r.created).toLocaleString('en-AU', { month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' })}.` });
+  return json({ ...j, art: undefined, pic: playPicV(j), by: `${nm ? nm + '. ' : ''}${ph[0].toUpperCase() + ph.slice(1)}, ${new Date(r.created).toLocaleString('en-AU', { month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' })}.` });
 }
 /* ───────── codes: one reader for every family; carts keep a 3-letter code a moon quarter; passes last a day at one island ───────── */
 const ABC = 'ABCDEFGHJKMNPQRSTVWXYZ';
@@ -1308,6 +1323,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'maker' && !p[1] && m === 'POST') return makerPass(db, env, req);
   if (p[0] === 'link' && !p[1] && m === 'POST') return linkSet(db, env, req);
   if (p[0] === 'plays' && p[1] && !p[2] && m === 'GET') return playOne(db, p[1]);
+  if (p[0] === 'plays' && p[1] && p[2] === 'art' && m === 'GET') return playPic(db, p[1]);
   if (p[0] === 'talk' && !p[1] && m === 'GET') return talkList(db, env, req, url);
   if (p[0] === 'talk' && !p[1] && m === 'POST') return talkSay(db, env, req);
   if (p[0] === 'live' && !p[1] && m === 'POST') return live(db, env, req);

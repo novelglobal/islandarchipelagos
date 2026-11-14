@@ -148,7 +148,13 @@
         words.length ? el('ol', {}, words.map(w => el('li', { text: w }))) : null];
     } else if (x.kind === 'play') {
       let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ }
-      body = [el('h3', { text: `PLAY · ${j.n || ''}` }), el('div', { class: 'meta', text: meta }), el('pre', { class: 'note', style: 'max-height:260px;overflow:auto;white-space:pre-wrap', text: String(j.src || '').slice(0, 40000) })];
+      /* its card: the picture its maker gave it, and its size: big only once novel.global gives it */
+      const pic = (() => { const m = /^data:(image\/[a-z]+);base64,(.+)$/.exec(j.art || ''); if (!m) return null; const b = atob(m[2]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return el('img', { src: URL.createObjectURL(new Blob([u], { type: m[1] })), alt: 'Its card', style: 'display:block;max-width:180px;max-height:180px;margin:6px 0;border:1px solid currentColor' }); })();
+      const szSay = el('span', { class: 'note', text: j.big === 'yes' ? 'BIG CARD' : j.big === 'ask' ? 'ASKS FOR A BIG CARD' : 'SMALL CARD' });
+      const sz = (a) => async () => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: a }) }); j.big = a === 'big' ? 'yes' : ''; szSay.textContent = a === 'big' ? 'BIG CARD' : 'SMALL CARD'; };
+      body = [el('h3', { text: `PLAY · ${j.n || ''}` }), el('div', { class: 'meta', text: meta }), pic,
+        el('div', { class: 'acts', style: 'margin:6px 0' }, szSay, el('button', { type: 'button', text: 'BIG', title: 'A big card on novel.global', onclick: sz('big') }), el('button', { type: 'button', text: 'SMALL', title: 'A small card in the showcase', onclick: sz('small') })),
+        el('pre', { class: 'note', style: 'max-height:260px;overflow:auto;white-space:pre-wrap', text: String(j.src || '').slice(0, 40000) })];
     } else if (x.kind === 'cells') {
       /* a pack of cells: its title, who sent it, and every cell, to check before it goes on the map */
       let j = {}; try { j = JSON.parse(x.body); } catch (e) { /* shown as it is */ } const cells = Array.isArray(j.cells) ? j.cells : [];

@@ -1634,8 +1634,19 @@ html.hm-on.hm-nocab { --hm-sbh: 0px; }
 #hm .hm-card[data-id^="dev-mk-"]:not([data-id="dev-mk-a"]) > * { visibility: hidden; }
 #hm { --th-dev: var(--th-slot); }
 /* HOME: a maker's own cards */
-.hm-made li { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 8px; }
-.hm-made li span { font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace; opacity: .6; }
+.hm-made li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "th nm st" "th k k" "pk pk pk"; align-items: center; column-gap: 10px; row-gap: 6px; padding: 8px 0; }
+.hm-made li > b { grid-area: nm; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-made li > span:not(.mk-k) { grid-area: st; font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace; opacity: .6; }
+.hm-made .mk-th { grid-area: th; align-self: start; width: 34px; aspect-ratio: 5 / 7; border-radius: 3px; overflow: hidden; background: var(--th-slot, #17457F); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); display: grid; place-items: center; }
+.hm-made .mk-th.pl-1 { background: #17457F; } .hm-made .mk-th.pl-2 { background: #0B0B0B; } .hm-made .mk-th.pl-3 { background: #C9C1F7; } .hm-made .mk-th.pl-4 { background: #1EA0E0; } .hm-made .mk-th.pl-5 { background: #E9E4DC; } .hm-made .mk-th.pl-6 { background: #F2B6C6; }
+.hm-made .mk-th img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hm-made .mk-k { grid-area: k; display: flex; flex-wrap: wrap; gap: 6px; }
+.hm-made .mk-k .hm-btn, .hm-made .mk-pick .hm-btn { min-height: 32px; padding: 0 10px; font-size: 10px; letter-spacing: .14em; }
+.hm-made .mk-pick { grid-area: pk; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .hm-made .mk-pick[hidden] { display: none; }
+.hm-made .mk-ds { width: 40px; height: 54px; padding: 0; border: 1px solid var(--hm-line, rgba(0, 0, 0, .3)); border-radius: 3px; background: #fff; overflow: hidden; cursor: pointer; }
+.hm-made .mk-ds img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* a play's own picture on its card, whole, over its colours */
+#hm .hm-art .hm-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; pointer-events: none; }
 
 /* the opener: one line by hand, in faded blue ink, an inch above the photograph */
 #hm .hm-card.sk-intro .in-hand { display: none; }
