@@ -535,11 +535,11 @@
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
   function wallArt() { return [{ src: '/wall/poster-01.webp', name: 'poster-01', island: 'novelglobal', where: 'Melbourne' }]; }
-  function wallHTML() { return '<section class="hm-wall" aria-label="Wall"><div class="wl-tr">' + wallArt().map(function (a, k) { return '<figure class="wl-it" data-k="' + k + '"><img class="wl-im" alt="" decoding="async" loading="lazy" draggable="false" src="' + esc(a.src) + '"></figure>'; }).join('') +
+  function wallHTML() { return '<section class="hm-wall" aria-label="Wall"><div class="wl-tr' + (wallArt().length > 1 ? ' many' : '') + '">' + wallArt().map(function (a, k) { return '<figure class="wl-it" data-k="' + k + '"><img class="wl-im" alt="" decoding="async" loading="lazy" draggable="false" src="' + esc(a.src) + '"></figure>'; }).join('') +
     '</div><div class="wl-op" hidden><button type="button" data-wl="play">PLAY</button><button type="button" data-wl="where">WHERE</button><button type="button" data-wl="print">PRINT</button><a data-wl="save" download>SAVE</a><p class="wl-msg" aria-live="polite"></p></div></section>'; }
   var WL = { s: 1, x: 0, y: 0, pts: {}, play: 0 };
   function wlSize() { var cs = getComputedStyle(col), top = parseFloat(cs.scrollPaddingTop) || 0; $$('.hm-wall', col).forEach(function (w) { w.style.height = (col.clientHeight - top) + 'px'; w.style.marginLeft = '-' + cs.paddingLeft; w.style.marginRight = '-' + cs.paddingRight; }); }
-  function wlFig() { var tr = col.querySelector('.wl-tr'); if (!tr) return null; var k = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth)); return tr.children[k] || tr.children[0]; }
+  function wlFig() { var tr = col.querySelector('.wl-tr'); if (!tr) return null; var f0 = tr.children[0], k = Math.round(tr.scrollLeft / Math.max(1, f0 ? f0.offsetWidth : tr.clientWidth)); return tr.children[k] || f0; }
   /* an artwork fills the width and scrolls by itself; zoomed, it is wider, and the point under the fingers stays under them */
   function wlSet(fig, s, cx, cy) { var im = fig && fig.querySelector('.wl-im'); if (!im) return; var r = fig.getBoundingClientRect(); if (cx == null) cx = r.left + r.width / 2; if (cy == null) cy = r.top + r.height / 2;
     var a = im.getBoundingClientRect(), u = a.width ? (cx - a.left) / a.width : 0.5, v = a.height ? (cy - a.top) / a.height : 0.5; WL.s = Math.max(1, Math.min(6, s)); im.style.setProperty('--z', WL.s.toFixed(3));
@@ -643,12 +643,17 @@
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
       '<div class="in-front"><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
-      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t"><span>A new kind of local area network (LAN)</span><span>built from repurposed e-waste</span></h2>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new kind of physical internet, built from repurposed waste.') + '</h2>' +
       '<p class="in-l">Connecting independent publishing stations through a local network powered by open-source technology.</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
       '</article></section>'; }
+  /* the headline in two lines, one size: broken where it is written broken, or else at its comma; the comma and the full stop are left off */
+  function introHead(v) { var t = String(v).trim(), l = t.split(/\s*\n+\s*/); if (l.length < 2) { var m = /^(.+?),\s+(.+?)[.]?$/.exec(t); l = m ? [m[1], m[2]] : [t]; }
+    return l.filter(Boolean).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(''); }
+  /* each line whole: the type steps down until the longest line is in */
+  function headFit() { $$('.sk-intro .in-t', col).forEach(function (h) { h.style.fontSize = ''; var bx = h.parentElement, cs = getComputedStyle(bx), w = bx.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), m = 0; $$('span', h).forEach(function (s) { m = Math.max(m, s.offsetWidth); }); if (w && m > w) h.style.fontSize = (parseFloat(getComputedStyle(h).fontSize) * w / m * 0.985).toFixed(2) + 'px'; }); }
   function introFlip(l) { return '<button type="button" class="in-flip" data-inflip aria-label="' + l + '" title="' + l + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg></button>'; }
   /* the archipelago at the receipt's foot: islands from a few octaves of noise, printed the way the T88V prints, black dots on a 4×4 order;
      the coasts ringed, the sea a sparse tone */
@@ -666,14 +671,14 @@
   /* the opener's words from admin (HOME, OPENER): headline, lede, paragraphs (a blank line between), signature, closing line; an empty field keeps its own */
   function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
     $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
-      (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = v.trim().split(/\n+/).map(function (l) { return '<span>' + esc(l.trim()) + '</span>'; }).join(''); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
+      (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
       if (typeof o.body === 'string' && o.body.trim()) { var b = cd.querySelector('.in-b'), ia = b && b.querySelector('.in-ia'); if (b) { $$('p:not(.in-ia)', b).forEach(function (p) { p.remove(); });
         o.body.trim().split(/\n\s*\n/).forEach(function (t) { var p = D.createElement('p'); p.textContent = t.trim(); b.insertBefore(p, ia); }); } } });
     INTRO_TXT = txt; requestAnimationFrame(introFit); }
   var INTRO_TXT = '';
   /* the opener stood small: the type steps down until every word is in */
-  function introFit() { $$('.sk-intro:not(.small) .in-f', col).forEach(function (f) { var st = f.style; st.scale = ''; st.width = st.height = st.right = st.bottom = ''; if (!f.clientHeight) return; var s = 1; while (s > 0.45 && f.scrollHeight > f.clientHeight + 1) { s -= 0.03; st.right = st.bottom = 'auto'; st.transformOrigin = '0 0'; st.width = (100 / s) + '%'; st.height = (100 / s) + '%'; st.scale = s.toFixed(3); } });
-    $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; } }); introArc(); }
+  function introFit() { headFit(); $$('.sk-intro:not(.small) .in-f', col).forEach(function (f) { var st = f.style; st.scale = ''; st.width = st.height = st.right = st.bottom = ''; if (!f.clientHeight) return; var s = 1; while (s > 0.45 && f.scrollHeight > f.clientHeight + 1) { s -= 0.03; st.right = st.bottom = 'auto'; st.transformOrigin = '0 0'; st.width = (100 / s) + '%'; st.height = (100 / s) + '%'; st.scale = s.toFixed(3); } });
+    $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; headFit(); } }); introArc(); }
   /* the wall is wired on the first drawing too, not only when the column is drawn again */
   wlWire();
   addEventListener('resize', function () { requestAnimationFrame(introFit); requestAnimationFrame(wlSize); });
