@@ -1515,9 +1515,9 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 .hm-wall { position: relative; flex: none; height: 92vh; margin: 0; background: #050505; scroll-snap-align: start; overflow: hidden; }
 .hm-wall .wl-tr { display: flex; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 .hm-wall .wl-tr::-webkit-scrollbar { display: none; }
-.hm-wall .wl-it { flex: 0 0 100%; height: 100%; margin: 0; position: relative; display: block; overflow: hidden; scroll-snap-align: center; touch-action: pan-x pan-y; user-select: none; -webkit-user-select: none; }
-.hm-wall .wl-it.zm { touch-action: none; }
-.hm-wall .wl-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 50% 50%; will-change: transform; -webkit-user-drag: none; }
+.hm-wall .wl-it { flex: 0 0 100%; height: 100%; margin: 0; position: relative; display: flex; overflow: auto; scrollbar-width: none; scroll-snap-align: center; touch-action: pan-x pan-y; user-select: none; -webkit-user-select: none; }
+.hm-wall .wl-it::-webkit-scrollbar { display: none; }
+.hm-wall .wl-im { flex: none; display: block; margin: auto; width: calc(min(100%, 720px) * var(--z, 1)); max-width: none; height: auto; -webkit-user-drag: none; }
 .hm-wall .wl-op { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 8px; border-radius: 10px; background: rgba(10, 10, 10, .72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .hm-wall .wl-op[hidden] { display: none; }
 #hm .hm-wall .wl-op button, #hm .hm-wall .wl-op a { padding: 9px 12px; border: 1px solid rgba(244, 241, 232, .4); border-radius: 6px; background: none; color: #F4F1E8; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; }
@@ -1546,7 +1546,12 @@ html.hm-sheet #hm-top nav #hm-mine, html.hm-sheet #hm-top nav #hm-theme { displa
 @keyframes in-out { from { transform: translateY(-100%); } to { transform: translateY(-60%); } }
 #hm .sk-intro .in-f { transform: none; transition: opacity .45s .2s; }
 #hm .sk-intro.flip .in-f { transform: none; }
-#hm .sk-intro .in-f .in-flip { position: absolute; top: 4cqw; right: 4cqw; bottom: auto; margin: 0; z-index: 3; }
+#hm .sk-intro .in-f .in-flip { position: absolute; top: auto; right: 12px; bottom: 12px; width: 40px; height: 40px; margin: 0; z-index: 3; }
+/* the headline: two lines, each whole, both one size */
+#hm .sk-intro .in-t span { display: block; white-space: nowrap; }
+#hm .sk-intro:not(.small) .in-t { font-size: min(3.5cqw, 24px); }
+/* ISLAND ARCHIPELAGOS: the red line stands clear above the first red point */
+#hm .sk-space .sp-fz { top: calc(18.7cqh - 13.5cqw - 16px); }
 .hm-card.small.sk-space .sm-sub { display: none; }
 #hm a.sm-inst, #hm a.sp-inst { text-decoration: none; color: inherit; }
 #hm .hm-card:not(.small).sk-space .hm-in { padding-bottom: 17cqw; }

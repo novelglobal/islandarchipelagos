@@ -39,7 +39,7 @@ function foot(all) {
 /* the menu as a printed card: cream type on the blue, pink for what is kept and named */
 const CSS = "<style>" +
   "#k{padding:0;gap:0;align-items:stretch;font-family:ui-monospace,Menlo,Consolas,monospace}" +
-  ".ss{display:flex;flex-direction:column;min-height:100vh;box-sizing:border-box;padding:16px 14px 18px}" +
+  ".ss{display:flex;flex-direction:column;min-height:100vh;box-sizing:border-box;padding:16px 14px 18px;width:100%;max-width:600px;margin:0 auto}" +
   ".hd{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(244,241,232,.35)}" +
   ".hd h1{margin:0;font:700 clamp(34px,11vw,54px)/.9 Georgia,serif;letter-spacing:-.01em}" +
   ".row{display:flex;gap:6px;flex-wrap:wrap}" +
@@ -66,13 +66,10 @@ const CSS = "<style>" +
 
 function cover() {
   const k = saved();
-  show(CSS + '<div class="ss"><div class="hd"><h1>SESAME</h1><div class="row">' +
-    '<button data-s title="A plate at random">SURPRISE</button><button data-i title="Print all twelve">ISSUE</button></div></div><div class="grid">' +
+  show(CSS + '<div class="ss"><div class="hd"><h1>SESAME</h1></div><div class="grid">' +
     plates.map((p, i) => '<button class="tile' + (k.includes(i) ? " kept" : "") + '" data-p="' + i + '"><b>' + no(i) + "</b>" +
       (nameOf(i) ? "<u>" + esc(nameOf(i)) + "</u>" : "") + "<i>" + p.map(esc).join("<br>") + "</i></button>").join("") +
     "</div></div>");
-  on("[data-s]", () => view(Math.floor(Math.random() * N)));
-  on("[data-i]", () => { big("SESAME"); line(); plates.forEach((p, i) => plate(i)); foot(true); });
   document.querySelectorAll("[data-p]").forEach((b) => { b.onclick = () => view(+b.dataset.p); });
   document.onkeydown = null;
 }
