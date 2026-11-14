@@ -198,6 +198,15 @@ try {
   const d1 = await dk(0), d2 = await dk(1), d3 = await dk(2), d4 = await dk(3);
   check('a deck prints all its pages; a new one inside the minute waits', [d1, d2, d3].every(r => r.status === 201) && d4.status === 429, JSON.stringify([d1.status, d2.status, d3.status, d4.status]));
 
+  /* the showcase: nine at a time in an order; a like once for each code; the maker sees opens and likes, and changes only their own */
+  const sc_pm = await call('/api/plays', { method: 'POST', key: KEY, ip: '10.0.0.61', body: { who: 'Q7M', n: 'tide clock', th: 'cyan', src: 'print("hi")' } });
+  const sc_pc = sc_pm.json.code, sc_sl = await call('/api/plays?o=liked&pg=0');
+  const sc_l1 = await call(`/api/plays/${sc_pc}/like`, { method: 'POST', ip: '10.0.0.62', body: { who: 'R4T' } }), sc_l2 = await call(`/api/plays/${sc_pc}/like`, { method: 'POST', ip: '10.0.0.62', body: { who: 'R4T' } });
+  await call(`/api/plays/${sc_pc}`); const sc_e0 = await call(`/api/plays/${sc_pc}/edit`, { method: 'POST', ip: '10.0.0.63', body: { who: 'R4T', th: 'pink' } }), sc_e1 = await call(`/api/plays/${sc_pc}/edit`, { method: 'POST', ip: '10.0.0.63', body: { who: 'Q7M', th: 'pink' } });
+  const sc_mn = (await call('/api/plays/mine?who=Q7M')).json.plays.find(x => x.c === sc_pc), sc_sl2 = await call('/api/plays?o=liked&pg=0');
+  check('the showcase: nine in an order, a like once a code, opens and likes for the maker, only the maker changes it', sc_pm.status === 201 && sc_sl.json.o === 'liked' && Array.isArray(sc_sl.json.plays) && sc_sl.json.plays.length <= 9 && sc_l1.json.n === 1 && sc_l2.json.n === 1 && sc_e0.status === 404 && sc_e1.status === 201 && sc_mn && sc_mn.th === 'pink' && sc_mn.lk === 1 && sc_mn.op >= 1 && sc_sl2.json.plays[1].c === sc_pc,
+    JSON.stringify({ sc_pm: sc_pm.status, l: [sc_l1.json, sc_l2.json], e: [sc_e0.status, sc_e1.status], sc_mn, first: sc_sl2.json.plays.map(x => x.c).slice(0, 3) }));
+
   /* a pack of cells: waits like any story, then everyone has it */
   const PACK = JSON.stringify({ title: 'Fruit and radios', by: 'neighbours', cells: [{ k: 'fruit', n: 'Lemon tree', lat: -37.7701, lng: 144.9602 }, { k: 'node', n: 'Rooftop repeater', lat: -37.7664, lng: 144.9731 }] });
   const c0 = await call('/api/stories', { method: 'POST', ip: '10.0.0.7', body: { kind: 'cells', code: 'DA-C3KS', body: PACK, lat: -37.768, lng: 144.967 } });

@@ -1159,14 +1159,48 @@ async function linkSet(db, env, req) {
   else await db.prepare('INSERT INTO links (who, k, v, at) VALUES (?, ?, ?, ?) ON CONFLICT(who, k) DO UPDATE SET v = excluded.v, at = excluded.at').bind(who, k, v, now()).run();
   return json({ ok: true }, 201);
 }
-async function playList(db) {
-  const { results } = await db.prepare("SELECT code, body FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL ORDER BY decided DESC LIMIT 24").all();
-  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '' }; } catch (e) { return null; } }).filter(r => r && r.c !== FIRST_PLAY.code);
-  return json({ plays: [{ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true }, ...l] });
+/* the showcase: nine at a time, by what is liked, what is fresh, or from the start (archive); the first play stands first */
+const playTables = new WeakMap();
+const playTable = db => { if (!playTables.has(db)) playTables.set(db, db.batch([db.prepare('CREATE TABLE IF NOT EXISTS play_likes (code TEXT NOT NULL, who TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (code, who))'), db.prepare('CREATE TABLE IF NOT EXISTS play_stats (code TEXT PRIMARY KEY, opens INTEGER NOT NULL DEFAULT 0)')]).catch(e => { playTables.delete(db); throw e; })); return playTables.get(db); };
+const PLAY_ORDER = { fresh: 's.decided DESC', archive: 's.decided ASC', liked: 'lk DESC, s.decided DESC' };
+async function playList(db, url) {
+  await playTable(db); const o = PLAY_ORDER[url.searchParams.get('o')] ? url.searchParams.get('o') : 'fresh', pg = Math.max(0, Math.min(500, Math.round(+url.searchParams.get('pg') || 0)));
+  const off = Math.max(0, pg * 9 - 1), lim = (pg ? 9 : 8) + 1;
+  const { results } = await db.prepare(`SELECT s.code, s.body, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk FROM stories s WHERE s.kind = 'play' AND s.status = 'shown' AND s.gone IS NULL AND s.code != ? ORDER BY ${PLAY_ORDER[o]} LIMIT ? OFFSET ?`).bind(FIRST_PLAY.code, lim, off).all();
+  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', lk: r.lk }; } catch (e) { return null; } }).filter(Boolean);
+  const more = l.length > lim - 1; l.length = Math.min(l.length, lim - 1);
+  if (!pg) { const fl = await db.prepare('SELECT count(*) AS n FROM play_likes WHERE code = ?').bind(FIRST_PLAY.code).first(); l.unshift({ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true, lk: fl ? fl.n : 0 }); }
+  return json({ plays: l, o, pg, more });
+}
+/* a like: one for each code, on each play */
+async function playLike(db, env, req, c) {
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (await tooMany(db, env, req, 'like', 40, 10 * 60e3)) return fail(429, 'slow down');
+  const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who'); await playTable(db);
+  if (c !== FIRST_PLAY.code && !(await db.prepare("SELECT 1 AS y FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first())) return fail(404, 'not found');
+  await db.prepare('INSERT OR IGNORE INTO play_likes (code, who, at) VALUES (?, ?, ?)').bind(c, who, now()).run();
+  const { n } = await db.prepare('SELECT count(*) AS n FROM play_likes WHERE code = ?').bind(c).first(); return json({ n }, 201);
+}
+/* a maker's own: what they made, how often it was opened and liked; theirs to change */
+async function playMine(db, url) {
+  const who = url.searchParams.get('who') || ''; if (!WHO.test(who)) return fail(400, 'who'); await playTable(db);
+  const { results } = await db.prepare("SELECT s.code, s.body, s.status, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk, (SELECT opens FROM play_stats t WHERE t.code = s.code) AS op FROM stories s WHERE s.kind = 'play' AND s.who = ? AND s.gone IS NULL ORDER BY s.created DESC LIMIT 20").bind(who).all();
+  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', src: j.src, up: r.status === 'shown', lk: r.lk || 0, op: r.op || 0 }; } catch (e) { return null; } }).filter(Boolean) });
+}
+async function playEdit(db, env, req, c) {
+  if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (await tooMany(db, env, req, 'play', 20, 10 * 60e3)) return fail(429, 'slow down');
+  const b = await body(req, 80e3); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null; if (!who) return fail(400, 'who');
+  const r = await db.prepare("SELECT id, body FROM stories WHERE kind = 'play' AND code = ? AND who = ? AND gone IS NULL").bind(c, who).first(); if (!r) return fail(404, 'not found');
+  const j = JSON.parse(r.body);
+  if (typeof b.n === 'string' && b.n.trim()) j.n = b.n.trim().toUpperCase().slice(0, 24);
+  if (PLAY_TH.includes(b.th)) j.th = b.th;
+  if (typeof b.fr === 'string' && ['', 'dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr)) j.fr = b.fr;
+  if (typeof b.src === 'string') { if (!b.src.trim() || b.src.length > 40e3) return fail(400, 'play'); j.src = b.src; }
+  await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), r.id).run(); return json({ code: c, ok: true }, 201);
 }
 async function playOne(db, c) {
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (c === FIRST_PLAY.code) return json({ n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, src: FIRST_PLAY.src, first: true, by: FIRST_PLAY.by });
   const r = await db.prepare("SELECT body, created FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first(); if (!r) return fail(404, 'not found');
+  try { await playTable(db); await db.prepare('INSERT INTO play_stats (code, opens) VALUES (?, 1) ON CONFLICT(code) DO UPDATE SET opens = opens + 1').bind(c).run(); } catch (e) { /* counted next time */ }
   const j = JSON.parse(r.body), nm = String(j.n || '').toLowerCase().replace(/(^|\s)\S/g, x => x.toUpperCase()), a = ((r.created / 864e5 - Date.UTC(2000, 0, 6, 18, 14) / 864e5) / 29.530588853 % 1 + 1) % 1, ph = a < 0.03 || a > 0.97 ? 'new moon' : a < 0.22 ? 'waxing crescent' : a < 0.28 ? 'first quarter' : a < 0.47 ? 'waxing gibbous' : a < 0.53 ? 'full moon' : a < 0.72 ? 'waning gibbous' : a < 0.78 ? 'last quarter' : 'waning crescent';
   return json({ ...j, by: `${nm ? nm + '. ' : ''}${ph[0].toUpperCase() + ph.slice(1)}, ${new Date(r.created).toLocaleString('en-AU', { month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' })}.` });
 }
@@ -1266,11 +1300,14 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'receipts' && p[1] && m === 'GET') return receipt(db, p[1]);
   if (p[0] === 'c' && p[1] && !p[2] && m === 'GET') return codeRead(db, env, req, p[1]);
   if (p[0] === 'c' && !p[1] && m === 'POST') return passAsk(db, env, req);
-  if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db);
+  if (p[0] === 'plays' && !p[1] && m === 'GET') return playList(db, url);
+  if (p[0] === 'plays' && p[1] === 'mine' && !p[2] && m === 'GET') return playMine(db, url);
+  if (p[0] === 'plays' && p[1] && p[2] === 'like' && m === 'POST') return playLike(db, env, req, p[1]);
+  if (p[0] === 'plays' && p[1] && p[2] === 'edit' && m === 'POST') return playEdit(db, env, req, p[1]);
   if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
   if (p[0] === 'maker' && !p[1] && m === 'POST') return makerPass(db, env, req);
   if (p[0] === 'link' && !p[1] && m === 'POST') return linkSet(db, env, req);
-  if (p[0] === 'plays' && p[1] && m === 'GET') return playOne(db, p[1]);
+  if (p[0] === 'plays' && p[1] && !p[2] && m === 'GET') return playOne(db, p[1]);
   if (p[0] === 'talk' && !p[1] && m === 'GET') return talkList(db, env, req, url);
   if (p[0] === 'talk' && !p[1] && m === 'POST') return talkSay(db, env, req);
   if (p[0] === 'live' && !p[1] && m === 'POST') return live(db, env, req);

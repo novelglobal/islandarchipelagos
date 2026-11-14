@@ -599,7 +599,7 @@
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    col.innerHTML = colHTML(); devBar(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -871,17 +871,35 @@
     for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
     applyCards(''); }
   var PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
-  function playCards(l) { var add = false;
-    (l || []).slice(0, 12).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
-      var at = CARDS.findIndex(function (c) { return c.opens === 'soon'; }); if (at < 0) at = CARDS.findIndex(function (c) { return c.ph; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: id, g: 'soon', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', motion: 'shadow', where: [-37.8136, 144.9631] }); add = true; });
-    if (!add) return;
-    /* the made nine: each card made takes a SOON place, newest first */
-    var made = CARDS.filter(function (c) { return c.g === 'soon' && c.opens !== 'soon'; }).length, room = Math.max(0, 9 - made);
-    for (var q = CARDS.length - 1, sn = CARDS.filter(function (c) { return c.opens === 'soon'; }).length; q >= 0 && sn > room; q--) if (CARDS[q].opens === 'soon') { CARDS.splice(q, 1); sn--; }
-    var real = CARDS.filter(function (c) { return c.size === 'small' && !c.ph; }).length, want = Math.ceil((real + 1) / 3) * 3 - real, k = 0;
-    for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
-    applyCards(''); }
-  fetch('/api/plays').then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { playCards(j.plays); }).catch(function () { /* none yet */ });
+  /* the showcase: what people made, nine at a time in one 3x3 under the unmade nine; its order LIKED, FRESH or ARCHIVE, NEXT swaps the nine in place */
+  var DEV = { o: /^(liked|fresh|archive)$/.test(store.get('da.hm.dev', 'fresh')) ? store.get('da.hm.dev', 'fresh') : 'fresh', pg: 0, more: false, keep: null };
+  function playCards(j) { j = j || {}; DEV.more = !!j.more;
+    for (var q = CARDS.length - 1; q >= 0; q--) if (CARDS[q].g === 'dev') CARDS.splice(q, 1);
+    var last = -1; CARDS.forEach(function (c, i) { if (c.g === 'soon') last = i; }); var at = last < 0 ? CARDS.length : last + 1, add = [];
+    (j.plays || []).slice(0, 9).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
+      add.push({ id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', motion: 'shadow', where: [-37.8136, 144.9631] }); });
+    for (var k = 0; add.length < 9; k++) add.push({ id: 'dev-mk-' + (k ? k : 'a'), g: 'dev', size: 'small', title: 'MAKE', skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] });
+    CARDS.splice.apply(CARDS, [at, 0].concat(add)); applyCards(''); }
+  function devLoad() { fetch('/api/plays?o=' + DEV.o + '&pg=' + DEV.pg).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(playCards).catch(function () { /* none yet */ }); }
+  function devBar() { var d0 = CARDS.filter(function (c) { return c.g === 'dev'; })[0], f = d0 && col.querySelector('.hm-card[data-id="' + d0.id + '"]'), sec = f && f.closest('.hm-trio'); if (!sec) return;
+    var nv = D.createElement('nav'); nv.className = 'dv-bar'; nv.setAttribute('aria-label', 'Showcase');
+    nv.innerHTML = [['liked', 'LIKED'], ['fresh', 'FRESH'], ['archive', 'ARCHIVE']].map(function (o) { return '<button type="button" data-dv="' + o[0] + '" aria-pressed="' + (DEV.o === o[0]) + '">' + o[1] + '</button>'; }).join('') +
+      '<button type="button" class="dv-nx" data-dv="next"' + (DEV.more || DEV.pg ? '' : ' hidden') + '>' + (DEV.more ? 'NEXT' : 'FIRST') + '</button>';
+    sec.insertBefore(nv, sec.firstChild); sec.classList.add('dv-nine');
+    nv.addEventListener('click', function (e) { var b = e.target.closest('[data-dv]'); if (!b) return; var v = b.dataset.dv;
+      if (v === 'next') DEV.pg = DEV.more ? DEV.pg + 1 : 0; else { if (v === DEV.o && !DEV.pg) return; DEV.o = v; DEV.pg = 0; store.set('da.hm.dev', v); }
+      beep(600, 0.04); DEV.keep = nv.getBoundingClientRect().top; devLoad(); });
+    /* swapped in place: the nine stays where it was on the screen */
+    if (DEV.keep != null) { var d = nv.getBoundingClientRect().top - DEV.keep; DEV.keep = null; if (Math.abs(d) > 1) { var x = col; while (x && x !== D.body && !(x.scrollHeight > x.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(x).overflowY))) x = x.parentElement; (x && x !== D.body ? x : D.scrollingElement).scrollTop += d; } } }
+  devLoad();
+  /* a maker's own cards in HOME: opened and liked counts, EDIT back into the maker, ART turns its colours */
+  function madeFill(el) { var who = tkWho(); if (!el || !who) return;
+    fetch('/api/plays/mine?who=' + encodeURIComponent(who)).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { var l = j.plays || []; if (!l.length) { el.innerHTML = ''; return; }
+      el.innerHTML = '<p class="hm-h">MADE</p><ol class="hm-list hm-made">' + l.map(function (p, i) { return '<li><b>' + esc(p.n || p.c) + '</b><span title="' + (p.up ? 'Opened ' + p.op + ' · liked ' + p.lk : 'Waiting for approval') + '">' + (p.up ? p.op + ' · ' + p.lk : 'WAITING') + '</span><button class="hm-btn" data-ed="' + i + '" title="Change it in the maker">EDIT</button><button class="hm-btn" data-art="' + i + '" title="Its colours">ART</button></li>'; }).join('') + '</ol>';
+      el.onclick = function (e) { var b = e.target.closest('[data-ed],[data-art]'); if (!b) return; var p = l[+(b.dataset.ed || b.dataset.art)];
+        if (b.dataset.ed) { var K = 'da.bench.plus.v2', P = store.get(K, {}) || {}; P.m = 'live'; P.live = { src: p.src || '', th: p.th || 'print', n: p.n || '', keep: {}, edit: p.c }; store.set(K, P); beep(660, 0.05); shut(true); setTimeout(function () { open('space', { mode: 'live' }); }, 480); return; }
+        var th = PLAY_TH[(PLAY_TH.indexOf(p.th) + 1) % PLAY_TH.length]; b.disabled = true;
+        fetch('/api/plays/' + p.c + '/edit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, th: th }) }).then(function (r) { b.disabled = false; if (!r.ok) return; p.th = th; var c = byId('pl-' + p.c.toLowerCase()); if (c) { c.pal = PLAY_TH.indexOf(th) + 1; applyCards(''); } beep(880, 0.05); }, function () { b.disabled = false; }); }; }).catch(function () { /* none */ }); }
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
@@ -938,9 +956,12 @@
   /* a card still to be built: start one from it? yes opens the maker on its kind */
   function soonAsk(c) { var old = document.querySelector('.sn-ask'); if (old) old.remove();
     var d = document.createElement('div'); d.className = 'sn-ask'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', c.title);
-    d.innerHTML = '<div class="sn-box">' + MARK + '<p><span>THIS CARD HASN\u2019T BEEN MADE.</span><span>YOU CAN BUILD IT.</span><span>FIND THE BLUEPAPER CARD TO INCREASE THE QUALITY OF YOUR IDEAS.</span><span class="sn-q">DO YOU WANT TO SEE THE TOOL TO CREATE ' + esc(c.make || c.title) + '?</span></p><div class="sn-yn"><button type="button" data-a="1" aria-label="Yes">\uD83D\uDC4D</button><button type="button" data-a="0" aria-label="No">\uD83D\uDC4E</button></div></div>';
+    var cur = '<svg class="sn-cur" viewBox="0 0 16 18" aria-hidden="true"><path d="M1.5 1.5l12 6.6-5.4 1.5-2.7 5.1z"/></svg>', what = (c.make || c.title).toLowerCase().replace(/\bpo box\b/, 'PO box');
+    d.innerHTML = '<div class="sn-disc"><h2>this card hasn\u2019t been made.</h2><div class="sn-card" aria-hidden="true"></div>' +
+      '<p class="sn-tags"><span class="sn-t t1">' + cur + 'You can build it.</span><span class="sn-t t2">' + cur + 'Find the bluepaper card to increase the quality of your ideas.</span><span class="sn-t t3">' + cur + 'Do you want to create ' + esc(what) + '?</span></p>' +
+      '<div class="sn-yn"><button type="button" data-a="1">Yes, start it</button><button type="button" data-a="0">No</button></div></div>';
     var esc1 = function (e) { if (e.key === 'Escape') shut(); }, shut = function () { d.remove(); removeEventListener('keydown', esc1); };
-    d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-box')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
+    d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-disc')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
     addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }
   /* a card opened is a print on its way: the printers are told to ask every few seconds for a while (one small call, at most every 90 s) */
   var WARMED = 0; function warmUp() { if (Date.now() - WARMED < 90e3) return; WARMED = Date.now(); try { fetch('/api/warm', { method: 'POST', keepalive: true }).catch(function () { /* none */ }); } catch (e) { /* none */ } }
@@ -1254,9 +1275,9 @@
     var dark = NIGHT, mo = MOTION || 'own';
     body.innerHTML = '<div class="hm-row"><a class="hm-btn big" href="https://github.com/novelglobal/islandarchipelagos" target="_blank" rel="noopener" title="Source code">SOURCE ↗</a></div><p class="hm-h">MOTION</p><div class="hm-row">' + [['own', 'EACH'], ['shadow', 'SHADOW'], ['speed', 'SPEED']].map(function (m) { return '<button class="hm-btn' + (mo === m[0] ? ' on' : '') + '" data-mo="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h">LIGHT</p><div class="hm-row"><button class="hm-btn' + (dark ? '' : ' on') + '" data-dk="0">DAY</button><button class="hm-btn' + (dark ? ' on' : '') + '" data-dk="1">NIGHT</button></div>' +
-      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn" id="hm-rewire">RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false">WORDS</button><button class="hm-btn' + (CX.on ? ' on' : '') + '" id="hm-cxo" aria-pressed="' + CX.on + '" title="Cables on cards">CABLES</button></div><div class="hm-sbw" hidden></div>' +
+      '<p class="hm-h">SWITCHBOARD</p><div class="hm-row"><button class="hm-btn' + (CAB ? ' on' : '') + '" id="hm-cab" aria-pressed="' + CAB + '" title="The board and its cables">' + (CAB ? 'ON' : 'OFF') + '</button><button class="hm-btn" id="hm-rewire"' + (CAB ? '' : ' hidden') + '>RESET</button><button class="hm-btn" id="hm-sbw" aria-expanded="false"' + (CAB ? '' : ' hidden') + '>WORDS</button><button class="hm-btn' + (CX.on ? ' on' : '') + '" id="hm-cxo" aria-pressed="' + CX.on + '" title="Cables on cards"' + (CAB ? '' : ' hidden') + '>CABLES</button></div><div class="hm-sbw" hidden></div>' +
       '<p class="hm-h" title="The stories card">STORIES</p><div class="hm-row">' + [['tap', 'TAP'], ['last', 'LAST'], ['own', 'MINE']].map(function (m) { var v = store.get('da.hm.stories', 'tap'); if (v === 'moa') v = 'tap'; return '<button class="hm-btn' + ((v === m[0] || (m[0] === 'own' && /^data:/.test(v))) ? ' on' : '') + '" data-st="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '<input type="file" accept="image/*" id="hm-stf" hidden></div>' +
-      '<div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>' +
+      '<div id="hm-made"></div><div id="hm-keeper"></div><p class="hm-h">ISLANDS</p><ol class="hm-list hm-isles"><li>· · ·</li></ol>' +
       '<p class="hm-h">THIS DEVICE</p><div class="hm-row"><button class="hm-btn" id="hm-hints" title="Hints again">HINTS</button><button class="hm-btn hm-wipe" id="hm-wipe" title="Start again: everything made on this device goes">WIPE</button></div><p class="hm-note" id="hm-wipe-say" hidden title="Everything made on this device goes: prints, boards, W.I.S.H.es, songs, cables, settings. Tap WIPE once more">SURE?</p>';
     $$('[data-mo]', body).forEach(function (b) { b.addEventListener('click', function () { MOTION = b.dataset.mo === 'own' ? null : b.dataset.mo; store.set('da.hm.motion', MOTION); find('style'); cards.forEach(function (el) { var c = byId(el.dataset.id); el.classList.remove('shadow', 'speed'); el.classList.add(MOTION || c.motion); }); $$('[data-mo]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); beep(550, 0.05); }); });
     $$('[data-dk]', body).forEach(function (b) { b.addEventListener('click', function () { setNight(b.dataset.dk === '1'); $$('[data-dk]', body).forEach(function (q) { q.classList.toggle('on', q === b); }); }); });
@@ -1267,6 +1288,8 @@
       w.innerHTML = rows.map(function (r) { return '<label' + (r[1] === 'NAME' ? ' class="nm"' : '') + '><span>' + esc(r[1]) + '</span><input data-k="' + r[0] + '" value="' + esc(r[2]) + '" maxlength="40" spellcheck="false"></label>'; }).join('') + '<button class="hm-btn" id="hm-sbw0">AS THEY WERE</button>';
       w.addEventListener('change', function (e) { var k = e.target.dataset && e.target.dataset.k; if (!k) return; var o = store.get('da.sb.words', {}) || {}; o[k] = e.target.value.trim().toUpperCase().slice(0, 40); if (!o[k]) delete o[k]; store.set('da.sb.words', o); sbWords(); board(); });
       $('#hm-sbw0', w).addEventListener('click', function () { store.set('da.sb.words', {}); location.reload(); }); });
+    madeFill($('#hm-made', body));
+    $('#hm-cab', body).addEventListener('click', function () { store.set('da.hm.cables', !CAB); beep(CAB ? 262 : 523, 0.05); setTimeout(function () { location.reload(); }, 120); });
     $('#hm-rewire', body).addEventListener('click', function () { WIRES = START.slice(); saveWires(); board(); beep(440, 0.08); });
     $('#hm-cxo', body).addEventListener('click', function () { var x = sb.querySelector('.ex'); if (x) x.click(); this.classList.toggle('on', CX.on); this.setAttribute('aria-pressed', String(CX.on)); });
     /* the first-visit notes and hints, seen again */
@@ -1845,6 +1868,8 @@
   function mix(a, b, t) { var A = toLab(a), B = toLab(b), k = t == null ? 0.5 : t; return fromLab([0, 1, 2].map(function (i) { return A[i] + (B[i] - A[i]) * k; })); }
 
   /* wires: four */
+  /* the board and its cables rest (da.hm.cables, off): with it off every card is joined to every card it fits, open to remix */
+  var CAB = !!store.get('da.hm.cables', false); D.documentElement.classList.toggle('hm-nocab', !CAB);
   var START = [['radio', 'wish'], ['wish', 'research'], ['wish', 'zine'], ['kit', 'space']], MAXW = 4;
   var WIRES = store.get('da.sb.v2', null);
   if (!WIRES) { var old = store.get('da.sb.v1', null); WIRES = old ? old.map(function (w) { return w.map(function (x) { x = String(x).split('.')[0]; return x === 'iruk' ? 'eye' : x; }); }).filter(function (w) { return w[0] !== w[1]; }) : START.slice(); }
@@ -1862,7 +1887,7 @@
   var cab = sb.querySelector('canvas.cab'), cg = cab.getContext('2d'), ckr = 1;
   function cabSize() { ckr = Math.min(2, devicePixelRatio || 1); cab.width = Math.round(sb.clientWidth * ckr); cab.height = Math.round(sb.clientHeight * ckr); }
   function saveWires() { store.set('da.sb.v2', WIRES); }
-  function wired(a, b) { return WIRES.some(function (w) { return (w[0] === a && w[1] === b) || (w[0] === b && w[1] === a); }); }
+  function wired(a, b) { if (!CAB) return a !== b && fits(a, b); return WIRES.some(function (w) { return (w[0] === a && w[1] === b) || (w[0] === b && w[1] === a); }); }
   function jpos(id) { var j = jk.querySelector('[data-j="' + id + '"]'); if (!j) return null; var r = j.getBoundingClientRect(), o = sb.getBoundingClientRect(); return [r.left + r.width / 2 - o.left, r.top + r.height / 2 - o.top]; }
   /* a cable as a tentacle */
   function tentacle(a, b, ca, cb, t, seed, alpha) {
@@ -1876,7 +1901,7 @@
     cg.globalAlpha = A0; [[a, ca], [b, cb]].forEach(function (p) { cg.fillStyle = p[1]; cg.beginPath(); cg.arc(p[0][0], p[0][1], 4, 0, 7); cg.fill(); }); cg.globalAlpha = 1;
   }
   /* the cables let out onto the cards: a switch on the board, then each cable down its own path, plugged into the cards it joins, hanging and swinging as they move */
-  var CX = { on: !!store.get('da.sb.out', false), cv: null, g: null, rope: {}, k: 1 };
+  var CX = { on: CAB && !!store.get('da.sb.out', false), cv: null, g: null, rope: {}, k: 1 };
   (function () { var cv = D.createElement('canvas'); cv.id = 'hm-cx'; cv.setAttribute('aria-hidden', 'true'); root.insertBefore(cv, $('#hm-jf')); CX.cv = cv; CX.g = cv.getContext('2d');
     var b = D.createElement('button'); b.className = 'ex'; b.title = 'Cables out on the cards'; b.setAttribute('aria-label', 'Cables out on the cards'); b.setAttribute('aria-pressed', String(CX.on)); b.innerHTML = '<span>CABLES</span><i></i>'; sb.insertBefore(b, sb.querySelector('.rs'));
     b.addEventListener('click', function (e) { e.stopPropagation(); CX.on = !CX.on; store.set('da.sb.out', CX.on); b.setAttribute('aria-pressed', String(CX.on)); root.classList.toggle('cx', CX.on); CX.rope = {}; beep(CX.on ? 523 : 262, 0.05); if (!CX.on) CX.g.clearRect(0, 0, CX.cv.width, CX.cv.height); });
@@ -1947,6 +1972,7 @@
     lamps(); drawCables();
   }
   function lamps() {
+    if (!CAB) { cards.forEach(function (el) { el.classList.remove('wired'); el.style.removeProperty('--mx'); }); return; }
     cards.forEach(function (el) { var id = el.dataset.id, l = el.querySelector('.hm-lamps'), ws = WIRES.filter(function (w) { return w[0] === id || w[1] === id; });
       el.classList.toggle('wired', ws.length > 0); if (ws.length) el.style.setProperty('--mx', wireCol(ws[0])); else el.style.removeProperty('--mx');
       /* what a card takes in shows in what it makes, never as tags on the card: the engine stays out of sight */

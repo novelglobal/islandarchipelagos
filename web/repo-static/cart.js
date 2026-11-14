@@ -137,25 +137,118 @@
   /* ───────── book: one page a day ───────── */
   var book = {
     feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1) + (s.shelf ? '&s=' + s.shelf : ''); },
-    opts: [['pick', 'BOOK', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›']],
+    opts: [['pick', 'BOOK', undefined, 'select'], ['go', 'PAGE', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›'], ['size', 'TEXT']],
+    init: function (o) { var z = 1; try { var zs = localStorage.getItem('da.book.sz'); z = zs == null ? 1 : +zs; } catch (e) { z = 1; } o.sz = z >= 0 && z < 3 ? z : 1; },
+    local: function (s, o) { return ownPage(s, o); },
+    mix: function (d, s, o) { o.srv = { n: d.books, all: d.all }; return MINE.all(s.shelf || 'all').then(function (l) { return bookLists(d, s, o, l); }); },
     act: function (a, s, o) {
       var b = o.b || 1, p = o.p || 1;
       var nb = o.nb || 20;
-      if (a === 'pick') { o.b = Math.max(1, Math.min(nb, +o.sel || 1)); o.p = 1; }
+      if (a === 'pick') { var v = +o.sel || 1; if (v === o.addAt) { addBook(s, o); return false; } if (v === o.dropAt) { dropBook(s, o); return false; } o.b = Math.max(1, Math.min(nb, v)); o.p = 0; }
+      else if (a === 'go') { o.p = Math.max(1, +o.sel || 1); }
+      else if (a === 'size') { o.sz = ((o.sz || 0) + 1) % 3; if (o.srv && b > o.srv.n) o.p = 0; try { localStorage.setItem('da.book.sz', String(o.sz)); } catch (e) { /* none */ } }
       else if (a === 'bprev' || a === 'bnext') { o.b = ((b - 1 + (a === 'bnext' ? 1 : nb - 1)) % nb) + 1; o.p = 1; }
       else o.p = Math.max(1, p + (a === 'next' ? 1 : -1));
       return true;
     },
     draw: function (k, d, s, o) {
-      o.nb = d.books; k.head('READ', s.shelf ? s.name : '', 'PAGE ' + d.p + ' / ' + d.of);
+      o.nb = d.books; var z = BOOK_SZ[o.sz == null ? 1 : o.sz]; k.head('READ', d.own ? 'ADDED' : s.shelf ? s.name : '', 'PAGE ' + d.p + ' / ' + d.of);
       var y = 128; k.fit(String(d.title || '').toUpperCase(), M, y, '700', 28, W - 2 * M, SANS);
-      k.txt((String(d.author || '') + ' · ' + d.year).toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
+      k.txt([d.author, d.year].filter(Boolean).join(' · ').toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
       if (d.review) { y += k.wrap(d.review, M, y, 'italic 400 22px ' + SANS, W - 2 * M, 30) + 8; k.box(M, y, W - 2 * M, 1); y += 34; }
-      String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 21px ' + SANS, W - 2 * M, 29) + 10; });
+      String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 ' + z[0] + 'px ' + SANS, W - 2 * M, z[1]) + 10; });
       y += 4; k.box(M, y, W - 2 * M, 3);
-      return k.foot(y, 'https://novel.global/x#' + s.id, '', 'PROJECT GUTENBERG · PUBLIC DOMAIN');
-    }
+      return k.foot(y, 'https://novel.global/x#' + s.id, '', d.own ? 'ADDED BY A READER' : 'PROJECT GUTENBERG · PUBLIC DOMAIN');
+    },
+    tall: 6400
   };
+
+  /* ───────── books a reader adds: read in the phone, kept on it (IndexedDB), paged and printed like the shelf's.
+     EPUB through its container, package and spine, front matter passed by; Word, OpenDocument, FB2, HTML, text and Markdown too ───────── */
+  var BOOK_SZ = [[18, 25, 'S', 6500], [21, 29, 'M', 4800], [25, 34, 'L', 3400]];
+  var BOOK_ACCEPT = '.epub,.docx,.odt,.fb2,.txt,.md,.markdown,.html,.htm,.xhtml,application/epub+zip,text/plain,text/html';
+  var MINE = {
+    db: null,
+    open: function () { if (!MINE.db) MINE.db = new Promise(function (ok, no) { try { var q = indexedDB.open('da-books', 1); q.onupgradeneeded = function () { q.result.createObjectStore('b', { keyPath: 'id' }); }; q.onsuccess = function () { ok(q.result); }; q.onerror = function () { no(q.error); }; } catch (e) { no(e); } }); return MINE.db; },
+    tx: function (mode, fn) { return MINE.open().then(function (db) { return new Promise(function (ok, no) { var t = db.transaction('b', mode), r = fn(t.objectStore('b')); t.oncomplete = function () { ok(r && r.result); }; t.onerror = function () { no(t.error); }; }); }); },
+    all: function (sh) { return MINE.tx('readonly', function (st) { return st.getAll(); }).then(function (l) { return (l || []).filter(function (b) { return b.shelf === sh; }).sort(function (a, b) { return a.when - b.when; }); }, function () { return []; }); },
+    put: function (b) { return MINE.tx('readwrite', function (st) { return st.put(b); }).catch(function () { /* none */ }); },
+    drop: function (id) { return MINE.tx('readwrite', function (st) { return st.delete(id); }); }
+  };
+  /* a zip read in place: the central directory, each file inflated by the browser itself */
+  function unzip(buf) {
+    var dv = new DataView(buf), u8 = new Uint8Array(buf), e = -1, F = {}, td = new TextDecoder();
+    for (var i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    if (e < 0) throw new Error('zip');
+    for (var k = 0, n = dv.getUint16(e + 10, true), p = dv.getUint32(e + 16, true); k < n && dv.getUint32(p, true) === 0x02014b50; k++) {
+      var nl = dv.getUint16(p + 28, true); F[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { m: dv.getUint16(p + 10, true), cs: dv.getUint32(p + 20, true), lo: dv.getUint32(p + 42, true) };
+      p += 46 + nl + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true); }
+    return {
+      path: function (dir, href) { try { return decodeURIComponent(new URL(href.split('#')[0], 'http://z/' + encodeURI(dir)).pathname.slice(1)); } catch (x) { return dir + href; } },
+      text: function (name) { var f = F[name]; if (!f) return Promise.resolve(''); var s0 = f.lo + 30 + dv.getUint16(f.lo + 26, true) + dv.getUint16(f.lo + 28, true), d = u8.subarray(s0, s0 + f.cs);
+        if (f.m === 0) return Promise.resolve(td.decode(d)); if (f.m !== 8 || !window.DecompressionStream) return Promise.reject(new Error('zip'));
+        return new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text(); }
+    };
+  }
+  var xmlOf = function (t) { return new DOMParser().parseFromString(t || '<x/>', 'application/xml'); };
+  var tagsOf = function (d, n) { return d.getElementsByTagNameNS('*', n); };
+  var one = function (d, n) { var x = tagsOf(d, n)[0]; return x ? x.textContent.replace(/\s+/g, ' ').trim() : ''; };
+  var paraSplit = function (t) { return String(t).replace(/\r/g, '').split(/\n\s*\n/).map(function (p) { return p.replace(/\s+/g, ' ').replace(/--/g, '\u2014').trim(); }).filter(Boolean); };
+  /* any page of html: one paragraph a block */
+  function htmlParas(t) { var d = new DOMParser().parseFromString(t, 'text/html'), b = d.body; if (!b) return [];
+    [].forEach.call(b.querySelectorAll('script,style,head'), function (x) { x.remove(); });
+    [].forEach.call(b.querySelectorAll('br'), function (x) { x.replaceWith('\n'); });
+    [].forEach.call(b.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6,li,blockquote,pre,dd,dt,tr,section,article,hr,figcaption'), function (x) { x.append('\n\n'); });
+    return paraSplit(b.textContent); }
+  function readBook(f) {
+    var ext = ((f.name || '').toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '', base = String(f.name || 'BOOK').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+    var out = function (t, a, P) { return { title: String(t || base).slice(0, 80), author: String(a || '').slice(0, 60), paras: P || [] }; };
+    if (ext === 'epub' || ext === 'docx' || ext === 'odt') return f.arrayBuffer().then(function (buf) { var z = unzip(buf);
+      if (ext === 'docx') return Promise.all([z.text('word/document.xml'), z.text('docProps/core.xml')]).then(function (r) { var d = xmlOf(r[0]), c = xmlOf(r[1]);
+        return out(one(c, 'title'), one(c, 'creator'), [].map.call(tagsOf(d, 'p'), function (p) { return [].map.call(tagsOf(p, 't'), function (x) { return x.textContent; }).join('').replace(/\s+/g, ' ').trim(); }).filter(Boolean)); });
+      if (ext === 'odt') return Promise.all([z.text('content.xml'), z.text('meta.xml')]).then(function (r) { var d = xmlOf(r[0]), m = xmlOf(r[1]);
+        return out(one(m, 'title'), one(m, 'initial-creator') || one(m, 'creator'), [].filter.call(tagsOf(d, '*'), function (x) { return (x.localName === 'p' || x.localName === 'h') && /opendocument/.test(x.namespaceURI || ''); }).map(function (x) { return x.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean)); });
+      return z.text('META-INF/container.xml').then(function (c) { var rf = tagsOf(xmlOf(c), 'rootfile')[0], op = rf && rf.getAttribute('full-path'); if (!op) throw new Error('epub');
+        return z.text(op).then(function (o) { var od = xmlOf(o), man = {}, dir = op.lastIndexOf('/') >= 0 ? op.slice(0, op.lastIndexOf('/') + 1) : '';
+          [].forEach.call(tagsOf(od, 'item'), function (it) { man[it.getAttribute('id')] = it.getAttribute('href'); });
+          var sp = [].map.call(tagsOf(od, 'itemref'), function (r) { return man[r.getAttribute('idref')]; }).filter(Boolean).map(function (h) { return z.path(dir, h); });
+          var body = sp.filter(function (q) { return !/(cover|toc|nav|copyright|colophon|titlepage|halftitle|dedication|contents|imprint)/i.test(q.split('/').pop()); });
+          return Promise.all((body.length ? body : sp).map(z.text)).then(function (hs) { var P = []; hs.forEach(function (h) { P = P.concat(htmlParas(h)); }); return out(one(od, 'title'), one(od, 'creator'), P); }); }); }); });
+    return f.text().then(function (t) {
+      if (ext === 'fb2') { var d = xmlOf(t), ti = tagsOf(d, 'title-info')[0] || d; return out(one(ti, 'book-title'), [one(ti, 'first-name'), one(ti, 'last-name')].filter(Boolean).join(' '), [].map.call(tagsOf(d, 'p'), function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean)); }
+      if (/^(html?|xhtml)$/.test(ext) || /^\s*<(!doctype|html)/i.test(t)) { var h = new DOMParser().parseFromString(t, 'text/html'); return out(h.title, '', htmlParas(t)); }
+      var a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a >= 0 && b > a) t = t.slice(t.indexOf('\n', a) + 1, b);
+      if (ext === 'md' || ext === 'markdown') t = t.replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '').replace(/[*_`]{1,3}([^*_`]+)[*_`]{1,3}/g, '$1').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1');
+      return out('', '', paraSplit(t)); });
+  }
+  /* where the story starts: the first long paragraph, with a short heading or two before it */
+  function startAt(P) { var s = P.findIndex(function (p) { return p.length >= 300; }); if (s < 0) return 0; for (var k = 0; s > 0 && k < 2 && P[s - 1].length < 70; k++) s--; return s; }
+  function pagesOf(P, max) { var pg = [], cur = '', from = 0, push = function () { if (cur) pg.push({ t: cur, from: from }); cur = ''; };
+    P.forEach(function (p, i) { var bits = p.length <= max ? [p] : p.split(/(?<=[.;:!?])\s+/).reduce(function (a, x) { var l = a.length - 1; if (l >= 0 && a[l].length + x.length < max * 0.8) a[l] += ' ' + x; else a.push(x.slice(0, max)); return a; }, []);
+      bits.forEach(function (x) { if (cur && cur.length + x.length > max) push(); if (!cur) from = i; cur = cur ? cur + '\n\n' + x : x; }); });
+    push(); return pg; }
+  function bookLists(d, s, o, l) {
+    var n = o.srv ? o.srv.n : 0; d.all = (o.srv ? o.srv.all : []).concat(l.map(function (b) { return 'ADDED · ' + b.title; })).concat(['+ ADD A BOOK']).concat(d.own ? ['× TAKE IT OFF'] : []);
+    d.books = n + l.length; o.addAt = n + l.length + 1; o.dropAt = d.own ? o.addAt + 1 : 0; o.p = d.p;
+    if (!d.plist) d.plist = Array.apply(null, Array(Math.min(d.of || 1, 2000))).map(function (x, i) { return 'PAGE ' + (i + 1); });
+    var tb = document.querySelector('#opts [data-a="size"]'); if (tb) { tb.textContent = 'TEXT ' + BOOK_SZ[o.sz == null ? 1 : o.sz][2]; tb.title = 'Text size'; }
+    return d; }
+  function ownPage(s, o) { var sh = s.shelf || 'all'; if (!o.srv || (o.b || 1) <= o.srv.n) return null;
+    return MINE.all(sh).then(function (l) { var bk = l[(o.b || 1) - o.srv.n - 1]; if (!bk) { o.b = 1; o.p = 1; return api(book.feed(s, o)).then(function (d) { return bookLists(d, s, o, l); }); }
+      var pg = pagesOf(bk.paras, BOOK_SZ[o.sz == null ? 1 : o.sz][3]), n = pg.length || 1, at = bk.at != null ? bk.at : bk.at0 || 0, p = o.p ? Math.max(1, Math.min(n, o.p)) : 1;
+      if (!o.p) for (var i = 0; i < pg.length; i++) if (pg[i].from <= at) p = i + 1;
+      var cur = pg[p - 1] || { t: '', from: 0 }; if (bk.at !== cur.from) { bk.at = cur.from; MINE.put(bk); }
+      return bookLists({ own: 1, b: o.b, title: bk.title, author: bk.author, year: '', p: p, of: n, text: cur.t, plist: pg.map(function (x, k) { return 'PAGE ' + (k + 1) + ' · ' + x.t.slice(0, 44); }) }, s, o, l); }); }
+  var BFI = null;
+  function addBook(s, o) { var st = document.querySelector('#st');
+    if (!BFI) { BFI = document.createElement('input'); BFI.type = 'file'; BFI.accept = BOOK_ACCEPT; BFI.setAttribute('aria-hidden', 'true'); BFI.tabIndex = -1; BFI.style.cssText = 'position:fixed;left:-300px;top:0;width:1px;height:1px;opacity:0'; document.body.appendChild(BFI);
+      BFI.addEventListener('change', function () { var f = BFI.files && BFI.files[0], c = BFI._cb; BFI.value = ''; if (f && c) c(f); }); }
+    BFI._cb = function (f) { if (f.size > 40e6) { st.textContent = 'TOO BIG'; return; } st.textContent = '· · ·';
+      readBook(f).then(function (b) { if (!b.paras.length) throw new Error('empty'); b.paras = b.paras.slice(0, 30000); b.id = 'b' + Date.now().toString(36); b.shelf = s.shelf || 'all'; b.at0 = startAt(b.paras); b.when = Date.now();
+        return MINE.put(b).then(function () { return MINE.all(b.shelf); }).then(function (l) { if (!l.some(function (x) { return x.id === b.id; })) throw new Error('kept'); o.b = (o.srv ? o.srv.n : 0) + l.map(function (x) { return x.id; }).indexOf(b.id) + 1; o.p = 0; load(); }); })
+        .catch(function (e) { st.textContent = /kept/.test(e.message) ? 'FULL' : /zip|epub/.test(e.message) ? 'UNREAD' : 'EMPTY'; st.title = 'EPUB, Word, OpenDocument, FB2, HTML, text or Markdown'; picks(); }); };
+    BFI.click(); picks(); }
+  function dropBook(s, o) { if (!confirm('Take this book off this phone?')) { picks(); return; } MINE.all(s.shelf || 'all').then(function (l) { var bk = l[(o.b || 1) - (o.srv ? o.srv.n : 0) - 1]; return bk ? MINE.drop(bk.id) : null; }).then(function () { o.b = 1; o.p = 1; load(); }, function () { picks(); }); }
 
   /* ───────── events: the island's own list, one a line: when | what | where ───────── */
   var events = {
@@ -341,7 +434,7 @@
     /* art at the head only when a picture is there: it pushes the paper down, and the sheet grows by as much, so nothing at the foot is lost.
        With ART on and no picture, nothing is drawn; the head is only a place to tap */
     var K = KINDS[kind], hw = W - 48, hh = Math.round(hw * 0.56), top = K.head && ART.head ? 20 + hh + 18 : 0;
-    cv.width = W; cv.height = 4200 + top; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
+    cv.width = W; cv.height = (K.tall || 4200) + top; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     if (top) { panel(k, 'head', 'spots', 24, 20, hw, hh, 5); k.g.save(); k.g.translate(0, top); k.dy = top; } else if (K.head && o && o.art) k.hits.push({ key: 'head', x: 24, y: 0, w: hw, h: 90 });
     var hgt = K.draw(k, data || {}, stack, o || {}); if (top) k.g.restore();
     return oneBit(cv, Math.min(cv.height, hgt + top));
@@ -359,7 +452,8 @@
 
   function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
-  function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { if (!d.all || s.options.length === d.all.length) { if (d.b) s.value = String(d.b); return; } s.innerHTML = d.all.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s.value = String(d.b || 1); }); }
+  function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { var pg = s.dataset.a === 'go', L = pg ? d.plist : d.all, v = String((pg ? d.p : d.b) || 1); if (!L || !L.length) return;
+    var sig = L.length + '|' + L[0] + '|' + L[L.length - 1]; if (s._sig !== sig) { s.innerHTML = L.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s._sig = sig; } s.value = v; }); }
   function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); }
   /* one file picker, kept in the page: a phone drops the choice of a picker that was never in it */
   var FI = null;
@@ -381,7 +475,8 @@
     ov.innerHTML = HITS.map(function (q, i) { var has = !!ART[q.key]; return '<button type="button" data-h="' + i + '"' + (has ? ' class="has"' : '') + ' style="left:' + (q.x * sx).toFixed(1) + 'px;top:' + (q.y * sy).toFixed(1) + 'px;width:' + (q.w * sx).toFixed(1) + 'px;height:' + (q.h * sy).toFixed(1) + 'px" aria-label="' + (has ? 'Take this art off' : 'Your art here') + '" title="' + (has ? 'Take this art off' : 'Your art here') + '"><i>' + (has ? '×' : '<svg class="ptr" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12V5.2a1.6 1.6 0 0 1 3.2 0V11m0-2.2a1.6 1.6 0 0 1 3.2 0V11.4m0-1.2a1.6 1.6 0 0 1 3.2 0v4.6c0 3.6-2.6 6.2-6.2 6.2h-.9c-2.1 0-3.5-.9-4.6-2.4l-3-4.3a1.6 1.6 0 0 1 2.6-1.9L9 15"/></svg>') + '</i></button>'; }).join(''); }
   function load() {
     var st = $('#st'); S.ready = false; keys(); st.textContent = '· · ·';
-    var got = S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({});
+    var loc = S.K.local ? S.K.local(S.stack, S.o) : null, got = loc || (S.K.get ? S.K.get(S.stack, S.o) : S.K.feed ? api(S.K.feed(S.stack, S.o)) : Promise.resolve({}));
+    if (!loc && S.K.mix) got = got.then(function (d) { return S.K.mix(d, S.stack, S.o); });
     if (!S.K.get && !S.code) api('/c?for=' + S.stack.id).then(function (j) { S.code = j.code || ''; if (S.ready) paint(); }, function () {});
     var fonts = document.fonts && document.fonts.load ? Promise.all(FONTS.map(function (f) { return document.fonts.load(f); })) : Promise.resolve();
     Promise.all([got, fonts.catch(function () {})]).then(function (r) { S.data = r[0]; if (S.K.get) own(r[0]); paint(); }, function (e) { if (S.K.get) { S.data = {}; paint(); S.ready = false; keys(); } st.textContent = S.K.get && /key|401/.test(e.message) ? 'KEEPERS' : 'OFFLINE'; st.title = S.K.get ? 'For island keepers' : ''; });

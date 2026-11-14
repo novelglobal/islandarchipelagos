@@ -32,12 +32,13 @@
   #to:empty, #opts:empty, #pick:empty { display: none; }
   #pick { flex: 1 1 100%; display: flex; justify-content: center; }
   #pick select { width: min(100%, 768px); min-height: 44px; padding: 10px 12px; font: inherit; font-size: 12px; letter-spacing: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 0; text-transform: uppercase; }
+  #pick { flex-wrap: wrap; gap: 8px; } #pick select { flex: 1 1 260px; max-width: 600px; } #pick select[data-a="go"] { flex: 0 1 170px; }
   @media (max-width: 600px) { #pick { padding: 0 12px; } }
   #go { min-height: 56px; font-size: 15px; font-weight: 600; background: var(--ink); color: var(--paper); }
   #st { min-height: 1.2em; margin: 0; color: var(--dim); text-align: center; }
   /* ART: a green key with a pointing hand, the same wherever art can be changed; while on, the places art can go are marked on the paper */
   #paper { position: relative; }
-  #opts button[data-a="art"] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; background: #1D9A55; border-color: #1D9A55; color: #fff; border-radius: 18px; }
+  #opts button[data-a="art"] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; order: 9; margin-left: auto; background: #1D9A55; border-color: #1D9A55; color: #fff; border-radius: 18px; }
   #opts button[data-a="art"][aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .ptr { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
   #artov { position: absolute; z-index: 2; pointer-events: none; }
@@ -47,7 +48,7 @@
   #artov button.has { border-style: solid; background: none; animation: none; } #artov button.has i { width: 30px; height: 30px; margin: -15px 0 0 -15px; background: #111; }
   @keyframes art-p { 50% { background-color: rgba(29, 154, 85, .26); } }
   @media (prefers-reduced-motion: reduce) { #artov button { animation: none; } }
-  @media (max-width: 600px) { .side { max-width: none; position: static; } .desk { padding: 12px 0; } }
+  @media (max-width: 600px) { .side { max-width: none; position: static; padding: 0 12px; } .desk { padding: 12px 0; } }
   .in { --ink: #111; --paper: #f2f1ec; --line: #111; --dim: rgba(17, 17, 17, .45); --bg: transparent; }
   .in.dk { --ink: #ecebe6; --paper: #121417; --line: #ecebe6; --dim: rgba(236, 235, 230, .45); }
   .in body { background: transparent; } .in main { padding: 0; } .in .win { border: 0; background: transparent; } .in .win > header { display: none; }

@@ -20,12 +20,15 @@
   #again svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
   #by { position: fixed; left: 14px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 2; margin: 0; max-width: calc(100% - 140px); font: 500 10px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; opacity: .55; }
   #by:empty { display: none; } html.night #by { color: #F4F1E8; }
+  #lk { position: fixed; right: 112px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 3; min-height: 30px; padding: 0 11px; border: 1px solid rgba(11, 11, 11, .25); border-radius: 15px; background: none; color: inherit; font: 600 10px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; cursor: pointer; }
+  #lk[aria-pressed="true"] { background: #0B0B0B; color: #F4F1E8; border-color: #0B0B0B; } html.night #lk { border-color: rgba(244, 241, 232, .3); color: #F4F1E8; }
   html.night #again { background: rgba(244, 241, 232, .12); color: #F4F1E8; }
 </style>
 </head>
 <body>
 <main id="p"></main>
 <p id="by"></p>
+<button id="lk" type="button" title="Like it" aria-pressed="false" hidden>LIKE</button>
 <button id="again" type="button" aria-label="Start again" title="Start again"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg></button>
 <button id="pr" type="button" aria-label="Print" title="Print" hidden><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg></button>
 <script src="vendor/qrcode.js"></script>
@@ -39,6 +42,13 @@
   var box = PK.mount(document.getElementById('p'), { quick: q.get('quick') === '1', keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return;
   fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); if (j && j.by) document.getElementById('by').textContent = j.by; });
+  /* LIKE: once for each code; the showcase orders by it */
+  var lk = document.getElementById('lk'), LK = 'da.liked'; var liked = function () { try { return (JSON.parse(localStorage.getItem(LK) || '[]') || []).indexOf(c) >= 0; } catch (e) { return false; } };
+  var who = function () { try { return NG && NG.me ? NG.me() : JSON.parse(localStorage.getItem('da.who') || '""'); } catch (e) { return ''; } };
+  lk.hidden = false; if (liked()) { lk.setAttribute('aria-pressed', 'true'); lk.textContent = 'LIKED'; }
+  lk.addEventListener('click', function () { if (liked()) return; var w = who(); if (!/^[A-HJ-NP-Z2-9]{3}$/.test(w || '')) { lk.textContent = 'CODE'; lk.title = 'A code from a print'; return; } lk.disabled = true;
+    fetch('/api/plays/' + encodeURIComponent(c) + '/like', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w }) }).then(function (r) { lk.disabled = false; if (!r.ok) return;
+      try { var l = JSON.parse(localStorage.getItem(LK) || '[]') || []; l.push(c); localStorage.setItem(LK, JSON.stringify(l.slice(-400))); } catch (e) { /* this visit */ } lk.setAttribute('aria-pressed', 'true'); lk.textContent = 'LIKED'; }, function () { lk.disabled = false; }); });
   document.getElementById('again').addEventListener('click', function () { pr.hidden = true; box.again(store); });
   pr.addEventListener('click', function () { var u = box.paper(); if (!u || !NG) return; pr.disabled = true;
     NG.printAgain(u, 'play').then(function () { pr.className = 'ok'; }).catch(function () { pr.className = 'no'; }).then(function () { setTimeout(function () { pr.className = ''; pr.disabled = false; }, 1600); }); });
