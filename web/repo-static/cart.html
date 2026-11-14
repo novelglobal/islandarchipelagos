@@ -39,6 +39,10 @@
   /* ART: a green key with a pointing hand, the same wherever art can be changed; while on, the places art can go are marked on the paper */
   #paper { position: relative; }
   #opts button[data-a="art"] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; order: 9; margin-left: auto; background: #1D9A55; border-color: #1D9A55; color: #fff; border-radius: 18px; }
+  #opts button[data-a="deck"], #opts button[data-a="biz"] { flex: 0 0 auto; width: 104px; }
+  #opts button[data-a="biz"] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+  #bizf { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; max-width: 512px; margin: 0 auto 10px; } #bizf[hidden] { display: none; }
+  #bizf input { min-height: 40px; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 0; }
   #opts button[data-a="art"][aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .ptr { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
   #artov { position: absolute; z-index: 2; pointer-events: none; }
