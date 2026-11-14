@@ -1615,7 +1615,7 @@ html.hm-night .sn-ask { background: rgba(18, 16, 14, .9); }
 /* THE OPENER, big: the whole photograph laid on a lit box, a margin all round; its lights and the print stay where they are on it */
 #hm .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #FFFFFF 0%, #F3F2EE 55%, #E2E1DC 100%); }
 #hm.night .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #2A2A28 0%, #191918 60%, #0E0E0D 100%); }
-#hm .hm-card.sk-intro:not(.small) .in-prn { top: 47%; left: 50%; width: auto; height: min(82cqh, 82cqw * 4 / 3); aspect-ratio: 900 / 1200; transform: translate(-50%, -50%); }
+#hm .hm-card.sk-intro:not(.small) .in-prn { top: calc(50% + .5in + 16px); left: 50%; width: auto; height: min(70cqh, 84cqw * 4 / 3); aspect-ratio: 900 / 1200; transform: translate(-50%, -50%); }
 #hm .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #FFFFFF, 0 18px 34px -16px rgba(0, 0, 0, .45); border-radius: 1px; }
 #hm.night .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #F2F1EC, 0 18px 40px -14px rgba(0, 0, 0, .8); }
 
@@ -1636,3 +1636,8 @@ html.hm-on.hm-nocab { --hm-sbh: 0px; }
 /* HOME: a maker's own cards */
 .hm-made li { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 8px; }
 .hm-made li span { font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace; opacity: .6; }
+
+/* the opener: one line by hand, in faded blue ink, an inch above the photograph */
+#hm .hm-card.sk-intro .in-hand { display: none; }
+#hm .hm-card.sk-intro:not(.small) .in-hand { display: block; position: absolute; left: 0; right: 0; z-index: 2; margin: 0; text-align: center; pointer-events: none; top: max(3cqh, calc(50cqh + .5in + 16px - min(70cqh, 84cqw * 4 / 3) / 2 - 1in - 1.1em)); font: 400 clamp(19px, 5.4cqw, 30px)/1.1 'Architects Daughter', 'Segoe Print', cursive; letter-spacing: .01em; color: #2C4A9E; opacity: .78; transform: rotate(-1.6deg); text-shadow: 0 0 .7px rgba(44, 74, 158, .55), .4px .3px 0 rgba(44, 74, 158, .18); -webkit-mask-image: linear-gradient(97deg, #000 0 38%, rgba(0, 0, 0, .72) 58%, #000 76%, rgba(0, 0, 0, .82) 100%); mask-image: linear-gradient(97deg, #000 0 38%, rgba(0, 0, 0, .72) 58%, #000 76%, rgba(0, 0, 0, .82) 100%); }
+#hm.night .hm-card.sk-intro:not(.small) .in-hand { color: #9FB4EC; opacity: .7; text-shadow: 0 0 .7px rgba(159, 180, 236, .5); }

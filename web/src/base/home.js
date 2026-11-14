@@ -660,7 +660,7 @@
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-front"><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
+      '<div class="in-front"><p class="in-hand" aria-hidden="true">what have you noticed?</p><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new kind of physical internet, built from repurposed waste.') + '</h2>' +
       '<p class="in-l">Connecting independent publishing stations through a local network powered by open-source technology.</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
