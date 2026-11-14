@@ -613,7 +613,7 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; ofs.forEach(t => { if (t.value.trim()) o[t.dataset.k] = t.value.trim(); }); save({ opener: JSON.stringify(o) }); } })));
     /* the novel.global business card: what it made, and its partners; one a line */
     let bz = {}; try { bz = st.bizcard ? JSON.parse(st.bizcard) : {}; } catch (e) { bz = {}; }
-    const bzl = el('textarea', { rows: 7, style: 'width:100%', placeholder: 'I W.I.S.H.™ framework\nPoP™ Proof of Presence\nIsland Archipelagos OS\nLAN · local area network\nbluepaper strategic storytelling\nsolar thermal printer from e-waste' }), bzp = el('textarea', { rows: 5, style: 'width:100%', placeholder: '/logos/rmit.png\n/logos/inaturalist.png\n/logos/blue4est.png\nRaspberry Pi' });
+    const bzl = el('textarea', { rows: 7, style: 'width:100%', placeholder: 'I W.I.S.H.™ framework\nPoP™ Proof of Presence\nIsland Archipelagos OS\nLAN parties\nbluepaper strategy\nsolar thermal printer from e-waste' }), bzp = el('textarea', { rows: 5, style: 'width:100%', placeholder: '/logos/rmit.png\n/logos/inaturalist.png\n/logos/blue4est.png\nRaspberry Pi' });
     bzl.value = (bz.list || []).join('\n'); bzp.value = (bz.partners || []).join('\n');
     const lines = t => t.value.split('\n').map(x => x.trim()).filter(Boolean);
     const bizEd = el('section', { class: 'ed' }, el('h3', { text: 'BUSINESS CARD' }), el('label', {}, 'MADE BY NOVEL.GLOBAL', bzl), hint('One a line, up to seven.'), el('label', {}, 'PARTNERS', bzp),

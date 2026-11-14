@@ -401,7 +401,7 @@
   }
   /* the novel.global card: the mark and the name; on the left what novel.global made; on the right its partners.
      Both lists from admin (settings 'bizcard'); a partner starting with / is a logo on the site, anything else is set in type */
-  var NGB = { list: ['I W.I.S.H.™ framework', 'PoP™ Proof of Presence', 'Island Archipelagos OS', 'LAN · local area network', 'bluepaper strategic storytelling', 'solar thermal printer from e-waste'],
+  var NGB = { list: ['I W.I.S.H.™ framework', 'PoP™ Proof of Presence', 'Island Archipelagos OS', 'LAN parties', 'bluepaper strategy', 'solar thermal printer from e-waste'],
     partners: ['/logos/rmit.png', '/logos/inaturalist.png', '/logos/blue4est.png', 'Raspberry Pi'] }, NGL = {}, NGF = false;
   function ngLoad() { if (NGF) return; NGF = true;
     var pics = function () { NGB.partners.forEach(function (p) { if (p[0] !== '/' || NGL[p]) return; var im = new Image(); NGL[p] = 1; im.onload = function () { NGL[p] = im; if (S.ready) paint(); }; im.onerror = function () { NGL[p] = 0; }; im.src = p; }); };
