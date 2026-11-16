@@ -430,6 +430,10 @@ try {
     check('the desk takes only pictures given to it, never a link to one elsewhere', bl.status === 400, String(bl.status));
     const dp = await call('/api/pop/desk?d=' + DK), o1 = await call('/api/pop/desk', { method: 'POST', body: { d: DK, act: 'off', printer: 'novelglobal' } }), o2 = await call('/api/pop/desk', { method: 'POST', body: { d: DK, act: 'off', printer: 'kines' } }), t2 = await call('/api/pop/desk', { method: 'POST', body: { d: DK, set: { to: 'kines' } } });
     check('the desk sees its printer, may turn it off or move its Wi-Fi, and never another place\'s', dp.json.printers.length === 1 && dp.json.printers[0].id === 'novelglobal' && o1.status === 200 && o2.status === 403 && t2.status === 403, JSON.stringify([dp.json.printers, o1.status, o2.status, t2.status])); }
+  /* a private page: read only by its own link, never in the settings anyone can read, never in a backup */
+  { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { note: '# Words\n\nPlain.', noteKey: 'notekeynotekeynotekey22' } });
+    const ok = await call('/api/note?k=notekeynotekeynotekey22'), bad = await call('/api/note?k=notekeynotekeynotekey23'), pub = await call('/api/settings'), ex = await call('/api/admin/export', { key: KEY });
+    check('a private page opens by its link alone, and is in no public setting and no backup', ok.status === 200 && /Plain/.test(ok.text) && bad.status === 404 && pub.json.note === undefined && pub.json.noteKey === undefined && ex.json.settings.note === undefined && ex.json.settings.noteKey === undefined, JSON.stringify([ok.status, bad.status, pub.json.note, Object.keys(ex.json.settings).filter(k => /note/.test(k))])); }
   /* a tape: kept on novel.global to be saved from any phone, under its one name, and refused without a code or a proper name */
   { const up = (q, t = 'audio/wav') => server.fetch(new URL('/api/tapes?' + q, O), { method: 'POST', headers: { origin: O, 'content-type': t }, body: Buffer.alloc(2048, 7) });
     const a = await up('who=K7Q&name=novel-global-tape-carlton-ab12.wav'), aj = a.status === 201 ? await a.json() : {}, g = aj.url ? await server.fetch(new URL(aj.url, O)) : null;

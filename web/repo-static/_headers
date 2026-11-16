@@ -19,6 +19,18 @@
 /admin.js
   Cache-Control: no-store
 
+# a private page: never kept, never indexed, never framed
+/note
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+/note.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+
 # a pop-up's desk: never kept, never indexed, never framed
 /desk
   X-Robots-Tag: noindex, nofollow

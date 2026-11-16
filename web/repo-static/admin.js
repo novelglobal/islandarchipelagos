@@ -627,6 +627,17 @@
       el('label', {}, 'HEADLINE', ofs[0]), el('label', {}, 'LEDE', ofs[1]), el('label', {}, 'WORDS', ofs[2]), hint('A blank line starts a new paragraph.'), el('label', {}, 'SIGNED', ofs[3]), el('label', {}, 'BLACK BAR', ofs[4]),
       hint('Empty: the words shown in grey stay.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; ofs.forEach(t => { if (t.value.trim()) o[t.dataset.k] = t.value.trim(); }); save({ opener: JSON.stringify(o) }); } })));
+    /* a private page: words read only by their own link. Chosen from a file or typed; never in a backup, never listed */
+    const nta = el('textarea', { rows: '8', maxlength: '80000', placeholder: 'Plain words. # a heading, ## a smaller one, - a list line, > a quoted line.' }); nta.value = st.note || '';
+    const nurl = () => location.origin + '/note#' + (st.noteKey || ''), nmint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(24); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
+    const note = el('section', { class: 'ed' }, el('h3', { text: 'PRIVATE PAGE' }), nta,
+      st.noteKey && st.note ? el('p', { class: 'hint', text: nurl() }) : hint('SAVE makes its link. Only people given the link can read it.'),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', text: 'CHOOSE FILE', onclick: () => { const fi = el('input', { type: 'file', accept: '.txt,.md,text/plain,text/markdown' }); fi.onchange = async () => { if (fi.files[0]) nta.value = (await fi.files[0].text()).slice(0, 80000); }; fi.click(); } }),
+        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ note: nta.value, noteKey: st.noteKey || nmint() }) }),
+        st.noteKey ? el('button', { type: 'button', text: 'COPY LINK', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(nurl()); } }) : '',
+        st.noteKey ? el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link. The old one stops working.')) save({ note: nta.value, noteKey: nmint() }); } }) : '',
+        st.note ? el('button', { type: 'button', class: 'no', text: 'DELETE', onclick: () => { if (confirm('Delete the private page? Its link stops working.')) save({ note: '', noteKey: '' }); } }) : ''));
     /* the novel.global business card: what it made, and its partners; one a line */
     let bz = {}; try { bz = st.bizcard ? JSON.parse(st.bizcard) : {}; } catch (e) { bz = {}; }
     const bzl = el('textarea', { rows: 7, style: 'width:100%', placeholder: 'I W.I.S.H.™ framework\nPoP™ Proof of Presence\nIsland Archipelagos OS\nLAN parties\nbluepaper strategy\nsolar thermal printer from e-waste' }), bzp = el('textarea', { rows: 5, style: 'width:100%', placeholder: '/logos/rmit.png\n/logos/inaturalist.png\n/logos/blue4est.png\nRaspberry Pi' });
@@ -635,7 +646,7 @@
     const bizEd = el('section', { class: 'ed' }, el('h3', { text: 'BUSINESS CARD' }), el('label', {}, 'MADE BY NOVEL.GLOBAL', bzl), hint('One a line, up to seven.'), el('label', {}, 'PARTNERS', bzp),
       hint('One a line, up to five: a logo on the site such as /logos/rmit.png, or a name set in type. Empty: the words shown in grey stay. Hold BUSINESS on the playing cards to see it.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; if (lines(bzl).length) o.list = lines(bzl).slice(0, 7); if (lines(bzp).length) o.partners = lines(bzp).slice(0, 5); save({ bizcard: JSON.stringify(o) }); } })));
-    main.replaceChildren(...head('Home'), opener, bizEd, cardsEd, look);
+    main.replaceChildren(...head('Home'), opener, bizEd, cardsEd, look, note);
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }
