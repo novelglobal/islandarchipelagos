@@ -481,9 +481,9 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700 };
 /* texts the public settings never show: the pop-up's private link */
-const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey'];
+const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
@@ -1037,7 +1037,7 @@ async function exportAll(db) {
     talk: await q('SELECT * FROM talk ORDER BY at DESC'), makers: await q('SELECT * FROM makers ORDER BY first'),
     stories: await q('SELECT id, code, kind, status, body, lat, lng, dest, created, decided, star, who, gone, origin, full, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories ORDER BY created DESC'),
     places: await q(`SELECT ${PLACE_COLS} FROM places ORDER BY created DESC`), posts: await q('SELECT id, slug, title, summary, body, cat, links, day, status, created, updated FROM posts ORDER BY created DESC'),
-    printers: await q('SELECT id, name, paper, mesh, auto, live, seen, token IS NOT NULL AS paired FROM printers ORDER BY id'), settings: await settingsOf(db).then(x => { delete x.note; delete x.noteKey; return x; }), species: await q('SELECT * FROM species ORDER BY first'), traffic: await q('SELECT day, k, n FROM traffic ORDER BY day DESC, k') };
+    printers: await q('SELECT id, name, paper, mesh, auto, live, seen, token IS NOT NULL AS paired FROM printers ORDER BY id'), settings: await settingsOf(db).then(x => { delete x.note; delete x.noteKey; delete x.noteSlip; return x; }), species: await q('SELECT * FROM species ORDER BY first'), traffic: await q('SELECT day, k, n FROM traffic ORDER BY day DESC, k') };
   return new Response(JSON.stringify(out, null, 1), { headers: { ...JSON_H, 'content-disposition': `attachment; filename="novel-global-${out.at.slice(0, 10)}.json"` } });
 }
 /* a backup brought back (the file DATA downloads): settings set as they were; places, posts, makers, the talk and the stories put back
@@ -1283,7 +1283,9 @@ async function deskGet(db, env, req, url) { if (await tooMany(db, env, req, 'des
   const f = await deskFind(db, url.searchParams.get('d') || ''); if (!f) return fail(404, 'closed'); const p = f.p, pub = {};
   ['id', 'name', 'on', 'key', 'to', 'logos', 'donate', 'tips', 'animals', 'promo', 'pimg', 'about'].forEach(k => { if (p[k] !== undefined) pub[k] = p[k]; }); pub.private = p.private !== false;
   const { results } = pub.private ? { results: [] } : await deskPosts(db, p.id);
-  return json({ ok: true, pop: pub, posts: results.map(r => ({ id: r.id, at: r.created })), printers: await deskPrinters(db, p), now: now() }); }
+  /* the private page, where there is one: its link and the few words that go on a slip with it, for the place to print and hand over */
+  const st = await settingsOf(db), page = st.noteKey && st.note ? { k: st.noteKey, words: st.noteSlip || '' } : null;
+  return json({ ok: true, pop: pub, posts: results.map(r => ({ id: r.id, at: r.created })), printers: await deskPrinters(db, p), now: now(), page }); }
 async function deskArt(db, env, req, url, id) { const f = await deskFind(db, url.searchParams.get('d') || ''); if (!f || !env.MEDIA) return fail(404, 'closed');
   const r = await db.prepare('SELECT origin FROM stories WHERE id = ? AND gone IS NULL').bind(id).first(); let o = {}; try { o = JSON.parse((r && r.origin) || '{}'); } catch (e) { o = {}; } if (o.pop !== f.p.id) return fail(404, 'not found');
   const a = await env.MEDIA.get(`art/${id}`); if (!a) return fail(404, 'not found');

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var T = window.THERMAL, D = document, $ = function (s) { return D.querySelector(s); };
-  var KEY = '', POP = null, POSTS = [], TO = null, PRS = [], NOW = 0;
+  var KEY = '', POP = null, POSTS = [], TO = null, PRS = [], NOW = 0, PAGE = null;
   var ANIMALS = [['frill', 'FRILLED LIZARD'], ['roo', 'KANGAROO'], ['dingo', 'DINGO'], ['emu', 'EMU'], ['quokka', 'QUOKKA'], ['wombat', 'WOMBAT'], ['echidna', 'ECHIDNA']];
   var ABOUT = 'novel.global is an independent web2print publishing platform built with e-waste and open source technology. It allows you to make and share art, or build your own. This device is on loan from the RMIT Sustainable Innovation Strategies (Fashion and Textiles) school.';
   var store = { get: function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* this visit */ } } };
@@ -40,7 +40,7 @@
     return { name: $('#name').value.trim(), to: POP.to || undefined, on: !!POP.on, private: POP.private !== false, promo: $('#promo').value.trim(), about: ab === ABOUT ? '' : ab, pimg: POP.pimg || '', logos: POP.logos || [],
       donate: du ? { url: du, label: $('#dlab').value.trim() || 'DONATE' } : null, tips: Object.keys(by).length ? { title: $('#ttl').value.trim(), by: by } : null }; }
   function save(extra) { say('· · ·'); $('#save').disabled = true; return api('/pop/desk', { method: 'POST', body: JSON.stringify(Object.assign({ d: KEY, set: read() }, extra || {})) }).then(function () { return load(); }).then(function () { say('SAVED'); }, function (e) { say(e.status === 413 ? 'TOO LARGE' : e.status === 400 ? '× ' + String(e.message).toUpperCase() : 'UNSAVED'); }).then(function () { $('#save').disabled = false; }); }
-  function load() { return api('/pop/desk?d=' + encodeURIComponent(KEY)).then(function (j) { POP = j.pop; POSTS = j.posts || []; PRS = j.printers || []; NOW = j.now || Date.now(); fill(); printer(); }); }
+  function load() { return api('/pop/desk?d=' + encodeURIComponent(KEY)).then(function (j) { POP = j.pop; POSTS = j.posts || []; PRS = j.printers || []; NOW = j.now || Date.now(); PAGE = j.page || null; $('#rslip').hidden = !PAGE; fill(); printer(); }); }
   /* the printer: which one, whether it is on, its Wi-Fi and how strong, what it has printed; and the two things a place needs: another Wi-Fi, and off */
   function ago(t) { if (!t) return 'never'; var s = Math.max(0, Math.round((NOW - t) / 1000)); return s < 90 ? 'now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 129600 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; }
   function printer() { var want = POP.to || POP.id, p = PRS.filter(function (q) { return q.id === want; })[0] || PRS[0] || null, on = !!(p && p.seen && NOW - p.seen < 2 * 60e3);
@@ -59,17 +59,17 @@
   /* the desk's own slip, for the place to keep: the code that opens this page, and what each key does */
   var HOW = ['Turn the pop-up on or off.', 'Keep prints, or keep nothing.', 'Change the words and pictures.', 'Fix or move the Wi-Fi.', 'Turn the printer off.', 'Build your own: find the Island Archipelagos card on novel.global.'];
   function crop(c, h) { var o = D.createElement('canvas'); o.width = c.width; o.height = Math.min(c.height, Math.round(h)); var g = o.getContext('2d'); g.drawImage(c, 0, 0); var d = g.getImageData(0, 0, o.width, o.height), i, v; for (i = 0; i < d.data.length; i += 4) { v = d.data[i] < 140 ? 0 : 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); return o; }
-  function slipCanvas(desk) { var W = 512, pad = 28, c = D.createElement('canvas'), g = c.getContext('2d'), about = ($('#about').value.trim() || ABOUT), q = qr(desk ? 'https://novel.global/desk?d=' + encodeURIComponent(KEY) : link(), desk ? 7 : 8, 2), F = "600 22px Poppins, sans-serif";
-    g.font = F; var L = desk ? HOW.reduce(function (a, t) { return a.concat(wrap(g, t, W - pad * 2)); }, []) : wrap(g, about, W - pad * 2), qs = Math.min(q.width, 336), H = 96 + 54 + qs + 54 + L.length * 30 + 30 + 78 + 16; c.width = W; c.height = H; g = c.getContext('2d');
+  function slipCanvas(desk) { var W = 512, pad = 28, c = D.createElement('canvas'), g = c.getContext('2d'), about = ($('#about').value.trim() || ABOUT), q = qr(desk === 'r' ? 'https://novel.global/note#' + PAGE.k : desk ? 'https://novel.global/desk?d=' + encodeURIComponent(KEY) : link(), desk ? 7 : 8, 2), F = "600 22px Poppins, sans-serif";
+    g.font = F; var L = desk === 'r' ? String(PAGE.words || '').split(/\n\s*\n/).reduce(function (a, t) { t = t.trim(); return t ? a.concat(a.length ? [''] : [], wrap(g, t, W - pad * 2)) : a; }, []) : desk ? HOW.reduce(function (a, t) { return a.concat(wrap(g, t, W - pad * 2)); }, []) : wrap(g, about, W - pad * 2), qs = Math.min(q.width, 336), H = 96 + 54 + qs + 54 + L.length * 30 + 30 + 78 + 16; c.width = W; c.height = H; g = c.getContext('2d');
     g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
     g.fillRect(pad, 26, 46, 46); /* the sun half ink, in dots: never both solid black */ for (var my = 25; my <= 73; my += 2) for (var mx = pad + 62; mx <= pad + 110; mx += 2) if (((mx >> 1) + (my >> 1)) % 2 === 0 && (mx - pad - 86) * (mx - pad - 86) + (my - 49) * (my - 49) <= 576) g.fillRect(mx, my, 2, 2); g.font = '700 40px Poppins, sans-serif'; g.fillText('novel.global', pad + 126, 64);
     var y = 96; g.fillRect(pad, y, W - pad * 2, 3); y += 44; g.font = '700 30px Poppins, sans-serif'; g.textAlign = 'center'; if (!desk) g.fillText(String(POP.name || '').toUpperCase(), W / 2, y); y += desk ? -30 : 14;
     g.imageSmoothingEnabled = false; g.drawImage(q, (W - qs) / 2, y, qs, qs); y += qs + 34; g.font = "600 20px 'IBM Plex Mono', monospace"; if (!desk) g.fillText('S C A N  ·  M A K E  ·  P R I N T', W / 2, y); y += desk ? 10 : 40;
-    g.textAlign = 'left'; g.font = F; L.forEach(function (l) { g.fillText(l, pad, y); y += 30; }); y += 12; if (desk) { c.dataset.h = y + 6; return crop(c, y + 6); } g.fillRect(pad, y, W - pad * 2, 3); y += 36;
+    g.textAlign = 'left'; g.font = F; L.forEach(function (l) { g.fillText(l, pad, y); y += l ? 30 : 14; }); y += 12; if (desk) { c.dataset.h = y + 6; return crop(c, y + 6); } g.fillRect(pad, y, W - pad * 2, 3); y += 36;
     g.font = "600 19px 'IBM Plex Mono', monospace"; if (!desk) { g.fillText('PHOTOS  NEWS  WEATHER  TAROT', pad, y); y += 28; g.fillText('CARDS  BOOKS  MAKE YOUR OWN', pad, y); }
     var d = g.getImageData(0, 0, W, H), i, v; for (i = 0; i < d.data.length; i += 4) { v = d.data[i] < 140 ? 0 : 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); return c; }
   function code() { var A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ', s = 'DA-', r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += A[r[i] % 32]; return s; }
-  function slip(desk) { desk = desk === true; if (!POP.on) { say('OPEN IT FIRST'); return; } if (!TO) { say('NO PRINTER'); return; } var b = $(desk ? '#dslip' : '#slip'); b.disabled = true; say('· · ·');
+  function slip(desk) { desk = desk === 'r' ? (PAGE ? 'r' : false) : desk === true; if (!POP.on) { say('OPEN IT FIRST'); return; } if (!TO) { say('NO PRINTER'); return; } var b = $(desk === 'r' ? '#rslip' : desk ? '#dslip' : '#slip'); b.disabled = true; say('· · ·');
     var fonts = D.fonts && D.fonts.load ? Promise.all(['700 40px Poppins', '600 22px Poppins', "600 20px 'IBM Plex Mono'"].map(function (f) { return D.fonts.load(f); })).catch(function () {}) : Promise.resolve();
     fonts.then(function () { return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: POP.id }), lat: 0, lng: 0, dest: TO, escpos: T.raster(slipCanvas(desk), 0), from: 'pop', stage: 'stack', pop: POP.key, popId: POP.id, keep: false }) }); })
       .then(function () { say('PRINTING'); }, function (e) { say(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : e.status === 403 ? 'CLOSED' : 'UNSENT'); }).then(function () { b.disabled = false; }); }
@@ -84,7 +84,7 @@
     $('#copy').onclick = function () { if (navigator.clipboard) navigator.clipboard.writeText(link()).then(function () { say('COPIED'); }); };
     $('#try').onclick = function () { window.open(link().replace('https://novel.global', location.origin), '_blank', 'noopener'); };
     $('#open').onclick = function () { POP.on = !POP.on; save(); };
-    $('#slip').onclick = function () { slip(false); }; $('#dslip').onclick = function () { slip(true); };
+    $('#slip').onclick = function () { slip(false); }; $('#dslip').onclick = function () { slip(true); }; $('#rslip').onclick = function () { slip('r'); };
     $('#wifi').onclick = function () { act('wifi', 'Move the printer to another Wi-Fi? It leaves this one and prints a slip with a code. Scan it with a phone, then choose the new Wi-Fi on the page that opens.'); };
     $('#off').onclick = function () { act('off', 'Turn the printer off? Unplug it once its green light stops. To start it again, plug it back in.'); };
     [].forEach.call(D.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { POP.private = b.dataset.pv === '1'; save(); }; });
