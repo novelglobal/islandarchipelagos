@@ -641,7 +641,7 @@
   function idleWatch() { if (!('IntersectionObserver' in window)) { $$('.hm-pics img[data-src]', col).forEach(function (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }); return; } if (IDLE) IDLE.disconnect(); if (WAKE) WAKE.disconnect();
     WAKE = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) return; var bx = e.target.querySelector('.hm-pics'); if (bx && bx._wake) { bx._wake.splice(0).forEach(function (f) { f(); }); } }); }, { threshold: 0.2 }); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); WAKE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
     var o2 = { talk: j.smallTalk === true, find: j.smallFind === true, one: j.oneIsland !== false, stamp: j.jellyStamp === true, carts: j.cartridges === true }, re = o2.talk !== OPT.talk || o2.find !== OPT.find || o2.one !== OPT.one || o2.carts !== OPT.carts; OPT = o2; if (re) applyCards(null); }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -651,7 +651,7 @@
      in dots at its foot. Nothing opens from it; × puts it away (the HOME panel brings it back). Everything here is made inside functions:
      the first cards are drawn before this part of the file has run */
   function introP() { return [
-    'Each printer becomes a local point of connection and distribution, enabling people to publish, exchange and share creative ideas in public, professional and community spaces.']; }
+    'Each printer becomes an island for sharing creative ideas. Distributed in community spaces.']; }
   /* the seal of the archipelagos: a stamp in the margin of the form. Two rings, a sun of twenty-four rays, the islands as five dots round it */
   function introSeal() { var r = '', d = ''; for (var k = 0; k < 24; k++) { var a = k * Math.PI / 12, l = k % 2 ? 25 : 29; r += 'M' + (50 + 15 * Math.cos(a)).toFixed(1) + ' ' + (50 + 15 * Math.sin(a)).toFixed(1) + 'L' + (50 + l * Math.cos(a)).toFixed(1) + ' ' + (50 + l * Math.sin(a)).toFixed(1); }
     for (k = 0; k < 5; k++) { var b = -Math.PI / 2 + k * Math.PI * 2 / 5; d += '<circle cx="' + (50 + 38.5 * Math.cos(b)).toFixed(1) + '" cy="' + (50 + 38.5 * Math.sin(b)).toFixed(1) + '" r="2.6"/>'; }
@@ -661,10 +661,11 @@
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
       '<div class="in-front"><p class="in-hand" aria-hidden="true">what have you noticed?</p><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
-      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new kind of physical internet, built from repurposed waste.') + '</h2>' +
-      '<p class="in-l">Connecting independent publishing stations through a local network powered by open-source technology.</p>' +
-      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span>' + introSeal() + '</p></div>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new local area network (LAN)\nfrom e-waste') + '</h2>' +
+      '<p class="in-l">independent web2print publishing. Open source. What can you do with a thermal printer network?</p>' +
+      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span></p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
+      (ETH && ETH.k ? '<p class="in-eth"><a target="_blank" rel="noopener" href="/note#' + esc(ETH.k) + '">Ethics and AI disclosure</a></p>' : '') +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
       '</article></section>'; }
   /* the headline in two lines, one size: broken where it is written broken, or else at its comma; the comma and the full stop are left off */
@@ -687,6 +688,11 @@
       var k = (y * W2 + x) * 4, on = t > th; d[k] = d[k + 1] = d[k + 2] = 20; d[k + 3] = on ? 235 : 0; }
     g.putImageData(im, 0, 0); }); }
   /* the opener's words from admin (HOME, OPENER): headline, lede, paragraphs (a blank line between), signature, closing line; an empty field keeps its own */
+  /* the link to the private page, where novel.global chose to show it: under the closing line, above the map */
+  var ETH = { k: '' };
+  function ethLink(k) { if (!/^[a-z0-9]{12,40}$/.test(k || '')) return; ETH.k = k; $$('.sk-intro .in-f', col).forEach(function (f) { var p = f.querySelector('.in-eth'), ft = f.querySelector('.in-ft'); if (!p) { p = D.createElement('p'); p.className = 'in-eth'; var a = D.createElement('a'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ethics and AI disclosure'; p.appendChild(a); f.insertBefore(p, ft); } p.querySelector('a').href = '/note#' + k; }); requestAnimationFrame(introFit); }
+  /* the handwritten line is written in once, five seconds after the page opens, and then stays */
+  setTimeout(function () { H.classList.add('hm-wrote'); }, 8200);
   function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
     $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
       (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
