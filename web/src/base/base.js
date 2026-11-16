@@ -1571,10 +1571,14 @@ function noteAt(c, tr, d, t, out) { var I = INS[tr.ins]; var f = I.base ? I.base
 function pluck(n) { var c = ac(); noteAt(c, SONG.tracks[SEQ.arm], deg(gOf(n)), c.currentTime + 0.01); }
 var SEQ = { on: false, step: 0, cur: 0, next: 0, timer: 0, rec: false, arm: 0, open: -1 };
 var stepDur = function (s) { return 60 / (s || SONG).bpm / 4; };
-function seqStart() { var c = ac(); SEQ.on = true; SEQ.step = 0; SEQ.next = c.currentTime + 0.06; SEQ.t0 = SEQ.next; clearInterval(SEQ.timer); SEQ.timer = setInterval(seqTick, 25); paintDeck(); }
+function seqStart() { var c = ac(); SEQ.on = true; SEQ.seen = 0; SEQ.look = 0.12; SEQ.step = 0; SEQ.next = c.currentTime + 0.06; SEQ.t0 = SEQ.next; clearInterval(SEQ.timer); SEQ.timer = setInterval(seqTick, 25); paintDeck(); }
 function seqStop() { SEQ.on = false; clearInterval(SEQ.timer); paintDeck(); }
+/* steps are set down an eighth of a second ahead; a phone held up for longer than that is given more room (up to half a second),
+   and a step it missed altogether is let go, never played late in a burst */
 function seqTick() {
-  var c = AC; while (SEQ.next < c.currentTime + 0.12) {
+  var c = AC, nw = performance.now(), gap = SEQ.seen ? (nw - SEQ.seen) / 1000 : 0; SEQ.seen = nw; SEQ.look = gap > 0.07 ? Math.min(0.5, Math.max(SEQ.look || 0.12, gap * 2 + 0.06)) : Math.max(0.12, (SEQ.look || 0.12) - 0.001);
+  while (SEQ.next < c.currentTime - 0.02) { SEQ.next += stepDur(); SEQ.step = (SEQ.step + 1) % LEN(); }
+  while (SEQ.next < c.currentTime + SEQ.look) {
     var s = SEQ.step, t = SEQ.next;
     SONG.tracks.forEach(function (tr) { var d = tr.steps[s]; if (d && !tr.mute) noteAt(c, tr, d.d, t); });
     setTimeout(function () { SEQ.cur = s; showStep(s); }, Math.max(0, (t - c.currentTime) * 1000));

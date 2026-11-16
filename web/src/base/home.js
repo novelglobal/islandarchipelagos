@@ -1546,7 +1546,7 @@
   addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'wires' && Array.isArray(d.w)) { WIRES = d.w.filter(function (w) { return w && found(w[0]) && found(w[1]) && fits(w[0], w[1]); }).slice(-MAXW); saveWires(); if (jk) board(); else lamps(); } });
   /* the strategy's loop: a slow turn of its own, faster for a touch or a scroll; each chair takes on the stop it last passed */
   var TAU = Math.PI * 2, ORB = { a: -TAU * 3 / 8 + 0.04, v: 0.16, t: 0, top: 0 };
-  function orbit(now) { requestAnimationFrame(orbit); var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
+  function orbit(now) { requestAnimationFrame(orbit); if (ORB.t && window.NGPERF && now - ORB.t < window.NGPERF.min) return; var el = col.querySelector('.st-orb'), dt = Math.min(0.05, (now - (ORB.t || now)) / 1000); ORB.t = now;
     if (!el || D.hidden || away || xv.classList.contains('on')) return; if (!ORB.r || now - ORB.rt > 1000 || col.scrollTop !== ORB.top) { ORB.r = el.getBoundingClientRect(); ORB.rt = now; ORB.w = ORB.r.width; } var r = ORB.r; if (r.bottom < 0 || r.top > innerHeight) return;
     var y = col.scrollTop; ORB.v += Math.max(-1.5, Math.min(1.5, (y - ORB.top) * 0.004)); ORB.top = y; ORB.v += (0.16 - ORB.v) * Math.min(1, dt * 1.2); ORB.v = Math.max(-4, Math.min(4, ORB.v)); if (!RM.matches) ORB.a += ORB.v * dt;
     var hit = [0, 0, 0, 0]; if (!ORB.pre) { ORB.pre = 1; for (var pc = 1; pc <= 10; pc++) new Image().src = '/cards/chair-' + pc + '-t.jpg'; }
@@ -2058,9 +2058,16 @@
   cabSize(); board();
 
   /* ───────── one loop for everything that moves ───────── */
+  /* the pace: never more than sixty pictures a second, however fast the screen; and on a phone that cannot hold sixty, a steady thirty,
+     which leaves it the time for sound and touch. Read from how far apart the screen's own frames arrive, so it follows the phone, not a list of phones */
+  var PERF = window.NGPERF = window.NGPERF || { min: 15, low: false }, PF = { raw: 0, n: 0, slow: 0, calm: 0 };
+  function pace(now) { var d = now - PF.raw; PF.raw = now; if (d <= 0 || d > 250) return; PF.n++; if (d > 22) PF.slow++;
+    if (PF.n < 120) return; var part = PF.slow / PF.n; PF.n = PF.slow = 0;
+    if (!PERF.low && part > 0.4) { PERF.low = true; PERF.min = 31; PF.calm = 0; H.classList.add('ng-low'); }
+    else if (PERF.low) { PF.calm = part < 0.08 ? PF.calm + 1 : 0; if (PF.calm >= 6) { PERF.low = false; PERF.min = 15; H.classList.remove('ng-low'); } } }
   var last = performance.now(), wasOpen = false;
   function frame(now) {
-    requestAnimationFrame(frame); if (D.hidden) return;
+    requestAnimationFrame(frame); if (D.hidden) return; pace(now); if (now - last < PERF.min) return;
     /* behind an open experience only the jellyfish shows: half the frames, and nothing the sheet covers is drawn (the studio shares this thread and its sound) */
     var sheet = xv.classList.contains('on'); if (sheet && (H.classList.contains('hm-nosea') || now - last < 31)) return;
     var dt = Math.min(0.05, (now - last) / 1000); last = now;

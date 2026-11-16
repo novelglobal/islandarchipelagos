@@ -8,7 +8,11 @@
   var I = function (d) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>'; };
   var K = 'da.bench.plus.v2', P = { m: 'slip', page: null, game: null, card: {} };
   try { var p0 = JSON.parse(localStorage.getItem(K) || 'null'); if (p0) P = Object.assign(P, p0); } catch (e) { /* fresh */ }
-  var save = function () { try { localStorage.setItem(K, JSON.stringify(P)); } catch (e) { /* this visit only */ } };
+  /* kept a moment after the hand stops, not at every letter: with pictures in it, writing it down is slow on an old phone.
+     Written at once when the page is left or hidden, so nothing made is lost */
+  var saveT = 0, saveNow = function () { clearTimeout(saveT); saveT = 0; try { localStorage.setItem(K, JSON.stringify(P)); } catch (e) { /* this visit only */ } };
+  var save = function () { if (!saveT) saveT = setTimeout(saveNow, 350); };
+  addEventListener('pagehide', function () { if (saveT) saveNow(); }); D.addEventListener('visibilitychange', function () { if (D.hidden && saveT) saveNow(); });
   var mq = /[?&]m=(slip|page|game|live|card|set)/.exec(location.search); if (mq) P.m = mq[1];
 
   /* a little sound for each thing done */

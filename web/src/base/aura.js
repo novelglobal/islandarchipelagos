@@ -930,7 +930,12 @@
     if (!DESK.play) { auraSound(false, 'desk'); DESK.list = false; deskHeld = null; ampDraw(); if (studioHeld) { studioHeld = false; studioTell(false); humSet(false); } else humSet(S.mode !== 'seed' && S.win == null); return; }
     /* one music at a time: the studio's radio, if it plays, waits under the desk's song and comes back when it stops */
     auraSound(true, 'desk'); beat('desk-play'); txtRead(); deskHeld = null; if (WIN && !studioHeld) { studioHeld = true; studioTell(true); } humSet(false); var c = NG.ac(), out = NG.bus(c), sg = DESK.song, sd = stepDur(sg), next = c.currentTime + 0.08, n = 0, li = DESK.li || 0; DESK.t0 = next; ampDraw();
-    DESK.iv = setInterval(function () { if (!DESK.play || (!DESK.list && DESK.song !== sg)) return; while (next < c.currentTime + 0.25) {
+    /* notes are set down a quarter second ahead; a phone held up for longer than that (drawing, saving) is given more room, up to
+       three quarters, and a beat it missed altogether is let go, never played late in a burst */
+    var look = 0.25, seen = 0;
+    DESK.iv = setInterval(function () { if (!DESK.play || (!DESK.list && DESK.song !== sg)) return; var nw = performance.now(), gap = seen ? (nw - seen) / 1000 : 0; seen = nw; look = gap > 0.12 ? Math.min(0.75, Math.max(look, gap * 2 + 0.1)) : Math.max(0.25, look - 0.002);
+      while (next < c.currentTime - 0.02) { next += sd; n++; }
+      while (next < c.currentTime + look) {
       if (amp && n >= STEPS_N * 2) { clearInterval(DESK.iv); setTimeout(ampEnded, 0); return; }
       if (DESK.list && n === STEPS_N * 2) { li = (li + 1) % DESK.kept.length; DESK.li = li; setTimeout(deskKept, 0); var s2 = keptSong(DESK.kept[li] || {}); if (s2) { sg = DESK.song = s2; DESK.mood = s2.m; DESK.src = s2.s; sd = stepDur(sg); DESK.t0 = next; deskSync(); } n = 0; }
       var st = n % STEPS_N, all = DESK.list ? [sg] : [sg].concat(layered()); all.forEach(function (g2) { g2.t.forEach(function (row, k) { var ch = row.charAt(st); if (ch !== '.') noteAt(c, out, g2, k, +ch, next); }); }); next += sd; n++; } }, 40);
@@ -1553,6 +1558,8 @@
     raf = 0; if (asleep || document.hidden) return; S.frames = (S.frames || 0) + 1;
     /* the next frame is asked for first: one bad frame never stops the creature */
     raf = requestAnimationFrame(frame);
+    /* the home's pace (sixty at most, thirty on a phone that cannot hold sixty) */
+    if (last && window.NGPERF && now - last < window.NGPERF.min) return;
     try { draw1(now); } catch (e) { S.ferr = (S.ferr || 0) + 1; if (!frame.told) { frame.told = 1; console.error('aura frame: ' + (e && e.stack || e)); } }
   }
   var FX = store.get('da.aura.fx', 'base'), PHREAK = !!store.get('da.aura.phreak', false), FXM = { calm: [0.45, 0.6], base: [1, 1], chaos: [2.4, 1.9] };
