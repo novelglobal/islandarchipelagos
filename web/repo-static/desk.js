@@ -56,19 +56,21 @@
 
   /* the counter slip: the mark, the place, the code to scan, what this is, in a few lines */
   function wrap(g, txt, w) { var out = [], line = ''; String(txt).split(/\s+/).forEach(function (wd) { var tr = line ? line + ' ' + wd : wd; if (g.measureText(tr).width > w && line) { out.push(line); line = wd; } else line = tr; }); if (line) out.push(line); return out; }
-  function slipCanvas() { var W = 512, pad = 28, c = D.createElement('canvas'), g = c.getContext('2d'), about = ($('#about').value.trim() || ABOUT), q = qr(link(), 8, 2), F = "600 22px Poppins, sans-serif";
-    g.font = F; var L = wrap(g, about, W - pad * 2), qs = Math.min(q.width, 336), H = 96 + 54 + qs + 54 + L.length * 30 + 30 + 78 + 16; c.width = W; c.height = H; g = c.getContext('2d');
+  /* the desk's own slip, for the place to keep: the code that opens this page, and what each key does */
+  var HOW = ['SCAN: YOUR DESK OPENS. KEEP THIS SLIP PRIVATE.', 'OPEN / CLOSED: THE POP-UP ON OR OFF.', 'PRIVATE: NOTHING IS KEPT. KEEP: EVERY PRINT SHOWS HERE IN COLOUR.', 'WORDS AND PICTURES: CHANGE THEM, THEN SAVE.', 'SLIP: PRINTS THE CODE PEOPLE SCAN.', 'WI-FI: MOVES THE PRINTER TO ANOTHER WI-FI.', 'NO WI-FI: THE PRINTER PRINTS A SLIP AFTER A MINUTE. SCAN IT, CHOOSE THE WI-FI.', 'OFF: TURNS IT OFF SAFELY. PLUG IT BACK IN TO START.'];
+  function slipCanvas(desk) { var W = 512, pad = 28, c = D.createElement('canvas'), g = c.getContext('2d'), about = ($('#about').value.trim() || ABOUT), q = qr(desk ? 'https://novel.global/desk?d=' + encodeURIComponent(KEY) : link(), desk ? 7 : 8, 2), F = desk ? "600 19px 'IBM Plex Mono', monospace" : "600 22px Poppins, sans-serif";
+    g.font = F; var L = desk ? HOW.reduce(function (a, t, i) { return a.concat(wrap(g, (i + 1) + '  ' + t, W - pad * 2), ['']); }, []) : wrap(g, about, W - pad * 2), qs = Math.min(q.width, 336), H = 96 + 54 + qs + 54 + L.length * 30 + 30 + 78 + 16; c.width = W; c.height = H; g = c.getContext('2d');
     g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
     g.fillRect(pad, 26, 46, 46); /* the sun half ink, in dots: never both solid black */ for (var my = 25; my <= 73; my += 2) for (var mx = pad + 62; mx <= pad + 110; mx += 2) if (((mx >> 1) + (my >> 1)) % 2 === 0 && (mx - pad - 86) * (mx - pad - 86) + (my - 49) * (my - 49) <= 576) g.fillRect(mx, my, 2, 2); g.font = '700 40px Poppins, sans-serif'; g.fillText('novel.global', pad + 126, 64);
-    var y = 96; g.fillRect(pad, y, W - pad * 2, 3); y += 44; g.font = '700 30px Poppins, sans-serif'; g.textAlign = 'center'; g.fillText(String(POP.name || '').toUpperCase(), W / 2, y); y += 14;
-    g.imageSmoothingEnabled = false; g.drawImage(q, (W - qs) / 2, y, qs, qs); y += qs + 34; g.font = "600 20px 'IBM Plex Mono', monospace"; g.fillText('S C A N  ·  M A K E  ·  P R I N T', W / 2, y); y += 40;
+    var y = 96; g.fillRect(pad, y, W - pad * 2, 3); y += 44; g.font = '700 30px Poppins, sans-serif'; g.textAlign = 'center'; g.fillText(String(POP.name || '').toUpperCase() + (desk ? ' · DESK' : ''), W / 2, y); y += 14;
+    g.imageSmoothingEnabled = false; g.drawImage(q, (W - qs) / 2, y, qs, qs); y += qs + 34; g.font = "600 20px 'IBM Plex Mono', monospace"; g.fillText(desk ? 'Y O U R  D E S K' : 'S C A N  ·  M A K E  ·  P R I N T', W / 2, y); y += 40;
     g.textAlign = 'left'; g.font = F; L.forEach(function (l) { g.fillText(l, pad, y); y += 30; }); y += 12; g.fillRect(pad, y, W - pad * 2, 3); y += 36;
-    g.font = "600 19px 'IBM Plex Mono', monospace"; g.fillText('PHOTOS  NEWS  WEATHER  TAROT', pad, y); y += 28; g.fillText('CARDS  BOOKS  MAKE YOUR OWN', pad, y);
+    g.font = "600 19px 'IBM Plex Mono', monospace"; if (desk) { g.fillText('NOVEL.GLOBAL/DESK', pad, y); } else { g.fillText('PHOTOS  NEWS  WEATHER  TAROT', pad, y); y += 28; g.fillText('CARDS  BOOKS  MAKE YOUR OWN', pad, y); }
     var d = g.getImageData(0, 0, W, H), i, v; for (i = 0; i < d.data.length; i += 4) { v = d.data[i] < 140 ? 0 : 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); return c; }
   function code() { var A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ', s = 'DA-', r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += A[r[i] % 32]; return s; }
-  function slip() { if (!POP.on) { say('OPEN IT FIRST'); return; } if (!TO) { say('NO PRINTER'); return; } var b = $('#slip'); b.disabled = true; say('· · ·');
+  function slip(desk) { desk = desk === true; if (!POP.on) { say('OPEN IT FIRST'); return; } if (!TO) { say('NO PRINTER'); return; } var b = $(desk ? '#dslip' : '#slip'); b.disabled = true; say('· · ·');
     var fonts = D.fonts && D.fonts.load ? Promise.all(['700 40px Poppins', '600 22px Poppins', "600 20px 'IBM Plex Mono'"].map(function (f) { return D.fonts.load(f); })).catch(function () {}) : Promise.resolve();
-    fonts.then(function () { return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: POP.id }), lat: 0, lng: 0, dest: TO, escpos: T.raster(slipCanvas(), 0), from: 'pop', stage: 'stack', pop: POP.key, popId: POP.id, keep: false }) }); })
+    fonts.then(function () { return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: POP.id }), lat: 0, lng: 0, dest: TO, escpos: T.raster(slipCanvas(desk), 0), from: 'pop', stage: 'stack', pop: POP.key, popId: POP.id, keep: false }) }); })
       .then(function () { say('PRINTING'); }, function (e) { say(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : e.status === 403 ? 'CLOSED' : 'UNSENT'); }).then(function () { b.disabled = false; }); }
 
   window.DESK = { slip: slipCanvas };
@@ -81,7 +83,7 @@
     $('#copy').onclick = function () { if (navigator.clipboard) navigator.clipboard.writeText(link()).then(function () { say('COPIED'); }); };
     $('#try').onclick = function () { window.open(link().replace('https://novel.global', location.origin), '_blank', 'noopener'); };
     $('#open').onclick = function () { POP.on = !POP.on; save(); };
-    $('#slip').onclick = slip;
+    $('#slip').onclick = function () { slip(false); }; $('#dslip').onclick = function () { slip(true); };
     $('#wifi').onclick = function () { act('wifi', 'Move the printer to another Wi-Fi? It leaves this one and prints a slip with a code. Scan it with a phone, then choose the new Wi-Fi on the page that opens.'); };
     $('#off').onclick = function () { act('off', 'Turn the printer off? Unplug it once its green light stops. To start it again, plug it back in.'); };
     [].forEach.call(D.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { POP.private = b.dataset.pv === '1'; save(); }; });
