@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">
+<title>Desk</title>
+<link rel="icon" href="icon.svg">
+<style>
+  @font-face { font-family: 'Poppins'; font-weight: 600; src: url(vendor/fonts/poppins-latin-600-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Poppins'; font-weight: 700; src: url(vendor/fonts/poppins-latin-700-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 500; src: url(vendor/fonts/ibm-plex-mono-latin-500-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 600; src: url(vendor/fonts/ibm-plex-mono-latin-600-normal.woff2) format('woff2'); }
+  :root { --ink: #161412; --paper: #F1F0EC; --line: rgba(22, 20, 18, .18); --on: #2FBF55; --hot: #E2552E; }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); color: var(--ink); -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font: 500 14px/1.45 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; }
+  main { max-width: 640px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom)); }
+  [hidden] { display: none !important; }
+  h1 { margin: 0; font: 700 30px/1 Poppins, sans-serif; letter-spacing: -.02em; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .top p { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600; letter-spacing: .14em; font-size: 11px; }
+  #led { width: 10px; height: 10px; border-radius: 50%; background: #B9B2A2; border: 1.5px solid var(--ink); }
+  #led.on { background: var(--on); }
+  section { margin-top: 14px; padding: 16px; background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; }
+  h2 { margin: 0 0 12px; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; }
+  label { display: block; margin-top: 12px; font-size: 10px; font-weight: 600; letter-spacing: .16em; }
+  input[type="text"], input[type="url"], textarea { display: block; width: 100%; margin-top: 5px; padding: 10px 11px; font: 500 15px/1.35 'IBM Plex Mono', monospace; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  textarea { resize: vertical; min-height: 64px; }
+  button { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 999px; min-height: 36px; padding: 0 14px; cursor: pointer; touch-action: manipulation; }
+  button[aria-pressed="true"], button.on { background: var(--ink); color: var(--paper); }
+  button:disabled { opacity: .45; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .link { display: grid; grid-template-columns: 132px 1fr; gap: 16px; align-items: center; }
+  .link canvas { width: 132px; height: 132px; image-rendering: pixelated; display: block; }
+  .link small { display: block; margin-bottom: 10px; word-break: break-all; opacity: .7; }
+  #posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; margin-top: 12px; }
+  #posts a { display: block; background: var(--paper); border: 1px solid var(--line); }
+  #posts img { display: block; width: 100%; height: auto; }
+  #posts time { display: block; padding: 4px 6px; font-size: 10px; letter-spacing: .08em; opacity: .7; }
+  .none { margin: 10px 0 0; opacity: .6; }
+  .lg { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .lg img { height: 44px; width: auto; max-width: 110px; object-fit: contain; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+  .lg input { margin-top: 0 !important; }
+  #pim { display: block; max-width: 180px; max-height: 180px; margin-top: 8px; border: 1px solid var(--line); }
+  details { margin-top: 12px; } summary { cursor: pointer; font-size: 10px; font-weight: 600; letter-spacing: .16em; }
+  .bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: var(--paper); }
+  #save { min-height: 48px; padding: 0 30px; font-size: 13px; }
+  #say { margin: 0; font-weight: 600; letter-spacing: .14em; }
+  #gate { text-align: center; padding-top: 22vh; }
+  #gate h1 { font-size: 54px; }
+  .hot { border-color: var(--hot); color: var(--hot); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 12px 0; } dt { font-size: 10px; font-weight: 600; letter-spacing: .16em; opacity: .65; padding-top: 2px; } dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+</style>
+</head>
+<body><main>
+<section id="gate" hidden style="border:0;background:none"><h1>closed</h1><p>Open the desk link you were sent.</p></section>
+<div id="desk" hidden>
+  <div class="top"><h1 id="nm"></h1><p title="The printer"><i id="led" aria-hidden="true"></i><span id="pst"></span></p></div>
+
+  <section><h2>LINK</h2>
+    <div class="link"><div id="qr"></div><div><small id="url"></small>
+      <div class="row"><button type="button" id="copy" title="Copy the link people scan">COPY</button><button type="button" id="slip" title="Print a slip for the counter: the code to scan and what this is">SLIP</button><button type="button" id="try" title="Open it as a visitor">TRY</button><button type="button" id="open" aria-pressed="false" title="Open: the link works. Closed: nobody can print">OPEN</button></div></div></div>
+    <label title="Printed on the counter slip">ABOUT<textarea id="about" maxlength="400" rows="5"></textarea></label>
+  </section>
+
+  <section><h2>PRINTER</h2>
+    <div class="row" id="prs"></div>
+    <dl id="pd"></dl>
+    <div class="row"><button type="button" id="wifi" title="Move it to another Wi-Fi: it prints a slip with a code to scan, then a page on your phone chooses the Wi-Fi">WI-FI</button><button type="button" id="off" title="Turn it off safely. To start it again, plug it back in">OFF</button></div>
+    <p class="none" id="phelp"></p>
+  </section>
+
+  <section><h2>PRINTS</h2>
+    <div class="row"><button type="button" data-pv="1" title="Nothing is kept: each print goes to the printer and is gone">PRIVATE</button><button type="button" data-pv="0" title="Each print is kept here in colour, for you to see">KEEP</button><button type="button" id="wipe" class="hot" hidden title="Delete every print kept here, for good">WIPE</button></div>
+    <p class="none" id="pnote"></p><div id="posts"></div>
+  </section>
+
+  <section><h2>WORDS</h2>
+    <label>NAME<input type="text" id="name" maxlength="40"></label>
+    <label title="Shown after a print, and printed under a photo with no animal">YOURS<textarea id="promo" maxlength="140" rows="2" placeholder="A special, an event, a hello"></textarea></label>
+    <div class="row" style="align-items:flex-end"><label style="flex:1 1 120px">BUTTON<input type="text" id="dlab" maxlength="24" placeholder="DONATE"></label><label style="flex:3 1 220px">GOES TO<input type="url" id="durl" placeholder="https://"></label></div>
+    <details><summary>TIPS</summary><label>TITLE<input type="text" id="ttl" maxlength="24"></label><div id="tips"></div></details>
+  </section>
+
+  <section><h2>PICTURES</h2>
+    <label>LOGOS</label><div id="logos"></div><div class="row" style="margin-top:10px"><button type="button" id="addlg" title="Add a logo from this device">ADD</button></div>
+    <label title="Shown after a print: a menu, a poster, a special">YOURS</label><img id="pim" alt="" hidden><div class="row" style="margin-top:10px"><button type="button" id="addpi" title="A picture from this device">PICTURE</button><button type="button" id="rmpi" hidden title="Take it off">×</button></div>
+  </section>
+
+  <div class="bar"><button type="button" id="save" class="on">SAVE</button><p id="say" aria-live="polite"></p></div>
+</div>
+<script src="vendor/qrcode.js"></script>
+<script src="desk.js"></script>
+</main></body></html>

@@ -19,6 +19,18 @@
 /admin.js
   Cache-Control: no-store
 
+# a pop-up's desk: never kept, never indexed, never framed
+/desk
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+/desk.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+
 # an island keeper's key page: never kept, never indexed
 /island
   X-Robots-Tag: noindex, nofollow

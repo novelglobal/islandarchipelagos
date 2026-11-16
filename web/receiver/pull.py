@@ -38,7 +38,7 @@ def env(k, d=''):
 SERVER = env('DA_SERVER', 'https://novel.global').rstrip('/')
 PRINTER = env('DA_PRINTER')
 TOKEN = env('DA_TOKEN')
-VERSION = 'bridge 6 Nov'   # said to the site beside its Wi-Fi, for the approval page
+VERSION = 'bridge 16 Nov'   # said to the site beside its Wi-Fi, for the approval page
 PRINTD = os.environ.get('PRINTD_URL', 'http://127.0.0.1:8080').rstrip('/')
 PRINTD_KEY = os.environ.get('PRINTD_API_KEY', '')
 MESH = os.environ.get('DA_MESH', '')        # '' for none; 'auto' (plugged in); a serial device such as /dev/ttyUSB0; tcp:auto (found
@@ -51,6 +51,8 @@ OFF_FILE = os.environ.get('DA_OFF_FILE', '/run/da-pull/off')   # the note da-off
 CAN_OFF = os.path.exists('/etc/systemd/system/da-off.path') or 'DA_OFF_FILE' in os.environ
 WIFI_FILE = os.environ.get('DA_WIFI_FILE', '/run/da-pull/wifi')   # the note wifi.py waits for
 CAN_WIFI = os.path.exists('/etc/systemd/system/wifi-setup.service') or 'DA_WIFI_FILE' in os.environ
+UPDATE_FILE = os.environ.get('DA_UPDATE_FILE', '/run/da-pull/update')   # the note da-update.path waits for
+CAN_UPDATE = os.path.exists('/etc/systemd/system/da-update.path') or 'DA_UPDATE_FILE' in os.environ
 
 log = logging.getLogger('da-pull')
 running = True
@@ -183,7 +185,7 @@ def here():
 
 
 def next_job():
-    can = ' '.join(c for c, on in (('off', CAN_OFF), ('wifi', CAN_WIFI)) if on)
+    can = ' '.join(c for c, on in (('off', CAN_OFF), ('wifi', CAN_WIFI), ('update', CAN_UPDATE)) if on)
     q = '&'.join(x for x in ((f'can={urllib.parse.quote(can)}' if can else ''), here()) if x)
     status, j = http('GET', f'{SERVER}/api/printers/{PRINTER}/next' + (f'?{q}' if q else ''), headers=auth())
     return j if status == 200 else None
@@ -201,10 +203,33 @@ def wifi_name():
     return ''
 
 
+def ready_slip():
+    """the slip at a start: on which Wi-Fi, or that a setup slip is on its way. The printer's own service may still be starting: asked for a minute"""
+    net = ''
+    for _ in range(6):   # the Wi-Fi it knows gets half a minute to be found
+        net = wifi_name()
+        if net:
+            break
+        time.sleep(5)
+    lines = ['NOVEL.GLOBAL', 'READY', PRINTER.upper()]
+    if net:
+        lines += [f'WI-FI {net}']
+    elif CAN_WIFI:
+        lines += ['NO WI-FI YET', 'A SETUP SLIP PRINTS IN A MINUTE', 'SCAN IT WITH A PHONE']
+    for i in range(12):
+        try:
+            print_bytes(text_slip(lines))
+            return
+        except Exception:
+            if i == 11:
+                raise
+            time.sleep(5)
+
+
 def turn_off():
     """TURN OFF from the approval page: a slip to say so, then the note that has systemd turn the Pi off safely"""
     try:
-        print_bytes(text_slip(['DIRECT ACTION', 'TURNING OFF', PRINTER.upper(), 'UNPLUG ONCE THE GREEN LIGHT STOPS', 'TO START: PLUG IT BACK IN', datetime.now().strftime('%d.%m.%y %H:%M')]))
+        print_bytes(text_slip(['NOVEL.GLOBAL', 'TURNING OFF', PRINTER.upper(), 'UNPLUG ONCE THE GREEN LIGHT STOPS', 'TO START: PLUG IT BACK IN', datetime.now().strftime('%d.%m.%y %H:%M')]))
     except Exception as e:  # turned off all the same
         log.warning('no TURNING OFF slip: %s', e)
     with open(OFF_FILE, 'w') as f:
@@ -248,7 +273,7 @@ def main():
     if '--no-ready' not in sys.argv:
         try:
             net = wifi_name()
-            print_bytes(text_slip(['DIRECT ACTION', 'READY', PRINTER.upper()] + ([f'WI-FI {net}'] if net else []) + ([f'NEW WI-FI: PLUG IN, UNPLUG WITHIN', 'A MINUTE, PLUG IN AGAIN'] if CAN_WIFI else []) + [datetime.now().strftime('%d.%m.%y %H:%M')]))
+            ready_slip()
         except Exception as e:
             log.warning('no READY slip: %s', e)
     wait = POLL
@@ -263,6 +288,14 @@ def main():
                     log.info('opening the Wi-Fi setup, as asked on the approval page')
                 except OSError as e:
                     log.warning('could not ask for the Wi-Fi setup: %s', e)
+                continue
+            if j and j.get('update'):
+                try:
+                    with open(UPDATE_FILE, 'w') as f:
+                        f.write(datetime.now().isoformat())
+                    log.info('updating, as asked on the approval page')
+                except OSError as e:
+                    log.warning('could not ask for the update: %s', e)
                 continue
             if j and j.get('off'):
                 turn_off()

@@ -1,0 +1,8 @@
+[Unit]
+Description=UPDATE on the approval page: the bridge leaves a note, this fetches the latest receiver
+
+[Path]
+PathExists=/run/da-pull/update
+
+[Install]
+WantedBy=multi-user.target

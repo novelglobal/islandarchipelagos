@@ -13,7 +13,9 @@
     ['emu', 'emu', 0.515, 0.44, 0.29, 0.165],
     ['quokka', 'quokka', 0.635, 0.43, 0.16, 0.135],
     ['wombat', 'wombat', 0.515, 0.385, 0.125, 0.17],
-    ['echidna', 'echidna', 0.56, 0.40, 0.12, 0.12]
+    ['echidna', 'echidna', 0.56, 0.40, 0.12, 0.12],
+    /* no animal: any photo, whole, for anyone who would rather not print their face */
+    ['none', 'your photo', 0.5, 0.5, 0, 0]
   ];
   /* what each pop-up can change, from the POP-UPS page in admin; these are Pickles' */
   var CFG = { id: 'pickles', to: 'novelglobal', logos: [{ src: 'pop/pickles.png', href: '' }, { src: 'pop/foe.png', href: 'https://www.melbournefoe.org.au/climatedonate#10' }], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' }, animals: null,
@@ -38,7 +40,7 @@
   /* a hole cut by hand: a wobbly oval, never quite round */
   function wob(g, h, seed, grow) { var r = rnd(seed), p = [r() * 6, r() * 6, r() * 6], n = 72; g.beginPath();
     for (var i = 0; i <= n; i++) { var a = i / n * Math.PI * 2, k = 1 + 0.05 * (Math.sin(a * 2 + p[0]) * 0.5 + Math.sin(a * 3 + p[1]) * 0.35 + Math.sin(a * 7 + p[2]) * 0.15), X = h.x + Math.cos(a) * (h.rx + grow) * k, Y = h.y + Math.sin(a) * (h.ry + grow) * k; if (i) g.lineTo(X, Y); else g.moveTo(X, Y); } g.closePath(); }
-  function animal(sc) { var cg = canvas(sc), c = cg[0], g = cg[1], an = S.an, im = an && S.IM[an[0]]; if (!im) return c;
+  function animal(sc) { var cg = canvas(sc), c = cg[0], g = cg[1], an = S.an, im = an && S.IM[an[0]]; if (an && an[0] === 'none') { S.hole = null; return c; } if (!im) return c;
     var L = lay(an, im); g.drawImage(im, L.ox, L.oy, im.naturalWidth * L.k, im.naturalHeight * L.k); S.hole = L;
     g.save(); g.globalCompositeOperation = 'destination-out'; wob(g, L, 17, 0); g.fill(); g.restore();
     /* the pen goes round twice and never quite meets itself */
@@ -54,6 +56,8 @@
     else if (h) { g.strokeStyle = INK; g.fillStyle = INK; g.lineWidth = 5; g.lineCap = 'round'; var e = Math.min(h.rx, h.ry);
       [[-0.32, -0.12], [0.3, -0.16]].forEach(function (q) { g.beginPath(); g.ellipse(h.x + q[0] * e, h.y + q[1] * e, e * 0.06, e * 0.09, 0, 0, 7); g.fill(); });
       g.beginPath(); g.moveTo(h.x - e * 0.3, h.y + e * 0.22); g.quadraticCurveTo(h.x, h.y + e * 0.5, h.x + e * 0.32, h.y + e * 0.18); g.stroke(); }
+    /* no animal and no photo yet: a frame drawn by hand and a plus, to tap */
+    else { g.strokeStyle = INK; g.lineWidth = 5; g.lineCap = g.lineJoin = 'round'; g.setLineDash([18, 16]); g.strokeRect(46, 60, AW - 92, AH - 120); g.setLineDash([]); g.beginPath(); g.moveTo(AW / 2 - 34, AH / 2); g.lineTo(AW / 2 + 34, AH / 2); g.moveTo(AW / 2, AH / 2 - 34); g.lineTo(AW / 2, AH / 2 + 34); g.stroke(); }
     return c; }
   /* exactly what the printer makes of the picture: one photograph, dithered */
   function inked() { var F = face(1), A = animal(1), h = S.hole, n = AW * AH, i, v;
@@ -75,11 +79,12 @@
   function paint() { if (!cv || raf) return; raf = requestAnimationFrame(draw); }
   function draw() { raf = 0; if (!OV) OV = animal(SC); cx2.setTransform(1, 0, 0, 1, 0, 0); cx2.clearRect(0, 0, cv.width, cv.height);
     cx2.drawImage(face(SC), 0, 0); cx2.drawImage(OV, 0, 0); if (S.lines.length) { cx2.save(); cx2.scale(SC, SC); lines(cx2); cx2.restore(); }
-    if (S.drag && S.img) { cx2.save(); cx2.scale(SC, SC); cx2.globalAlpha = 0.35; you(cx2); cx2.globalAlpha = 1; cx2.setLineDash([7, 7]); cx2.lineWidth = 2; cx2.strokeStyle = '#E2552E'; wob(cx2, S.hole, 17, 0); cx2.stroke(); cx2.restore(); } }
-  function fit() { var h = S.hole; if (!S.img || !h) return; S.x = h.x; S.y = h.y + h.ry * 0.08; S.s = h.ry * 2 * 2.1 / S.img.height; if (S.img.width * S.s < h.rx * 2.3) S.s = h.rx * 2.3 / S.img.width; S.r = 0; }
-  function load(an) { return S.IM[an[0]] ? Promise.resolve() : new Promise(function (res) { var im = new Image(); im.onload = function () { S.IM[an[0]] = im; res(); }; im.onerror = res; im.src = 'pop/animals/' + an[0] + '.jpg'; }); }
-  function pool() { var l = CFG.animals && CFG.animals.length ? ANIMALS.filter(function (a) { return CFG.animals.indexOf(a[0]) >= 0; }) : ANIMALS; return l.length ? l : ANIMALS; }
-  function another() { var L = pool(), i; do { i = Math.floor(Math.random() * L.length); } while (L[i] === S.an && L.length > 1); S.an = L[i];
+    if (S.drag && S.img && S.hole) { cx2.save(); cx2.scale(SC, SC); cx2.globalAlpha = 0.35; you(cx2); cx2.globalAlpha = 1; cx2.setLineDash([7, 7]); cx2.lineWidth = 2; cx2.strokeStyle = '#E2552E'; wob(cx2, S.hole, 17, 0); cx2.stroke(); cx2.restore(); } }
+  function fit() { var h = S.hole; if (!S.img) return; if (!h) { S.x = AW / 2; S.y = AH / 2; S.s = Math.min(AW / S.img.width, AH / S.img.height); S.r = 0; return; } S.x = h.x; S.y = h.y + h.ry * 0.08; S.s = h.ry * 2 * 2.1 / S.img.height; if (S.img.width * S.s < h.rx * 2.3) S.s = h.rx * 2.3 / S.img.width; S.r = 0; }
+  function load(an) { return S.IM[an[0]] || an[0] === 'none' ? Promise.resolve() : new Promise(function (res) { var im = new Image(); im.onload = function () { S.IM[an[0]] = im; res(); }; im.onerror = res; im.src = 'pop/animals/' + an[0] + '.jpg'; }); }
+  /* the animals this pop-up chose, and always the one with no animal */
+  function pool() { var l = CFG.animals && CFG.animals.length ? ANIMALS.filter(function (a) { return a[0] === 'none' || CFG.animals.indexOf(a[0]) >= 0; }) : ANIMALS; return l.length > 1 ? l : ANIMALS; }
+  function another() { var L = pool(), i; do { i = Math.floor(Math.random() * L.length); } while ((L[i] === S.an || (!S.an && L[i][0] === 'none')) && L.length > 1); S.an = L[i];
     var nm = $('#nm'); nm.textContent = S.an[1]; nm.style.transform = 'rotate(' + (Math.random() * 6 - 3).toFixed(1) + 'deg)';
     return load(S.an).then(function () { OV = null; OV = animal(SC); fit(); paint(); }); }
   function take(f) { if (!f) return; var u = URL.createObjectURL(f), im = new Image();
@@ -115,12 +120,16 @@
   /* ───────── the print: the picture as it shows in PRINT, then novel.global and the code ───────── */
   /* the novel.global mark: a black square and a sun, as mark.svg (237 by 112), h high; the sun black on the thermal print */
   function mark(g, x, y, h, colour) { var k = h / 112; g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = '#111'; g.translate(56, 56); g.rotate(-0.34 * Math.PI / 180); g.fillRect(-45.8, -46, 91.6, 92); g.restore();
-    g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = colour ? '#E25C40' : '#000'; g.beginPath(); g.arc(178.3, 56.5, 48.8, 0, 7); g.fill(); g.restore(); }
-  function tipOf() { var t = CFG.tips; return t && t.by && S.an ? t.by[S.an[0]] || '' : ''; }
+    if (colour) { g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = '#E25C40'; g.beginPath(); g.arc(178.3, 56.5, 48.8, 0, 7); g.fill(); g.restore(); return; }
+    /* in print the square is solid and the sun is half ink, in dots: the two are never both solid black */
+    var cx = x + 178.3 * k, cy = y + 56.5 * k, r = 48.8 * k, mx, my; g.fillStyle = '#000'; for (my = Math.floor(cy - r); my <= cy + r; my += 2) for (mx = Math.floor(cx - r); mx <= cx + r; mx += 2) if (((mx >> 1) + (my >> 1)) % 2 === 0 && (mx - cx) * (mx - cx) + (my - cy) * (my - cy) <= r * r) g.fillRect(mx, my, 2, 2); }
+  /* under the picture: the animal's tip, or the place's own words where it has none */
+  function tipOwn() { var t = CFG.tips; return t && t.by && S.an ? t.by[S.an[0]] || '' : ''; }
+  function tipOf() { return tipOwn() || String(CFG.promo || ''); }
   function wrap(g, txt, w) { var out = [], line = ''; String(txt).split(/\s+/).forEach(function (wd) { var tr = line ? line + ' ' + wd : wd; if (g.measureText(tr).width > w && line) { out.push(line); line = wd; } else line = tr; }); if (line) out.push(line); return out; }
   /* the tip block under the picture, at scale k: a small title, the tip in Poppins; returns its height when draw is false */
   function tipBlock(g, x, y, w, k, draw) { var tp = tipOf(); if (!tp) return 0; g.font = '600 ' + 23 * k + 'px Poppins, sans-serif'; var L = wrap(g, tp, w), h = (40 + L.length * 31 + 6) * k; if (!draw) return h;
-    g.textBaseline = 'alphabetic'; g.font = "600 " + 17 * k + "px 'IBM Plex Mono', monospace"; g.fillText((CFG.tips.title || '').toUpperCase().split('').join(' '), x, y + 26 * k);
+    g.textBaseline = 'alphabetic'; g.font = "600 " + 17 * k + "px 'IBM Plex Mono', monospace"; g.fillText((tipOwn() ? (CFG.tips.title || '') : String(CFG.name || '')).toUpperCase().split('').join(' '), x, y + 26 * k);
     g.font = '600 ' + 23 * k + 'px Poppins, sans-serif'; L.forEach(function (l, i) { g.fillText(l, x, y + (64 + i * 31) * k); }); return h; }
   function whoNow() { var c = store.get('da.who', ''), at = +store.get('da.who.at', 0) || 0; if (/^[A-HJ-NP-Z2-9]{3}$/.test(c) && at && Date.now() - at < 29.53 * 864e5) return c;
     var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = new Uint8Array(3); crypto.getRandomValues(r); c = ''; for (var i = 0; i < 3; i++) c += A[r[i] % A.length]; store.set('da.who', c); store.set('da.who.at', Date.now()); return c; }
@@ -140,7 +149,9 @@
   function print() { if (S.busy) return; if (!S.img) { pick(); return; } if (!S.to) { say('NO PRINTER'); return; } S.busy = true; $('#go').disabled = true; say('· · ·');
     var who = whoNow(), ps = store.get('da.pass', null); if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
     fonts().then(function () { var c = paper(who);
-      return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: 'pickles', lat: WHERE[0], lng: WHERE[1] }), lat: WHERE[0], lng: WHERE[1], dest: S.to, escpos: T.raster(c, 0), from: 'pop', stage: 'stack', who: who, pop: S.key, popId: CFG.id, pass: ps ? ps.code : undefined }) }); })
+      return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: 'pickles', lat: WHERE[0], lng: WHERE[1] }), lat: WHERE[0], lng: WHERE[1], dest: S.to, escpos: T.raster(c, 0), from: 'pop', stage: 'stack', who: who, pop: S.key, popId: CFG.id, pass: ps ? ps.code : undefined,
+        /* the colour print goes with it only where the place keeps its prints; a private pop-up is sent nothing but the dots */
+        art: CFG.keep ? receipt().toDataURL('image/jpeg', 0.8) : undefined }) }); })
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } say(''); done(!!(j && (j.passed || j.straight || (j.job && j.job.status === 'queued')))); },
         function (e) { say(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : e.status === 403 ? 'CLOSED' : e.status === 503 ? 'BUSY' : 'UNSENT'); })
       .then(function () { S.busy = false; $('#go').disabled = false; }); }
@@ -166,6 +177,7 @@
 
   function dress() { if (Array.isArray(CFG.logos)) { var hd = $('header'); hd.replaceChildren(); hd.hidden = !CFG.logos.length; CFG.logos.forEach(function (lg, i) { if (typeof lg === 'string') lg = { src: lg, href: /foe\.png$/.test(lg) && CFG.donate ? CFG.donate.url : '' }; if (i) { var x = D.createElement('span'); x.setAttribute('aria-hidden', 'true'); x.textContent = '×'; hd.appendChild(x); }
       var im = D.createElement('img'); if (!/^data:/.test(lg.src)) im.crossOrigin = 'anonymous'; im.src = lg.src; im.alt = ''; if (/^https:\/\//.test(lg.href || '')) { var a = D.createElement('a'); a.href = lg.href; a.target = '_blank'; a.rel = 'noopener'; a.appendChild(im); hd.appendChild(a); } else hd.appendChild(im); }); }
+    var pr = String(CFG.promo || ''), pi = /^data:image\//.test(CFG.pimg || '') ? CFG.pimg : ''; $('#promo').hidden = !(pr || pi); $('#ptxt').textContent = pr; $('#ptxt').hidden = !pr; if (pi) { $('#pimg').src = pi; $('#pimg').hidden = false; }
     var dn = CFG.donate; if (dn && /^https:\/\//.test(dn.url || '')) { $('#donate').href = dn.url; $('#donate').textContent = dn.label || 'DONATE'; $('#dn-u').textContent = dn.url.replace(/^https?:\/\/(www\.)?/, '').replace(/[#?].*$/, ''); } else $('.give').hidden = true;
   }
   function open() { dress(); $('#gate').hidden = true; $('#card').hidden = false; cv = $('#stage'); cv.width = AW * SC; cv.height = AH * SC; cx2 = cv.getContext('2d'); gestures(); another(); printers();

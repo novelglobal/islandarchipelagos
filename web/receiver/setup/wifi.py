@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Wi-Fi setup: a printer that finds no Wi-Fi opens one of its own, so a phone can tell it which to join.
 
-No screen, keyboard or computer. When this Pi has had no network for two minutes, it opens a Wi-Fi called
+No screen, keyboard or computer. When this Pi has had no network for a minute, it opens a Wi-Fi called
 <NAME> SETUP, and the printer prints a slip with its password and a code to scan. Join it with a phone: a page opens by
 itself (or go to http://10.42.0.1), choose the Wi-Fi and type its password. The Pi joins it, remembers it, and prints a
 slip to say so. Every Wi-Fi it already knows is kept: this only adds. If nobody comes, the setup Wi-Fi closes after ten
@@ -28,11 +28,12 @@ NAME = os.environ.get('WIFI_NAME', 'PRINTER').upper()[:24]
 SSID = f'{NAME} SETUP'
 PASS = os.environ.get('WIFI_PASSWORD', '')
 IFACE = os.environ.get('WIFI_IFACE', 'wlan0')
-WAIT = int(os.environ.get('WIFI_WAIT', '120'))       # seconds with no network before the setup Wi-Fi opens
+WAIT = int(os.environ.get('WIFI_WAIT', '60'))       # seconds with no network before the setup Wi-Fi opens
 WINDOW = int(os.environ.get('WIFI_WINDOW', '600'))   # seconds it stays open before the known Wi-Fi is looked for again
 SLIPS = os.environ.get('WIFI_SLIPS', '1') == '1'
 DEVICE = os.environ.get('FOE_PRINTER', '/dev/usb/lp0')
-PRINTD = f"http://{os.environ.get('PRINTD_HOST', '127.0.0.1')}:{os.environ['PRINTD_PORT']}" if os.environ.get('PRINTD_PORT') else ''
+# printd is asked first, where the bridge finds it (PRINTD_URL, or its usual port); then the printer itself
+PRINTD = [u for u in dict.fromkeys([os.environ.get('PRINTD_URL', '').rstrip('/'), f"http://{os.environ.get('PRINTD_HOST', '127.0.0.1')}:{os.environ.get('PRINTD_PORT', '8080')}"]) if u]
 PRINTD_KEY = os.environ.get('PRINTD_API_KEY', '')
 COLS = 42
 CON = 'wifi-setup'   # NetworkManager's name for the setup Wi-Fi
@@ -43,7 +44,7 @@ SHARE = os.environ.get('WIFI_SHARE', '1') == '1'                    # the joined
 WANT = os.environ.get('WIFI_WANT', '/run/da-pull/wifi')           # CHANGE WI-FI, from the approval page through the bridge
 QUICK = os.environ.get('WIFI_QUICK', '/var/lib/wifi-setup/quick')  # written at start, gone after two minutes up
 WEAK = 50   # NetworkManager's percent below which the touch screen, a smaller radio, may not reach it
-slipped = False      # the setup slip prints once a start, however often the setup Wi-Fi opens
+slipped = False      # the setup slip prints once a start (once it has really printed), however often the setup Wi-Fi opens
 failed = ''          # why the setup Wi-Fi last failed to open, printed once a start
 
 
@@ -138,8 +139,9 @@ def fail(out):
     global failed
     if failed or not SLIPS:
         return
-    failed = ' '.join(out.split())[:160] or 'no reason given'
-    send(slip(NAME, ['NO WI-FI', 'THE SETUP WI-FI DID NOT OPEN', '', failed, '', stamp()]))
+    why = ' '.join(out.split())[:160] or 'no reason given'
+    if send(slip(NAME, ['NO WI-FI', 'THE SETUP WI-FI DID NOT OPEN', 'IT TRIES AGAIN IN A MINUTE', '', why, '', stamp()]), tries=3):
+        failed = why
 
 
 def join(name, pw, hidden):
@@ -194,26 +196,36 @@ def slip(head, lines, qr=None, at=0):
     return bytes(out + b'\x1bd\x04\x1dVB\x00')
 
 
-def send(data):
-    if DEMO:
-        log('slip:', len(data), 'bytes'); return
-    try:
-        if PRINTD:
-            req = urllib.request.Request(PRINTD + '/print/raw', data=json.dumps({'bytes_b64': base64.b64encode(data).decode()}).encode(), method='POST',
+def send_once(data):
+    for url in PRINTD:
+        try:
+            req = urllib.request.Request(url + '/print/raw', data=json.dumps({'bytes_b64': base64.b64encode(data).decode()}).encode(), method='POST',
                                          headers={'content-type': 'application/json', **({'authorization': f'Bearer {PRINTD_KEY}'} if PRINTD_KEY else {})})
             urllib.request.urlopen(req, timeout=30).read()
-            return
-        for i in range(5):  # the printer may be busy with another slip for a moment
-            try:
-                with open(DEVICE, 'wb') as p:
-                    p.write(data)
-                return
-            except OSError:
-                if i == 4:
-                    raise
-                time.sleep(2)
-    except Exception as e:  # a slip that does not print never stops the Wi-Fi
-        log('no slip:', e)
+            return True
+        except Exception as e:
+            log('printd did not take the slip:', url, e)
+    for dev in dict.fromkeys([DEVICE, '/dev/usb/lp0', '/dev/usb/lp1']):
+        try:
+            with open(dev, 'wb') as p:
+                p.write(data)
+            return True
+        except OSError:
+            pass
+    return False
+
+
+def send(data, tries=12):
+    """True once the slip is with the printer. Just after a start the printer's own service may not be up: asked again for a minute.
+    A slip that does not print never stops the Wi-Fi"""
+    if DEMO:
+        log('slip:', len(data), 'bytes'); return True
+    for i in range(tries):
+        if send_once(data):
+            return True
+        time.sleep(5)
+    log('no slip: the printer did not take it')
+    return False
 
 
 # ───────── the page a phone sees ─────────
@@ -320,16 +332,19 @@ def serve(nets, error='', forever=False):
 def setup_round():
     """True once a Wi-Fi is joined; False if nobody came; None if the setup Wi-Fi could not open"""
     global slipped
-    if not os.path.exists(f'/sys/class/net/{IFACE}'):
+    for _ in range(12):   # just after a start the radio may not be there yet
+        if os.path.exists(f'/sys/class/net/{IFACE}'):
+            break
+        time.sleep(5)
+    else:
         log('no Wi-Fi on this Pi:', IFACE); return None
     nets = scan()   # looked at before the radio becomes a hotspot, as it cannot look around while it is one
     if not make_setup() or not setup_wifi(True):
         return None
     log('the setup Wi-Fi is open:', SSID)
     if SLIPS and not slipped:
-        slipped = True
-        send(slip(NAME, ['NO WI-FI', '', f'1  JOIN  {SSID}', f'   PASSWORD  {PASS}', '', f'2  A PAGE OPENS. IF NOT: {ADDR}',
-                         '3  CHOOSE THE WI-FI, TYPE ITS PASSWORD', '', stamp()], qr=wifi_qr(SSID, PASS), at=5))
+        slipped = send(slip(NAME, ['NO WI-FI', '', '1  SCAN THIS WITH A PHONE CAMERA', f'   OR JOIN  {SSID}', f'   PASSWORD  {PASS}', '', f'2  A PAGE OPENS. IF NOT: {ADDR}',
+                                   '3  CHOOSE THE WI-FI, TYPE ITS PASSWORD', '', stamp()], qr=wifi_qr(SSID, PASS), at=5))
     error = ''
     while True:
         want = serve(nets, error)
@@ -417,8 +432,8 @@ def main():
             time.sleep(5); continue
         force = False
         joined = setup_round()
-        # nobody came: the Wi-Fi it knows gets a minute, then the setup Wi-Fi again; one that could not open, ten minutes
-        lost = None if joined else time.time() - WAIT + (60 if joined is False else 600)
+        # nobody came: the Wi-Fi it knows gets a minute, then the setup Wi-Fi again; one that could not open is tried again in a minute too
+        lost = None if joined else time.time() - WAIT + 60
 
 
 if __name__ == '__main__':

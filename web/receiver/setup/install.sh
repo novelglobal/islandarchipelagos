@@ -2,10 +2,10 @@
 # Setup for any of our Pis, the novel.global receiver or FOE: Wi-Fi chosen from a phone, and safe ways to turn it off.
 #   curl -fsSL https://raw.githubusercontent.com/novelglobal/islandarchipelagos/main/web/receiver/setup/install.sh | sh
 #
-# 1. Wi-Fi from a phone: with no Wi-Fi for two minutes, the Pi opens one of its own, <NAME> SETUP, and the printer
+# 1. Wi-Fi from a phone: with no Wi-Fi for a minute, the Pi opens one of its own, <NAME> SETUP, and the printer
 #    prints its password and a code to scan. A page on the phone chooses the Wi-Fi. Known Wi-Fi is kept (setup/wifi.py).
 # 2. An off button: a push button on pins 5 and 6 turns the Pi off safely, and on again (the Pi's own gpio-shutdown).
-# 3. On the novel.global receiver: TURN OFF on the approval page, and the latest bridge (pull.py, da-off.path).
+# 3. On the novel.global receiver: TURN OFF and UPDATE on the approval page, and the latest bridge (pull.py, da-off.path, da-update.path).
 # Run it again at any time to update; the setup Wi-Fi's password is kept.
 set -e
 BASE=https://raw.githubusercontent.com/novelglobal/islandarchipelagos/main/web/receiver
@@ -38,14 +38,18 @@ if [ -f /opt/da-pull/pull.py ]; then
   sudo curl -fsSL "$BASE/da-pull.service" -o /etc/systemd/system/da-pull.service
   sudo curl -fsSL "$BASE/da-off.path" -o /etc/systemd/system/da-off.path
   sudo curl -fsSL "$BASE/da-off.service" -o /etc/systemd/system/da-off.service
+  sudo curl -fsSL "$BASE/da-update.path" -o /etc/systemd/system/da-update.path
+  sudo curl -fsSL "$BASE/da-update.service" -o /etc/systemd/system/da-update.service
   sudo systemctl daemon-reload
-  sudo systemctl enable --now da-off.path
-  sudo systemctl restart da-pull
+  sudo systemctl enable --now da-off.path da-update.path
+  # the bridge restarts a moment later, so an update asked for from the approval page can finish first
+  sudo systemd-run --on-active=5 systemctl restart da-pull >/dev/null 2>&1 || sudo systemctl restart da-pull
 fi
 
 sudo systemctl daemon-reload
 sudo systemctl enable wifi-setup >/dev/null 2>&1
-sudo systemctl restart wifi-setup
+# restarted a moment later too: run from the approval page, this must not drop the Wi-Fi it is fetching over
+sudo systemd-run --on-active=8 systemctl restart wifi-setup >/dev/null 2>&1 || sudo systemctl restart wifi-setup
 echo
 echo "Done. With no Wi-Fi it can join, this Pi opens: $(sudo sed -n 's/^WIFI_NAME=//p' /etc/wifi-setup.env) SETUP"
 echo "Its password: $(sudo sed -n 's/^WIFI_PASSWORD=//p' /etc/wifi-setup.env)   (the printer prints it too, when needed)"

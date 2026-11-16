@@ -1,0 +1,7 @@
+[Unit]
+Description=Fetch the latest receiver and Wi-Fi setup
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/rm -f /run/da-pull/update
+ExecStart=/bin/sh -c 'curl -fsSL https://raw.githubusercontent.com/novelglobal/islandarchipelagos/main/web/receiver/setup/install.sh | sh'
