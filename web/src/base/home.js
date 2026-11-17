@@ -45,7 +45,7 @@
     { id: 'radio', size: 'small', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'wish', size: 'small', title: 'BLUEPAPER', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'small', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'zine', size: 'small', title: 'DESIGN PRINT', opens: 'press', island: 'pickles', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'zine', size: 'small', title: 'DESIGN PRINT', opens: 'press', island: 'milkbar', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'small', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'small', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
 
@@ -693,14 +693,17 @@
   function ethLink(k) { if (!/^[a-z0-9]{12,40}$/.test(k || '')) return; ETH.k = k; $$('.sk-intro .in-f', col).forEach(function (f) { var p = f.querySelector('.in-eth'), ft = f.querySelector('.in-ft'); if (!p) { p = D.createElement('p'); p.className = 'in-eth'; var a = D.createElement('a'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ethics and AI disclosure'; p.appendChild(a); f.insertBefore(p, ft); } p.querySelector('a').href = '/note#' + k; }); requestAnimationFrame(introFit); }
   /* the handwritten line is written in once, five seconds after the page opens, and then stays */
   setTimeout(function () { H.classList.add('hm-wrote'); }, 8200);
-  /* THE LABEL: what a first visit meets, set like the label beside a work in a gallery. Every word of it comes from the approval page (LABEL).
-     It is a part of this page, never a new window, so nothing can block it. Shown once each visit until the visitor says never again */
+  /* THE LABEL: what a first visit meets, set like the label beside a work in a gallery, a film under it. Every word of it comes from the approval
+     page (LABEL). It is a part of this page, never a new window, so nothing can block it. It goes when it has been read: a long press or a
+     double tap on it. Shown once each visit until the visitor says never again */
   function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
     var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
-    var lb = mk('div'), c = mk('div', 'lb-c', null, lb); lb.id = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || 'novel.global');
-    var shutLb = function () { mem(sessionStorage, 'da.label.seen', '1'); if (nv.checked) mem(localStorage, 'da.label.never', '1'); lb.remove(); D.removeEventListener('keydown', esc2); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
+    var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid'); lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
+    var fit = function () { var px = 13.5; c.style.fontSize = px + 'px'; while (px > 8 && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
+    var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen', '1'); if (nv.checked) mem(localStorage, 'da.label.never', '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
+        lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
     var b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', '', t, b); });
@@ -717,12 +720,32 @@
         set(nf(k.now) || 0);
         if (k.live === 'paired') fetch('/api/isles').then(function (r) { return r.json(); }).then(function (j) { if (typeof j.paired === 'number') set(j.paired); }).catch(function () { /* as typed */ });
         if (k.live === 'printed') fetch('/api/partners').then(function (r) { return r.json(); }).then(function (j) { set((j.partners || []).reduce(function (a, p) { return a + (p.printed || 0); }, 0)); }).catch(function () { /* as typed */ }); }); }
-    var ft = mk('div', 'lb-f', null, c), lab = mk('label', '', null, ft), nv = mk('input', '', null, lab); nv.type = 'checkbox'; lab.appendChild(D.createTextNode(' ' + (L.never || 'Never show again')));
-    var en = mk('button', '', L.enter || '×', ft); en.type = 'button'; if (!L.enter) en.setAttribute('aria-label', 'Close'); en.addEventListener('click', shutLb);
-    lb.addEventListener('click', function (e) { if (e.target === lb) shutLb(); }); D.addEventListener('keydown', esc2); D.body.appendChild(lb);
+    var ft = mk('div', 'lb-f', null, c), lab = mk('label', '', null, ft); nv = mk('input', '', null, lab); nv.type = 'checkbox'; lab.appendChild(D.createTextNode(' ' + (L.never || 'Never show again'))); if (L.hold) mk('span', 'lb-h', L.hold, ft);
+    /* read: a long press on the label, or a double tap, puts it away. A link, the switch and the film are their own taps */
+    var own = function (e) { return !!(e.target && e.target.closest && e.target.closest('a, label, input, button')); }, hold = 0, at0 = null, tapT = 0, tapAt = [0, 0], drop = function () { clearTimeout(hold); hold = 0; at0 = null; c.classList.remove('lb-held'); };
+    c.addEventListener('pointerdown', function (e) { if (own(e) || (e.pointerType === 'mouse' && e.button)) return; at0 = [e.clientX, e.clientY]; c.classList.add('lb-held'); clearTimeout(hold); hold = setTimeout(function () { hold = 0; shutLb(); }, 650); });
+    c.addEventListener('pointermove', function (e) { if (at0 && Math.hypot(e.clientX - at0[0], e.clientY - at0[1]) > 12) drop(); });
+    c.addEventListener('pointerup', function (e) { var was = hold; drop(); if (!was || own(e)) return; if (e.timeStamp - tapT < 400 && Math.hypot(e.clientX - tapAt[0], e.clientY - tapAt[1]) < 44) return shutLb(); tapT = e.timeStamp; tapAt = [e.clientX, e.clientY]; });
+    c.addEventListener('pointercancel', drop); c.addEventListener('pointerleave', drop); c.addEventListener('contextmenu', function (e) { if (!own(e)) e.preventDefault(); });
+    c.tabIndex = 0; c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === c) shutLb(); });
+    /* the film: asked for when play is first pressed, then played here by its own few keys. No more of it today, or none there: no player */
+    var F = L.film; if (F && F.on && F.file) { var v = mk('div', 'lb-v'), pl = mk('button', 'lb-vp', null, v), bar = mk('div', 'lb-vb', null, v), tr = mk('i', '', null, bar), fl = mk('u', '', null, tr), mu = mk('button', 'lb-vm', null, bar), asked = 0;
+      vid = D.createElement('video'); v.insertBefore(vid, pl); if (F.side === 'above') w.insertBefore(v, c); else w.appendChild(v); v.style.setProperty('--w', Math.max(30, Math.min(100, +F.w || 100)) + '%');
+      vid.playsInline = true; vid.setAttribute('playsinline', ''); vid.preload = 'none'; vid.disablePictureInPicture = true; vid.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback'); vid.setAttribute('disableremoteplayback', '');
+      vid.volume = Math.max(0, Math.min(1, (F.vol == null || F.vol === '' ? 80 : +F.vol || 0) / 100)); pl.type = mu.type = 'button'; pl.setAttribute('aria-label', 'Play'); mu.setAttribute('aria-label', 'Sound');
+      pl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>'; mu.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4z"/><path class="w" d="M15.5 9a4.2 4.2 0 010 6M18 6.5a7.8 7.8 0 010 11"/><path class="x" d="M15.5 9.5l5 5m0-5l-5 5"/></svg>';
+      var gone = function () { vid = null; v.remove(); fit(); };
+      var play = function () { if (!vid) return; if (vid.getAttribute('src')) { if (vid.paused) vid.play().catch(function () { /* a tap will */ }); else vid.pause(); return; } if (asked) return; asked = 1; v.classList.add('lb-wait');
+        fetch('/api/film', { method: 'POST' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { if (!vid) return; vid.src = j.u; v.classList.remove('lb-wait'); vid.play().catch(function () { /* a tap will */ }); }, gone); };
+      vid.addEventListener('play', function () { v.classList.add('lb-on'); }); vid.addEventListener('pause', function () { v.classList.remove('lb-on'); }); vid.addEventListener('ended', function () { v.classList.remove('lb-on'); fl.style.width = '0'; });
+      vid.addEventListener('timeupdate', function () { if (vid && vid.duration) fl.style.width = (vid.currentTime / vid.duration * 100).toFixed(2) + '%'; }); vid.addEventListener('error', gone);
+      vid.addEventListener('loadedmetadata', function () { if (vid.videoWidth && vid.videoHeight) { v.style.setProperty('--r', (vid.videoWidth / vid.videoHeight).toFixed(4)); fit(); } });
+      v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
+      mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); }
+    D.addEventListener('keydown', esc2); D.body.appendChild(lb);
     /* all of it on one screen: the type steps down until nothing is cut off */
-    var fit = function () { var px = 13.5; c.style.fontSize = px + 'px'; while (px > 8 && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
-    fit(); addEventListener('resize', fit); if (D.fonts && D.fonts.ready) D.fonts.ready.then(fit); setTimeout(function () { en.focus({ preventScroll: true }); }, 60); }
+    fit(); addEventListener('resize', fit); if (D.fonts && D.fonts.ready) D.fonts.ready.then(fit); }
   function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
     $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
       (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
@@ -1036,7 +1059,7 @@
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
-    if (c.opens === 'pop') return sheet(c.title, inFrame((c.pop === 'pickles' ? 'pickles' : 'popup') + '?in=1#p'));
+    if (c.opens === 'pop') return sheet(c.title, inFrame('popup?in=1#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
     if (c.opens === 'bench') { var bm = (opt && opt.mode) || c.mode; return sheet(c.title, inFrame('bench?in=1' + (bm ? '&m=' + bm : '') + '#b')); }

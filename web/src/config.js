@@ -414,7 +414,7 @@ window.DA_PRINTERS = {
 window.DA_MASTER = { id: 'novelglobal', n: 'novel.global', paper: 80 };
 
 window.DA_PARTNERS = [
-  { id: 'pickles', printer: true, paper: 80 },
+  { id: 'milkbar', printer: true, paper: 80 },
   { id: 'kines', printer: true, paper: 80 },
   { id: 'elsie', printer: true, paper: 80 },
 ];

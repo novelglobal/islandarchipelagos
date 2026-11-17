@@ -9,7 +9,7 @@
   var store = { get: function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* this visit */ } } };
   var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); }); };
   function say(t) { $('#say').textContent = t || ''; }
-  function link() { return 'https://novel.global/' + (POP.id === 'pickles' ? 'pickles' : 'popup') + '?k=' + encodeURIComponent(POP.key || '') + (POP.id === 'pickles' ? '' : '&p=' + encodeURIComponent(POP.id)); }
+  function link() { return 'https://novel.global/popup?k=' + encodeURIComponent(POP.key || '') + '&p=' + encodeURIComponent(POP.id); }
   function qr(url, px, m) { var q = window.qrcode(0, 'M'); q.addData(url); q.make(); var n = q.getModuleCount(), c = D.createElement('canvas'); c.width = c.height = (n + m * 2) * px; var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
     for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect((x + m) * px, (y + m) * px, px, px); return c; }
   /* a picture made small enough to keep: png for logos (their edges), jpeg for the rest */

@@ -1,10 +1,10 @@
 {
   "$schema": "../../schemas/mod.schema.json",
-  "id": "pickles-zine",
+  "id": "milkbar-zine",
   "version": "1.0.0",
   "title": "LANDSCAPE ZINE",
-  "island": "pickles",
-  "about": "Pickles' long landscape zine.",
+  "island": "milkbar",
+  "about": "Milk Bar's long landscape zine.",
   "licence": "CC-BY-SA-4.0",
   "connection": "art",
   "gives": ["LENGTH","PICTURE"],

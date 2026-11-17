@@ -394,8 +394,8 @@ const swim = () => `<div class="swim"><i class="sw-x"><i class="sw-y"><button ty
 function headBar() { const h = $('#ph'); if (h) h.innerHTML = S.view === 3 ? swim() : lockup() + (S.view === 0 ? countryBar() : ''); }
 document.addEventListener('change', e => { if (e.target.id !== 'ctry') return; prefs.ctry = e.target.value; savePrefs(); headBar(); });
 /* the printers online, as a pager would say it: its light, its name, a buzz when one comes on */
-/* a printer by one word, wherever it is named: Pickles, not Pickles Milk Bar */
-const prnWord = p => String((p && ((PSTATE[p.id] || {}).name || p.n || p.id)) || '').trim().split(/\s+/)[0];
+/* a printer by a short name, wherever it is named: a name of one or two words whole, a longer one by its first */
+const prnWord = p => { const w = String((p && ((PSTATE[p.id] || {}).name || p.n || p.id)) || '').trim().split(/\s+/); return w.length <= 2 ? w.join(' ') : w[0]; };
 const printersOn = () => [MASTER, ...PARTNERS].filter(p => p && (PSTATE[p.id] || {}).ready);
 function pagerHTML() {
   const on = printersOn();

@@ -32,7 +32,7 @@ try {
   const h = await call('/api/health');
   check('health answers ok with the build', h.status === 200 && /^ok \w+/.test(h.text), h.text);
   const pa = await call('/api/partners');
-  check('every partner place has a print queue, none paired yet', pa.status === 200 && ['pickles', 'kines', 'elsie'].every(id => pa.json.partners.some(p => p.id === id && !p.paired && !p.ready)), JSON.stringify(pa.json));
+  check('every partner place has a print queue, none paired yet', pa.status === 200 && ['milkbar', 'kines', 'elsie'].every(id => pa.json.partners.some(p => p.id === id && !p.paired && !p.ready)), JSON.stringify(pa.json));
   check('novel.global has its own print queue too', pa.json.partners.some(p => p.id === 'novelglobal'), JSON.stringify(pa.json.partners.map(p => p.id)));
   /* stage 5: a place suggested waits; shown on the approval page it is listed for everyone, changed, and deleted */
   const pg = await call('/api/places', { method: 'POST', body: { n: 'Test Repair Cafe', what: 'Fixes things', url: 'https://example.org/', lat: -37.77, lng: 144.97, cat: 'circular' }, ip: '10.9.9.9' });
@@ -54,8 +54,8 @@ try {
   const im1 = await call('/api/img?u=' + encodeURIComponent('https://example.org/photos/1/medium.jpg')), im2 = await call('/api/img?u=' + encodeURIComponent('http://static.inaturalist.org/photos/1/medium.jpg')), im3 = await call('/api/img?u=' + encodeURIComponent('https://static.inaturalist.org/sounds/1.mp3'));
   check('photographs pass through from iNaturalist only', im1.status === 400 && im2.status === 400 && im3.status === 400, `${im1.status} ${im2.status} ${im3.status}`);
 
-  /* a story sent to Pickles: it waits, and so does its print */
-  const s1 = await call('/api/stories', { method: 'POST', body: story('DA-7K2Q', { dest: 'pickles', escpos: Buffer.from([0x1B, 0x40, 65, 10]).toString('base64'), mesh: 'DA-7K2Q NOISY MINER', photo: JPEG }) });
+  /* a story sent to Milk Bar: it waits, and so does its print */
+  const s1 = await call('/api/stories', { method: 'POST', body: story('DA-7K2Q', { dest: 'milkbar', escpos: Buffer.from([0x1B, 0x40, 65, 10]).toString('base64'), mesh: 'DA-7K2Q NOISY MINER', photo: JPEG }) });
   check('a story sent waits for approval, and its print waits with it', s1.status === 201 && s1.json.status === 'waiting' && s1.json.job && s1.json.job.status === 'held', JSON.stringify(s1.json));
   const pub0 = await call('/api/stories'); const one0 = await call('/api/stories/DA-7K2Q'); const ph0 = await call(`/api/photos/${s1.json.id}`);
   check('until it is approved nobody else sees it, nor its photograph', pub0.json.stories.length === 0 && one0.status === 404 && ph0.status === 404, `${pub0.json.stories.length} · ${one0.status} · ${ph0.status}`);
@@ -66,30 +66,30 @@ try {
   const a0 = await call('/api/admin/stories'); const a1 = await call('/api/admin/stories', { key: 'wrong' });
   check('the approval page refuses anyone without the password', a0.status === 401 && a1.status === 401, `${a0.status} · ${a1.status}`);
   const a2 = await call('/api/admin/stories?status=waiting', { key: KEY });
-  check('with it, everything waiting is listed', a2.status === 200 && a2.json.stories.some(s => s.id === s1.json.id && s.photo && s.dest === 'pickles' && s.job === 'held'), JSON.stringify(a2.json.stories.map(s => s.code)));
-  const tok = await call('/api/admin/printers/pickles', { method: 'POST', key: KEY, body: { action: 'token' } });
+  check('with it, everything waiting is listed', a2.status === 200 && a2.json.stories.some(s => s.id === s1.json.id && s.photo && s.dest === 'milkbar' && s.job === 'held'), JSON.stringify(a2.json.stories.map(s => s.code)));
+  const tok = await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'token' } });
   check('a printer token is made once, on the approval page', tok.status === 200 && /^[a-z2-9]{32}$/.test(tok.json.token), JSON.stringify(tok.json));
   const T = tok.json.token;
-  const n0 = await call('/api/printers/pickles/next', { token: T }); const nx = await call('/api/printers/pickles/next', { token: 'nope' });
+  const n0 = await call('/api/printers/milkbar/next', { token: T }); const nx = await call('/api/printers/milkbar/next', { token: 'nope' });
   check('a held print is not given to the printer; a wrong token gets nothing', n0.status === 204 && nx.status === 401, `${n0.status} · ${nx.status}`);
   const pa2 = await call('/api/partners');
-  check('the printer that asked shows as ready', pa2.json.partners.find(p => p.id === 'pickles').ready === true, JSON.stringify(pa2.json.partners[0]));
+  check('the printer that asked shows as ready', pa2.json.partners.find(p => p.id === 'milkbar').ready === true, JSON.stringify(pa2.json.partners[0]));
 
   await call(`/api/admin/stories/${s1.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
   { const ov = await call('/api/admin/overview', { key: KEY }); check('a photograph is kept in R2, not in the database, and counted there', ov.json.use.r2 >= JPEG_B.length, JSON.stringify(ov.json.use)); }
   const pub1 = await call('/api/stories'); const one1 = await call('/api/stories/DA-7K2Q'); const ph1 = await call(`/api/photos/${s1.json.id}`); const r1 = await call(`/api/receipts/${s1.json.id}`);
   check('approved: it is shown to everyone, with its photograph, and its print joins the queue', pub1.json.stories.filter(s => s.kind === 'story').length === 1 && pub1.json.stories[0].body === SIG && one1.status === 200 && ph1.status === 200 && ph1.type === 'image/jpeg' && !!ph1.bin && ph1.bin.equals(JPEG_B) && r1.json.job.status === 'queued' && r1.json.job.ahead === 0, JSON.stringify({ n: pub1.json.stories.length, r: r1.json }));
 
-  /* the receiver at Pickles pulls it, prints it, and says so */
-  const j1 = await call('/api/printers/pickles/next', { token: T }); const j2 = await call('/api/printers/pickles/next', { token: T });
+  /* the receiver at Milk Bar pulls it, prints it, and says so */
+  const j1 = await call('/api/printers/milkbar/next', { token: T }); const j2 = await call('/api/printers/milkbar/next', { token: T });
   check('the printer takes the job, with its ESC/POS bytes and its mesh line; nobody else gets it while it prints', j1.status === 200 && j1.json.code === 'DA-7K2Q' && j1.json.escpos && j1.json.mesh === null && j2.status === 204, JSON.stringify({ j1: j1.json && { ...j1.json, escpos: !!j1.json.escpos }, j2: j2.status }));
-  await call(`/api/printers/pickles/jobs/${j1.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
+  await call(`/api/printers/milkbar/jobs/${j1.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
   const r2 = await call(`/api/receipts/${s1.json.id}`);
   check('and once printed, the sender sees it printed', r2.json.job.status === 'printed' && !!r2.json.job.done, JSON.stringify(r2.json));
   /* 1.0 C: the calibration strip goes to the printer with its own bytes; garbage is refused; the styles setting keeps a mod pack */
   { const esc = Buffer.from([0x1B, 0x40, 0x1D, 0x76, 0x30, 0, 1, 0, 1, 0, 0xFF]).toString('base64');
-    const sp = await call('/api/admin/printers/pickles', { method: 'POST', key: KEY, body: { action: 'strip', escpos: esc } }), sx = await call('/api/admin/printers/pickles', { method: 'POST', key: KEY, body: { action: 'strip', escpos: '<b>' } });
-    const js = await call('/api/printers/pickles/next', { token: T }); if (js.json && js.json.job) await call(`/api/printers/pickles/jobs/${js.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
+    const sp = await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'strip', escpos: esc } }), sx = await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'strip', escpos: '<b>' } });
+    const js = await call('/api/printers/milkbar/next', { token: T }); if (js.json && js.json.job) await call(`/api/printers/milkbar/jobs/${js.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
     const pack = JSON.stringify({ packs: [{ name: 'A PACK', by: 'an artist', styles: [{ id: 'grain', fonts: { body: 'mono' } }], off: [] }] });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { styles: pack } }); const pub = await call('/api/settings');
     check('the calibration strip prints with its own bytes (garbage refused); a mod pack is kept in the settings every phone reads', sp.status === 200 && sx.status === 400 && js.json && js.json.code === 'DA-STRIP' && js.json.escpos === esc && pub.json.styles === pack,
@@ -101,9 +101,9 @@ try {
   check('a story starred on the approval page comes to everyone starred, with its prints counted', sp && sp.star === true && sp.printed === 1, JSON.stringify(sp && { star: sp.star, printed: sp.printed }));
 
   /* refused: never shown, never printed */
-  const s2 = await call('/api/stories', { method: 'POST', body: story('DA-8M3R', { dest: 'pickles', escpos: 'G0A=' }) });
+  const s2 = await call('/api/stories', { method: 'POST', body: story('DA-8M3R', { dest: 'milkbar', escpos: 'G0A=' }) });
   await call(`/api/admin/stories/${s2.json.id}`, { method: 'POST', key: KEY, body: { action: 'refuse' } });
-  const r3 = await call(`/api/receipts/${s2.json.id}`); const one3 = await call('/api/stories/DA-8M3R'); const n3 = await call('/api/printers/pickles/next', { token: T });
+  const r3 = await call(`/api/receipts/${s2.json.id}`); const one3 = await call('/api/stories/DA-8M3R'); const n3 = await call('/api/printers/milkbar/next', { token: T });
   check('refused: never shown, never printed', r3.json.status === 'refused' && !r3.json.job && one3.status === 404 && n3.status === 204, JSON.stringify({ r3: r3.json, one: one3.status, next: n3.status }));
 
   /* a printer trusted to print without approval */
@@ -159,16 +159,16 @@ try {
   check('a printer is renamed on the approval page, its id kept', nm1.status === 200 && nmP && nmP.name === 'Elsie Corner Bar', JSON.stringify({ nm1: nm1.status, nmP }));
 
   /* to the local mesh: nothing printed; the mesh line goes to each paired printer whose radio is on, once approved */
-  await call('/api/admin/printers/pickles', { method: 'POST', key: KEY, body: { action: 'mesh', on: true } });
+  await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'mesh', on: true } });
   const MESH = 'DA-M5H1 NOISY MINER\n-37.7700,144.9600\nA line';
   const m0 = await call('/api/stories', { method: 'POST', ip: '10.0.0.6', body: story('DA-M5H1', { dest: 'mesh' }) });
   const m1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.6', body: story('DA-M5H1', { dest: 'mesh', mesh: MESH }) });
   const pm = (await call('/api/partners')).json.partners;
-  check('sent to the local mesh: it goes at once, with a mesh line for each radio that is on', m0.status === 400 && m1.status === 201 && m1.json.job && m1.json.job.status === 'queued' && pm.find(p => p.id === 'pickles').mesh === true && pm.find(p => p.id === 'kines').mesh === false, JSON.stringify({ m0: m0.status, m1: m1.json, pm }));
+  check('sent to the local mesh: it goes at once, with a mesh line for each radio that is on', m0.status === 400 && m1.status === 201 && m1.json.job && m1.json.job.status === 'queued' && pm.find(p => p.id === 'milkbar').mesh === true && pm.find(p => p.id === 'kines').mesh === false, JSON.stringify({ m0: m0.status, m1: m1.json, pm }));
   await call(`/api/admin/stories/${m1.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
-  const mj = await call('/api/printers/pickles/next', { token: T });
+  const mj = await call('/api/printers/milkbar/next', { token: T });
   check('the radio gets the mesh line alone, no bytes to print', mj.status === 200 && mj.json.code === 'DA-M5H1' && mj.json.escpos === null && mj.json.mesh === MESH, JSON.stringify(mj.json));
-  await call(`/api/printers/pickles/jobs/${mj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
+  await call(`/api/printers/milkbar/jobs/${mj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
 
   /* a touch screen beside a printer: its own token, shown once; every slip waits for it; a press prints, a long press squashes */
   await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchOn: true } });   // touch screens are off unless turned on
@@ -178,7 +178,7 @@ try {
   const WISH = { type: 'noticed', lat: -37.77, lng: 144.96, text: 'to keep the creek cool', wish: ['One', 'Two', 'Three', 'Four'], tx: { n: 'Manorina melanocephala', cn: 'Noisy Miner' } };
   const tA = await call('/api/stories', { method: 'POST', ip: '10.0.0.8', body: { kind: 'record', code: 'DA-T0CA', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
   const tB = await call('/api/stories', { method: 'POST', ip: '10.0.0.8', body: { kind: 'record', code: 'DA-T0CB', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
-  const tl = await call('/api/touch/kines', { token: TT }); const tlx = await call('/api/touch/kines', { token: 'nope' }); const tly = await call('/api/touch/pickles', { token: TT });
+  const tl = await call('/api/touch/kines', { token: TT }); const tlx = await call('/api/touch/kines', { token: 'nope' }); const tly = await call('/api/touch/milkbar', { token: TT });
   const h0 = tl.json && tl.json.held.find(h => h.code === 'DA-T0CA');
   check('a touch screen has its own token, shown once; with it on, slips wait and it sees them with their words; no other token or printer', tcx.status === 401 && typeof TT === 'string' && TT.length > 16 && tA.json.job.status === 'held' && tl.status === 200 && h0 && h0.say === 'to keep the creek cool' && h0.wish.length === 4 && h0.life === 'Noisy Miner' && h0.paper === true && tl.json.waiting === 2 && tl.json.wait === 2 && tl.json.printing >= 1 && tlx.status === 401 && tly.status === 401,
     JSON.stringify({ tcx: tcx.status, tA: tA.json.job, tl: tl.status, waiting: tl.json && tl.json.waiting, printing: tl.json && tl.json.printing, h0, tlx: tlx.status, tly: tly.status }));
@@ -382,9 +382,9 @@ try {
     wdrop.status === 200 && !wpub2.json.stories.some(x => x.code === 'DA-3WHY') && wone.status === 404 && wl2.json.mine.length === 0 && kept.who === 'K7Q' && !!kept.gone && wpub3.json.stories.some(x => x.code === 'DA-3WHY'),
     JSON.stringify({ wl: wl.json, wo: wo.json, wbad: wbad.status, wnot: wnot.status, wdrop: wdrop.status, wone: wone.status, kept: { who: kept.who, gone: kept.gone } }));
   /* the board: written only with a code a print gave, read by anyone by kin (never the code), a reply under what it answers, hidden from the approval page */
-  const kp = await call('/api/stories', { method: 'POST', body: story('DA-4PQR', { dest: 'pickles', who: 'K7Q', escpos: Buffer.from([0x1B, 0x40, 66, 10]).toString('base64') }) });
+  const kp = await call('/api/stories', { method: 'POST', body: story('DA-4PQR', { dest: 'milkbar', who: 'K7Q', escpos: Buffer.from([0x1B, 0x40, 66, 10]).toString('base64') }) });
   await call(`/api/admin/stories/${kp.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
-  for (let i = 0; i < 12; i++) { const nj = await call('/api/printers/pickles/next', { token: T }); if (nj.status !== 200) break; await call(`/api/printers/pickles/jobs/${nj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } }); }
+  for (let i = 0; i < 12; i++) { const nj = await call('/api/printers/milkbar/next', { token: T }); if (nj.status !== 200) break; await call(`/api/printers/milkbar/jobs/${nj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } }); }
   const kMine = await call('/api/mine/K7Q');
   check('a printer still marks the codes it printed for', kMine.json.printed === true, JSON.stringify([kMine.json.printed]));
   const kNo = await call('/api/talk', { method: 'POST', ip: '198.51.100.11', body: { s: 'make', who: 'ZZ8', text: 'hello' } });
@@ -402,9 +402,9 @@ try {
     kNo.status === 401 && kAnon.status === 400 && kGuess.status === 401 && kA.status === 201 && kB.status === 201 && Number.isInteger(kA.json.kin) && kL.json.talk.length === 2 && kL.json.talk.every(t => !('who' in t) && t.kin === kA.json.kin) && kL.json.talk.some(t => t.re === kA.json.id) && kS.json.talk.length === 0 && kL2.json.talk.length === 1 && kAd.json.talk.filter(t => t.k !== 'ng').length === 2 && kAd.json.talk.some(t => t.hidden && t.who === 'K7Q'),
     JSON.stringify({ no: kNo.status, a: kA.json, l: kL.json, ad: (kAd.json.talk || []).length }));
   /* a maker on the approval page: everything they did; deleted, their stories go to the archive and their posts and record go */
-  const qA = await call('/api/stories', { method: 'POST', ip: '198.51.100.21', body: story('DA-4QXA', { who: 'Q4X', dest: 'pickles', escpos: Buffer.from([0x1B, 0x40, 67, 10]).toString('base64') }) });
+  const qA = await call('/api/stories', { method: 'POST', ip: '198.51.100.21', body: story('DA-4QXA', { who: 'Q4X', dest: 'milkbar', escpos: Buffer.from([0x1B, 0x40, 67, 10]).toString('base64') }) });
   await call(`/api/admin/stories/${qA.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
-  for (let i = 0; i < 12; i++) { const nj = await call('/api/printers/pickles/next', { token: T }); if (nj.status !== 200) break; await call(`/api/printers/pickles/jobs/${nj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } }); }
+  for (let i = 0; i < 12; i++) { const nj = await call('/api/printers/milkbar/next', { token: T }); if (nj.status !== 200) break; await call(`/api/printers/milkbar/jobs/${nj.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } }); }
   await call('/api/talk', { method: 'POST', ip: '198.51.100.21', body: { s: 'make', who: 'Q4X', text: 'a kelp forest of paper' } });
   const qM = await call('/api/admin/makers/Q4X', { key: KEY }), qMx = await call('/api/admin/makers/Q4X');
   const qD = await call('/api/admin/makers/Q4X', { method: 'POST', key: KEY, body: { action: 'delete' } });
@@ -436,6 +436,18 @@ try {
     check('a private page opens by its link alone, and is in no public setting and no backup', ok.status === 200 && /Plain/.test(ok.text) && bad.status === 404 && pub.json.note === undefined && pub.json.noteKey === undefined && pub.json.noteK === undefined && ex.json.settings.note === undefined && ex.json.settings.noteKey === undefined, JSON.stringify([ok.status, bad.status, pub.json.note, Object.keys(ex.json.settings).filter(k => /note/.test(k))])); }
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { notePub: '1' } }); const p2 = await call('/api/settings'); await call('/api/admin/settings', { method: 'POST', key: KEY, body: { notePub: '' } }); const p3 = await call('/api/settings');
     check('the private page is linked from the site only while novel.global says so', p2.json.noteK === 'notekeynotekeynotekey22' && p3.json.noteK === undefined && p2.json.note === undefined, JSON.stringify([p2.json.noteK, p3.json.noteK])); }
+  /* a receiver that still asks under an id its printer no longer goes by is known by its token */
+  { const o = await call('/api/printers/an-older-name/next', { token: T }), x = await call('/api/printers/an-older-name/next', { token: 'nope' });
+    check('a receiver asking under an older id is known by its token, and by nothing else', (o.status === 200 || o.status === 204) && x.status === 401, JSON.stringify([o.status, x.status])); }
+  /* the film under the label: a play is asked for and counted, its address is signed, and it answers a player on this site only */
+  { const d0 = await call('/api/settings'); let L0 = {}; try { L0 = JSON.parse(d0.json.label); } catch (e) { L0 = {}; }
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T', film: { on: true, file: 'none-there.mp4', max: 2, each: 5 } }) } });
+    const a1 = await call('/api/film', { method: 'POST' }), a2 = await call('/api/film', { method: 'POST' }), a3 = await call('/api/film', { method: 'POST' }), u = (a1.json && a1.json.u) || '/api/film/x';
+    const raw = (p, h) => fetch(O + p, { headers: h }).then(r => r.status);
+    const noRange = await raw(u, {}), tab = await raw(u, { range: 'bytes=0-', 'sec-fetch-dest': 'document' }), other = await raw(u, { range: 'bytes=0-', 'sec-fetch-site': 'cross-site' }), forged = await raw(u.replace(/.$/, c => (c === 'a' ? 'b' : 'a')), { range: 'bytes=0-' }), ok = await raw(u, { range: 'bytes=0-', 'sec-fetch-dest': 'video', 'sec-fetch-site': 'same-origin' });
+    const ad = await call('/api/admin/film', { key: KEY });
+    check('the label is there from the start, with a film; a play is counted and stops at the day\'s limit; its address answers a player here only', L0.on === true && !!L0.film && a1.status === 200 && /^\/api\/film\/\d{13}\.[0-9a-f]{32}$/.test(u) && a2.status === 200 && a3.status === 429 && noRange === 403 && tab === 403 && other === 403 && forged === 404 && ok === 404 && ad.json.today === 2 && ad.json.found === false,
+      JSON.stringify([L0.on, a1.status, a2.status, a3.status, noRange, tab, other, forged, ok, ad.json])); }
   /* the label a first visit meets, and the islands to be found: both as the approval page set them, a closed island's place kept back */
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T' }), isles: JSON.stringify({ novelglobal: { addr: '1 Test St', lat: -37.8, lng: 144.9 } }) } });
     const ps = await call('/api/settings'), is = await call('/api/isles');

@@ -1,5 +1,5 @@
 /* a pop-up card: your face in an Australian animal's, placed by hand, printed at the place hosting it. Open only by its private link (the poster QR)
-   or a pass that printer printed. Each pop-up's logos, printer, donation, tips and animals come from the POP-UPS page in admin; these defaults are Pickles' */
+   or a pass that printer printed. Each pop-up's logos, printer, donation, tips and animals come from the POP-UPS page in admin; these defaults are Milk Bar's */
 (function () {
   'use strict';
   var T = window.THERMAL, D = document, $ = function (s) { return D.querySelector(s); };
@@ -17,8 +17,8 @@
     /* no animal: any photo, whole, for anyone who would rather not print their face */
     ['none', 'your photo', 0.5, 0.5, 0, 0]
   ];
-  /* what each pop-up can change, from the POP-UPS page in admin; these are Pickles' */
-  var CFG = { id: 'pickles', to: 'novelglobal', logos: [{ src: 'pop/pickles.png', href: '' }, { src: 'pop/foe.png', href: 'https://www.melbournefoe.org.au/climatedonate#10' }], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' }, animals: null,
+  /* what each pop-up can change, from the POP-UPS page in admin; these are Milk Bar's */
+  var CFG = { id: 'milkbar', to: 'novelglobal', logos: [{ src: 'pop/milkbar.png', href: '' }, { src: 'pop/foe.png', href: 'https://www.melbournefoe.org.au/climatedonate#10' }], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' }, animals: null,
     tips: { title: 'El Niño', by: {
       frill: 'In heatwaves, lizards shelter under logs and leaf litter. Leave some fallen wood and mulch in the garden: it is their cool room.',
       roo: 'In dry spells, roos graze roadsides where runoff keeps the grass green. Drive slower at dawn and dusk, when they move.',
@@ -149,7 +149,7 @@
   function print() { if (S.busy) return; if (!S.img) { pick(); return; } if (!S.to) { say('NO PRINTER'); return; } S.busy = true; $('#go').disabled = true; say('· · ·');
     var who = whoNow(), ps = store.get('da.pass', null); if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
     fonts().then(function () { var c = paper(who);
-      return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: 'pickles', lat: WHERE[0], lng: WHERE[1] }), lat: WHERE[0], lng: WHERE[1], dest: S.to, escpos: T.raster(c, 0), from: 'pop', stage: 'stack', who: who, pop: S.key, popId: CFG.id, pass: ps ? ps.code : undefined,
+      return api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: code(), body: JSON.stringify({ type: 'stack', stack: 'milkbar', lat: WHERE[0], lng: WHERE[1] }), lat: WHERE[0], lng: WHERE[1], dest: S.to, escpos: T.raster(c, 0), from: 'pop', stage: 'stack', who: who, pop: S.key, popId: CFG.id, pass: ps ? ps.code : undefined,
         /* the colour print goes with it only where the place keeps its prints; a private pop-up is sent nothing but the dots */
         art: CFG.keep ? receipt().toDataURL('image/jpeg', 0.8) : undefined }) }); })
       .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } say(''); done(!!(j && (j.passed || j.straight || (j.job && j.job.status === 'queued')))); },

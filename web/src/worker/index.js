@@ -10,6 +10,7 @@
    job waits a day at most, and once printed only its status is kept, for a week. A preview build has its own database. */
 import { BUILD, PREVIEW, PARTNERS } from './stamp.js';
 import { FIRST_PLAY } from './first-play.js';
+import { LABEL } from './label.js';
 
 const JSON_H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 const TEXT_H = { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
@@ -65,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 10;
+const SCHEMA_V = 11;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -73,6 +74,8 @@ function ready(db) {
     if (!at || +at.v < SCHEMA_V) await upgrade(db);
     /* every partner place has a print queue from the start; a printer joins it when its token is made on the approval page */
     if (PARTNERS.length) await db.batch(PARTNERS.map(p => db.prepare('INSERT OR IGNORE INTO printers (id, name, paper, created, links, two) VALUES (?, ?, ?, ?, ?, 1)').bind(p.id, p.n, p.paper, now(), '*')));
+    /* a copy of the site from before the second island's new id may have put its old queue back: an unpaired one goes */
+    await db.prepare('DELETE FROM printers WHERE id = ? AND token IS NULL').bind(['pic', 'kles'].join('')).run();
     await numberPrinters(db);
   })().catch(e => { readied.delete(db); throw e; }));
   return readied.get(db);
@@ -131,6 +134,22 @@ async function upgrade(db) {
     /* version 2. pic, cov: a photograph or a portfolio cover kept in R2 (its size), no longer inside the database */
     try { await db.prepare('ALTER TABLE stories ADD COLUMN pic INTEGER').run(); } catch (e) { /* already there */ }
     try { await db.prepare('ALTER TABLE posts ADD COLUMN cov INTEGER').run(); } catch (e) { /* already there */ }
+    /* version 11. the second island takes its new id and name, wherever either was written down, and the first three their names and numbers */
+    { const was = ['pic', 'kles'].join(''), Was = was[0].toUpperCase() + was.slice(1), to = 'milkbar', run = async (q, ...a) => { try { await db.prepare(q).bind(...a).run(); } catch (e) { /* no such table yet */ } };
+      if (await db.prepare('SELECT 1 FROM printers WHERE id = ?').bind(was).first()) {
+        await run('DELETE FROM printers WHERE id = ? AND token IS NULL', to);
+        if (!(await db.prepare('SELECT 1 FROM printers WHERE id = ?').bind(to).first())) {
+          await run('UPDATE printers SET id = ? WHERE id = ?', to, was);
+          for (const [t, c] of [['jobs', 'printer'], ['stories', 'dest'], ['cardpics', 'card'], ['cardset', 'card'], ['passes', 'island'], ['asks', 'island'], ['pairs', 'printer']]) await run(`UPDATE ${t} SET ${c} = ? WHERE ${c} = ?`, to, was); } }
+      await run("UPDATE printers SET name = 'Milk Bar' WHERE id = ?", to);
+      await run("UPDATE printers SET name = 'Dead Tree' WHERE name = 'ISLAND CE40'");
+      await run("UPDATE settings SET v = REPLACE(REPLACE(REPLACE(v, ?, 'Milk Bar'), ?, 'Milk Bar'), ?, ?) WHERE k IN ('pops', 'isles', 'cards', 'printq', 'curations')", Was + ' Milk Bar', Was, was, to);
+      await run('UPDATE stories SET origin = REPLACE(origin, ?, ?) WHERE origin LIKE ?', `"pop":"${was}"`, `"pop":"${to}"`, `{"pop":"${was}"%`);
+      await run("UPDATE places SET n = 'Milk Bar', url = '' WHERE n = ?", Was + ' Milk Bar');
+      const dead = await db.prepare("SELECT id FROM printers WHERE name = 'Dead Tree' ORDER BY created LIMIT 1").first().catch(() => null);
+      for (const [id, n] of [[to, 2], [dead && dead.id, 3]]) { if (!id || !(await db.prepare('SELECT 1 FROM printers WHERE id = ? AND token IS NOT NULL').bind(id).first().catch(() => null))) continue;
+        const top = (await db.prepare('SELECT max(number) AS n FROM printers').first()).n || 3;
+        await run('UPDATE printers SET number = ? WHERE number = ? AND id != ?', Math.max(top, 3) + 1, n, id); await run('UPDATE printers SET number = ? WHERE id = ?', n, id); } }
     await db.prepare("INSERT INTO settings (k, v) VALUES ('~schema', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(SCHEMA_V)).run();
 }
 /* each printer's island number, given the first time it is paired, in that order: novel.global's own is 1, the islands 2 and up. It stays
@@ -498,7 +517,8 @@ async function posterArt(db, env, id, any) {
   const o = await env.MEDIA.get(`art/${id}`); if (!o) return fail(404, 'not found');
   return new Response(o.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': any ? 'no-store' : 'public, max-age=86400', 'x-content-type-options': 'nosniff' } });
 }
-async function settingsOf(db) { const { results } = await db.prepare('SELECT k, v FROM settings').all(); const out = { ...SETTINGS, ...Object.fromEntries(Object.keys(TEXTS).map(k => [k, ''])) }; for (const r of results) { if (r.k in SETTINGS) out[r.k] = r.v === '1'; else if (r.k in TEXTS) out[r.k] = r.v; } return out; }
+async function settingsOf(db) { const { results } = await db.prepare('SELECT k, v FROM settings').all(); const out = { ...SETTINGS, ...Object.fromEntries(Object.keys(TEXTS).map(k => [k, ''])) }; for (const r of results) { if (r.k in SETTINGS) out[r.k] = r.v === '1'; else if (r.k in TEXTS) out[r.k] = r.v; } if (!out.label) out.label = LABEL_TEXT; return out; }
+const LABEL_TEXT = JSON.stringify(LABEL);
 /* the partner places: whether a printer is there and listening, and how much it has printed */
 async function partners(db) {
   const { results } = await db.prepare(`SELECT p.id, p.name, p.paper, p.mesh, p.live, p.two, p.links, p.token IS NOT NULL AS paired, p.seen,
@@ -507,6 +527,33 @@ async function partners(db) {
   return json({ partners: results.map(p => ({ id: p.id, name: p.name, paper: p.paper, paired: !!p.paired, mesh: !!p.mesh && !!p.paired, live: !!p.live, two: !!p.two, links: p.id === 'novelglobal' ? LINKS : linksOf(p.links), ready: !!p.seen && now() - p.seen < 2 * 60e3, queued: p.queued, printed: p.printed })) });
 }
 
+/* the film under the label: one file from the films bucket, played in the page and nowhere else. A play is asked for first and counted: so
+   many a day in all, so many a day from one place, both set on the approval page. What comes back is an address signed for a few hours,
+   which answers a player on this site, a piece at a time: never a tab, a save, or another site */
+const FILM = { file: /^\w[\w.-]{0,79}\.(mp4|webm|mov)$/, life: 4 * 3600e3, piece: 4 << 20 };
+const hex = u => [...u].map(b => b.toString(16).padStart(2, '0')).join('');
+async function filmOf(db) { let L = {}; try { L = JSON.parse((await settingsOf(db)).label || '{}'); } catch (e) { L = {}; } const f = L && L.film; return f && f.on && FILM.file.test(f.file || '') ? f : null; }
+const filmSig = async (env, file, exp) => hex(await mac(codeKey(env), `film|${file}|${exp}`)).slice(0, 32);
+const filmToday = async db => { const r = await db.prepare("SELECT n FROM traffic WHERE day = ? AND k = 'film'").bind(melDay()).first(); return r ? r.n : 0; };
+async function filmAsk(db, env, req) {
+  const f = await filmOf(db); if (!f || !env.FILMS || !codeKey(env)) return fail(404, 'none');
+  const max = Math.max(1, Math.min(1e6, Math.round(+f.max) || 300)), each = Math.max(1, Math.min(500, Math.round(+f.each) || 6));
+  if ((await filmToday(db)) >= max || await tooMany(db, env, req, 'film', each, DAY)) return fail(429, 'rest');
+  await db.prepare("INSERT INTO traffic (day, k, n) VALUES (?, 'film', 1) ON CONFLICT(day, k) DO UPDATE SET n = n + 1").bind(melDay()).run();
+  const exp = now() + FILM.life; return json({ u: `/api/film/${exp}.${await filmSig(env, f.file, exp)}` });
+}
+async function filmPlay(db, env, req, tok) {
+  const f = await filmOf(db), m = /^(\d{13})\.([0-9a-f]{32})$/.exec(tok || ''); if (!f || !env.FILMS || !codeKey(env) || !m || +m[1] < now()) return fail(404, 'none');
+  if (!(await same(m[2], await filmSig(env, f.file, m[1])))) return fail(404, 'none');
+  const dest = req.headers.get('sec-fetch-dest'), site = req.headers.get('sec-fetch-site'), r = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') || '');
+  if ((dest && dest !== 'video') || (site && site !== 'same-origin') || !r || (!r[1] && !r[2])) return fail(403, 'no');
+  const head = await env.FILMS.head(f.file); if (!head) return fail(404, 'none');
+  const size = head.size; let a = 0, b = size - 1; if (r[1]) { a = +r[1]; if (r[2]) b = Math.min(b, +r[2]); } else a = Math.max(0, size - +r[2]);
+  if (a > b || a >= size) return new Response(null, { status: 416, headers: { 'content-range': `bytes */${size}` } });
+  b = Math.min(b, a + FILM.piece - 1); const o = await env.FILMS.get(f.file, { range: { offset: a, length: b - a + 1 } }); if (!o) return fail(404, 'none');
+  return new Response(o.body, { status: 206, headers: { 'content-type': (head.httpMetadata && head.httpMetadata.contentType) || (/\.webm$/.test(f.file) ? 'video/webm' : 'video/mp4'), 'accept-ranges': 'bytes', 'content-range': `bytes ${a}-${b}/${size}`, 'content-length': String(b - a + 1),
+    'cache-control': 'private, no-store', 'content-disposition': 'inline', 'x-content-type-options': 'nosniff', 'cross-origin-resource-policy': 'same-origin', 'x-robots-tag': 'noindex, noarchive' } });
+}
 /* the islands, for someone looking for one: each printer that is paired, whether it is on, whether a pop-up is open on it, and, while it is
    open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture) */
 async function isles(db) {
@@ -791,6 +838,7 @@ async function admin(db, env, req, parts) {
   if (what === 'restore' && req.method === 'POST') return restoreAll(db, req);
   if (what === 'reset' && req.method === 'POST') return resetSite(db, env, req);
   if (what === 'pair' && id && (req.method === 'GET' || req.method === 'POST')) return adminPair(db, req, id);
+  if (what === 'film' && !id && req.method === 'GET') { const f = await filmOf(db); return json({ today: await filmToday(db), bucket: !!env.FILMS, found: !!(f && env.FILMS && await env.FILMS.head(f.file)) }); }
   if (what === 'printers' && !id) {
     const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.net, p.touch_net, p.wifi, p.upd,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed' AND j.done > (strftime('%s', 'now') - 86400) * 1000) AS day,
@@ -1270,9 +1318,9 @@ async function passMake(env, island, n) { const day = melDay(), out = [];
   for (let i = 0; i < n; i++) { const a = crypto.getRandomValues(new Uint8Array(3)), nn = letters(a, 3); out.push(nn + '-' + await passMac(env, island, day, nn)); }
   return { day, mark: await markOf(env, island, day), passes: out }; }
 /* the pop-up (a card for one place and one weekend): open only by its private link on the poster there, or a pass that place's printer printed */
-/* every pop-up lives in the pops text: {pops:[{id, name, on, key, to, logos, donate, tips, animals}], tpl:[...]}; the first one, Pickles, may still be the old popOn/popKey pair */
+/* every pop-up lives in the pops text: {pops:[{id, name, on, key, to, logos, donate, tips, animals}], tpl:[...]}; the first one, Milk Bar, may still be the old popOn/popKey pair */
 async function popsOf(db) { const s = await settingsOf(db); let d = {}; try { d = s.pops ? JSON.parse(s.pops) : {}; } catch (e) { d = {}; } const l = Array.isArray(d.pops) ? d.pops : [];
-  if (s.popKey && !l.some(p => p.id === 'pickles')) l.unshift({ id: 'pickles', name: 'Pickles', on: !!s.popOn, key: s.popKey }); return l; }
+  if (s.popKey && !l.some(p => p.id === 'milkbar')) l.unshift({ id: 'milkbar', name: 'Milk Bar', on: !!s.popOn, key: s.popKey }); return l; }
 async function popFind(db, env, k, id) { if (typeof k !== 'string' || !k) return null; const l = (await popsOf(db)).filter(p => p && p.on);
   for (const p of l) if (typeof p.key === 'string' && p.key && k.length === p.key.length && await same(k, p.key)) return p;
   const ps = k.toUpperCase().replace(/\s+/g, ''); if (PASS.test(ps) && codeKey(env)) { const want = l.filter(p => p.id === id)[0] || (l.length === 1 ? l[0] : null); if (want && await passFind(db, env, ps)) return want; } return null; }
@@ -1431,6 +1479,10 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'posters' && p[1] && !p[2] && m === 'GET') return posterArt(db, env, p[1], false);
   /* someone has set out towards a print: every printer asks quickly for the next few minutes (at most one write a minute from each copy) */
   if (p[0] === 'warm' && !p[1] && m === 'POST') { if (now() - USE.warmAt > 60e3) { USE.warmAt = now(); await db.prepare('UPDATE printers SET warm = ? WHERE token IS NOT NULL OR touch IS NOT NULL').bind(now()).run(); } return new Response(null, { status: 204, headers: TEXT_H }); }
+  if (p[0] === 'film' && !p[1] && m === 'POST') return filmAsk(db, env, req);
+  if (p[0] === 'film' && p[1] && !p[2] && m === 'GET') return filmPlay(db, env, req, p[1]);
+  /* a receiver set up under an id its printer no longer goes by is known by its token */
+  if ((p[0] === 'printers' || p[0] === 'touch') && p[1] && bearer(req) && !(await db.prepare('SELECT 1 FROM printers WHERE id = ?').bind(p[1]).first())) { const r = await db.prepare(`SELECT id FROM printers WHERE ${p[0] === 'touch' ? 'touch' : 'token'} = ?`).bind(await sha256(bearer(req))).first(); if (r) p[1] = r.id; }
   if (p[0] === 'printers' && p[1] && p[2] === 'next' && m === 'GET') return next(db, req, p[1]);
   if (p[0] === 'printers' && p[1] && p[2] === 'jobs' && p[3] && m === 'POST') return report(db, req, p[1], p[3]);
   if (p[0] === 'pair' && !p[1] && m === 'POST') return pairAsk(db, env, req);
@@ -1454,6 +1506,9 @@ export default {
       const origin = request.headers.get('origin'); if (origin && request.method !== 'GET' && origin !== url.origin) return fail(403, 'origin');
       try { return await api(request, env, url, ctx); } catch (e) { return fail(e.status || 500, e.status ? e.message : 'error'); }
     }
-    return env.ASSETS.fetch(request);
+    /* a pop-up's link under an address that is no longer a page still opens the pop-up */
+    const res = await env.ASSETS.fetch(request);
+    if (res.status === 404 && request.method === 'GET' && url.searchParams.get('k') && /^\/[a-z0-9-]{1,40}$/.test(url.pathname)) return Response.redirect(url.origin + '/popup' + url.search, 302);
+    return res;
   },
 };

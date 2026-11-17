@@ -751,15 +751,15 @@
     ]
    },
    "properties": {
-    "id": "pickles-milk-bar",
-    "name": "Pickles Milk Bar",
+    "id": "milk-bar",
+    "name": "Milk Bar",
     "kind": "third",
     "role": "third",
     "note": "A plant-based milk bar with a W.I.S.H. receipt printer: slips sent here print at the counter",
-    "url": "https://www.instagram.com/pickles_milkbar/",
+    "url": "",
     "addr": "1008 Lygon Street",
     "sub": "Carlton North",
-    "partner": "pickles"
+    "partner": "milkbar"
    }
   },
   {

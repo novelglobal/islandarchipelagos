@@ -49,8 +49,8 @@
       "home": true
     },
     {
-      "id": "pickles",
-      "name": "Pickles Milk Bar",
+      "id": "milkbar",
+      "name": "Milk Bar",
       "profile": "tm-t88v",
       "paper": 80,
       "at": [

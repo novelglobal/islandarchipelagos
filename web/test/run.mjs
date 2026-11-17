@@ -30,6 +30,8 @@ const API_O = (await apiServer.listen()).url.origin;
 const admin = async (p, body) => { const r = await apiServer.fetch(new URL('/api/admin/' + p, API_O), { method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${ADMIN_KEY}`, 'content-type': 'application/json', origin: API_O }, body: body ? JSON.stringify(body) : undefined }); return r.json(); };
 
 async function wire(ctx, { inat = true, config = BASE_CONFIG, tmax = 33, night = 0, worst = 30, ens = true, comOK = true, overpass = true, net = { down: false }, first = false, nocode = false, dark = false, front = false, journey = false, plain = false } = {}) {
+  /* the label a first visit meets is put away, so each check sees the page under it */
+  await ctx.addInitScript(() => { try { localStorage.setItem('da.label.never', '1'); } catch (e) { /* none */ } });
   /* the studio, the back of every page, unless a check is about the fronts */
   /* the radar stays where it is pinned, unless a check is about a first visit */
   /* and by day (night is the default), unless a check is about the night */
@@ -313,7 +315,7 @@ if (run('smoke')) try {
   check('W.I.S.H.: the handheld first, then the boards, the active one with its signal; the field notes to download; the board beside it', sg.first === 'sec-wish' && sg.pages === 1 && sg.md && sg.board && sg.hash === '#wish', JSON.stringify(sg));
   /* PRINT SHOP: no readings row (the style stays as set elsewhere), novel.global's printer alone, a blank slip */
   await tab(page, 2); await sleep(600);
-  const sn = await page.evaluate(() => ({ styles: document.querySelectorAll('#view [data-style]').length, prn: document.querySelectorAll('.ps-printer').length, cafes: /Pickles|Kines|Elsie/.test(document.querySelector('#view').innerHTML), blank: !!document.querySelector('#view [data-doc="blank"]'), head: (document.querySelector('.ps-hl b') || {}).textContent, hidden: !!(document.querySelector('#ps-info') || {}).hidden, main: (() => { const k = document.querySelector('#sec-out .print-k'); return k ? { text: k.textContent.trim(), icon: !!k.querySelector('svg use[href="#g-epson"]'), on: k.classList.contains('on') } : null; })() }));
+  const sn = await page.evaluate(() => ({ styles: document.querySelectorAll('#view [data-style]').length, prn: document.querySelectorAll('.ps-printer').length, cafes: /Milk Bar|Kines|Elsie/.test(document.querySelector('#view').innerHTML), blank: !!document.querySelector('#view [data-doc="blank"]'), head: (document.querySelector('.ps-hl b') || {}).textContent, hidden: !!(document.querySelector('#ps-info') || {}).hidden, main: (() => { const k = document.querySelector('#sec-out .print-k'); return k ? { text: k.textContent.trim(), icon: !!k.querySelector('svg use[href="#g-epson"]'), on: k.classList.contains('on') } : null; })() }));
   check('PRINT: no readings row; novel.global’s printer alone at its head, named only when it is pressed; no print key on the studio side, the printers listed instead; the blank slip gone to the portfolio', sn.styles === 0 && sn.prn === 1 && !sn.cafes && !sn.blank && /NOVEL/.test(sn.head || '') && sn.hidden && !sn.main, JSON.stringify(sn));
   /* PORTFOLIO: the board, eight as cards, the rest as a list; the briefs, the tools */
   await tab(page, 3); await sleep(600);
@@ -535,11 +537,11 @@ if (run('fronts')) try {
   check('editing switched on at the approval page: BOARD 00 opens and changes, is sent, waits there, and once shown is the example everyone is served; locked again, nothing more is taken', ed.open && ed.send && ed.added && exw.length === 1 && !!served.board && served.board.objects.length >= 40 && pub === 0 && locked === 403, JSON.stringify({ ed, waiting: exw.length, served: !!served.board, pub, locked }));
   for (const st of ['waiting', 'shown']) for (const x of (await admin('stories?status=' + st)).stories.filter(y => y.kind === 'example')) await admin(`stories/${x.id}`, { action: 'delete' });
   /* more than one printer online: PRINT's light opens a short list, each with its light and its place, and the one chosen is kept */
-  for (const id of ['pickles', 'kines']) await admin(`printers/${id}`, { action: 'live', on: true });
+  for (const id of ['milkbar', 'kines']) await admin(`printers/${id}`, { action: 'live', on: true });
   const pc = await page.evaluate(async () => { const da = window.__da; const wait = ms => new Promise(r => setTimeout(r, ms)); await da.loadPartners(); da.setFace(2, 'front'); da.setView(2); await wait(900);
     document.querySelector('#view [data-prn]').click(); await wait(300); const ks = [...document.querySelectorAll('#view [data-prn-pick]')]; const out = { n: ks.length, places: ks.map(k => (k.querySelector('small') || {}).textContent || '').filter(Boolean).length };
     if (ks[1]) { ks[1].click(); await wait(200); out.chosen = da.prefs.prn === ks[1].dataset.prnPick && ks[1].classList.contains('on') && !ks[0].classList.contains('on'); } return out; });
-  for (const id of ['pickles', 'kines']) await admin(`printers/${id}`, { action: 'live', on: false });
+  for (const id of ['milkbar', 'kines']) await admin(`printers/${id}`, { action: 'live', on: false });
   check('more than one printer online: PRINT\'s light opens the printers to choose from, each with its light and its one-word name, and the one chosen is kept', pc.n === 2 && pc.places === 0 && pc.chosen, JSON.stringify(pc));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section fronts: ${e.message.split('\n')[0]}`); }
@@ -573,7 +575,7 @@ async function walkJourney(page, tag, phoneSize) {
   const out = {}; const st = () => page.evaluate(() => ({ j: window.__da.prefs.journey, view: window.__da.S.view, simple: window.__da.simple(), cls: ['simple', 'j0', 'j1', 'j2', 'j3'].filter(c => document.body.classList.contains(c)).join(' ') }));
   const press = async (sel, x) => (phoneSize ? page.tap(sel, { timeout: 20000, ...(x || {}) }) : tap(page, sel, x));
   /* 0: the map alone */
-  out.s0 = await page.evaluate(() => { const da = window.__da; const vis = el => !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0; const so = document.querySelector('.jr-sonar'); const sr = so.getBoundingClientRect(); return { j: da.prefs.journey, cls: document.body.classList.contains('j0'), placed: da.placed(), panel: vis(document.querySelector('#panel')), rail: vis(document.querySelector('#rail')), sonar: !so.hidden && sr.left > 0 && sr.left < innerWidth && sr.top > 0 && sr.top < innerHeight, printers: da.PARTNERS.every(p => p._x == null), start: Math.round(da.haversine(da.S.scan.lat, da.S.scan.lng, da.CONFIG.SCAN.lat, da.CONFIG.SCAN.lng)), pickles: (pk => Math.round(da.haversine(da.S.scan.lat, da.S.scan.lng, pk.lat, pk.lng)))(da.PARTNERS.find(p => p.id === 'pickles')) }; });
+  out.s0 = await page.evaluate(() => { const da = window.__da; const vis = el => !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0; const so = document.querySelector('.jr-sonar'); const sr = so.getBoundingClientRect(); return { j: da.prefs.journey, cls: document.body.classList.contains('j0'), placed: da.placed(), panel: vis(document.querySelector('#panel')), rail: vis(document.querySelector('#rail')), sonar: !so.hidden && sr.left > 0 && sr.left < innerWidth && sr.top > 0 && sr.top < innerHeight, printers: da.PARTNERS.every(p => p._x == null), start: Math.round(da.haversine(da.S.scan.lat, da.S.scan.lng, da.CONFIG.SCAN.lat, da.CONFIG.SCAN.lng)), milkbar: (pk => Math.round(da.haversine(da.S.scan.lat, da.S.scan.lng, pk.lat, pk.lng)))(da.PARTNERS.find(p => p.id === 'milkbar')) }; });
   await shot(page, `${tag}0-map.png`);
   /* 1: a touch on the map, and the radar lands where it fell, 500 m; the radio comes up, half its height, no jellyfish */
   const m = await page.evaluate(() => { const r = window.__da.map.getContainer().getBoundingClientRect(); return [r.left + r.width * 0.48, r.top + r.height * 0.36]; });
@@ -715,7 +717,7 @@ if (run('journey')) try {
   check('a first visit opens on a veil over the map: small words alone, What have you noticed?, held a few seconds and gone by itself', vq === 'What have you noticed?' && vt >= 3000 && vt < 12000, JSON.stringify({ vq, vt, load: v1 - v0 }));
   await ready(page); await settle(page); await sleep(1200);
   const d = await walkJourney(page, 'j-');
-  check('a first visit: the map alone, no page, no rail, no radar; a sonar where life gathers says where to touch; no printer shown until one is online, and the map not opened on one', d.s0.j === 0 && d.s0.cls && !d.s0.placed && !d.s0.panel && !d.s0.rail && d.s0.sonar && d.s0.printers && d.s0.start < 50 && d.s0.pickles > 400, JSON.stringify(d.s0));
+  check('a first visit: the map alone, no page, no rail, no radar; a sonar where life gathers says where to touch; no printer shown until one is online, and the map not opened on one', d.s0.j === 0 && d.s0.cls && !d.s0.placed && !d.s0.panel && !d.s0.rail && d.s0.sonar && d.s0.printers && d.s0.start < 50 && d.s0.milkbar > 400, JSON.stringify(d.s0));
   check('the sound in one deep key at one tempo: LIFE after Boadicea (a choir for a cluster, a depth charge for a life in danger), COMMUNITY dust, WATER a falling sub, POLLUTION a low stab; El Niño turns the radar twice as fast and drives the heat, its notes still on the beat', d.snd.moods === 'boa,dust,weight,stab' && d.snd.t0 === 1 && d.snd.t1 === 2 && d.snd.hot, JSON.stringify(d.snd));
   check('a touch on the map: the radar lands where it fell, 500 m across its reach, and plays; the radio comes up at half its height with its switch, grille, play and knobs, no jellyfish; only RADIO on the rail', d.s1.r === 500 && d.s1.placed && d.s1.off < 30 && d.s1.radio && d.s1.h <= 150 && d.s1.inView && d.s1.flip === 0 && d.s1.keys === 4 && d.s1.play && d.s1.nino && d.s1.tabs.join() === 'true,false,false,false', JSON.stringify(d.s1));
   { const f = d.fixed || {}; check('the intention device holds its size: a long intention scrolls in its two-line screen with an arrow on the glass, and the device and its make key stay where they were', f.same && f.scroll && f.arrow, JSON.stringify(f)); }
@@ -1202,14 +1204,14 @@ if (run('share')) try {
   const dp = await page.evaluate(code => ({ view: window.__da.S.view, mode: window.__da.S.mode, story: window.__da.PRESS.story === window.__da.S.signals.find(x => x.code === code).key, base: window.__da.zineObjects().some(o => o.daKind === 'base') }), s0.code);
   check('TO PRINT takes the receipt to the ZINEMAKER, at the head of the strip, ready to print', dp.view === 2 && !dp.mode && dp.story && dp.base, JSON.stringify(dp));
   /* the server's side of a print to a place: it waits for approval, its print with it */
-  await page.evaluate(async code => { const da = window.__da; const s = da.S.signals.find(x => x.code === code); await da.directAction(s, 'pickles'); da.openSignal(s.key); }, s0.code); await sleep(1200);
+  await page.evaluate(async code => { const da = window.__da; const s = da.S.signals.find(x => x.code === code); await da.directAction(s, 'milkbar'); da.openSignal(s.key); }, s0.code); await sleep(1200);
   const st0 = await page.evaluate(() => document.querySelector('#s-status').textContent);
   const waiting = await admin('stories?status=waiting'); const mine = waiting.stories.find(x => x.code === s0.code);
-  check('sent to Pickles: it waits for approval, its print with it, and says so', /PICKLES MILK BAR/.test(st0) && mine && mine.dest === 'pickles' && mine.job === 'held', JSON.stringify({ st0, mine: mine && { code: mine.code, dest: mine.dest, job: mine.job } }));
+  check('sent to Milk Bar: it waits for approval, its print with it, and says so', /MILK BAR/.test(st0) && mine && mine.dest === 'milkbar' && mine.job === 'held', JSON.stringify({ st0, mine: mine && { code: mine.code, dest: mine.dest, job: mine.job } }));
   await admin(`stories/${mine.id}`, { action: 'show' });
   await page.evaluate(() => window.__da.checkSent()); await sleep(900);
   const st1 = await page.evaluate(() => document.querySelector('#s-status').textContent);
-  check('approved: the sender sees it join the printer queue', /IN THE QUEUE/.test(st1) && /PICKLES/.test(st1), st1);
+  check('approved: the sender sees it join the printer queue', /IN THE QUEUE/.test(st1) && /MILK BAR/.test(st1), st1);
   /* another device: the board shows it to everyone */
   const ctx2 = await newCtx(); await wire(ctx2); const p2 = await ctx2.newPage(); watch(p2, 'share-2');
   await p2.goto('https://oan.test/studio'); await ready(p2); await sleep(1500); await tab(p2, 3); await sleep(600);
@@ -1229,13 +1231,13 @@ if (run('share')) try {
   const r3 = await p3.evaluate(() => ({ code: window.__da.S.issued && window.__da.S.issued.code, face: window.__da.face(), mode: window.__da.S.mode }));
   check('RECEIVE: the code printed on the slip brings the story up on any device', r3.code === s0.code && r3.face === 'signal' && r3.mode === 'ping', JSON.stringify(r3));
   await ctx3.close();
-  /* the printer at Pickles: always on the map, its own card */
+  /* the printer at Milk Bar: always on the map, its own card */
   await page.evaluate(() => { const da = window.__da; da.closeRecord(); da.setView(0); da.setOpen(false); da.life.moveScan(-37.758, 144.952, false); }); await sleep(500);
-  const pk = await page.evaluate(() => { const da = window.__da; const p = da.PARTNERS.find(x => x.id === 'pickles'); da.map.jumpTo({ center: [p.lng, p.lat], zoom: 15.2 }); return { lat: p.lat, lng: p.lng }; }); await settle(page); await sleep(500);
+  const pk = await page.evaluate(() => { const da = window.__da; const p = da.PARTNERS.find(x => x.id === 'milkbar'); da.map.jumpTo({ center: [p.lng, p.lat], zoom: 15.2 }); return { lat: p.lat, lng: p.lng }; }); await settle(page); await sleep(500);
   const pxy = await page.evaluate(({ lat, lng }) => { const da = window.__da; const q = da.map.project([lng, lat]); const r = da.map.getContainer().getBoundingClientRect(); return { x: q.x + r.left, y: q.y + r.top, hit: (da.life.hit(q.x, q.y) || {}).kind, inScan: da.life.inScan(lat, lng) }; }, pk);
   await page.mouse.click(pxy.x, pxy.y); await sleep(1400);
   const pc = await page.evaluate(() => ({ mode: window.__da.S.mode, name: document.querySelector('#r-name').textContent, no: document.querySelector('#r-no').textContent, main: document.querySelector('#r-act .hw').textContent, chips: document.querySelector('#r-chips').textContent, sent: document.querySelectorAll('#r-strings [data-sig]').length }));
-  check('Pickles Milk Bar: its printer on the map, outside the radar too, opening its card', !pxy.inScan && pxy.hit === 'partner' && pc.mode === 'partner' && pc.name === 'Pickles Milk Bar' && /PRINTER/.test(pc.no) && pc.main === 'VISIT' && /80 MM/.test(pc.chips) && pc.sent >= 1, JSON.stringify({ pxy, pc }));
+  check('Milk Bar: its printer on the map, outside the radar too, opening its card', !pxy.inScan && pxy.hit === 'partner' && pc.mode === 'partner' && pc.name === 'Milk Bar' && /PRINTER/.test(pc.no) && pc.main === 'VISIT' && /80 MM/.test(pc.chips) && pc.sent >= 1, JSON.stringify({ pxy, pc }));
   await shot(page, '35-partner.png');
   /* switched online on the approval page: its icon on the map is online at once, without a Pi */
   await admin('printers/kines', { action: 'live', on: true }); await page.evaluate(() => window.__da.loadPartners()); await sleep(300);

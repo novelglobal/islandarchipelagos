@@ -397,7 +397,7 @@
     ['wish.tab', 'W.I.S.H. · ITS QUICK WORD'], ['wish.say', 'W.I.S.H. · THE LINE THAT COMES AND GOES'],
     ...['w', 'i', 's', 'h'].flatMap(l => [[`${l}.word`, `${l.toUpperCase()} · ITS QUICK WORD`], [`${l}.head`, `${l.toUpperCase()} · ITS HEADING (ON HOVER)`], [`${l}.how`, `${l.toUpperCase()} · WHAT GOES ON ITS LINE (ON HOVER)`]])];
   /* the home's cards: each card's words, place and look, in the order they stand on novel.global; a card not written here keeps its own */
-  const CARD_EG = '# wish\ntitle: I W.I.S.H.\nafter: helps you tell stories of change\ntag: STRATEGIC INNOVATION\nkey: MORE LIFE\nwhere: -37.8136, 144.9631\nmotion: shadow\n\n# zine\ntitle: PICKLES LANDSCAPE ZINE MAKER\nisland: pickles\nopens: stack:tall\n\n# radio\nhide';
+  const CARD_EG = '# wish\ntitle: I W.I.S.H.\nafter: helps you tell stories of change\ntag: STRATEGIC INNOVATION\nkey: MORE LIFE\nwhere: -37.8136, 144.9631\nmotion: shadow\n\n# zine\ntitle: MILK BAR LANDSCAPE ZINE MAKER\nisland: milkbar\nopens: stack:tall\n\n# radio\nhide';
   /* a card's own pictures: the photographs CIRCULAR STRATEGY turns through (up to ten) and how fast; the picture behind DIRECT ACTION RADIO and how strongly it shows */
   function picsCard() {
     const sec = el('section', { class: 'printer ed' }), box = el('div');
@@ -480,7 +480,7 @@
   /* ───────── pop-ups: a card for one place and one weekend. Build one (from a template), open it, print its QR for the poster,
      close it after; keep any as a template for the next. All of it is the pops setting: {pops:[…], tpl:[…]} ───────── */
   const POP_ANIMALS = [['frill', 'FRILLED LIZARD'], ['roo', 'KANGAROO'], ['dingo', 'DINGO'], ['emu', 'EMU'], ['quokka', 'QUOKKA'], ['wombat', 'WOMBAT'], ['echidna', 'ECHIDNA']];
-  const POP_BASE = { kind: 'faces', name: 'Animal faces', to: 'novelglobal', auto: true, logos: [{ src: 'pop/pickles.png', href: '' }, { src: 'pop/foe.png', href: 'https://www.melbournefoe.org.au/climatedonate#10' }], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' },
+  const POP_BASE = { kind: 'faces', name: 'Animal faces', to: 'novelglobal', auto: true, logos: [{ src: 'pop/milkbar.png', href: '' }, { src: 'pop/foe.png', href: 'https://www.melbournefoe.org.au/climatedonate#10' }], donate: { url: 'https://www.melbournefoe.org.au/climatedonate#10', label: 'DONATE $10' },
     tips: { title: 'El Niño', by: {
       frill: 'In heatwaves, lizards shelter under logs and leaf litter. Leave some fallen wood and mulch in the garden: it is their cool room.',
       roo: 'In dry spells, roos graze roadsides where runoff keeps the grass green. Drive slower at dawn and dusk, when they move.',
@@ -492,7 +492,7 @@
     animals: POP_ANIMALS.map(a => a[0]) };
   const popMint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(12); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
   const deskUrl = p => 'https://novel.global/desk?d=' + encodeURIComponent(p.desk || '');
-  const popUrl = p => 'https://novel.global/' + (p.id === 'pickles' ? 'pickles' : 'popup') + '?k=' + encodeURIComponent(p.key || '');
+  const popUrl = p => 'https://novel.global/popup?k=' + encodeURIComponent(p.key || '');
   const popClone = o => JSON.parse(JSON.stringify(o));
   const popTpl = p => { const t = popClone(p); delete t.id; delete t.on; delete t.key; return t; };
   function popQr(url, box) { const draw = () => { const q = window.qrcode(0, 'M'); q.addData(url); q.make(); const n = q.getModuleCount(), m = 4, px = 12, c = document.createElement('canvas'); c.width = c.height = (n + m * 2) * px; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
@@ -503,8 +503,8 @@
     const [st, pr] = await Promise.all([(await api('settings')).json(), api('printers').then(r => r.json()).catch(() => ({ printers: [] }))]);
     let doc = {}; try { doc = st.pops ? JSON.parse(st.pops) : {}; } catch (e) { doc = {}; }
     doc.pops = Array.isArray(doc.pops) ? doc.pops : []; doc.tpl = Array.isArray(doc.tpl) ? doc.tpl : [];
-    /* the first pop-up was Pickles, set in SETTINGS: it moves here with its key, so its posters keep working */
-    if (st.popKey && !doc.pops.some(p => p.id === 'pickles')) doc.pops.unshift(Object.assign(popClone(POP_BASE), { id: 'pickles', name: 'Pickles', on: !!st.popOn, key: st.popKey }));
+    /* the first pop-up was Milk Bar, set in SETTINGS: it moves here with its key, so its posters keep working */
+    if (st.popKey && !doc.pops.some(p => p.id === 'milkbar')) doc.pops.unshift(Object.assign(popClone(POP_BASE), { id: 'milkbar', name: 'Milk Bar', on: !!st.popOn, key: st.popKey }));
     const put = async () => { await api('settings', { method: 'POST', body: JSON.stringify({ pops: JSON.stringify(doc) }) }); show('popups'); };
     const printers = (pr.printers || []).map(p => [p.id, (p.name || p.id).toUpperCase()]);
     const tpls = [['', POP_BASE.name.toUpperCase() + ' (BUILT IN)'], ...doc.tpl.map((t, i) => [String(i), (t.name || 'TEMPLATE').toUpperCase()])];
@@ -595,7 +595,13 @@
     L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : [];
     const inp = (v, o) => { const e = el('input', o || {}); e.value = v == null ? '' : v; return e; }, ta = (v, rows) => { const e = el('textarea', { rows: String(rows || 3) }); e.value = v || ''; return e; };
     const on = el('input', { type: 'checkbox' }); on.checked = !!L.on;
-    const f = { top: inp(L.top), sub: inp(L.sub), title: inp(L.title), meta: inp(L.meta), credit: inp(L.credit), num: inp(L.num), body: ta(L.body, 14), never: inp(L.never), enter: inp(L.enter) };
+    const f = { top: inp(L.top), sub: inp(L.sub), title: inp(L.title), meta: inp(L.meta), credit: inp(L.credit), num: inp(L.num), body: ta(L.body, 14), never: inp(L.never), hold: inp(L.hold) };
+    const sel = (opts, v) => { const e = el('select', {}, ...opts.map(([x, t]) => el('option', { value: x, text: t }))); e.value = v; return e; }, num = (v, min, max) => inp(v, { type: 'number', min: String(min), max: String(max), step: '1' });
+    const at = sel([['top', 'TOP'], ['mid', 'MIDDLE'], ['low', 'BOTTOM']], 'mid'), fo = el('input', { type: 'checkbox' }), fv = inp(80, { type: 'range', min: '0', max: '100', step: '1' }), fvn = el('span', { class: 'hint' });
+    const ff = inp(''), fs = sel([['below', 'UNDER THE LABEL'], ['above', 'OVER THE LABEL']], 'below'), fw = num(100, 30, 100), fm = num('', 1, 1000000), fe = num('', 1, 500), fsay = el('small', { class: 'hint' });
+    fv.oninput = () => { fvn.textContent = fv.value; };
+    const film = F => { F = F || {}; at.value = L.at === 'top' || L.at === 'low' ? L.at : 'mid'; fo.checked = !!F.on; ff.value = F.file || ''; fs.value = F.side === 'above' ? 'above' : 'below'; fw.value = F.w || 100; fv.value = F.vol == null || F.vol === '' ? 80 : F.vol; fvn.textContent = fv.value; fm.value = F.max || ''; fe.value = F.each || ''; }; film(L.film);
+    api('film').then(r => r.json()).then(j => { fsay.textContent = 'PLAYED TODAY: ' + (j.today || 0) + ' · ' + (!j.bucket ? 'NO FILMS BUCKET YET' : j.found ? 'FILE FOUND' : 'FILE NOT FOUND'); }).catch(() => {});
     const TO = [['card', 'THE BACK OF THE FIRST CARD'], ['islands', 'FIND AN ISLAND (THE LIST OF PRINTERS)'], ['kit', 'BUILD YOUR OWN (THE KIT PAGE)'], ['note', 'THE PRIVATE PAGE'], ['url', 'A LINK OF ITS OWN']];
     const lbox = el('div', { style: 'display:grid;gap:8px' }), cbox = el('div', { style: 'display:grid;gap:8px' });
     const drawL = () => lbox.replaceChildren(...L.links.map((k, i) => { const before = inp(k.b), words = inp(k.t), to = el('select', {}, ...TO.map(([v, t]) => el('option', { value: v, text: t }))), url = inp(k.u, { placeholder: 'https://' }); to.value = k.to || 'url'; url.hidden = to.value !== 'url';
@@ -608,9 +614,9 @@
         return el('div', { style: 'display:grid;grid-template-columns:60px 1fr 1fr 1.4fr 1.3fr 1.6fr 34px;gap:8px;align-items:end' }, el('label', {}, 'SIGN', pre), el('label', {}, 'NOW', now), el('label', {}, 'OF', goal), el('label', {}, 'WORDS', words), el('label', {}, 'COUNTED', src), el('label', {}, 'PROOF OR DETAIL (A LINK)', url), el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { L.counts.splice(i, 1); drawC(); } })); }),
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'ADD A COUNT', onclick: () => { L.counts.push({ pre: '', now: '', goal: '', t: '', live: '', u: '' }); drawC(); } })));
     drawL(); drawC();
-    const read = () => ({ on: on.checked, top: f.top.value.trim(), sub: f.sub.value.trim(), title: f.title.value.trim(), meta: f.meta.value.trim(), credit: f.credit.value.trim(), num: f.num.value.trim(), body: f.body.value.replace(/\r/g, '').trim(), never: f.never.value.trim(), enter: f.enter.value.trim(),
+    const read = () => ({ on: on.checked, top: f.top.value.trim(), sub: f.sub.value.trim(), title: f.title.value.trim(), meta: f.meta.value.trim(), credit: f.credit.value.trim(), num: f.num.value.trim(), body: f.body.value.replace(/\r/g, '').trim(), never: f.never.value.trim(), hold: f.hold.value.trim(), at: at.value, film: { on: fo.checked, file: ff.value.trim(), side: fs.value, w: Math.max(30, Math.min(100, +fw.value || 100)), vol: +fv.value, max: Math.max(0, Math.round(+fm.value) || 0), each: Math.max(0, Math.round(+fe.value) || 0) },
       links: L.links.filter(k => (k.t || '').trim()).map(k => ({ b: (k.b || '').trim(), t: k.t.trim(), to: k.to || 'url', u: /^https:\/\//.test(k.u || '') ? k.u : '' })), counts: L.counts.filter(k => (k.t || '').trim()).map(k => ({ pre: k.pre || '', now: k.now || '', goal: k.goal || '', t: k.t.trim(), live: k.live || '', u: /^https:\/\//.test(k.u || '') ? k.u : '' })) });
-    const fill = o => { L = o || {}; L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : []; on.checked = !!L.on; Object.keys(f).forEach(k => { f[k].value = L[k] || ''; }); drawL(); drawC(); };
+    const fill = o => { L = o || {}; L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : []; on.checked = !!L.on; Object.keys(f).forEach(k => { f[k].value = L[k] || ''; }); film(L.film); drawL(); drawC(); };
     const put = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('label'); };
     const lab = el('section', { class: 'ed' }, el('h3', { text: 'THE LABEL' }), el('small', { class: 'hint', text: 'Shown over the site on each first visit, until the visitor says never again. It is a part of the page, not a new window, so a browser that blocks pop-ups still shows it. Everything on it is written here.' }),
       el('label', { class: 'check' }, on, 'SHOWN'),
@@ -619,7 +625,13 @@
       el('div', { class: 'two' }, el('label', {}, 'SMALL LINE (CREDIT)', f.credit), el('label', {}, 'NUMBER AT ITS RIGHT', f.num)),
       el('label', {}, 'WORDS (A BLANK LINE STARTS A NEW PARAGRAPH)', f.body),
       el('label', {}, 'LINKS, ONE A LINE, UNDER THE WORDS', lbox), el('label', {}, 'COUNTS, AT THE FOOT', cbox),
-      el('div', { class: 'two' }, el('label', {}, 'THE SWITCH (NEVER SHOW AGAIN)', f.never), el('label', {}, 'THE KEY THAT CLOSES IT', f.enter)),
+      el('div', { class: 'two' }, el('label', {}, 'THE SWITCH (NEVER SHOW AGAIN)', f.never), el('label', {}, 'THE PROMPT (A LONG PRESS OR A DOUBLE TAP PUTS THE LABEL AWAY)', f.hold)),
+      el('label', {}, 'WHERE IT SITS ON THE SCREEN', at),
+      el('h3', { text: 'THE FILM' }), el('small', { class: 'hint', text: 'A film from the films bucket, played beside the label. It plays on this site only, a piece at a time, with no save key. When a limit is reached the player is left out until the next day.' }), fsay,
+      el('label', { class: 'check' }, fo, 'SHOWN'),
+      el('div', { class: 'two' }, el('label', {}, 'FILE (ITS NAME IN THE BUCKET)', ff), el('label', {}, 'WHERE', fs)),
+      el('div', { class: 'two' }, el('label', {}, 'WIDTH (30 TO 100, OF THE LABEL)', fw), el('label', {}, 'VOLUME ', fvn, fv)),
+      el('div', { class: 'two' }, el('label', {}, 'PLAYS A DAY, EVERYONE', fm), el('label', {}, 'PLAYS A DAY, ONE VISITOR', fe)),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => put({ label: JSON.stringify(read()) }) }),
         el('button', { type: 'button', text: 'CHOOSE FILE', title: 'Fill every box from a label file', onclick: () => { const fi = el('input', { type: 'file', accept: '.json,application/json' }); fi.onchange = async () => { try { fill(JSON.parse(await fi.files[0].text())); } catch (e) { alert('Not a label file.'); } }; fi.click(); } }),
         el('button', { type: 'button', text: 'SEE IT', onclick: () => window.open('/?label=1', '_blank', 'noopener') })));

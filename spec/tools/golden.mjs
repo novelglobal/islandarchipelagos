@@ -41,24 +41,24 @@ function write() {
   const state = {
     'novel-global-wish': { WORDS: 'the drain that holds', CODE: { code: 'DA-7Q2K', url: 'https://novel.global/#x=DA-7Q2K' } },
     'novel-global-radio': { SOUND: { title: 'FOG ON THE CREEK', code: 'T-3', url: 'https://novel.global/#t=T-3' }, CODE: { code: 'T-3', url: 'https://novel.global/#t=T-3' } },
-    'pickles-zine': { LENGTH: 'strip', PICTURE: slope },
+    'milkbar-zine': { LENGTH: 'strip', PICTURE: slope },
     'novel-global-kit': { LIST: [{ text: 'a TM-T88V, second-hand', done: true }, 'a Pi 3 and its card', 'write the card', 'plug in and print'] },
     'novel-global-space': { WORDS: 'brunswick east', CODE: 'BE-2K7QF' },
     'novel-global-reef': { PICTURE: reef },
     'novel-global-eye': { PICTURE: moon, SOUND: { title: 'FOG HORN', code: 'E-1' } }
   };
-  const all = { 'novel-global': ['wish', 'radio', 'art', 'words', 'cards', 'codes'], pickles: ['wish', 'radio', 'art', 'words', 'cards', 'codes'] };
+  const all = { 'novel-global': ['wish', 'radio', 'art', 'words', 'cards', 'codes'], milkbar: ['wish', 'radio', 'art', 'words', 'cards', 'codes'] };
   const base = { jacks, mods, state, settings: {}, on: all, printer: profile('tm-t88v') };
   const cases = {
     '01-wish-alone': { board: '', press: 'novel-global-wish' },
     '02-radio-into-wish': { board: 'RW', press: 'novel-global-wish' },
     '03-zine-makes-wish-a-strip': { board: 'RW/ZW', press: 'novel-global-wish' },
-    '04-wish-and-radio-into-zine': { board: 'RW/ZW/RZ', press: 'pickles-zine', settings: { 'pickles-zine': { ink: true } } },
+    '04-wish-and-radio-into-zine': { board: 'RW/ZW/RZ', press: 'milkbar-zine', settings: { 'milkbar-zine': { ink: true } } },
     '05-kit-into-wish': { board: 'KW', press: 'novel-global-wish' },
     '06-eye-needs-the-reef': { board: '', press: 'novel-global-eye' },
-    '07-zine-connection-off': { board: 'ZW', press: 'novel-global-wish', on: { 'novel-global': all['novel-global'], pickles: [] } },
+    '07-zine-connection-off': { board: 'ZW', press: 'novel-global-wish', on: { 'novel-global': all['novel-global'], milkbar: [] } },
     '08-nothing-to-print': { board: 'XY', press: 'novel-global-reef', state: { ...state, 'novel-global-reef': {} } },
-    '09-space-on-58mm': { board: 'SK/KW', press: 'novel-global-space', settings: { 'novel-global-space': { name: 'pickles corner' } }, printer: profile('generic-58') },
+    '09-space-on-58mm': { board: 'SK/KW', press: 'novel-global-space', settings: { 'novel-global-space': { name: 'milk bar corner' } }, printer: profile('generic-58') },
     '10-messy-board-code': { board: ' rw / zw/ww/ab/cd/ef ', press: 'novel-global-wish' },
     '11-four-cables-full': { board: 'RW/ZW/KW/EW', press: 'novel-global-wish', printer: profile('generic-80') }
   };
