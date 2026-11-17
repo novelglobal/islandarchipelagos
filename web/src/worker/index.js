@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 11;
+const SCHEMA_V = 12;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -119,7 +119,7 @@ async function upgrade(db) {
     try { await db.prepare('ALTER TABLE printers ADD COLUMN touch TEXT').run(); } catch (e) { /* already there */ }
     try { await db.prepare('ALTER TABLE printers ADD COLUMN touch_seen INTEGER').run(); } catch (e) { /* already there */ }
     /* the Wi-Fi each is on and how strongly, as each last said (JSON: { n, rssi, at }); and a Wi-Fi setup asked for */
-    for (const col of ['net TEXT', 'touch_net TEXT', 'wifi INTEGER', 'upd INTEGER']) { try { await db.prepare(`ALTER TABLE printers ADD COLUMN ${col}`).run(); } catch (e) { /* already there */ } }
+    for (const col of ['net TEXT', 'touch_net TEXT', 'wifi INTEGER', 'upd INTEGER', 'rst INTEGER']) { try { await db.prepare(`ALTER TABLE printers ADD COLUMN ${col}`).run(); } catch (e) { /* already there */ } }
     try { await db.prepare('ALTER TABLE printers ADD COLUMN refused TEXT').run(); } catch (e) { /* already there */ }
     /* two: an island granted two-way. novel.global may always use an island's printer; two-way lets the island's own experiences print on novel.global's too */
     try { await db.prepare('ALTER TABLE printers ADD COLUMN two INTEGER DEFAULT 0').run(); } catch (e) { /* already there */ }
@@ -584,6 +584,8 @@ async function next(db, req, id) {
   if (p.upd) { await db.prepare('UPDATE printers SET upd = NULL WHERE id = ?').bind(id).run(); if (t - p.upd < 2 * 60e3 && /\bupdate\b/.test(can)) return json({ update: true }); }
   /* CHANGE WI-FI, pressed on the approval page in the last two minutes: the receiver opens its setup Wi-Fi (only one that says it can) */
   if (p.wifi) { await db.prepare('UPDATE printers SET wifi = NULL WHERE id = ?').bind(id).run(); if (t - p.wifi < 2 * 60e3 && /\bwifi\b/.test(can)) return json({ wifi: true }); }
+  /* RESTART, pressed in the last two minutes: the Pi turns off and on again by itself (only one that says it can) */
+  if (p.rst) { await db.prepare('UPDATE printers SET rst = NULL WHERE id = ?').bind(id).run(); if (t - p.rst < 2 * 60e3 && /\brestart\b/.test(can)) return json({ restart: true }); }
   /* TURN OFF, pressed on the approval page in the last two minutes, comes before any slip. An older one is dropped, so a
      printer moved and switched on days later is never turned off by it; a receiver that cannot turn off is never sent it */
   if (p.off) { await db.prepare('UPDATE printers SET off = NULL WHERE id = ?').bind(id).run(); if (t - p.off < 2 * 60e3 && /\boff\b/.test(can)) return json({ off: true }); }
@@ -840,7 +842,7 @@ async function admin(db, env, req, parts) {
   if (what === 'pair' && id && (req.method === 'GET' || req.method === 'POST')) return adminPair(db, req, id);
   if (what === 'film' && !id && req.method === 'GET') { const f = await filmOf(db); return json({ today: await filmToday(db), bucket: !!env.FILMS, found: !!(f && env.FILMS && await env.FILMS.head(f.file)) }); }
   if (what === 'printers' && !id) {
-    const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.net, p.touch_net, p.wifi, p.upd,
+    const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.rst, p.net, p.touch_net, p.wifi, p.upd,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed' AND j.done > (strftime('%s', 'now') - 86400) * 1000) AS day,
         (SELECT json_object('code', j.code, 'status', j.status, 'at', j.created, 'error', j.error, 'mesh', j.mesh IS NOT NULL, 'paper', j.escpos IS NOT NULL) FROM jobs j WHERE j.printer = p.id ORDER BY j.created DESC LIMIT 1) AS last,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'held') AS held,
@@ -862,6 +864,7 @@ async function admin(db, env, req, parts) {
     /* TURN OFF: the receiver is handed it the next time it asks, if that is within two minutes */
     if (b.action === 'wifi') { await db.prepare('UPDATE printers SET wifi = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
     if (b.action === 'update') { await db.prepare('UPDATE printers SET upd = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
+    if (b.action === 'restart') { await db.prepare('UPDATE printers SET rst = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
     if (b.action === 'off') { await db.prepare('UPDATE printers SET off = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
     if (b.action === 'links' && Array.isArray(b.links)) { await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(linksIn(b.links.map(String)), id).run(); return json({ ok: true }); }
     if (b.action === 'auto' || b.action === 'mesh' || b.action === 'live' || b.action === 'two') { await db.prepare(`UPDATE printers SET ${b.action} = ? WHERE id = ?`).bind(b.on ? 1 : 0, id).run(); return json({ ok: true }); }
@@ -1333,11 +1336,11 @@ async function deskFind(db, d) { if (typeof d !== 'string' || !/^[a-z0-9]{12,40}
   const l = Array.isArray(doc.pops) ? doc.pops : []; for (const p of l) if (p && typeof p.desk === 'string' && p.desk.length === d.length && await same(d, p.desk)) return { doc, p }; return null; }
 /* the printers a place may choose between and look after from its desk: those the approval page ticked for it (p.allow), or the one it was given */
 const deskAllow = p => { const l = (Array.isArray(p.allow) ? p.allow : []).filter(x => typeof x === 'string' && /^[a-z0-9-]{1,40}$/.test(x)); if (p.to && !l.includes(p.to)) l.unshift(p.to); return l.length ? l : ['novelglobal']; };
-async function deskPrinters(db, p) { const out = []; for (const id of deskAllow(p)) { const r = await db.prepare(`SELECT id, name, seen, can, net, off, wifi, token IS NOT NULL AS paired,
+async function deskPrinters(db, p) { const out = []; for (const id of deskAllow(p)) { const r = await db.prepare(`SELECT id, name, seen, can, net, off, wifi, rst, token IS NOT NULL AS paired,
       (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN ('queued', 'printing')) AS queued,
       (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = 'printed' AND j.done > ?) AS day FROM printers WHERE id = ?`).bind(now() - DAY, id).first(); if (!r) continue;
     let n = null; try { n = r.net ? JSON.parse(r.net) : null; } catch (e) { n = null; }
-    out.push({ id: r.id, name: r.name || r.id, paired: !!r.paired, seen: r.seen || null, can: r.can || '', queued: r.queued || 0, day: r.day || 0, net: n ? { n: n.n, rssi: n.rssi == null ? null : n.rssi, at: n.at, ...(n.p === 0 || n.p === 1 ? { p: n.p } : {}) } : null, off: r.off || null, wifi: r.wifi || null }); } return out; }
+    out.push({ id: r.id, name: r.name || r.id, paired: !!r.paired, seen: r.seen || null, can: r.can || '', queued: r.queued || 0, day: r.day || 0, net: n ? { n: n.n, rssi: n.rssi == null ? null : n.rssi, at: n.at, ...(n.p === 0 || n.p === 1 ? { p: n.p } : {}) } : null, off: r.off || null, wifi: r.wifi || null, rst: r.rst || null }); } return out; }
 const deskPosts = (db, id) => db.prepare("SELECT id, created FROM stories WHERE origin LIKE ? AND art IS NOT NULL AND gone IS NULL ORDER BY created DESC LIMIT 80").bind('{"pop":"' + String(id).replace(/[%_"\\]/g, '') + '"%').all();
 async function deskGet(db, env, req, url) { if (await tooMany(db, env, req, 'desk', 120, 10 * 60e3)) return fail(429, 'too many');
   const f = await deskFind(db, url.searchParams.get('d') || ''); if (!f) return fail(404, 'closed'); const p = f.p, pub = {};
@@ -1353,7 +1356,7 @@ async function deskArt(db, env, req, url, id) { const f = await deskFind(db, url
 async function deskSet(db, env, req) { if (await tooMany(db, env, req, 'desk', 120, 10 * 60e3)) return fail(429, 'too many');
   const b = await body(req, 700e3), f = await deskFind(db, b.d || ''); if (!f) return fail(404, 'closed'); const p = f.p, v = b.set && typeof b.set === 'object' ? b.set : {}, txt = (x, n) => String(x == null ? '' : x).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, n), web = x => typeof x === 'string' && /^https:\/\/[^\s<>"']{3,300}$/.test(x);
   /* TURN OFF and CHANGE WI-FI for one of its printers: handed to that printer's Pi the next time it asks, within two minutes */
-  if (b.act === 'off' || b.act === 'wifi') { if (!deskAllow(p).includes(b.printer)) return fail(403, 'printer'); await db.prepare(`UPDATE printers SET ${b.act} = ? WHERE id = ? AND token IS NOT NULL`).bind(now(), b.printer).run(); return json({ ok: true }); }
+  if (b.act === 'off' || b.act === 'wifi' || b.act === 'restart') { if (!deskAllow(p).includes(b.printer)) return fail(403, 'printer'); await db.prepare(`UPDATE printers SET ${b.act === 'restart' ? 'rst' : b.act} = ? WHERE id = ? AND token IS NOT NULL`).bind(now(), b.printer).run(); return json({ ok: true }); }
   if (typeof v.to === 'string') { if (!deskAllow(p).includes(v.to)) return fail(403, 'printer'); p.to = v.to; }
   if (typeof v.name === 'string' && txt(v.name, 40)) p.name = txt(v.name, 40);
   if (typeof v.on === 'boolean') p.on = v.on;

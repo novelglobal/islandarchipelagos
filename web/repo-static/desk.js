@@ -46,11 +46,11 @@
   function printer() { var want = POP.to || POP.id, p = PRS.filter(function (q) { return q.id === want; })[0] || PRS[0] || null, on = !!(p && p.seen && NOW - p.seen < 2 * 60e3);
     TO = p ? p.id : null; $('#led').classList.toggle('on', on); $('#pst').textContent = p ? (on ? 'ON' : 'ASLEEP') : 'NONE';
     var box = $('#prs'); box.replaceChildren(); if (PRS.length > 1) PRS.forEach(function (q) { var b = D.createElement('button'); b.type = 'button'; b.textContent = String(q.name).toUpperCase().slice(0, 18); b.title = 'Print here'; b.setAttribute('aria-pressed', String(!!p && q.id === p.id)); b.onclick = function () { POP.to = q.id; save(); }; box.appendChild(b); });
-    var dl = $('#pd'); dl.replaceChildren(); if (!p) { $('#wifi').hidden = $('#off').hidden = true; $('#phelp').textContent = 'No printer yet.'; return; }
+    var dl = $('#pd'); dl.replaceChildren(); if (!p) { $('#wifi').hidden = $('#off').hidden = $('#rst').hidden = true; $('#phelp').textContent = 'No printer yet.'; return; }
     var sig = function (r) { return r == null ? '' : r > -60 ? 'strong' : r > -70 ? 'good' : r > -78 ? 'weak' : 'too weak'; };
     [['NAME', p.name], ['HEARD', ago(p.seen)], ['WI-FI', p.net ? p.net.n + (p.net.rssi == null ? '' : ' · ' + sig(p.net.rssi)) : 'not said'], ['PAPER', !p.net || p.net.p == null ? 'not said' : p.net.p ? 'answering' : 'not answering: check it is on, has paper and its cable is in'], ['TODAY', p.day + ' printed' + (p.queued ? ' · ' + p.queued + ' waiting' : '')]].forEach(function (r) { var dt = D.createElement('dt'), dd = D.createElement('dd'); dt.textContent = r[0]; dd.textContent = r[1]; dl.append(dt, dd); });
     var asked = function (t) { return t && NOW - t < 2 * 60e3; };
-    $('#wifi').hidden = !/\bwifi\b/.test(p.can); $('#off').hidden = !/\boff\b/.test(p.can); $('#wifi').disabled = $('#off').disabled = !on; $('#wifi').textContent = asked(p.wifi) ? 'OPENING' : 'WI-FI'; $('#off').textContent = asked(p.off) ? 'TURNING OFF' : 'OFF';
+    $('#wifi').hidden = !/\bwifi\b/.test(p.can); $('#off').hidden = !/\boff\b/.test(p.can); $('#wifi').disabled = $('#off').disabled = !on; $('#wifi').textContent = asked(p.wifi) ? 'OPENING' : 'WI-FI'; $('#off').textContent = asked(p.off) ? 'TURNING OFF' : 'OFF'; $('#rst').hidden = !/\brestart\b/.test(p.can); $('#rst').disabled = !on; $('#rst').textContent = asked(p.rst) ? 'RESTARTING' : 'RESTART';
     $('#phelp').textContent = on ? '' : 'Asleep: check it is plugged in. With no Wi-Fi it prints a slip after a minute: scan it with a phone and choose the Wi-Fi.'; }
   function act(what, ask) { if (!TO || !confirm(ask)) return; say('· · ·'); api('/pop/desk', { method: 'POST', body: JSON.stringify({ d: KEY, act: what, printer: TO }) }).then(function () { return load(); }).then(function () { say('ASKED'); }, function () { say('UNSENT'); }); }
 
@@ -86,6 +86,7 @@
     $('#open').onclick = function () { POP.on = !POP.on; save(); };
     $('#slip').onclick = function () { slip(false); }; $('#dslip').onclick = function () { slip(true); }; $('#rslip').onclick = function () { slip('r'); };
     $('#wifi').onclick = function () { act('wifi', 'Move the printer to another Wi-Fi? It leaves this one and prints a slip with a code. Scan it with a phone, then choose the new Wi-Fi on the page that opens.'); };
+    $('#rst').onclick = function () { act('restart', 'Restart the printer? It is back in about a minute and prints READY.'); };
     $('#off').onclick = function () { act('off', 'Turn the printer off? Unplug it once its green light stops. To start it again, plug it back in.'); };
     [].forEach.call(D.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { POP.private = b.dataset.pv === '1'; save(); }; });
     $('#wipe').onclick = function () { if (confirm('Delete every print kept here? This cannot be undone.')) save({ wipe: true }); };

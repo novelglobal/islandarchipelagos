@@ -57,6 +57,8 @@ WIFI_FILE = os.environ.get('DA_WIFI_FILE', '/run/da-pull/wifi')   # the note wif
 CAN_WIFI = os.path.exists('/etc/systemd/system/wifi-setup.service') or 'DA_WIFI_FILE' in os.environ
 DEVICES = list(dict.fromkeys(d for d in (os.environ.get('DA_DEVICE', ''), '/dev/usb/lp0', '/dev/usb/lp1') if d))   # the printer itself
 STATE_FILE = os.environ.get('DA_STATE_FILE', '/run/da-pull/state')   # ok / noprinter / nonet, for the green light
+RESTART_FILE = os.environ.get('DA_RESTART_FILE', '/run/da-pull/restart')   # the note da-restart.path waits for
+CAN_RESTART = os.path.exists('/etc/systemd/system/da-restart.path') or 'DA_RESTART_FILE' in os.environ
 UPDATE_FILE = os.environ.get('DA_UPDATE_FILE', '/run/da-pull/update')   # the note da-update.path waits for
 CAN_UPDATE = os.path.exists('/etc/systemd/system/da-update.path') or 'DA_UPDATE_FILE' in os.environ
 
@@ -231,7 +233,7 @@ def here():
 
 
 def next_job():
-    can = ' '.join(c for c, on in (('off', CAN_OFF), ('wifi', CAN_WIFI), ('update', CAN_UPDATE)) if on)
+    can = ' '.join(c for c, on in (('off', CAN_OFF), ('wifi', CAN_WIFI), ('update', CAN_UPDATE), ('restart', CAN_RESTART)) if on)
     q = '&'.join(x for x in ((f'can={urllib.parse.quote(can)}' if can else ''), here()) if x)
     status, j = http('GET', f'{SERVER}/api/printers/{PRINTER}/next' + (f'?{q}' if q else ''), headers=auth())
     return j if status == 200 else None
@@ -337,6 +339,18 @@ def main():
                     log.info('updating, as asked on the approval page')
                 except OSError as e:
                     log.warning('could not ask for the update: %s', e)
+                continue
+            if j and j.get('restart'):
+                try:
+                    print_bytes(text_slip(['NOVEL.GLOBAL', 'RESTARTING', PRINTER.upper(), 'BACK IN ABOUT A MINUTE']))
+                except Exception as e:   # restarted all the same
+                    log.warning('no RESTARTING slip: %s', e)
+                try:
+                    with open(RESTART_FILE, 'w') as f:
+                        f.write(datetime.now().isoformat())
+                    log.info('restarting, as asked')
+                except OSError as e:
+                    log.warning('could not ask for the restart: %s', e)
                 continue
             if j and j.get('off'):
                 turn_off()

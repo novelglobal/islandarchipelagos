@@ -42,8 +42,10 @@ if [ -f /opt/da-pull/pull.py ]; then
   sudo curl -fsSL "$BASE/da-off.service" -o /etc/systemd/system/da-off.service
   sudo curl -fsSL "$BASE/da-update.path" -o /etc/systemd/system/da-update.path
   sudo curl -fsSL "$BASE/da-update.service" -o /etc/systemd/system/da-update.service
+  sudo curl -fsSL "$BASE/da-restart.path" -o /etc/systemd/system/da-restart.path
+  sudo curl -fsSL "$BASE/da-restart.service" -o /etc/systemd/system/da-restart.service
   sudo systemctl daemon-reload
-  sudo systemctl enable --now da-off.path da-update.path
+  sudo systemctl enable --now da-off.path da-update.path da-restart.path
   # the bridge restarts a moment later, so an update asked for from the approval page can finish first
   sudo systemd-run --on-active=5 systemctl restart da-pull >/dev/null 2>&1 || sudo systemctl restart da-pull
 fi

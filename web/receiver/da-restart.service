@@ -1,0 +1,8 @@
+# started by da-restart.path: turns this Pi off and on again safely
+[Unit]
+Description=Restart this Pi safely
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/rm -f /run/da-pull/restart
+ExecStart=/usr/bin/systemctl reboot

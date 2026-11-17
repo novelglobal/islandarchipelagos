@@ -26,7 +26,20 @@
       el('button', { type: 'submit', text: 'OPEN' }), el('p', { class: 'note', id: 'gate-note' }));
     return f;
   }
-  async function open() { $('#tabs').hidden = false; if (/pair=/.test(location.hash)) tab = 'printers'; await show(tab); badges(); }
+  async function open() { $('#tabs').hidden = false; if (/pair=/.test(location.hash)) tab = 'printers'; await show(tab); badges(); quick(); }
+  /* two switches always at the top: every pop-up off at once (and back on, the same ones), and the label */
+  async function quick() {
+    const bar = $('#quick'); if (!bar) return; bar.hidden = false;
+    const st = await (await api('settings')).json(); let doc = {}; try { doc = st.pops ? JSON.parse(st.pops) : {}; } catch (e) { doc = {}; } doc.pops = Array.isArray(doc.pops) ? doc.pops : [];
+    let L = {}; try { L = st.label ? JSON.parse(st.label) : {}; } catch (e) { L = {}; }
+    const live = doc.pops.filter(p => p && p.on).length + (st.popOn && !doc.pops.some(p => p.id === 'milkbar') ? 1 : 0);
+    const pk = el('button', { type: 'button', class: live ? 'on' : '', text: live ? `POP-UPS ON · ${live}` : 'POP-UPS OFF', title: live ? 'Turn every pop-up off now' : 'Turn the pop-ups that were on back on' });
+    pk.onclick = async () => { if (live) { if (!confirm('Turn every pop-up off now? Their links say closed until they are on again.')) return; doc.was = doc.pops.filter(p => p && p.on).map(p => p.id); doc.pops.forEach(p => { p.on = false; }); }
+      else { const was = Array.isArray(doc.was) ? doc.was : []; if (!was.length) { alert('None were on. Turn one on in POP-UPS.'); return; } doc.pops.forEach(p => { if (was.includes(p.id)) p.on = true; }); delete doc.was; }
+      await api('settings', { method: 'POST', body: JSON.stringify({ pops: JSON.stringify(doc), ...(live ? { popOn: false } : {}) }) }); quick(); if (tab === 'popups') show('popups'); };
+    const lk = el('button', { type: 'button', class: L.on ? 'on' : '', text: L.on ? 'LABEL ON' : 'LABEL OFF', title: L.on ? 'Stop showing the label to first visits' : 'Show the label to first visits' });
+    lk.onclick = async () => { L.on = !L.on; await api('settings', { method: 'POST', body: JSON.stringify({ label: JSON.stringify(L) }) }); quick(); if (tab === 'label') show('label'); };
+    bar.replaceChildren(pk, lk); }
   /* how many wait, beside their names in the rail */
   async function badges() { try { const o = await (await api('overview')).json(); $('#n-waiting').textContent = o.stories.waiting || ''; $('#n-places').textContent = o.places.waiting || ''; } catch (e) { /* later */ } }
   /* a page's own heading, and a line on what it is for */
@@ -324,6 +337,7 @@
         el('button', { type: 'button', text: `PAPER ${p.paper === '80' ? '58' : '80'} MM`, onclick: async () => { await setP(p.id, { action: 'paper', paper: p.paper === '80' ? '58' : '80' }); show('printers'); } }),
         !(p.paired && /\bwifi\b/.test(p.can || '')) ? el('button', { type: 'button', disabled: true, text: p.paired ? 'CHANGE WI-FI ONCE HEARD' : 'CHANGE WI-FI ONCE PAIRED' }) : null,
         p.paired && /\bupdate\b/.test(p.can || '') ? el('button', { type: 'button', text: fresh(p.upd) ? 'UPDATING' : 'UPDATE', title: 'The Pi fetches the latest receiver and Wi-Fi setup, then carries on', onclick: async () => { if (!confirm('Update this printer\'s Pi now? It fetches the latest receiver, restarts it, and carries on.')) return; await setP(p.id, { action: 'update' }); show('printers'); } }) : null,
+        p.paired && /\brestart\b/.test(p.can || '') ? el('button', { type: 'button', text: fresh(p.rst) ? 'RESTARTING' : 'RESTART', title: 'The Pi turns off and on again by itself, and prints READY', onclick: async () => { if (!confirm('Restart this printer\'s Pi? It is back in about a minute and prints READY.')) return; await setP(p.id, { action: 'restart' }); show('printers'); } }) : null,
         p.paired && /\bwifi\b/.test(p.can || '') ? el('button', { type: 'button', text: fresh(p.wifi) ? 'OPENING ITS WI-FI SETUP' : 'CHANGE WI-FI', onclick: async () => { if (!confirm('Open this printer\'s Wi-Fi setup? It leaves its Wi-Fi, prints its setup slip with a code to scan, and waits ten minutes for a phone to choose another.')) return; await setP(p.id, { action: 'wifi' }); show('printers'); } }) : null,
         p.paired ? el('button', { type: 'button', text: 'TEST PRINT', onclick: async () => { await setP(p.id, { action: 'test' }); show('printers'); } }) : null,
         p.paired ? el('button', { type: 'button', text: 'PASSES', onclick: () => { location.href = '/cart?p=' + encodeURIComponent(p.id) + '#pass'; } }) : null,

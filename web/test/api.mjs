@@ -436,6 +436,14 @@ try {
     check('a private page opens by its link alone, and is in no public setting and no backup', ok.status === 200 && /Plain/.test(ok.text) && bad.status === 404 && pub.json.note === undefined && pub.json.noteKey === undefined && pub.json.noteK === undefined && ex.json.settings.note === undefined && ex.json.settings.noteKey === undefined, JSON.stringify([ok.status, bad.status, pub.json.note, Object.keys(ex.json.settings).filter(k => /note/.test(k))])); }
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { notePub: '1' } }); const p2 = await call('/api/settings'); await call('/api/admin/settings', { method: 'POST', key: KEY, body: { notePub: '' } }); const p3 = await call('/api/settings');
     check('the private page is linked from the site only while novel.global says so', p2.json.noteK === 'notekeynotekeynotekey22' && p3.json.noteK === undefined && p2.json.note === undefined, JSON.stringify([p2.json.noteK, p3.json.noteK])); }
+  /* RESTART: asked for on the approval page, handed once to a receiver that says it can; one that cannot is never sent it; a printer
+     that says it is not answering is shown as off on the islands list */
+  { await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'restart' } });
+    const r0 = await call('/api/printers/milkbar/next?can=off', { token: T }); await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'restart' } });
+    const r1 = await call('/api/printers/milkbar/next?can=off%20restart&net=Home&prn=0', { token: T }), r2 = await call('/api/printers/milkbar/next?can=off%20restart&net=Home&prn=0', { token: T });
+    const il = await call('/api/isles'), mine = (il.json.isles || []).find(i => i.id === 'milkbar'), pl = await call('/api/admin/printers', { key: KEY }), pr = (pl.json.printers || []).find(x => x.id === 'milkbar');
+    await call('/api/printers/milkbar/next?net=Home&prn=1', { token: T });
+    check('RESTART reaches a receiver that can, once; one that cannot is never sent it; a printer not answering shows as off', !(r0.json && r0.json.restart) && r1.json && r1.json.restart === true && !(r2.json && r2.json.restart) && mine && mine.on === false && pr && /"p":0/.test(pr.net || ''), JSON.stringify([r0.status, r1.json, r2.status, mine, pr && pr.net])); }
   /* a receiver that still asks under an id its printer no longer goes by is known by its token */
   { const o = await call('/api/printers/an-older-name/next', { token: T }), x = await call('/api/printers/an-older-name/next', { token: 'nope' });
     check('a receiver asking under an older id is known by its token, and by nothing else', (o.status === 200 || o.status === 204) && x.status === 401, JSON.stringify([o.status, x.status])); }
