@@ -4,8 +4,12 @@
 It asks novel.global for the next slip sent to this printer, prints it, and says how it went. It pulls: nothing reaches
 in, so it needs no open ports and works behind any shop's Wi-Fi.
 
-  · printing goes through printd (https://github.com/HansF/printd, MIT), running on this Pi at 127.0.0.1:8080:
-    the slip's ESC/POS bytes are sent to its POST /print/raw as {"bytes_b64": ...}
+  · each slip's ESC/POS bytes go straight to the printer (/dev/usb/lp0, opened fresh each time, so a printer that wakes after
+    the Pi, or is plugged in again, is found at once); where that cannot be opened, through printd
+    (https://github.com/HansF/printd, MIT) at 127.0.0.1:8080, POST /print/raw as {"bytes_b64": ...}
+  · while the printer is away nothing is lost: the READY slip and every slip wait until it answers, and the site is told
+    (prn=0), so the approval page and the desk can say so. /run/da-pull/state says the same to wifi.py, which shows it
+    on the Pi's green light
   · a slip's mesh line can also go out over a Meshtastic radio plugged into this Pi, through Meshtastic's own Python
     library (https://github.com/meshtastic/python, GPL-3.0), when DA_MESH is set and the printer's MESH is on
   · TURN OFF on the approval page: this bridge prints a slip and leaves a note in /run/da-pull, and da-off.path, a
@@ -38,7 +42,7 @@ def env(k, d=''):
 SERVER = env('DA_SERVER', 'https://novel.global').rstrip('/')
 PRINTER = env('DA_PRINTER')
 TOKEN = env('DA_TOKEN')
-VERSION = 'bridge 16 Nov'   # said to the site beside its Wi-Fi, for the approval page
+VERSION = 'bridge 18 Nov'   # said to the site beside its Wi-Fi, for the approval page
 PRINTD = os.environ.get('PRINTD_URL', 'http://127.0.0.1:8080').rstrip('/')
 PRINTD_KEY = os.environ.get('PRINTD_API_KEY', '')
 MESH = os.environ.get('DA_MESH', '')        # '' for none; 'auto' (plugged in); a serial device such as /dev/ttyUSB0; tcp:auto (found
@@ -51,6 +55,8 @@ OFF_FILE = os.environ.get('DA_OFF_FILE', '/run/da-pull/off')   # the note da-off
 CAN_OFF = os.path.exists('/etc/systemd/system/da-off.path') or 'DA_OFF_FILE' in os.environ
 WIFI_FILE = os.environ.get('DA_WIFI_FILE', '/run/da-pull/wifi')   # the note wifi.py waits for
 CAN_WIFI = os.path.exists('/etc/systemd/system/wifi-setup.service') or 'DA_WIFI_FILE' in os.environ
+DEVICES = list(dict.fromkeys(d for d in (os.environ.get('DA_DEVICE', ''), '/dev/usb/lp0', '/dev/usb/lp1') if d))   # the printer itself
+STATE_FILE = os.environ.get('DA_STATE_FILE', '/run/da-pull/state')   # ok / noprinter / nonet, for the green light
 UPDATE_FILE = os.environ.get('DA_UPDATE_FILE', '/run/da-pull/update')   # the note da-update.path waits for
 CAN_UPDATE = os.path.exists('/etc/systemd/system/da-update.path') or 'DA_UPDATE_FILE' in os.environ
 
@@ -61,6 +67,22 @@ running = True
 def stop(*_):
     global running
     running = False
+
+
+class Away(RuntimeError):
+    """the printer is not answering: off, unplugged, out of paper or still waking. Nothing is lost: it is asked again"""
+
+
+PAPER = {'ok': None, 'ready': False}   # whether the printer last took a slip; whether this start's READY slip has printed
+
+
+def state(s):
+    """what the green light shows, through wifi.py"""
+    try:
+        with open(STATE_FILE, 'w') as f:
+            f.write(s)
+    except OSError:
+        pass
 
 
 HINT = {'wait': None}  # how long the site asks this bridge to wait before asking again (quick while someone is on their way to print)
@@ -80,23 +102,47 @@ def http(method, url, body=None, headers=None, timeout=35):
 
 
 # ───────── the printer, through printd ─────────
+def to_device(data):
+    """straight to the printer; True once written, False where no printer can be opened"""
+    for dev in DEVICES:
+        try:
+            with open(dev, 'wb', buffering=0) as f:
+                f.write(data)
+            return True
+        except OSError:
+            continue
+    return False
+
+
 def print_bytes(data):
+    """the slip to the printer, or Away. The device first, then printd"""
     if DRY:
         path = os.path.join(DRY_DIR, f'da-slip-{int(time.time() * 1000)}.bin')
         with open(path, 'wb') as f:
             f.write(data)
         log.info('dry run: %d bytes to %s', len(data), path)
         return
+    if to_device(data):
+        return printed(True)
     headers = {'authorization': f'Bearer {PRINTD_KEY}'} if PRINTD_KEY else {}
     try:
         status, _ = http('POST', f'{PRINTD}/print/raw', {'bytes_b64': base64.b64encode(data).decode()}, headers, timeout=60)
-    except urllib.error.HTTPError as e:
-        # said plainly where the approval page shows it: most often the printer is not seen on USB at all
-        if not os.path.exists('/dev/usb'):
-            raise RuntimeError('no USB printer seen: check it is on and its cable is in, or restart the Pi') from e
-        raise RuntimeError(f'printd answered {e.code}: {e.read()[:120].decode("utf-8", "replace")}') from e
+    except (urllib.error.URLError, OSError) as e:
+        printed(False)
+        seen = os.path.exists('/dev/usb/lp0') or os.path.exists('/dev/usb/lp1')
+        raise Away('the printer is plugged in but this Pi may not write to it (sudo usermod -aG lp da)' if seen else 'no printer seen: check it is on, has paper and its cable is in') from e
     if status >= 300:
-        raise RuntimeError(f'printd answered {status}')
+        printed(False); raise Away(f'printd answered {status}')
+    printed(True)
+
+
+def printed(ok):
+    """the printer took a slip, or did not: said once in the log, to the light, and to the site at the next ask"""
+    if ok != PAPER['ok']:
+        log.info('the printer is answering' if ok else 'the printer is not answering: slips wait for it')
+        HERE['at'] = 0
+    PAPER['ok'] = ok
+    state('ok' if ok else 'noprinter')
 
 
 def text_slip(lines):
@@ -160,7 +206,7 @@ def here():
     """this Pi's Wi-Fi, its strength in dBm (from NetworkManager's percent), and its address on it, as a query string"""
     if time.time() - HERE['at'] < 60:
         return HERE['q']
-    q = {}
+    q = {} if PAPER['ok'] is None else {'prn': '1' if PAPER['ok'] else '0'}
     try:
         out = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID,SIGNAL', 'device', 'wifi', 'list', '--rescan', 'no'], capture_output=True, text=True, timeout=10).stdout
         for line in out.splitlines():
@@ -204,26 +250,18 @@ def wifi_name():
 
 
 def ready_slip():
-    """the slip at a start: on which Wi-Fi, or that a setup slip is on its way. The printer's own service may still be starting: asked for a minute"""
-    net = ''
-    for _ in range(6):   # the Wi-Fi it knows gets half a minute to be found
-        net = wifi_name()
-        if net:
-            break
-        time.sleep(5)
-    lines = ['NOVEL.GLOBAL', 'READY', PRINTER.upper()]
-    if net:
-        lines += [f'WI-FI {net}']
-    elif CAN_WIFI:
-        lines += ['NO WI-FI YET', 'A SETUP SLIP PRINTS IN A MINUTE', 'SCAN IT WITH A PHONE']
-    for i in range(12):
-        try:
-            print_bytes(text_slip(lines))
-            return
-        except Exception:
-            if i == 11:
-                raise
-            time.sleep(5)
+    """the slip at a start: on which Wi-Fi. Tried at each ask until the printer takes it, however long it takes to wake"""
+    if PAPER['ready']:
+        return
+    net = wifi_name()
+    lines = ['NOVEL.GLOBAL', 'READY', PRINTER.upper()] + ([f'WI-FI {net}'] if net else []) + ['', datetime.now().strftime('%d.%m.%y %H:%M')]
+    try:
+        print_bytes(text_slip(lines))
+        PAPER['ready'] = True
+        log.info('READY slip printed')
+    except Away as e:
+        if PAPER['ok'] is not False:
+            log.warning('no READY slip yet: %s', e)
 
 
 def turn_off():
@@ -257,6 +295,10 @@ def handle(j):
                 log.warning('%s: mesh not sent: %s', code, e)
         report(j['job'], True)
         log.info('%s printed', code)
+    except Away as e:
+        # not reported: the site hands it back in a minute, and it prints once the printer answers
+        log.warning('%s waits for the printer: %s', code, e)
+        return False
     except Exception as e:
         log.error('%s not printed: %s', code, e)
         report(j['job'], False, str(e))
@@ -270,16 +312,15 @@ def main():
     once = '--once' in sys.argv
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    if '--no-ready' not in sys.argv:
-        try:
-            net = wifi_name()
-            ready_slip()
-        except Exception as e:
-            log.warning('no READY slip: %s', e)
+    PAPER['ready'] = '--no-ready' in sys.argv
+    state('nonet')
     wait = POLL
     while running:
         try:
+            ready_slip()
             j = next_job()
+            if PAPER['ok'] is not False:
+                state('ok')
             wait = HINT['wait'] or POLL
             if j and j.get('wifi'):
                 try:
@@ -308,7 +349,8 @@ def main():
                 log.error('asked to turn off, but the Pi is still on: is da-off.path installed?')
                 continue
             if j:
-                handle(j)
+                if handle(j) is False:
+                    time.sleep(10)
                 if once:
                     return 0
                 continue
@@ -323,6 +365,7 @@ def main():
                 wait = min(60, wait * 2)
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             log.warning('no signal: %s', getattr(e, 'reason', e))
+            state('nonet')
             wait = min(60, wait * 2)  # the Wi-Fi dropped: ask less often, and keep asking
         time.sleep(wait)
     return 0

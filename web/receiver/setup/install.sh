@@ -34,6 +34,8 @@ grep -q '^dtoverlay=gpio-shutdown' "$CFG" || printf '\n[all]\ndtoverlay=gpio-shu
 
 # 3. The novel.global receiver, where there is one
 if [ -f /opt/da-pull/pull.py ]; then
+  # the bridge writes to the printer itself, so a printer that wakes after the Pi is found at once
+  id da >/dev/null 2>&1 && sudo usermod -aG lp da
   sudo curl -fsSL "$BASE/pull.py" -o /opt/da-pull/pull.py
   sudo curl -fsSL "$BASE/da-pull.service" -o /etc/systemd/system/da-pull.service
   sudo curl -fsSL "$BASE/da-off.path" -o /etc/systemd/system/da-off.path

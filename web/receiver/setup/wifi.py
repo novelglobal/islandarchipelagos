@@ -12,6 +12,9 @@ plug it in and, within two minutes, unplug it and plug it in again (a start cut 
 sudo python3 wifi.py --now. Its page marks a Wi-Fi too weak for the touch screen, and the slip saying it joined carries a
 code a phone's camera reads to join the same Wi-Fi (WIFI_SHARE=0 in /etc/wifi-setup.env leaves it off).
 
+The Pi's green light says where it stands, with no screen: steady when all is well; slow blink with no Wi-Fi yet;
+quick blink while the setup Wi-Fi is open; a heartbeat when the printer is not answering (off, no paper, its cable out).
+
 Built on NetworkManager's own hotspot (Raspberry Pi OS Bookworm and later). Standard library only. Runs as root.
 Settings come from /etc/wifi-setup.env (receiver/setup/install.sh writes it); slips go through printd where this Pi
 has it (/etc/printd.env), else straight to the printer.
@@ -44,6 +47,7 @@ SHARE = os.environ.get('WIFI_SHARE', '1') == '1'                    # the joined
 WANT = os.environ.get('WIFI_WANT', '/run/da-pull/wifi')           # CHANGE WI-FI, from the approval page through the bridge
 QUICK = os.environ.get('WIFI_QUICK', '/var/lib/wifi-setup/quick')  # written at start, gone after two minutes up
 WEAK = 50   # NetworkManager's percent below which the touch screen, a smaller radio, may not reach it
+STATE = os.environ.get('DA_STATE_FILE', '/run/da-pull/state')       # the bridge's word on the printer
 slipped = False      # the setup slip prints once a start (once it has really printed), however often the setup Wi-Fi opens
 failed = ''          # why the setup Wi-Fi last failed to open, printed once a start
 
@@ -54,6 +58,37 @@ def log(*a):
 
 def stamp():
     return datetime.now().strftime('%d.%m.%y %H:%M')
+
+
+# ───────── the green light ─────────
+LED = next((f'/sys/class/leds/{n}' for n in ('ACT', 'led0') if os.path.isdir(f'/sys/class/leds/{n}')), '')
+LIT = {'now': ''}
+
+
+def light(how):
+    """steady, slow, quick or beat; set only when it changes"""
+    if DEMO or not LED or LIT['now'] == how:
+        return
+    def put(k, v):
+        try:
+            with open(f'{LED}/{k}', 'w') as f:
+                f.write(v)
+        except OSError:
+            pass
+    if how == 'steady':
+        put('trigger', 'default-on')
+    elif how == 'beat':
+        put('trigger', 'heartbeat')
+    else:
+        put('trigger', 'timer'); ms = '1000' if how == 'slow' else '120'; put('delay_on', ms); put('delay_off', ms)
+    LIT['now'] = how
+
+
+def printer_word():
+    try:
+        return open(STATE).read().strip()
+    except OSError:
+        return ''
 
 
 # ───────── NetworkManager, through nmcli ─────────
@@ -341,6 +376,7 @@ def setup_round():
     nets = scan()   # looked at before the radio becomes a hotspot, as it cannot look around while it is one
     if not make_setup() or not setup_wifi(True):
         return None
+    light('quick')
     log('the setup Wi-Fi is open:', SSID)
     if SLIPS and not slipped:
         slipped = send(slip(NAME, ['NO WI-FI', '', '1  SCAN THIS WITH A PHONE CAMERA', f'   OR JOIN  {SSID}', f'   PASSWORD  {PASS}', '', f'2  A PAGE OPENS. IF NOT: {ADDR}',
@@ -426,7 +462,9 @@ def main():
         if asked():
             log('CHANGE WI-FI, from the approval page'); force = True
         if not force and online():
+            light('beat' if printer_word() == 'noprinter' else 'steady')
             lost = None; time.sleep(5); continue
+        light('slow')
         lost = lost or time.time()
         if not force and time.time() - lost < WAIT:
             time.sleep(5); continue

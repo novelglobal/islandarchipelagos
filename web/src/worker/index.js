@@ -559,8 +559,8 @@ async function filmPlay(db, env, req, tok) {
 async function isles(db) {
   const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
   const pops = (await popsOf(db)).filter(p => p && p.on);
-  const { results } = await db.prepare('SELECT id, name, number, seen FROM printers WHERE token IS NOT NULL ORDER BY number, created').all();
-  const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, open = pops.some(q => q.to === p.id || q.id === p.id || (!q.to && p.id === 'novelglobal')) || d.open === true, o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3, open };
+  const { results } = await db.prepare('SELECT id, name, number, seen, net FROM printers WHERE token IS NOT NULL ORDER BY number, created').all();
+  const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, open = pops.some(q => q.to === p.id || q.id === p.id || (!q.to && p.id === 'novelglobal')) || d.open === true, o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3 && !/"p":0\b/.test(p.net || ''), open };
     if (open) { ['addr', 'words', 'pic'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } }
     return o; });
   return json({ isles: out, paired: results.length });
@@ -579,7 +579,7 @@ async function next(db, req, id) {
   { const pn = netOf(new URL(req.url), req.cf); if (pn) { const o = JSON.parse(pn), was = (() => { try { return JSON.parse(p.net || 'null'); } catch (e) { return null; } })();
       /* moved: it asks from another town or network than before; kept on its line for a week */
       if (was && was.w && o.w && was.w !== o.w) o.moved = { from: was.w, at: o.at }; else if (was && was.moved && o.at - was.moved.at < 7 * DAY) o.moved = was.moved;
-      if (!was || was.n !== o.n || was.w !== o.w || Math.abs((was.rssi || 0) - (o.rssi || 0)) > 6 || o.at - was.at > 60e3) await db.prepare('UPDATE printers SET net = ? WHERE id = ?').bind(JSON.stringify(o), id).run(); } }
+      if (!was || was.n !== o.n || was.w !== o.w || was.p !== o.p || Math.abs((was.rssi || 0) - (o.rssi || 0)) > 6 || o.at - was.at > 60e3) await db.prepare('UPDATE printers SET net = ? WHERE id = ?').bind(JSON.stringify(o), id).run(); } }
   /* UPDATE, pressed on the approval page in the last two minutes: the receiver fetches its latest self (only one that says it can) */
   if (p.upd) { await db.prepare('UPDATE printers SET upd = NULL WHERE id = ?').bind(id).run(); if (t - p.upd < 2 * 60e3 && /\bupdate\b/.test(can)) return json({ update: true }); }
   /* CHANGE WI-FI, pressed on the approval page in the last two minutes: the receiver opens its setup Wi-Fi (only one that says it can) */
@@ -605,7 +605,7 @@ async function touchAuth(db, req, id) {
   if (!p || !p.touch || !tok || !(await same(await sha256(tok), p.touch))) return null;
   if (!p.touch_seen || now() - p.touch_seen > 60e3) await db.prepare('UPDATE printers SET touch_seen = ? WHERE id = ?').bind(now(), id).run(); return p;
 }
-const netOf = (url, cf) => { const n = (url.searchParams.get('net') || '').slice(0, 40), r = +url.searchParams.get('rssi'), ip = url.searchParams.get('ip') || '', w = cf ? [cf.city, cf.region, cf.country, cf.asOrganization].filter(x => typeof x === 'string' && x).join(', ').slice(0, 90) : ''; return n ? JSON.stringify({ n, ...(w ? { w } : {}), rssi: Number.isFinite(r) ? Math.max(-120, Math.min(0, Math.round(r))) : null, ...(/^\d{1,3}(\.\d{1,3}){3}$/.test(ip) ? { ip } : {}), ...(/^[\w .·:-]{1,24}$/.test(url.searchParams.get('v') || '') ? { v: url.searchParams.get('v') } : {}), at: now() }) : null; };
+const netOf = (url, cf) => { const n = (url.searchParams.get('net') || '').slice(0, 40), r = +url.searchParams.get('rssi'), ip = url.searchParams.get('ip') || '', w = cf ? [cf.city, cf.region, cf.country, cf.asOrganization].filter(x => typeof x === 'string' && x).join(', ').slice(0, 90) : ''; return n ? JSON.stringify({ n, ...(w ? { w } : {}), rssi: Number.isFinite(r) ? Math.max(-120, Math.min(0, Math.round(r))) : null, ...(/^\d{1,3}(\.\d{1,3}){3}$/.test(ip) ? { ip } : {}), ...(/^[\w .·:-]{1,24}$/.test(url.searchParams.get('v') || '') ? { v: url.searchParams.get('v') } : {}), ...(/^[01]$/.test(url.searchParams.get('prn') || '') ? { p: +url.searchParams.get('prn') } : {}), at: now() }) : null; };
 async function touchList(db, req, id, env) {
   const p0 = await touchAuth(db, req, id); if (!p0) return fail(401, 'token');
   { const tn = netOf(new URL(req.url)); if (tn) { const o = JSON.parse(tn), was = (() => { try { return JSON.parse(p0.touch_net || 'null'); } catch (e) { return null; } })(); if (!was || was.n !== o.n || Math.abs((was.rssi || 0) - (o.rssi || 0)) > 6 || o.at - was.at > 60e3) await db.prepare('UPDATE printers SET touch_net = ? WHERE id = ?').bind(tn, id).run(); } }
@@ -1337,7 +1337,7 @@ async function deskPrinters(db, p) { const out = []; for (const id of deskAllow(
       (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN ('queued', 'printing')) AS queued,
       (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = 'printed' AND j.done > ?) AS day FROM printers WHERE id = ?`).bind(now() - DAY, id).first(); if (!r) continue;
     let n = null; try { n = r.net ? JSON.parse(r.net) : null; } catch (e) { n = null; }
-    out.push({ id: r.id, name: r.name || r.id, paired: !!r.paired, seen: r.seen || null, can: r.can || '', queued: r.queued || 0, day: r.day || 0, net: n ? { n: n.n, rssi: n.rssi == null ? null : n.rssi, at: n.at } : null, off: r.off || null, wifi: r.wifi || null }); } return out; }
+    out.push({ id: r.id, name: r.name || r.id, paired: !!r.paired, seen: r.seen || null, can: r.can || '', queued: r.queued || 0, day: r.day || 0, net: n ? { n: n.n, rssi: n.rssi == null ? null : n.rssi, at: n.at, ...(n.p === 0 || n.p === 1 ? { p: n.p } : {}) } : null, off: r.off || null, wifi: r.wifi || null }); } return out; }
 const deskPosts = (db, id) => db.prepare("SELECT id, created FROM stories WHERE origin LIKE ? AND art IS NOT NULL AND gone IS NULL ORDER BY created DESC LIMIT 80").bind('{"pop":"' + String(id).replace(/[%_"\\]/g, '') + '"%').all();
 async function deskGet(db, env, req, url) { if (await tooMany(db, env, req, 'desk', 120, 10 * 60e3)) return fail(429, 'too many');
   const f = await deskFind(db, url.searchParams.get('d') || ''); if (!f) return fail(404, 'closed'); const p = f.p, pub = {};
