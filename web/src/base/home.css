@@ -1667,3 +1667,27 @@ html.ng-low #hm *, html.ng-low #hm *::before, html.ng-low #hm *::after { -webkit
 html.hm-wrote #hm .hm-card.sk-intro:not(.small) .in-hand { animation: none; }
 @media (prefers-reduced-motion: reduce) { #hm .hm-card.sk-intro:not(.small) .in-hand { animation: none; } }
 #hm.night .hm-card.sk-intro:not(.small) .in-hand { display: none; }
+
+/* THE LABEL: a first visit meets it. A card on the wall beside the work: small plain type, a title, a credit line with its number, the words, the links, the counts */
+#lb { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: rgba(16, 16, 16, .62); animation: lb-in .35s ease both; }
+@keyframes lb-in { from { opacity: 0; } }
+#lb .lb-c { width: min(100%, 430px); max-height: 100%; overflow: hidden; padding: 1.7em 1.6em 1.3em; background: #F3F2EE; color: #161514; font: 400 13.5px/1.36 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; text-align: left; box-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 22px 44px -18px rgba(0, 0, 0, .7); }
+html.hm-night #lb .lb-c { background: #3B3736; color: #F4F2EE; }
+#lb p, #lb h2, #lb ul { margin: 0; padding: 0; list-style: none; }
+#lb .lb-top { font-size: 1.3em; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+#lb .lb-sub { margin-top: .15em; opacity: .85; }
+#lb .lb-t { margin-top: .9em; font: inherit; font-size: 1.2em; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+#lb .lb-m { margin-top: .1em; }
+#lb .lb-cr { display: flex; justify-content: space-between; gap: 1.5em; margin-top: .8em; font-size: .72em; line-height: 1.3; opacity: .8; }
+#lb .lb-cr span:last-child { flex: none; font-variant-numeric: tabular-nums; }
+#lb .lb-b { margin-top: 1em; } #lb .lb-b p + p { margin-top: .62em; }
+#lb .lb-l { margin-top: .9em; } #lb .lb-l li + li { margin-top: .22em; }
+#lb a { color: inherit; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+#lb .lb-n { margin-top: 1em; padding-top: .8em; border-top: 1px solid currentColor; display: grid; gap: .55em; }
+#lb .lb-n li > a, #lb .lb-n li > span { display: block; text-decoration: none; } #lb .lb-n b { font-weight: 700; font-variant-numeric: tabular-nums; }
+#lb .lb-n i { display: block; height: 2px; margin-top: .3em; background: rgba(128, 128, 128, .35); } #lb .lb-n u { display: block; height: 100%; background: #E25C40; }
+#lb .lb-f { display: flex; align-items: center; justify-content: space-between; gap: 1em; margin-top: 1.1em; font-size: .86em; }
+#lb .lb-f label { display: inline-flex; align-items: center; gap: .5em; cursor: pointer; min-height: 32px; } #lb .lb-f input { width: 15px; height: 15px; margin: 0; accent-color: currentColor; }
+#lb .lb-f button { font: inherit; font-weight: 700; color: #F3F2EE; background: #161514; border: 0; border-radius: 2px; min-width: 44px; min-height: 34px; padding: 0 1.1em; cursor: pointer; }
+html.hm-night #lb .lb-f button { color: #161514; background: #F4F2EE; }
+@media (prefers-reduced-motion: reduce) { #lb { animation: none; } }

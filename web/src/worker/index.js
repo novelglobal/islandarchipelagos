@@ -481,9 +481,9 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, isles: 400000 };
 /* texts the public settings never show: the pop-up's private link */
-const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub'];
+const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
@@ -505,6 +505,18 @@ async function partners(db) {
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('queued', 'printing')) AS queued,
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed') AS printed FROM printers p ORDER BY p.created`).all();
   return json({ partners: results.map(p => ({ id: p.id, name: p.name, paper: p.paper, paired: !!p.paired, mesh: !!p.mesh && !!p.paired, live: !!p.live, two: !!p.two, links: p.id === 'novelglobal' ? LINKS : linksOf(p.links), ready: !!p.seen && now() - p.seen < 2 * 60e3, queued: p.queued, printed: p.printed })) });
+}
+
+/* the islands, for someone looking for one: each printer that is paired, whether it is on, whether a pop-up is open on it, and, while it is
+   open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture) */
+async function isles(db) {
+  const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
+  const pops = (await popsOf(db)).filter(p => p && p.on);
+  const { results } = await db.prepare('SELECT id, name, number, seen FROM printers WHERE token IS NOT NULL ORDER BY number, created').all();
+  const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, open = pops.some(q => q.to === p.id || q.id === p.id || (!q.to && p.id === 'novelglobal')) || d.open === true, o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3, open };
+    if (open) { ['addr', 'words', 'pic'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } }
+    return o; });
+  return json({ isles: out, paired: results.length });
 }
 
 /* ───────── a printer's receiver: it asks for the next job, prints it, and says how it went ───────── */
@@ -1397,6 +1409,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'mine' && p[1] && !p[3] && (m === 'GET' && !p[2] || m === 'POST' && p[2])) return mine(db, env, req, p[1], p[2]);
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
   if (p[0] === 'partners' && m === 'GET') return partners(db);
+  if (p[0] === 'isles' && m === 'GET') return isles(db);
   if (p[0] === 'osm' && !p[1] && m === 'GET') return osmThrough(db, env, req, url);
   if (p[0] === 'places' && !p[1] && m === 'GET') return listPlaces(db);
   if (p[0] === 'places' && !p[1] && m === 'POST') return suggestPlace(db, env, req);

@@ -19,6 +19,10 @@
 /admin.js
   Cache-Control: no-store
 
+# the islands: asked fresh each time
+/islands
+  Cache-Control: no-cache
+
 # a private page: never kept, never indexed, never framed
 /note
   X-Robots-Tag: noindex, nofollow, noarchive

@@ -34,7 +34,7 @@
   async function show(t) {
     tab = t; document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
-    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'home') await home(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
+    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'home') await home(); else if (t === 'label') await label(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
   }
 
   /* ───────── species: every kind of life the devices have met, learned from their pulls. In the field list, a kind has its months,
@@ -587,6 +587,58 @@
     ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'LAN PARTIES', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
     ['cards', 'PLAYING', 'nine'], ['tarot', 'TAROT', 'nine'], ['pl-pl-2uqn', 'SESAME', 'nine'], ['portfolio', 'PORTFOLIO', 'small', 1], ['slot-2', 'OPEN ISLAND', 'nine', 1], ['slot-3', 'MAKE', 'nine', 1]];
   const JOIN0 = { weather: 'week', news: 'week', events: 'week', fiction: 'read', nonfiction: 'read', survival: 'read', cards: 'deck', tarot: 'deck', 'pl-pl-2uqn': 'deck' };
+  /* ───────── the label: what a first visit meets, set like the label beside a work in a gallery. Its lines, its links, its counts, and the
+     islands people are sent to find. All of it is the label setting (public) and the isles setting (each island's place, shown only while it is open) ───────── */
+  async function label() {
+    const [st, pr] = await Promise.all([(await api('settings')).json(), api('printers').then(r => r.json()).catch(() => ({ printers: [] }))]);
+    let L = {}; try { L = st.label ? JSON.parse(st.label) : {}; } catch (e) { L = {}; } let I = {}; try { I = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { I = {}; }
+    L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : [];
+    const inp = (v, o) => { const e = el('input', o || {}); e.value = v == null ? '' : v; return e; }, ta = (v, rows) => { const e = el('textarea', { rows: String(rows || 3) }); e.value = v || ''; return e; };
+    const on = el('input', { type: 'checkbox' }); on.checked = !!L.on;
+    const f = { top: inp(L.top), sub: inp(L.sub), title: inp(L.title), meta: inp(L.meta), credit: inp(L.credit), num: inp(L.num), body: ta(L.body, 14), never: inp(L.never), enter: inp(L.enter) };
+    const TO = [['card', 'THE BACK OF THE FIRST CARD'], ['islands', 'FIND AN ISLAND (THE LIST OF PRINTERS)'], ['kit', 'BUILD YOUR OWN (THE KIT PAGE)'], ['note', 'THE PRIVATE PAGE'], ['url', 'A LINK OF ITS OWN']];
+    const lbox = el('div', { style: 'display:grid;gap:8px' }), cbox = el('div', { style: 'display:grid;gap:8px' });
+    const drawL = () => lbox.replaceChildren(...L.links.map((k, i) => { const before = inp(k.b), words = inp(k.t), to = el('select', {}, ...TO.map(([v, t]) => el('option', { value: v, text: t }))), url = inp(k.u, { placeholder: 'https://' }); to.value = k.to || 'url'; url.hidden = to.value !== 'url';
+        before.oninput = () => { k.b = before.value; }; words.oninput = () => { k.t = words.value; }; url.oninput = () => { k.u = url.value.trim(); }; to.onchange = () => { k.to = to.value; url.hidden = to.value !== 'url'; };
+        return el('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr 34px;gap:8px;align-items:end' }, el('label', {}, 'WORDS BEFORE', before), el('label', {}, 'LINKED WORDS', words), el('label', {}, 'GOES TO', to), el('label', {}, 'LINK', url), el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { L.links.splice(i, 1); drawL(); } })); }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'ADD A LINK', onclick: () => { L.links.push({ b: '', t: '', to: 'url', u: '' }); drawL(); } })));
+    const SRC = [['', 'TYPED HERE'], ['paired', 'LIVE: PRINTERS PAIRED'], ['printed', 'LIVE: PRINTS MADE']];
+    const drawC = () => cbox.replaceChildren(...L.counts.map((k, i) => { const now = inp(k.now), goal = inp(k.goal), pre = inp(k.pre, { maxlength: '4' }), words = inp(k.t), src = el('select', {}, ...SRC.map(([v, t]) => el('option', { value: v, text: t }))), url = inp(k.u, { placeholder: 'https://' }); src.value = k.live || ''; now.disabled = !!src.value;
+        now.oninput = () => { k.now = now.value.trim(); }; goal.oninput = () => { k.goal = goal.value.trim(); }; pre.oninput = () => { k.pre = pre.value; }; words.oninput = () => { k.t = words.value; }; url.oninput = () => { k.u = url.value.trim(); }; src.onchange = () => { k.live = src.value; now.disabled = !!src.value; };
+        return el('div', { style: 'display:grid;grid-template-columns:60px 1fr 1fr 1.4fr 1.3fr 1.6fr 34px;gap:8px;align-items:end' }, el('label', {}, 'SIGN', pre), el('label', {}, 'NOW', now), el('label', {}, 'OF', goal), el('label', {}, 'WORDS', words), el('label', {}, 'COUNTED', src), el('label', {}, 'PROOF OR DETAIL (A LINK)', url), el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { L.counts.splice(i, 1); drawC(); } })); }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'ADD A COUNT', onclick: () => { L.counts.push({ pre: '', now: '', goal: '', t: '', live: '', u: '' }); drawC(); } })));
+    drawL(); drawC();
+    const read = () => ({ on: on.checked, top: f.top.value.trim(), sub: f.sub.value.trim(), title: f.title.value.trim(), meta: f.meta.value.trim(), credit: f.credit.value.trim(), num: f.num.value.trim(), body: f.body.value.replace(/\r/g, '').trim(), never: f.never.value.trim(), enter: f.enter.value.trim(),
+      links: L.links.filter(k => (k.t || '').trim()).map(k => ({ b: (k.b || '').trim(), t: k.t.trim(), to: k.to || 'url', u: /^https:\/\//.test(k.u || '') ? k.u : '' })), counts: L.counts.filter(k => (k.t || '').trim()).map(k => ({ pre: k.pre || '', now: k.now || '', goal: k.goal || '', t: k.t.trim(), live: k.live || '', u: /^https:\/\//.test(k.u || '') ? k.u : '' })) });
+    const fill = o => { L = o || {}; L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : []; on.checked = !!L.on; Object.keys(f).forEach(k => { f[k].value = L[k] || ''; }); drawL(); drawC(); };
+    const put = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('label'); };
+    const lab = el('section', { class: 'ed' }, el('h3', { text: 'THE LABEL' }), el('small', { class: 'hint', text: 'Shown over the site on each first visit, until the visitor says never again. It is a part of the page, not a new window, so a browser that blocks pop-ups still shows it. Everything on it is written here.' }),
+      el('label', { class: 'check' }, on, 'SHOWN'),
+      el('div', { class: 'two' }, el('label', {}, 'FIRST LINE (WHO)', f.top), el('label', {}, 'SECOND LINE (WHERE FROM)', f.sub)),
+      el('div', { class: 'two' }, el('label', {}, 'TITLE', f.title), el('label', {}, 'UNDER THE TITLE (YEAR, WHAT IT IS MADE OF)', f.meta)),
+      el('div', { class: 'two' }, el('label', {}, 'SMALL LINE (CREDIT)', f.credit), el('label', {}, 'NUMBER AT ITS RIGHT', f.num)),
+      el('label', {}, 'WORDS (A BLANK LINE STARTS A NEW PARAGRAPH)', f.body),
+      el('label', {}, 'LINKS, ONE A LINE, UNDER THE WORDS', lbox), el('label', {}, 'COUNTS, AT THE FOOT', cbox),
+      el('div', { class: 'two' }, el('label', {}, 'THE SWITCH (NEVER SHOW AGAIN)', f.never), el('label', {}, 'THE KEY THAT CLOSES IT', f.enter)),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => put({ label: JSON.stringify(read()) }) }),
+        el('button', { type: 'button', text: 'CHOOSE FILE', title: 'Fill every box from a label file', onclick: () => { const fi = el('input', { type: 'file', accept: '.json,application/json' }); fi.onchange = async () => { try { fill(JSON.parse(await fi.files[0].text())); } catch (e) { alert('Not a label file.'); } }; fi.click(); } }),
+        el('button', { type: 'button', text: 'SEE IT', onclick: () => window.open('/?label=1', '_blank', 'noopener') })));
+    /* the islands: where each is, for the people sent to find one */
+    const rows = (pr.printers || []).filter(p => p.paired).map(p => { const d = I[p.id] || (I[p.id] = {}), hide = el('input', { type: 'checkbox' }), open = el('input', { type: 'checkbox' }), addr = inp(d.addr), lat = inp(d.lat), lng = inp(d.lng), words = inp(d.words, { maxlength: '160' }), pic = el('img', { alt: '', style: 'max-height:70px;max-width:120px;border:1px solid #ccd;border-radius:4px' + (d.pic ? '' : ';display:none') });
+      hide.checked = !d.hide; open.checked = d.open === true; if (d.pic) pic.src = URL.createObjectURL(dataBlob(d.pic));
+      hide.onchange = () => { d.hide = !hide.checked; }; open.onchange = () => { d.open = open.checked; }; addr.oninput = () => { d.addr = addr.value.trim(); }; lat.oninput = () => { d.lat = lat.value.trim(); }; lng.oninput = () => { d.lng = lng.value.trim(); }; words.oninput = () => { d.words = words.value.trim(); };
+      return el('div', { style: 'display:grid;gap:8px;padding:10px 0;border-top:1px solid #dde' }, el('b', { text: (p.name || p.id).toUpperCase() }),
+        el('div', { class: 'acts' }, el('label', { class: 'check' }, hide, 'LISTED'), el('label', { class: 'check' }, open, 'OPEN EVEN WITH NO POP-UP ON IT')),
+        el('div', { class: 'three' }, el('label', {}, 'ADDRESS', addr), el('label', {}, 'LATITUDE', lat), el('label', {}, 'LONGITUDE', lng)), el('label', {}, 'A FEW WORDS (HOURS, WHERE IT SITS)', words),
+        el('div', { class: 'acts' }, pic, el('button', { type: 'button', text: 'PICTURE', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = async () => { if (!fi.files[0]) return; d.pic = await islePic(fi.files[0]); pic.src = URL.createObjectURL(dataBlob(d.pic)); pic.style.display = ''; }; fi.click(); } }), el('button', { type: 'button', text: '×', title: 'Take the picture off', onclick: () => { delete d.pic; pic.style.display = 'none'; } }))); });
+    const isl = el('section', { class: 'ed' }, el('h3', { text: 'THE ISLANDS' }), el('small', { class: 'hint', text: 'The page people are sent to: novel.global/islands. Each paired printer, whether it is on, and whether it is open. Where it is shows only while it is open (a pop-up is open on it, or it is ticked open here).' }),
+      ...(rows.length ? rows : [el('p', { class: 'empty', text: 'NO PRINTER IS PAIRED YET' })]),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => put({ isles: JSON.stringify(I) }) }), el('button', { type: 'button', text: 'SEE IT', onclick: () => window.open('/islands', '_blank', 'noopener') })));
+    main.replaceChildren(...head('Label'), lab, isl);
+  }
+  /* a picture of a place made small enough to keep (a jpeg, 900 across at most); and a data URL as a blob, since this page shows no data: pictures */
+  function islePic(file) { return new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { let k = Math.min(1, 900 / Math.max(im.width, im.height)), q = 0.8, d = ''; const c = document.createElement('canvas'); for (;;) { c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); d = c.toDataURL('image/jpeg', q); if (d.length < 110e3 || k < 0.2) break; k *= 0.82; } URL.revokeObjectURL(u); res(d); }; im.onerror = rej; im.src = u; }); }
+  function dataBlob(d) { const m = /^data:([^;]+);base64,(.*)$/.exec(d) || [], b = atob(m[2] || ''), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new Blob([u], { type: m[1] || 'image/jpeg' }); }
   async function home() {
     const st = await (await api('settings')).json();
     const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('home'); };
