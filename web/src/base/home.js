@@ -775,7 +775,7 @@
     INTRO_TXT = txt; requestAnimationFrame(introFit); }
   var INTRO_TXT = '';
   /* the opener stood small: the type steps down until every word is in */
-  function introFit() { headFit(); $$('.sk-intro:not(.small) .in-f', col).forEach(function (f) { var st = f.style; st.scale = ''; st.width = st.height = st.right = st.bottom = ''; if (!f.clientHeight) return; var s = 1; while (s > 0.45 && f.scrollHeight > f.clientHeight + 1) { s -= 0.03; st.right = st.bottom = 'auto'; st.transformOrigin = '0 0'; st.width = (100 / s) + '%'; st.height = (100 / s) + '%'; st.scale = s.toFixed(3); } });
+  function introFit() { headFit(); $$('.sk-intro:not(.small) .in-pp', col).forEach(function (p) { p.style.fontSize = ''; if (!p.clientWidth) return; var px = parseFloat(getComputedStyle(p).fontSize), lh = function () { return parseFloat(getComputedStyle(p).lineHeight) || px * 1.4; }; while (px > 7.5 && p.clientHeight > lh() * 2 + 1) { px -= 0.25; p.style.fontSize = px + 'px'; } }); $$('.sk-intro:not(.small) .in-f', col).forEach(function (f) { var st = f.style; st.scale = ''; st.width = st.height = st.right = st.bottom = ''; if (!f.clientHeight) return; var s = 1; while (s > 0.45 && f.scrollHeight > f.clientHeight + 1) { s -= 0.03; st.right = st.bottom = 'auto'; st.transformOrigin = '0 0'; st.width = (100 / s) + '%'; st.height = (100 / s) + '%'; st.scale = s.toFixed(3); } });
     $$('.sk-intro.small .in-f', col).forEach(function (f) { var px = 19; f.style.fontSize = px + 'px'; while (px > 5.5 && (f.scrollHeight > f.clientHeight + 1 || f.scrollWidth > f.clientWidth + 1)) { px -= 0.25; f.style.fontSize = px + 'px'; headFit(); } }); introArc(); }
   /* the wall is wired on the first drawing too, not only when the column is drawn again */
   wlWire();
