@@ -698,18 +698,35 @@
   var NT_G = { week: 'utils', read: 'utils', deck: 'utils', soon: 'soon', dev: 'dev' };
   function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } noteWait(); }
   function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
-  function noteOut() { var n = NT.el; NT.el = null; if (!n) return; n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
+  function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
   function noteWait() { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(noteShow, 900); }
   function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '', seen = store.get('da.notes.seen', []) || [];
     if (!t || seen.indexOf(k) >= 0 || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
     seen.push(k); store.set('da.notes.seen', seen);
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
     n.className = 'hm-note'; n.setAttribute('role', 'note'); n.title = 'Tap to put away';
+    var nf = NT.t.films && NT.t.films[k]; if (nf && nf.file) { var fv = filmEl(nf, k, function () {}); n.appendChild(fv); n.classList.add('nt-f'); }
     ps.forEach(function (s, i) { var p = D.createElement('p'); p.textContent = s; if (i === 0 && head) p.className = 'nt-h'; else if (i >= show) p.className = 'nt-x'; n.appendChild(p); });
     if (ps.length > show) { var mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo);
       mo.addEventListener('click', function (e) { e.stopPropagation(); var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); }); }
-    n.addEventListener('click', function () { if (NT.el === n) noteOut(); });
+    n.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.lb-v')) return; if (NT.el === n) noteOut(); });
     root.appendChild(n); NT.el = n; }
+  /* a film from the films bucket in its own few keys: asked for when play is first pressed, counted, played here only. k: whose film, '' the label's */
+  function filmEl(F, k, fit) { var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (to) to.appendChild(e); return e; };
+      var v = mk('div', 'lb-v'), pl = mk('button', 'lb-vp', null, v), bar = mk('div', 'lb-vb', null, v), tr = mk('i', '', null, bar), fl = mk('u', '', null, tr), mu = mk('button', 'lb-vm', null, bar), asked = 0;
+      var vid = D.createElement('video'); v.insertBefore(vid, pl); v.style.setProperty('--w', Math.max(30, Math.min(100, +F.w || 100)) + '%');
+      vid.playsInline = true; vid.setAttribute('playsinline', ''); vid.preload = 'none'; vid.disablePictureInPicture = true; vid.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback'); vid.setAttribute('disableremoteplayback', '');
+      vid.volume = Math.max(0, Math.min(1, (F.vol == null || F.vol === '' ? 80 : +F.vol || 0) / 100)); pl.type = mu.type = 'button'; pl.setAttribute('aria-label', 'Play'); mu.setAttribute('aria-label', 'Sound');
+      pl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>'; mu.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4z"/><path class="w" d="M15.5 9a4.2 4.2 0 010 6M18 6.5a7.8 7.8 0 010 11"/><path class="x" d="M15.5 9.5l5 5m0-5l-5 5"/></svg>';
+      var gone = function () { v.vid = vid = null; v.remove(); fit(); };
+      var play = function () { if (!vid) return; if (vid.getAttribute('src')) { if (vid.paused) vid.play().catch(function () { /* a tap will */ }); else vid.pause(); return; } if (asked) return; asked = 1; v.classList.add('lb-wait');
+        fetch('/api/film' + (k ? '?k=' + k : ''), { method: 'POST' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { if (!vid) return; vid.src = j.u; v.classList.remove('lb-wait'); vid.play().catch(function () { /* a tap will */ }); }, gone); };
+      vid.addEventListener('play', function () { v.classList.add('lb-on'); }); vid.addEventListener('pause', function () { v.classList.remove('lb-on'); }); vid.addEventListener('ended', function () { v.classList.remove('lb-on'); fl.style.width = '0'; });
+      vid.addEventListener('timeupdate', function () { if (vid && vid.duration) fl.style.width = (vid.currentTime / vid.duration * 100).toFixed(2) + '%'; }); vid.addEventListener('error', gone);
+      vid.addEventListener('loadedmetadata', function () { if (vid.videoWidth && vid.videoHeight) { v.style.setProperty('--r', (vid.videoWidth / vid.videoHeight).toFixed(4)); fit(); } });
+      v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
+      mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
   function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
@@ -746,20 +763,7 @@
     c.addEventListener('pointercancel', drop); c.addEventListener('pointerleave', drop); c.addEventListener('contextmenu', function (e) { if (!own(e)) e.preventDefault(); });
     c.tabIndex = 0; c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === c) shutLb(); });
     /* the film: asked for when play is first pressed, then played here by its own few keys. No more of it today, or none there: no player */
-    var F = L.film; if (F && F.on && F.file) { var v = mk('div', 'lb-v'), pl = mk('button', 'lb-vp', null, v), bar = mk('div', 'lb-vb', null, v), tr = mk('i', '', null, bar), fl = mk('u', '', null, tr), mu = mk('button', 'lb-vm', null, bar), asked = 0;
-      vid = D.createElement('video'); v.insertBefore(vid, pl); if (F.side === 'above') w.insertBefore(v, c); else w.appendChild(v); v.style.setProperty('--w', Math.max(30, Math.min(100, +F.w || 100)) + '%');
-      vid.playsInline = true; vid.setAttribute('playsinline', ''); vid.preload = 'none'; vid.disablePictureInPicture = true; vid.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback'); vid.setAttribute('disableremoteplayback', '');
-      vid.volume = Math.max(0, Math.min(1, (F.vol == null || F.vol === '' ? 80 : +F.vol || 0) / 100)); pl.type = mu.type = 'button'; pl.setAttribute('aria-label', 'Play'); mu.setAttribute('aria-label', 'Sound');
-      pl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>'; mu.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4z"/><path class="w" d="M15.5 9a4.2 4.2 0 010 6M18 6.5a7.8 7.8 0 010 11"/><path class="x" d="M15.5 9.5l5 5m0-5l-5 5"/></svg>';
-      var gone = function () { vid = null; v.remove(); fit(); };
-      var play = function () { if (!vid) return; if (vid.getAttribute('src')) { if (vid.paused) vid.play().catch(function () { /* a tap will */ }); else vid.pause(); return; } if (asked) return; asked = 1; v.classList.add('lb-wait');
-        fetch('/api/film', { method: 'POST' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { if (!vid) return; vid.src = j.u; v.classList.remove('lb-wait'); vid.play().catch(function () { /* a tap will */ }); }, gone); };
-      vid.addEventListener('play', function () { v.classList.add('lb-on'); }); vid.addEventListener('pause', function () { v.classList.remove('lb-on'); }); vid.addEventListener('ended', function () { v.classList.remove('lb-on'); fl.style.width = '0'; });
-      vid.addEventListener('timeupdate', function () { if (vid && vid.duration) fl.style.width = (vid.currentTime / vid.duration * 100).toFixed(2) + '%'; }); vid.addEventListener('error', gone);
-      vid.addEventListener('loadedmetadata', function () { if (vid.videoWidth && vid.videoHeight) { v.style.setProperty('--r', (vid.videoWidth / vid.videoHeight).toFixed(4)); fit(); } });
-      v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-      tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
-      mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); }
+    var F = L.film; if (F && F.on && F.file) { var fv = filmEl(F, '', fit); vid = fv.vid; if (F.side === 'above') w.insertBefore(fv, c); else w.appendChild(fv); }
     D.addEventListener('keydown', esc2); D.body.appendChild(lb);
     /* all of it on one screen: the type steps down until nothing is cut off */
     fit(); addEventListener('resize', fit); if (D.fonts && D.fonts.ready) D.fonts.ready.then(fit); }

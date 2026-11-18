@@ -741,10 +741,10 @@
     let N = {}; try { N = JSON.parse(st.notes || '{}') || {}; } catch (e) { N = {}; }
     const on = el('input', { type: 'checkbox' }); on.checked = N.on !== false; const say = el('small', { class: 'hint' });
     const F = [['radio', 'DIRECT ACTION RADIO'], ['wish', 'BLUEPAPER'], ['research', 'RESEARCH BOARD'], ['zine', 'DESIGN PRINT'], ['kit', 'ISLAND (MAKE YOUR OWN)'], ['utils', 'FIRST 3 × 3 (WEATHER TO CARDS)'], ['soon', 'SECOND 3 × 3 (COMING)'], ['dev', 'YOUR APPS']]
-      .map(([k, t]) => { const x = el('textarea', { rows: '6' }); x.value = N[k] || ''; return [k, t, x]; });
-    const save = async () => { const o = { on: on.checked }; F.forEach(([k, , x]) => { o[k] = x.value.replace(/\r/g, '').trim(); }); await api('settings', { method: 'POST', body: JSON.stringify({ notes: JSON.stringify(o) }) }); say.textContent = 'SAVED'; };
-    return el('section', { class: 'ed' }, el('h3', { text: 'CARD NOTES' }), el('small', { class: 'hint', text: 'Each comes up once, small, as its card is first reached; one tap puts it away. A turn from day to night brings them back. A blank line between paragraphs; a short first line is the heading; the first paragraph shows, the rest under More. Empty: no note.' }),
-      el('label', { class: 'check' }, on, 'SHOWN'), ...F.map(([, t, x]) => el('label', {}, t, x)),
+      .map(([k, t]) => { const x = el('textarea', { rows: '8' }); x.value = N[k] || ''; const fm = el('input', { placeholder: 'FILE NAME IN THE FILMS BUCKET', maxlength: '80' }); fm.value = ((N.films || {})[k] || {}).file || ''; return [k, t, x, fm]; });
+    const save = async () => { const o = { on: on.checked, films: {} }; for (const [k, t, x, fm] of F) { o[k] = x.value.replace(/\r/g, '').trim(); const fl = fm.value.trim(); if (fl && !/^\w[\w.-]{0,79}\.(mp4|webm|mov)$/.test(fl)) { say.textContent = t + ': THE FILM IS A FILE NAME ENDING .mp4, .webm OR .mov'; return; } if (fl) o.films[k] = { file: fl, vol: 80 }; } await api('settings', { method: 'POST', body: JSON.stringify({ notes: JSON.stringify(o) }) }); say.textContent = 'SAVED'; };
+    return el('section', { class: 'ed' }, el('h3', { text: 'CARD NOTES' }), el('small', { class: 'hint', text: 'Each comes up once, small, as its card is first reached; one tap puts it away. A turn from day to night brings them back. A blank line between paragraphs; a short first line is the heading; the first paragraph shows, the rest under More. Empty: no note. A film sits above the words and plays like the label film, under its limits.' }),
+      el('label', { class: 'check' }, on, 'SHOWN'), ...F.map(([, t, x, fm]) => el('div', { style: 'display:grid;gap:10px;margin:0 0 22px' }, el('label', {}, t, x), el('label', {}, 'FILM (EMPTY: NONE)', fm))),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: save }), say)); }
 
   async function welcomeCard() {

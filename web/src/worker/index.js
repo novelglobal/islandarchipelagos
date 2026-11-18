@@ -532,18 +532,22 @@ async function partners(db) {
    which answers a player on this site, a piece at a time: never a tab, a save, or another site */
 const FILM = { file: /^\w[\w.-]{0,79}\.(mp4|webm|mov)$/, life: 4 * 3600e3, piece: 4 << 20 };
 const hex = u => [...u].map(b => b.toString(16).padStart(2, '0')).join('');
-async function filmOf(db) { let L = {}; try { L = JSON.parse((await settingsOf(db)).label || '{}'); } catch (e) { L = {}; } const f = L && L.film; return f && f.on && FILM.file.test(f.file || '') ? f : null; }
+/* k: a card note's film (its file set on the approval page, LABEL, CARD NOTES), under the label film's limits; none: the label's own */
+async function filmOf(db, k) { const s = await settingsOf(db); let L = {}, N = {}; try { L = JSON.parse(s.label || '{}') || {}; } catch (e) { L = {}; }
+  if (!k) { const f = L.film; return f && f.on && FILM.file.test(f.file || '') ? f : null; }
+  try { N = JSON.parse(s.notes || '{}') || {}; } catch (e) { N = {}; } const f = /^[a-z]{2,12}$/.test(k) && N.films && N.films[k];
+  return f && FILM.file.test(f.file || '') ? { ...f, max: (L.film || {}).max, each: (L.film || {}).each } : null; }
 const filmSig = async (env, file, exp) => hex(await mac(codeKey(env), `film|${file}|${exp}`)).slice(0, 32);
 const filmToday = async db => { const r = await db.prepare("SELECT n FROM traffic WHERE day = ? AND k = 'film'").bind(melDay()).first(); return r ? r.n : 0; };
 async function filmAsk(db, env, req) {
-  const f = await filmOf(db); if (!f || !env.FILMS || !codeKey(env)) return fail(404, 'none');
+  const k = new URL(req.url).searchParams.get('k') || '', f = await filmOf(db, k); if (!f || !env.FILMS || !codeKey(env)) return fail(404, 'none');
   const max = Math.max(1, Math.min(1e6, Math.round(+f.max) || 300)), each = Math.max(1, Math.min(500, Math.round(+f.each) || 6));
   if ((await filmToday(db)) >= max || await tooMany(db, env, req, 'film', each, DAY)) return fail(429, 'rest');
   await db.prepare("INSERT INTO traffic (day, k, n) VALUES (?, 'film', 1) ON CONFLICT(day, k) DO UPDATE SET n = n + 1").bind(melDay()).run();
-  const exp = now() + FILM.life; return json({ u: `/api/film/${exp}.${await filmSig(env, f.file, exp)}` });
+  const exp = now() + FILM.life; return json({ u: `/api/film/${exp}.${await filmSig(env, f.file, exp)}${k ? '.' + k : ''}` });
 }
 async function filmPlay(db, env, req, tok) {
-  const f = await filmOf(db), m = /^(\d{13})\.([0-9a-f]{32})$/.exec(tok || ''); if (!f || !env.FILMS || !codeKey(env) || !m || +m[1] < now()) return fail(404, 'none');
+  const m = /^(\d{13})\.([0-9a-f]{32})(?:\.([a-z]{2,12}))?$/.exec(tok || ''), f = await filmOf(db, m ? m[3] : ''); if (!f || !env.FILMS || !codeKey(env) || !m || +m[1] < now()) return fail(404, 'none');
   if (!(await same(m[2], await filmSig(env, f.file, m[1])))) return fail(404, 'none');
   const dest = req.headers.get('sec-fetch-dest'), site = req.headers.get('sec-fetch-site'), r = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') || '');
   if ((dest && dest !== 'video') || (site && site !== 'same-origin') || !r || (!r[1] && !r[2])) return fail(403, 'no');
