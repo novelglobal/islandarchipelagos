@@ -1,7 +1,7 @@
 /* what this phone has spotted, and the list it is out to find: one store for the radio, the species cards and SPECIES LIST */
 (function () {
   if (window.SPOT) return;
-  var KS = 'da.spotted.v1', KH = 'da.hunt.v1';
+  var KS = 'da.spotted.v1', KH = 'da.hunt.v1', KM = 'da.species.mine.v1';
   var get = function (k, d) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } };
   var put = function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* this visit only */ } };
   var M = function () { try { return +new Date().toLocaleString('en-AU', { timeZone: 'Australia/Melbourne', month: 'numeric' }) - 1; } catch (e) { return new Date().getMonth(); } };
@@ -19,20 +19,37 @@
     return f.brd && f.brd[m] === 'B';
   }
   /* the lists: the month's birds (one challenge for all), what is in season, ten about now picked at random, the curated, and what is spotted */
+  /* species added on this phone: found on iNaturalist, or a name of one's own; they stand in the guide beside the rest */
+  var ICON = { Aves: 'bird', Mammalia: 'mammal', Reptilia: 'reptile', Amphibia: 'frog', Actinopterygii: 'fish', Insecta: 'insect', Arachnida: 'spider', Mollusca: 'snail', Plantae: 'plant', Fungi: 'fungus' };
+  function mine() { var l = get(KM, []); return Array.isArray(l) ? l : []; }
+  function addMine(o) { var l = mine(), cn = String(o.cn || o.n || '').trim().slice(0, 60); if (!cn) return null;
+    var id = o.tid ? 'u-' + (+o.tid) : 'u-' + cn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40); if (id === 'u-') return null;
+    var f = { id: id, cn: cn, n: String(o.n || '').slice(0, 80), g: ICON[o.icon] || o.g || 'added', st: 'U', where: '', event: '', act: '', tid: o.tid ? +o.tid : undefined, mine: 1, at: Date.now() };
+    l = l.filter(function (x) { return x.id !== id; }); l.unshift(f); put(KM, l.slice(0, 200)); return f; }
+  function dropMine(id) { put(KM, mine().filter(function (x) { return x.id !== id; })); }
   function list(k, F, cur) {
-    var m = M(), r = rnd(MON[m] + new Date().getFullYear() + k), n = 10;
+    var m = M();
+    if (k === 'added') return mine();
+    F = F.concat(mine().filter(function (x) { return !F.some(function (f) { return f.id === x.id; }); }));
+    if (k === 'mine') { var s0 = get(KS, {}); return F.filter(function (f) { return s0[f.id]; }).sort(function (a, b) { return s0[b.id].at - s0[a.id].at; }); }
+    if (k === 'all') return F.slice().sort(function (a, b) { return String(a.cn).localeCompare(b.cn); });
+    F = F.filter(function (f) { return !f.mine; }); r = rnd(MON[m] + new Date().getFullYear() + k), n = 10;
     if (k === 'birds') return F.filter(function (f) { return BIRD.test(f.g) && !out(f, m); }).map(function (f) { return [f, score(f, m) + r() * 1.6]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, n).map(function (x) { return x[0]; });
     if (k === 'season') return F.filter(function (f) { return inSeason(f, m); }).sort(function (a, b) { return score(b, m) - score(a, m); }).slice(0, n);
     if (k === 'local') { var l = F.filter(function (f) { return !out(f, m) && f.st !== 'I'; }).slice(); for (var i = l.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = l[i]; l[i] = l[j]; l[j] = t; } return l.slice(0, n); }
     if (k === 'curated') { var want = (cur && cur.length ? cur : CURATED).map(function (s) { return String(s).trim().toLowerCase(); }).filter(Boolean);
       return want.map(function (w) { return F.filter(function (f) { return f.id === w || String(f.cn).toLowerCase() === w; })[0]; }).filter(Boolean).slice(0, 20); }
-    if (k === 'mine') { var s = get(KS, {}); return F.filter(function (f) { return s[f.id]; }).sort(function (a, b) { return s[b.id].at - s[a.id].at; }); }
     return F.slice();
   }
   var CURATED = ['tawny-frogmouth', 'superb-fairywren', 'kookaburra', 'powerful-owl', 'rainbow-lorikeet', 'black-swan', 'eastern-spinebill', 'sc-cockatoo', 'wf-heron', 'nankeen-kestrel'];
-  var NAMES = { birds: 'BIRDS', season: 'SEASON', local: 'LOCAL 10', curated: 'CURATED', mine: 'SPOTTED', all: 'GUIDE' };
+  var NAMES = { birds: 'BIRDS', season: 'SEASON', local: 'LOCAL 10', curated: 'CURATED', added: 'ADDED', mine: 'SPOTTED', all: 'GUIDE' };
+  /* iNaturalist's names, through novel.global: species only, the common name in English where there is one */
+  function search(q) { q = String(q || '').trim(); if (q.length < 3) return Promise.resolve([]);
+    return fetch('/api/inat/taxa?q=' + encodeURIComponent(q.slice(0, 60)) + '&rank=species&is_active=true&per_page=8&locale=en').then(function (r) { return r.ok ? r.json() : { results: [] }; })
+      .then(function (j) { return (j.results || []).map(function (t) { return { tid: t.id, n: t.name, cn: t.preferred_common_name ? t.preferred_common_name.replace(/^./, function (c) { return c.toUpperCase(); }) : t.name, icon: t.iconic_taxon_name }; }); })
+      .catch(function () { return []; }); }
   window.SPOT = {
-    month: M, mon: function () { return MON[M()]; }, names: NAMES, list: list, inSeason: inSeason,
+    month: M, mon: function () { return MON[M()]; }, names: NAMES, list: list, inSeason: inSeason, mine: mine, addMine: addMine, dropMine: dropMine, search: search,
     all: function () { return get(KS, {}); },
     has: function (id) { return !!get(KS, {})[id]; },
     set: function (id, cn, on, at) { var s = get(KS, {}); if (on === undefined) on = !s[id]; if (on) s[id] = { cn: String(cn || id).slice(0, 60), at: Date.now(), lat: at && +(+at[0]).toFixed(3), lng: at && +(+at[1]).toFixed(3) }; else delete s[id]; put(KS, s);
@@ -42,5 +59,5 @@
     hunt: function (h) { if (h === undefined) return get(KH, null); put(KH, h); return h; }
   };
   /* a change on another page of the same site (the radio in its frame, the card in its own) reaches this one */
-  addEventListener('storage', function (e) { if (e.key === KS || e.key === KH) try { window.dispatchEvent(new CustomEvent('da-spot', { detail: {} })); } catch (er) { /* old browser */ } });
+  addEventListener('storage', function (e) { if (e.key === KS || e.key === KH || e.key === KM) try { window.dispatchEvent(new CustomEvent('da-spot', { detail: {} })); } catch (er) { /* old browser */ } });
 })();

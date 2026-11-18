@@ -490,25 +490,26 @@
   function fieldDb() { if (!SPF) SPF = Promise.all([fetch('base-db.json').then(function (r) { return r.json(); }), fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })])
     .then(function (r) { var cur = String(r[1].species || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); try { if (cur.length) localStorage.setItem('da.species.cur', JSON.stringify(cur)); else localStorage.removeItem('da.species.cur'); } catch (e) { /* none */ } return { F: (r[0] && r[0].field) || [], cur: cur }; });
     return SPF; }
-  var SPK = { local: 'LOCAL 10', season: 'SEASON', birds: 'BIRDS', curated: 'CURATED', mine: 'SPOTTED' };
+  var SPK = { local: 'LOCAL 10', season: 'SEASON', birds: 'BIRDS', curated: 'CURATED', added: 'ADDED', mine: 'SPOTTED', all: 'GUIDE' };
   function spList(d, o) { var SP = window.SPOT, F = d.F || []; if (!SP) return [];
     if (o.k === 'local') { if (!o.ids) { var h = SP.hunt(); o.ids = h && h.k === 'local' && h.ids ? h.ids : SP.list('local', F).map(function (f) { return f.id; }); } var by = {}; F.forEach(function (f) { by[f.id] = f; }); return o.ids.map(function (id) { return by[id]; }).filter(Boolean); }
     return SP.list(o.k, F, d.cur); }
   var species = {
-    tall: 3400, opts: [['local', 'LOCAL'], ['season', 'SEASON'], ['birds', 'BIRDS'], ['curated', 'CURATED'], ['mine', 'SPOTTED'], ['share', 'SHARE']],
+    tall: 4600, opts: [['local', 'LOCAL'], ['season', 'SEASON'], ['birds', 'BIRDS'], ['curated', 'CURATED'], ['added', 'ADDED'], ['mine', 'SPOTTED'], ['all', 'GUIDE'], ['share', 'SHARE']],
     init: function (o) { var h = window.SPOT && SPOT.hunt(); o.k = h && SPK[h.k] ? h.k : 'birds'; },
     local: function () { return fieldDb(); },
     act: function (a, s, o) { if (a === 'share') { spShare(); return false; } if (!SPK[a]) return false; if (a === 'local' && o.k === 'local') o.ids = null; o.k = a; return true; },
     draw: function (k, d, s, o) {
       var SP = window.SPOT, l = spList(d, o), got = SP ? SP.all() : {}, g = k.g, n = l.filter(function (f) { return got[f.id]; }).length;
       var y = k.head('SPECIES', o.k === 'birds' && SP ? 'BIRDS · ' + SP.mon() : SPK[o.k], phase(age(today()))) + 30;
-      if (!l.length) { k.txt(o.k === 'mine' ? 'NOTHING SPOTTED YET' : '—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
-      l.slice(0, 40).forEach(function (f) { var on = !!got[f.id];
+      if (!l.length) { k.txt(o.k === 'mine' ? 'NOTHING SPOTTED YET' : o.k === 'added' ? 'ADD ONE IN THE GUIDE' : '—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
+      var cap = o.k === 'all' ? 60 : 40; l.slice(0, cap).forEach(function (f) { var on = !!got[f.id];
         g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeRect(M + 6, y - 2, 28, 28);
         if (on) { k.box(M + 6, y - 2, 28, 28); g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(M + 12, y + 12); g.lineTo(M + 18, y + 19); g.lineTo(M + 29, y + 5); g.stroke(); }
         k.fit(String(f.cn), M + 48, y + 22, '700', 27, W - 2 * M - 52, SANS);
         k.fit([f.n, f.event].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
         y += 66; k.box(M + 48, y - 10, W - 2 * M - 48, 1); });
+      if (l.length > cap) { k.txt('+ ' + (l.length - cap) + ' MORE IN THE GUIDE', M + 48, y + 14, '600 18px ' + MONO); y += 30; }
       y += 10; k.txt('SPOTTED ' + n + ' / ' + l.length, M, y + 20, '600 22px ' + MONO);
       return k.foot(y + 26, 'https://novel.global/x#species', '', 'FIELD GUIDE · NOVEL.GLOBAL');
     }
@@ -522,8 +523,8 @@
     [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { if (SPK[b.dataset.a]) b.setAttribute('aria-pressed', String(b.dataset.a === S.o.k)); if (b.dataset.a === 'share') b.hidden = window.parent === window; });
     var pk = $('#pick'), f = $('#spf'); if (!pk || !SP) return; if (!f) { f = document.createElement('ol'); f.id = 'spf'; pk.appendChild(f);
       f.addEventListener('change', function (e) { var c = e.target.closest('input'); if (!c) return; SP.set(c.dataset.id, c.dataset.n, c.checked); paint(); }); }
-    var got = SP.all(); f.innerHTML = spList(S.data || {}, S.o).slice(0, 40).map(function (x) { return '<li><label><input type="checkbox" data-id="' + x.id + '" data-n="' + String(x.cn).replace(/["<&]/g, '') + '"' + (got[x.id] ? ' checked' : '') + '><span>' + String(x.cn).replace(/[<&]/g, '') + '</span></label></li>'; }).join('');
-    if (SPK[S.o.k] && S.o.k !== 'mine') SP.hunt({ k: S.o.k, ids: spList(S.data || {}, S.o).map(function (x) { return x.id; }), at: Date.now() }); }
+    var got = SP.all(); f.innerHTML = spList(S.data || {}, S.o).map(function (x) { return '<li><label><input type="checkbox" data-id="' + x.id + '" data-n="' + String(x.cn).replace(/["<&]/g, '') + '"' + (got[x.id] ? ' checked' : '') + '><span>' + String(x.cn).replace(/[<&]/g, '') + '</span></label></li>'; }).join('');
+    if (SPK[S.o.k] && S.o.k !== 'mine' && S.o.k !== 'added' && S.o.k !== 'all') SP.hunt({ k: S.o.k, ids: spList(S.data || {}, S.o).map(function (x) { return x.id; }), at: Date.now() }); }
   addEventListener('da-spot', function () { if (S.stack && S.stack.kind === 'species' && S.ready) paint(); });
 
   var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass, species: species };
