@@ -698,18 +698,20 @@
   var NT_G = { week: 'utils', read: 'utils', deck: 'utils', soon: 'soon', dev: 'dev' };
   function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } noteWait(); }
   function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
+  /* a tap off the note while it is up only puts it away: the card behind does not open with it */
+  D.addEventListener('click', function (e) { if (!NT.el || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) return; e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
   function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
   function noteWait() { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(noteShow, 900); }
   function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '', seen = store.get('da.notes.seen', []) || [];
     if (!t || seen.indexOf(k) >= 0 || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
     seen.push(k); store.set('da.notes.seen', seen);
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
-    n.className = 'hm-note'; n.setAttribute('role', 'note'); n.title = 'Tap to put away';
+    n.className = 'hm-note'; n.setAttribute('role', 'note');
     var nf = NT.t.films && NT.t.films[k]; if (nf && nf.file) { var fv = filmEl(nf, k, function () {}); n.appendChild(fv); n.classList.add('nt-f'); }
     ps.forEach(function (s, i) { var p = D.createElement('p'); p.textContent = s; if (i === 0 && head) p.className = 'nt-h'; else if (i >= show) p.className = 'nt-x'; n.appendChild(p); });
-    if (ps.length > show) { var mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo);
-      mo.addEventListener('click', function (e) { e.stopPropagation(); var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); }); }
-    n.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.lb-v')) return; if (NT.el === n) noteOut(); });
+    var mo = null; if (ps.length > show) { mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo); }
+    n.title = mo ? 'Tap to read more; tap the card behind to close' : 'Tap the card behind to close';
+    n.addEventListener('click', function (e) { e.stopPropagation(); if (e.target.closest && e.target.closest('.lb-v')) return; if (!mo) return; var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); });
     root.appendChild(n); NT.el = n; }
   /* a film from the films bucket in its own few keys: asked for when play is first pressed, counted, played here only. k: whose film, '' the label's */
   function filmEl(F, k, fit) { var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (to) to.appendChild(e); return e; };

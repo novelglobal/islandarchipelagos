@@ -1723,6 +1723,6 @@ html.hm-night #lb .lb-c { background: #3B3736; color: #F4F2EE; }
 #hm .hm-note .lb-v { width: 100%; margin: 0 0 .85em; box-shadow: none; } #hm .hm-note.nt-f { width: min(72vw, 280px); }
 #hm .hm-note .nt-h { font-size: 1.12em; font-weight: 700; line-height: 1.18; letter-spacing: -.01em; }
 #hm .hm-note:not(.nt-open) .nt-x { display: none; }
-#hm .hm-note .nt-mo { display: block; margin: .4em 0 0; padding: .3em 0; min-height: 28px; font: inherit; font-size: .92em; font-weight: 700; color: inherit; background: none; border: 0; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
+#hm .hm-note .nt-mo { pointer-events: none; display: block; margin: .4em 0 0; padding: .3em 0; min-height: 28px; font: inherit; font-size: .92em; font-weight: 700; color: inherit; background: none; border: 0; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
 html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 @media (prefers-reduced-motion: reduce) { #hm .hm-note { animation: none; transition: none; } }
