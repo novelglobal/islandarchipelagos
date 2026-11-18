@@ -25,6 +25,15 @@
     window.choose = function (l) { return new Promise(function (res) { var d = D.createElement('div'); d.className = 'ch'; (l || []).forEach(function (x) { var b = D.createElement('button'); b.type = 'button'; b.textContent = S(x); b.onclick = function () { d.remove(); res(x); }; d.appendChild(b); }); root.appendChild(d); }); };
     window.beep = function (f, d) { try { var A = window.__ac || (window.__ac = new AudioContext()), o = A.createOscillator(), g = A.createGain(); d = d || 0.08; o.type = 'square'; o.frequency.value = f || 660; g.gain.setValueAtTime(0.05, A.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, A.currentTime + d); o.connect(g); g.connect(A.destination); o.start(); o.stop(A.currentTime + d + 0.02); } catch (e) { /* silent */ } };
     window.phase = function () { var d = (Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5, f = ((d % 29.530588853) + 29.530588853) % 29.530588853 / 29.530588853; return ['NEW MOON', 'WAXING CRESCENT', 'FIRST QUARTER', 'WAXING GIBBOUS', 'FULL MOON', 'WANING GIBBOUS', 'LAST QUARTER', 'WANING CRESCENT'][Math.round(f * 8) % 8]; };
+    window.snap = function (l) { return new Promise(function (res) { var f = D.createElement('label'); f.className = 'snap'; f.innerHTML = '<input type="file" accept="image/*" hidden><b></b>'; f.querySelector('b').textContent = S(l || 'PHOTO');
+      var inp = f.querySelector('input'); inp.onchange = function () { var fl = inp.files[0]; f.remove(); if (!fl) { res(null); return; } var rd = new FileReader();
+        rd.onload = function () { var im = new Image(); im.onload = function () { var w = 464, h = Math.min(900, Math.round(im.height * w / im.width)), c = D.createElement('canvas'); c.width = w; c.height = h; var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(im, 0, 0, w, Math.round(im.height * w / im.width));
+          var d = g.getImageData(0, 0, w, h), a = d.data, e = new Float32Array(w * h); for (var i = 0; i < w * h; i++) e[i] = a[i * 4] * 0.3 + a[i * 4 + 1] * 0.59 + a[i * 4 + 2] * 0.11;
+          for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) { var k = y * w + x, o = e[k], n = o < 128 ? 0 : 255, r = o - n; a[k * 4] = a[k * 4 + 1] = a[k * 4 + 2] = n; a[k * 4 + 3] = 255;
+            if (x + 1 < w) e[k + 1] += r * 7 / 16; if (y + 1 < h) { if (x) e[k + w - 1] += r * 3 / 16; e[k + w] += r * 5 / 16; if (x + 1 < w) e[k + w + 1] += r / 16; } }
+          g.putImageData(d, 0, 0); res(c.toDataURL('image/png')); }; im.onerror = function () { res(null); }; im.src = rd.result; }; rd.readAsDataURL(fl); };
+      root.appendChild(f); }); };
+    window.image = function (pic) { if (/^data:image\/png;base64,/.test(S(pic))) q({ t: 'img', s: S(pic) }); };
     window.keep = function (k, v) { k = S(k).slice(0, 40); if (v === undefined) return STORE[k]; STORE[k] = v; q({ t: 'keep', k: k, v: JSON.stringify(v).slice(0, 4000) }); return v; };
     window.onerror = function (m, u, l) { q({ t: 'err', s: S(m) + (l ? ' · ' + l : '') }); };
     window.addEventListener('unhandledrejection', function (e) { q({ t: 'err', s: S(e.reason && e.reason.message || e.reason) }); });
@@ -36,7 +45,7 @@
       '#k{min-height:100%;box-sizing:border-box;padding:18px 16px 28px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}#k p{margin:0}' +
       'button{font:inherit;font-weight:600;letter-spacing:.06em;padding:9px 16px;border-radius:999px;border:1.5px solid ' + t[1] + ';background:transparent;color:inherit;cursor:pointer}button:active{background:' + t[2] + ';color:' + t[0] + '}' +
       'form{display:flex;flex-direction:column;gap:6px;width:100%}form span{display:flex;gap:6px}input{flex:1;min-width:0;font:inherit;padding:9px 12px;border-radius:10px;border:1.5px solid ' + t[1] + ';background:transparent;color:inherit}input:focus{outline:2px solid ' + t[2] + '}' +
-      '.ch{display:flex;flex-wrap:wrap;gap:6px}h1,h2{margin:0;font-family:system-ui,sans-serif;letter-spacing:-.02em}img{max-width:100%}';
+      '.snap{display:inline-block;font-weight:600;letter-spacing:.06em;padding:9px 16px;border-radius:999px;border:1.5px dashed ' + t[1] + ';cursor:pointer}.ch{display:flex;flex-wrap:wrap;gap:6px}h1,h2{margin:0;font-family:system-ui,sans-serif;letter-spacing:-.02em}img{max-width:100%}';
     var csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:";
     var body = String(src || '').replace(/<\/(script)/gi, '<\\/$1');
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="' + csp + '"><style>' + css + '</style></head><body><main id="k"></main>' +
@@ -54,6 +63,7 @@
       if (o.t === 'big') { f = '800 46px system-ui, Arial, sans-serif'; L = wrap(o.s, f); add(L.length * 48 + 14, function (c, y0) { c.font = f; L.forEach(function (l, j) { c.fillText(l, P, y0 + 42 + j * 48); }); }); }
       if (o.t === 'small') { f = '500 17px ui-monospace, Menlo, monospace'; L = wrap(o.s, f); add(L.length * 22 + 8, function (c, y0) { c.font = f; L.forEach(function (l, j) { c.fillText(l, P, y0 + 17 + j * 22); }); }); }
       if (o.t === 'line') add(22, function (c, y0) { for (var x = P; x < W - P; x += 10) c.fillRect(x, y0 + 10, 5, 2); });
+      if (o.t === 'img' && o.im && o.im.naturalWidth) add(o.im.naturalHeight + 10, function (c, y0) { c.drawImage(o.im, P, y0 + 5); });
       if (o.t === 'moon') add(96, function (c, y0) { moonAt(c, W / 2, y0 + 46, 40); });
       if (o.t === 'cut') add(34, function (c, y0) { c.save(); c.globalCompositeOperation = 'destination-out'; for (var x = 0; x < W; x += 16) { c.beginPath(); c.moveTo(x, y0 + 17); c.lineTo(x + 8, y0 + 9); c.lineTo(x + 16, y0 + 17); c.lineTo(x + 8, y0 + 25); c.fill(); } c.restore(); });
       if (o.t === 'qr' && window.qrcode) { var m; try { m = window.qrcode(0, 'M'); m.addData(o.s); m.make(); } catch (e) { m = null; } if (m) { var n = m.getModuleCount(), s = Math.floor(200 / n); add(n * s + 20, function (c, y0) { var x0 = (W - n * s) / 2; for (var r = 0; r < n; r++) for (var q = 0; q < n; q++) if (m.isDark(r, q)) c.fillRect(x0 + q * s, y0 + 10 + r * s, s, s); }); } } });
@@ -68,7 +78,8 @@
     addEventListener('message', function (e) { if (e.source !== fr.contentWindow || e.origin !== location.origin || !e.data) return; if (e.data.pkready === 1 && html) { fr.contentWindow.postMessage({ pkrun: html }, location.origin); html = ''; return; } if (e.data.pk !== 1) return; var o = e.data.o || {};
       if (o.t === 'keep') { if (opt.keep) opt.keep(o.k, o.v); return; }
       if (o.t === 'err') { if (opt.err) opt.err(String(o.s || '').slice(0, 160)); return; }
-      if (ops.length > 400 || !/^(text|big|small|line|qr|moon|cut)$/.test(o.t)) return; ops.push({ t: o.t, s: String(o.s == null ? '' : o.s) }); paint(); if (opt.ink) opt.ink(o); });
+      if (ops.length > 400 || !/^(text|big|small|line|qr|moon|cut|img)$/.test(o.t)) return; var op = { t: o.t, s: String(o.s == null ? '' : o.s) };
+      if (o.t === 'img') { if (op.s.length > 400e3 || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(op.s)) return; op.im = new Image(); op.im.onload = paint; op.im.src = op.s; } ops.push(op); paint(); if (opt.ink) opt.ink(o); });
     function run(src, th, store) { last = { src: src, th: th }; ops = []; paint(); if (opt.err) opt.err(''); var nf = fr.cloneNode(); html = doc(src, th, store, opt.quick); nf.src = 'play-box.html'; fr.replaceWith(nf); fr = nf; var t = TH[th] || TH.print; scr.style.background = t[0]; }
     return { run: run, again: function (store) { run(last.src, last.th, store); }, paper: function () { return ops.length ? cv.toDataURL('image/png') : null; }, inked: function () { return ops.length; } };
   }
@@ -76,6 +87,7 @@
   /* the brief: what this kit offers, to copy and paste */
   var BRIEF = 'Write plain JavaScript (no HTML, no imports, no network) for a tiny experience that runs on a phone screen next to a thermal receipt printer. Top-level await works. Available functions:\n' +
     'print(text) big(text) small(text) line() qr(text) moon() cut()  -> put things on the paper\n' +
+    'await snap(label) -> a photo from the phone, in dots; image(photo) -> that photo on the paper\n' +
     'say(text) show(html) button(label, fn) await ask(label) await choose([..])  -> the screen\n' +
     'pick(list) await wait(ms) every(seconds, fn) beep(freq) phase() (moon phase name) keep(key) / keep(key, value) (remembered)\n' +
     'QUICK is true when it is opened for a quick print: put one thing on the paper at once\n' +

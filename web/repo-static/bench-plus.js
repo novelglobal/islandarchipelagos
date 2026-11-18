@@ -14,6 +14,10 @@
   var save = function () { if (!saveT) saveT = setTimeout(saveNow, 350); };
   addEventListener('pagehide', function () { if (saveT) saveNow(); }); D.addEventListener('visibilitychange', function () { if (D.hidden && saveT) saveNow(); });
   var mq = /[?&]m=(slip|page|game|live|card|set)/.exec(location.search); if (mq) P.m = mq[1];
+  /* a starter for a card still to be made: taken when the code is empty or another starter, asked first over code of their own */
+  var TQ = /[?&]t=([a-z]+)/.exec(location.search), TT = window.STARTERS || {};
+  if (TQ && TT[TQ[1]]) { var tt = TT[TQ[1]], had = P.live && String(P.live.src || '').trim(), mine = had && !Object.keys(TT).some(function (k) { return TT[k].src === P.live.src; });
+    P.m = 'live'; if (!had || (P.live.src !== tt.src && (!mine || confirm('Start ' + tt.n + ' over your code?')))) { P.live = { src: tt.src, th: tt.th, n: tt.n, keep: {} }; saveNow(); } }
 
   /* a little sound for each thing done */
   var AC = null, SFX = false; function beep(f, d, type) { if (!SFX) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.05, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + (d || 0.06)); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + (d || 0.06) + 0.02); } catch (e) { /* silent */ } }

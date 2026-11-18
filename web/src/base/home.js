@@ -62,15 +62,15 @@
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-2', off: true, size: 'small', title: 'OPEN ISLAND', ph: 2, skin: 'slot', opens: 'unlock', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'slot-3', off: true, size: 'small', title: 'MAKE', ph: 3, skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-ghost', make: 'A GHOST CAPTURE', size: 'small', title: 'GHOST CAPTURE', p: 1, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-armband', make: 'AN ARMBAND', size: 'small', title: 'ARMBAND', p: 2, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-textgame', make: 'A TEXT GAME', size: 'small', title: 'TEXT GAME', p: 3, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-comics', make: 'A COMIC STRIP', size: 'small', title: 'COMICS', p: 4, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-speech', make: 'A SPEECH PRINT', size: 'small', title: 'SPEECH PRINT', p: 5, mode: 'live', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-pobox', make: 'A POEM FOR A PO BOX', size: 'small', title: 'PO BOX', p: 6, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-photosend', make: 'A PHOTO SEND', size: 'small', title: 'PHOTO SEND', p: 7, mode: 'page', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-link', make: 'A LINKED GAME', size: 'small', title: 'LINK PLAY', p: 8, mode: 'game', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
-    { id: 'soon-astronomy', make: 'A STAR MAP', size: 'small', title: 'ASTRONOMY', p: 9, mode: 'slip', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
+    { id: 'soon-ghost', make: 'A GHOST CAPTURE', size: 'small', title: 'GHOST CAPTURE', p: 1, mode: 'live', t: 'ghost', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-armband', make: 'AN ARMBAND', size: 'small', title: 'ARMBAND', p: 2, mode: 'live', t: 'armband', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-textgame', make: 'A TEXT GAME', size: 'small', title: 'TEXT GAME', p: 3, mode: 'live', t: 'quest', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-comics', make: 'A COMIC STRIP', size: 'small', title: 'COMICS', p: 4, mode: 'live', t: 'comic', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-speech', make: 'A SPEECH PRINT', size: 'small', title: 'SPEECH PRINT', p: 5, mode: 'live', t: 'memo', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-pobox', make: 'A PO BOX', size: 'small', title: 'PO BOX', p: 6, mode: 'live', t: 'pobox', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-photosend', make: 'A PHOTO SEND', size: 'small', title: 'PHOTO SEND', p: 7, mode: 'live', t: 'album', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-link', make: 'A LINKED GAME', size: 'small', title: 'LINK PLAY', p: 8, mode: 'live', t: 'link', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'soon-astronomy', make: 'A STAR MAP', size: 'small', title: 'ASTRONOMY', p: 9, mode: 'live', t: 'sky', opens: 'soon', g: 'soon', skin: 'soon', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] }
   ];
   /* small line drawings: blue on THIS WEEK, ink on CARDS */
   var PRN_HTML = '<div class="hm-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>';
@@ -1072,7 +1072,7 @@
       '<p class="sn-tags"><span class="sn-t t1">' + cur + 'You can build it.</span><span class="sn-t t2">' + cur + 'Find the bluepaper card to increase the quality of your ideas.</span><span class="sn-t t3">' + cur + 'Do you want to create ' + esc(what) + '?</span></p>' +
       '<div class="sn-yn"><button type="button" data-a="1">Yes, start it</button><button type="button" data-a="0">No</button></div></div>';
     var esc1 = function (e) { if (e.key === 'Escape') shut(); }, shut = function () { d.remove(); removeEventListener('keydown', esc1); };
-    d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-disc')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode }); });
+    d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-disc')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode, t: c.t }); });
     addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }
   /* a card opened is a print on its way: the printers are told to ask every few seconds for a while (one small call, at most every 90 s) */
   var WARMED = 0; function warmUp() { if (Date.now() - WARMED < 90e3) return; WARMED = Date.now(); try { fetch('/api/warm', { method: 'POST', keepalive: true }).catch(function () { /* none */ }); } catch (e) { /* none */ } }
@@ -1094,7 +1094,7 @@
     if (c.opens === 'panel') return sheet(c.title, panelIn);
     /* the builder card opens on its three ways in (hardware, software, stories); a mode asked for goes straight to the bench */
     if (c.opens === 'bench' && c.id === 'space' && !(opt && (opt.mode || opt.bench))) return sheet(c.title, inFrame('archipelagos?in=1#a'));
-    if (c.opens === 'bench') { var bm = (opt && opt.mode) || c.mode; return sheet(c.title, inFrame('bench?in=1' + (bm ? '&m=' + bm : '') + '#b')); }
+    if (c.opens === 'bench') { var bm = (opt && opt.mode) || c.mode; return sheet(c.title, inFrame('bench?in=1' + (bm ? '&m=' + bm : '') + (opt && opt.t ? '&t=' + opt.t : '') + '#b')); }
     if (c.opens === 'unlock') return sheet('YOUR PRINTER', unlockIn);
     if (c.opens === 'play') return sheet(c.title, inFrame('play.html?c=' + encodeURIComponent(c.play) + '#p'));
   }
