@@ -1092,6 +1092,8 @@
     if (c.opens === 'pop') return sheet(c.title, inFrame('popup?in=1#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
+    /* the builder card opens on its three ways in (hardware, software, stories); a mode asked for goes straight to the bench */
+    if (c.opens === 'bench' && c.id === 'space' && !(opt && (opt.mode || opt.bench))) return sheet(c.title, inFrame('archipelagos?in=1#a'));
     if (c.opens === 'bench') { var bm = (opt && opt.mode) || c.mode; return sheet(c.title, inFrame('bench?in=1' + (bm ? '&m=' + bm : '') + '#b')); }
     if (c.opens === 'unlock') return sheet('YOUR PRINTER', unlockIn);
     if (c.opens === 'play') return sheet(c.title, inFrame('play.html?c=' + encodeURIComponent(c.play) + '#p'));
@@ -1371,7 +1373,7 @@
       return '<li role="checkbox" tabindex="0" data-k="' + s[0] + '" aria-checked="' + (got.indexOf(s[0]) >= 0) + '"><i></i><span>' + (s[2] ? '<a href="' + s[2] + '" rel="noopener" target="_blank">' + esc(s[1]) + ' ↗</a>' : esc(s[1])) + '</span></li>'; }).join('') + '</ol><p class="hm-say" aria-live="polite"></p>';
     $$('[data-k]', body).forEach(function (li) { var flip = function () { var on = li.getAttribute('aria-checked') !== 'true'; li.setAttribute('aria-checked', String(on)); store.set('da.isle.v1', $$('[aria-checked="true"]', body).map(function (q) { return q.dataset.k; })); beep(on ? 880 : 440, 0.05); };
       li.addEventListener('click', function (e) { if (!e.target.closest('a')) flip(); }); li.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); } }); });
-    $('#hm-kbench', body).addEventListener('click', function () { SH.swap = true; open('space'); });
+    $('#hm-kbench', body).addEventListener('click', function () { SH.swap = true; open('space', { bench: 1 }); });
     $('#hm-kprint', body).addEventListener('click', function () { var say = $('.hm-say', body), ticks = store.get('da.isle.v1', []) || [];
       var cv = window.SLIPS && SLIPS.checklist ? SLIPS.checklist(ticks, 512) : listSlip(list, ticks); say.textContent = '· · ·'; printCanvas(cv, 'kit').then(function (s) { say.textContent = s === 'held' ? 'WAITING' : s ? 'PRINTING' : '×'; say.title = s === 'held' ? 'Waiting for the printer’s yes' : ''; }, function (e) { say.textContent = e && e.wait ? NG.waitSay(e) : '× NO PRINTER ONLINE'; }); });
   }
@@ -2204,7 +2206,7 @@
   seaSize(); requestAnimationFrame(frame);
   receipt(); lastPrint();
   if (/[?&]stories\b/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(function () { open('portfolio'); }, 400); }
-  requestAnimationFrame(function () { paintAll(); parallax(); board(); zpStart(); rnStart(); paperEdges(); topo(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space'); } });
+  requestAnimationFrame(function () { paintAll(); parallax(); board(); zpStart(); rnStart(); paperEdges(); topo(); if (window.__LH && /[?&]panel\b/.test(location.search)) { history.replaceState(null, '', location.pathname); open('space', { bench: 1 }); } });
   (function () { var c = $('#hm-col'), on = false, chk = function () { var e = c.scrollTop + c.clientHeight >= c.scrollHeight - 80; if (e !== on) { on = e; H.classList.toggle('hm-end', e); } };
     c.addEventListener('scroll', chk, { passive: true }); addEventListener('resize', chk); })();
   window.HOME = { open: open, home: home, wired: wired, find: find, carry: carry, fits: fits, outcomes: outcomes, mix: mix, wires: function () { return WIRES.slice(); }, reef: reef, cards: CARDS, night: setNight, J: J, buoy: function (k) { RS.scrap = !!k; RS.drawn = false; } };
