@@ -601,13 +601,13 @@
 
   /* ───────── MIXTAPE: its tracks, each one's sound traced to where it was heard and who heard it; played here, tuned down,
      a sound's own echo where it has one, nothing under them. Its cover is the lines from the city out to each place ───────── */
-  var TQ = (location.search.match(/[?&]t=([\w-]{1,40})/) || [])[1] || '', TPH = [], TPC = null, TP = { a: null, e: null, i: -1, f: 0, u: '', t: 0 };
+  var TQ = (location.search.match(/[?&]t=([\w-]{1,40})/) || [])[1] || '', TPH = [], TPC = null, TPP = [], TP = { a: null, e: null, i: -1, f: 0, u: '', t: 0 };
   /* a tape kept on this phone: its tracks are the radio's loops recorded here, each with its place and the lives in it */
   function tapeOwn(id) { var ts = [], ls = []; try { ts = JSON.parse(localStorage.getItem('da.tapes.v1') || '[]') || []; ls = JSON.parse(localStorage.getItem('da.loops.v1') || '[]') || []; } catch (e) { return null; }
     var t = ts.filter(function (x) { return x && x.id === id; })[0]; if (!t) return null; var n = 0;
-    return { id: t.id, name: t.name || 'MIXTAPE', own: 1, from: [-37.8136, 144.9631], tracks: (t.ids || []).map(function (lid) { var l = ls.filter(function (q) { return q && q.id === lid; })[0]; if (!l || !l.rec) return null; var w = l.where || {}, lv = [];
+    return { id: t.id, name: t.name || 'MIXTAPE', own: 1, from: [-37.8136, 144.9631], tracks: (t.ids || []).map(function (lid) { var l = ls.filter(function (q) { return q && q.id === lid; })[0]; if (!l) return null; var w = l.where || {}, lv = [];
       [l].concat(l.parts || []).forEach(function (p) { ((((p || {}).layers || {}).life || {}).cells || []).forEach(function (c) { if (c && c.n && lv.indexOf(c.n) < 0) lv.push(c.n); }); });
-      return { n: ++n, cn: String(w.place || 'RADIO').toUpperCase(), sci: lv.slice(0, 4).join(' · '), where: '', at: l.at ? new Date(l.at).toISOString().slice(0, 10) : '', lat: w.lat, lng: w.lng, st: 0, echo: 0, rec: lid, s: l.rec.s }; }).filter(Boolean) }; }
+      return { n: ++n, cn: String(w.place || 'RADIO').toUpperCase(), sci: lv.slice(0, 4).join(' · '), where: '', at: l.at ? new Date(l.at).toISOString().slice(0, 10) : '', lat: w.lat, lng: w.lng, st: 0, echo: 0, rec: l.rec ? lid : '', none: !l.rec, s: l.rec ? l.rec.s : 0 }; }).filter(Boolean) }; }
   /* the cover: rings ten kilometres apart, a line to each place a sound was heard, its number there */
   function tapeCover(k, d, y, h) { var g = k.g, L = d.tracks || [], c = d.from || [-37.8136, 144.9631], kx = Math.cos(c[0] * Math.PI / 180), x0 = 0, x1 = 0, y0 = 0, y1 = 0;
     var P = L.map(function (t) { var dx = ((+t.lng || c[1]) - c[1]) * kx, dy = c[0] - (+t.lat || c[0]); x0 = Math.min(x0, dx); x1 = Math.max(x1, dx); y0 = Math.min(y0, dy); y1 = Math.max(y1, dy); return [dx, dy, t]; });
@@ -615,12 +615,12 @@
     k.box(M, y, W - 2 * M, h); g.save(); g.beginPath(); g.rect(M, y, W - 2 * M, h); g.clip(); g.strokeStyle = '#fff'; g.fillStyle = '#fff'; g.lineWidth = 2;
     g.setLineDash([2, 6]); for (var r = 10; r < 400; r += 10) { var rr = r / 111.32 * sc; if (rr > 2 * W) break; g.beginPath(); g.arc(ox, oy, rr, 0, 7); g.stroke(); } g.setLineDash([]); g.lineWidth = 3;
     P.forEach(function (p) { g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox + p[0] * sc, oy + p[1] * sc); g.stroke(); });
-    P.forEach(function (p) { var x = ox + p[0] * sc, yy = oy + p[1] * sc; g.fillStyle = '#fff'; g.beginPath(); g.arc(x, yy, 15, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = '600 16px ' + MONO; g.textAlign = 'center'; g.fillText(String(p[2].n), x, yy + 6); });
+    TPP = []; P.forEach(function (p) { var x = ox + p[0] * sc, yy = oy + p[1] * sc; TPP[p[2].n - 1] = [x, yy]; g.fillStyle = '#fff'; g.beginPath(); g.arc(x, yy, 15, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = '600 16px ' + MONO; g.textAlign = 'center'; g.fillText(String(p[2].n), x, yy + 6); });
     g.fillStyle = '#fff'; g.fillRect(ox - 6, oy - 6, 12, 12); g.textAlign = 'left'; g.restore(); }
   var tape = {
-    opts: [['play', 'PLAY'], ['share', 'SHARE'], ['save', 'SAVE'], ['board', 'BOARD'], ['design', 'DESIGN']],
+    opts: [['play', 'PLAY'], ['save', 'SAVE'], ['board', 'BOARD'], ['design', 'DESIGN']],
     local: function () { if (TQ) { var t = tapeOwn(TQ); return t ? Promise.resolve(t) : Promise.reject(new Error('gone')); } return fetch('tapes/night-field.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); },
-    act: function (a) { if (a === 'play') { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); } else if (a === 'share') tpShare(); else if (a === 'save') paperSave('mixtape-' + String((S.data || {}).name || 'tape').toLowerCase().replace(/[^a-z0-9]+/g, '-')); else if (a === 'board' || a === 'design') paperPlace(a, 'tp'); return false; },
+    act: function (a) { if (a === 'play') { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); } else if (a === 'save') paperSave('mixtape-' + String((S.data || {}).name || 'tape').toLowerCase().replace(/[^a-z0-9]+/g, '-')); else if (a === 'board' || a === 'design') paperPlace(a, 'tp'); return false; },
     draw: function (k, d) { var L = d.tracks || []; TPH = [];
       var y = k.head('MIXTAPE', d.name || '', phase(age(today()))) + 16;
       TPC = { y: y, h: 420 }; tapeCover(k, d, y, 420); y += 420 + 40;
@@ -629,47 +629,48 @@
       L.forEach(function (t) { var y0 = y - 32, w0 = W - 2 * M - 48 - 60;
         k.txt(('0' + t.n).slice(-2), M, y, '600 22px ' + MONO); k.fit(String(t.cn), M + 48, y, '700', 27, w0, SANS);
         var tune = t.st ? (t.st > 0 ? '+' : '−') + Math.abs(t.st) + ' ST' : '', len = t.s ? Math.floor(t.s / 60) + ':' + ('0' + Math.round(t.s % 60)).slice(-2) : '';
-        var la = [t.sci, t.where, t.at].filter(Boolean), lb = [t.by, t.lic, tune, t.echo ? 'ECHO' : '', len, t.rec && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean);
+        var la = [t.sci, t.where, t.at].filter(Boolean), lb = [t.by, t.lic, tune, t.echo ? 'ECHO' : '', t.none ? 'NOT RECORDED' : '', len, (t.rec || t.none) && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean);
         /* a line too long to print at its size goes onto two, never smaller */
         var ls = [], put = function (l) { var s = l.join(' · ').toUpperCase(); k.g.font = '500 15px ' + MONO; if (l.length > 1 && k.g.measureText(s).width > w0) { var h = Math.max(1, Math.floor(l.length / 2)); ls.push(l.slice(0, h).join(' · ').toUpperCase(), l.slice(h).join(' · ').toUpperCase()); } else if (s) ls.push(s); };
         put(la); put(lb); var ly = y + 30; ls.forEach(function (s) { k.fit(s, M + 48, ly, '500', 15, w0, MONO); ly += 24; });
         if (t.obs) { k.fit('inaturalist.org/observations/' + (+t.obs), M + 48, ly, '600', 15, w0, MONO); ly += 24; } var hh = ly - 24 + 12 - y;
-        var sep = y + hh; k.box(M + 48, sep, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: sep - y0, obs: t.obs, cn: t.cn, go: tpWhere(t) }); y = sep + 46; });
+        var sep = y + hh; k.box(M + 48, sep, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: sep - y0, cn: t.cn }); y = sep + 46; });
       return k.foot(y + 14, TQ ? '' : 'https://novel.global/x#tape', '', 'MIXTAPE · NOVEL.GLOBAL'); }
   };
   Object.defineProperty(tape, 'tall', { get: function () { var n = S && S.data && S.data.tracks ? S.data.tracks.length : 10; return 760 + 420 + n * 200; } });
-  /* where a track was made, on the radar: a sound heard, the sighting on the map; a loop of this phone's, the radio tuned there as it was */
-  function tpWhere(t) { return t.obs ? '/studio#' + (+t.obs).toString(36) : t.rec ? '/studio#loop=' + encodeURIComponent(t.rec) : ''; }
   /* playing: one track after the other, tuned, faded in; a sound's own echo comes in after it, quieter */
   function tpBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
     q.onsuccess = function () { try { var r = q.result.transaction('kv').objectStore('kv').get('rec:' + id); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   function tpAudio(u, rate) { var a = new Audio(); a.preload = 'auto'; a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false; a.src = u; a.defaultPlaybackRate = rate; a.playbackRate = rate; a.volume = 0; return a; }
   function tpFade(a, to, ms, done) { var v0 = a.volume, t0 = Date.now(); clearInterval(a._f); a._f = setInterval(function () { var p = Math.min(1, (Date.now() - t0) / ms); try { a.volume = Math.max(0, Math.min(1, v0 + (to - v0) * p)); } catch (e) { /* fixed volume */ } if (p >= 1) { clearInterval(a._f); if (done) done(); } }, 60); }
   function tpHush() { [TP.a, TP.e].forEach(function (a) { if (!a) return; clearInterval(a._f); try { a.pause(); a.removeAttribute('src'); a.load(); } catch (e) { /* gone */ } }); clearTimeout(TP.t); if (TP.u && /^blob:/.test(TP.u)) URL.revokeObjectURL(TP.u); TP.a = TP.e = null; TP.u = ''; }
-  function tpStop() { TP.f++; TP.on = false; tpHush(); tpKeys(); }
-  function tpPlay(i) { var L = (S.data && S.data.tracks) || [], t = L[i]; TP.f++; tpHush(); if (!t) { TP.i = -1; TP.on = false; tpKeys(); return; } TP.i = i; TP.on = true; var my = TP.f, rate = Math.pow(2, (+t.st || 0) / 12);
+  var tpLib = function () { var A = window.NGAWAY; return A && A.lib ? A.lib : null; }, tpV = function () { return TQ ? 't:' + TQ : 'nf'; }, tpId = function (t) { return TQ ? t.rec : 'nf' + t.n; };
+  /* a track of this paper in the site's library: its album and its place there (a loop never recorded has none) */
+  function tpAt(i) { var Lb = tpLib(), t = ((S.data && S.data.tracks) || [])[i], ab = Lb && t ? Lb.album(tpV()) : null; if (!ab) return -1; for (var j = 0; j < ab.tracks.length; j++) if (ab.tracks[j].id === tpId(t)) return j; return -1; }
+  function tpStop() { TP.f++; TP.on = false; tpHush(); var Lb = tpLib(); if (Lb && Lb.now().v === tpV()) Lb.stop(); tpKeys(); }
+  function tpPlay(i) { var Lb = tpLib(); if (Lb) { var L0 = (S.data && S.data.tracks) || [], k = i, j = -1; for (var n0 = 0; n0 < L0.length && j < 0; n0++, k = (k + 1) % L0.length) j = tpAt(k);
+      if (j >= 0) { TP.f++; tpHush(); Lb.play(tpV(), j); tpKeys(); return; }
+      if (!TQ && Lb.ready) { Lb.ready().then(function () { if (tpAt(i) >= 0) tpPlay(i); }); return; } }
+    var L = (S.data && S.data.tracks) || [], t = L[i]; TP.f++; tpHush(); if (!t) { TP.i = -1; TP.on = false; tpKeys(); return; } TP.i = i; TP.on = true; var my = TP.f, rate = Math.pow(2, (+t.st || 0) / 12);
     (t.rec ? tpBlob(t.rec).then(function (b) { return b ? URL.createObjectURL(b) : ''; }) : Promise.resolve(t.src || '')).then(function (u) { if (my !== TP.f) { if (/^blob:/.test(u)) URL.revokeObjectURL(u); return; } if (!u) { tpPlay(i + 1); return; }
       var a = tpAudio(u, rate); TP.a = a; TP.u = u; var next = function () { if (my !== TP.f) return; var e = TP.e; if (e) tpFade(e, 0, 1200); setTimeout(function () { if (my === TP.f) tpPlay(i + 1); }, e ? 1200 : 300); };
       a.onended = next; a.onerror = next; a.play().then(function () { tpFade(a, 0.9, 1800); }, function (er) { if (my === TP.f && er && er.name === 'NotAllowedError') tpStop(); });
       if (t.echo) { var e = tpAudio(u, rate); TP.e = e; a.addEventListener('playing', function () { clearTimeout(TP.t); if (my === TP.f && e.paused) TP.t = setTimeout(function () { if (my === TP.f) e.play().then(function () { tpFade(e, 0.3, 2400); }, function () {}); }, t.echo); }, { once: true }); }
       tpKeys(); }); tpKeys(); }
-  function tpKeys() { if (!S.stack || S.stack.kind !== 'tape') return; var IN0 = window.parent !== window;
+  function tpKeys() { if (!S.stack || S.stack.kind !== 'tape') return; var IN0 = window.parent !== window, Lb = tpLib();
+    if (Lb && !TP.a) { var nw = Lb.now(), L1 = (S.data && S.data.tracks) || []; TP.on = nw.v === tpV() && nw.live; if (TP.on) for (var q = 0; q < L1.length; q++) if (tpId(L1[q]) === nw.id) TP.i = q; }
     [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { var a = b.dataset.a; if (a === 'play') b.setAttribute('aria-pressed', String(!!TP.on)); if (a === 'design') b.hidden = !IN0; });
     var pp = $('#paper'), ov = $('#tpov'); if (!pp) return; if (!ov) { ov = document.createElement('div'); ov.id = 'tpov'; pp.appendChild(ov);
       ov.addEventListener('click', function (e) { if (e.target.closest('[data-go]')) { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); return; } var b = e.target.closest('button[data-i]'); if (!b) return; var i = +b.dataset.i; if (TP.on && TP.i === i) tpStop(); else tpPlay(i); }); }
     var sx = cv.offsetWidth / cv.width, sy = cv.offsetHeight / cv.height, px = function (v, k) { return (v * k).toFixed(1) + 'px'; };
     ov.style.cssText = 'left:' + cv.offsetLeft + 'px;top:' + cv.offsetTop + 'px;width:' + cv.offsetWidth + 'px;height:' + cv.offsetHeight + 'px';
     var go = TPC ? '<button type="button" class="tp-go" data-go aria-pressed="' + !!TP.on + '" aria-label="' + (TP.on ? 'Stop the mixtape' : 'Play the mixtape') + '" style="left:' + px(W - M - 100, sx) + ';top:' + px(TPC.y + TPC.h - 100, sy) + ';width:' + px(80, sx) + ';height:' + px(80, sx) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + (TP.on ? 'M7 5h4v14H7zM13 5h4v14h-4z' : 'M8 5l11 7-11 7z') + '"/></svg></button>' : '';
-    ov.innerHTML = go + TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
-      return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W - (h.go ? 56 : 0), sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>' +
-        (h.go ? '<a href="' + h.go + '" target="_top" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="' + esc(h.cn) + ' on the radar" title="On the radar">↗&#xFE0E;</a>' : ''); }).join(''); }
-  /* SHARE: the paper and its link where the phone can send them, else the link copied; a tape of this phone's own goes as its picture */
-  function tpShare() { var st = $('#st'), url = location.origin + '/cart.html?c=tape', nm = String((S.data || {}).name || 'MIXTAPE');
-    cv.toBlob(function (b) { var fl = null; try { fl = b && new File([b], 'mixtape.png', { type: 'image/png' }); } catch (e) { fl = null; }
-      if (fl && navigator.canShare && navigator.canShare({ files: [fl] })) { navigator.share(TQ ? { files: [fl], title: nm } : { files: [fl], title: nm, text: url }).catch(function () {}); return; }
-      if (TQ) { paperSave('mixtape'); return; }
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { if (st) st.textContent = 'COPIED'; }, function () { prompt('', url); }); else prompt('', url); }, 'image/png'); }
-  addEventListener('pagehide', function () { tpStop(); });
+    /* the track playing: its place lit on the cover's radar */
+    var at = TP.on && TPP[TP.i] ? '<i class="tp-at" aria-hidden="true" style="left:' + px(TPP[TP.i][0], sx) + ';top:' + px(TPP[TP.i][1], sy) + '"></i>' : '';
+    ov.innerHTML = go + at + TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
+      return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>'; }).join(''); }
+  addEventListener('pagehide', function () { TP.f++; tpHush(); });
+  addEventListener('ng-away', function () { tpKeys(); });
 
   var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass, species: species, tape: tape };
   /* the prints with no art of their own take one at their head */

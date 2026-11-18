@@ -327,7 +327,8 @@ function stepNow() {
   const rows = [{ w: 'where are you?', done: p }, { w: 'W.I.S.H.', done: wi && wo, go: 1 }, { w: 'make · print', done: mi && mo, go: 2 }]; const now = rows.findIndex(r => !r.done);
   return now < 0 ? { now: -1 } : { n: 3, now, w: rows[now].w, go: rows[now].go };
 }
-const stepAttr = () => { const st = stepNow(); return ` data-st='${esc(JSON.stringify(st))}'${st.share ? ' data-share-mix' : st.go != null ? ` data-go-view="${st.go}"` : ''}`; };
+/* the step on the radio's screen: a way on in the studio itself; inside the cards, where those pages are not, its words alone */
+const stepAttr = () => { const st = stepNow(); return ` data-st='${esc(JSON.stringify(st))}'${IN_AURA ? '' : st.share ? ' data-share-mix' : st.go != null ? ` data-go-view="${st.go}"` : ''}`; };
 const stepWords = () => { const st = stepNow(); return st.now >= 0 ? String(st.w).toUpperCase() : 'EL NIÑO'; };
 let cdT = 0;
 setInterval(() => {
@@ -385,7 +386,7 @@ function won(i) {
 }
 setInterval(stepsCheck, 1500);
 /* the lockup: the muse and the name. Tapped, the muse pulses and rings; tapped five times quickly, the water fills with them */
-const lockup = () => `<header class="lockup"><button type="button" class="lk-mark" data-muse aria-label="novel.global">${M.jellySVG('currentColor', 'var(--glass)', 44)}</button><b class="lk-n">novel.global</b></header>`;
+const lockup = () => `<header class="lockup"><button type="button" class="lk-mark" data-muse aria-label="novel.global">${M.jellySVG('currentColor', 'var(--glass)', 44)}</button>${self === top ? '<a class="lk-n" href="/" aria-label="Back to the cards">novel.global</a>' : '<b class="lk-n">novel.global</b>'}</header>`;
 let museN = 0, museT = 0;
 document.addEventListener('click', e => { const b = e.target.closest('[data-muse]'); if (!b) return; b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); if (Date.now() - (window.__shipT || 0) > 6000) { window.__shipT = Date.now(); snd.ship(); } else snd.jelly(0); museN = Date.now() - museT < 900 ? museN + 1 : 1; museT = Date.now(); if (museN >= 5) { museN = 0; dispatchEvent(new CustomEvent('da:muse')); } });
 /* the head of every page: the muse and the name, level with the first key of the rail; the Country on the right */

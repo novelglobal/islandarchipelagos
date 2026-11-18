@@ -45,10 +45,12 @@
   #opts button[data-a="biz"] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   /* MIXTAPE: the round key on the cover plays it all; a track tapped plays from there (▶ under its number); ↗ the radar where it was made */
   #tpov { position: absolute; z-index: 2; }
-  #tpov button, #tpov a { position: absolute; min-height: 0; padding: 0; border: 0; background: none; color: #111; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #tpov button { position: absolute; min-height: 0; padding: 0; border: 0; background: none; color: #111; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   #tpov button:hover { background: rgba(0, 0, 0, .04); } #tpov button.on { background: rgba(232, 145, 58, .16); box-shadow: inset 4px 0 0 #E8913A; }
-  #tpov a { display: grid; place-items: center; font: 600 18px/1 sans-serif; text-decoration: none; opacity: .45; } #tpov a:hover, #tpov a:focus-visible { opacity: 1; }
-  #tpov button:focus-visible, #tpov a:focus-visible { outline: 2px solid #1D9A55; outline-offset: -2px; }
+  #tpov .tp-at { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 3px solid #E8913A; pointer-events: none; animation: tpat 1.6s ease-out infinite; }
+  @keyframes tpat { from { transform: scale(.7); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { #tpov .tp-at { animation: none; } }
+  #tpov button:focus-visible { outline: 2px solid #1D9A55; outline-offset: -2px; }
   #tpov button[data-i]::after { content: '\25B6'; position: absolute; left: 9px; bottom: 14px; font: 400 11px/1 sans-serif; opacity: .3; }
   #tpov button[data-i].on::after { content: '\275A\275A'; letter-spacing: -1px; color: #E8913A; opacity: 1; }
   #tpov .tp-go { display: grid; place-items: center; border-radius: 50%; background: #F4F1E8; color: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .45); }
@@ -87,6 +89,7 @@
 </style>
 <script src="vendor/qrcode.js"></script>
 <script src="spot.js"></script>
+<script src="away.js"></script>
 <script src="cart.js"></script></head>
 <body><main><section class="win" id="cart" aria-live="polite"><header><i class="led" id="led"></i><b id="nm">·</b></header>
 <div class="desk"><div id="pick"></div><div id="paper"><canvas aria-label="The slip"></canvas></div>

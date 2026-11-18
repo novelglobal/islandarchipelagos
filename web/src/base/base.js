@@ -1894,7 +1894,7 @@ function shopSheet() {
 function packsHTML() {
   var p = function (k, g, t) { return '<button class="g' + (PACKS[k] ? ' on' : '') + '" data-pack="' + k + '" aria-label="' + t + '" title="' + t + '">' + glyph(g) + '</button>'; };
   return '<div class="row">' + p('terrain', 'map', 'Terrain') + p('field', 'guide', 'Field data') + '<button class="g" id="pk-out" aria-label="Save my noticings as a pack" title="Save my noticings as a pack">↓</button>' +
-    '<label class="g" aria-label="Add a pack" title="Add a pack">+<input id="pk-in" type="file" accept=".json,application/json" hidden></label><a class="g" href="studio" aria-label="novel.global for class, with crayons" title="novel.global for class">' + glyph('crayon') + '</a></div>';
+    '<label class="g" aria-label="Add a pack" title="Add a pack">+<input id="pk-in" type="file" accept=".json,application/json" hidden></label></div>';
 }
 function wirePacks() {
   $$('[data-pack]').forEach(function (b) { b.addEventListener('click', function () { PACKS[b.dataset.pack] = !PACKS[b.dataset.pack]; store.set('da.base.packs', PACKS); b.classList.toggle('on', PACKS[b.dataset.pack]); if (b.dataset.pack === 'field') { DB = null; dbP = null; } credit(); render(); }); });
@@ -2558,7 +2558,7 @@ function route() {
   if (/^me=/i.test(h)) { history.replaceState(null, '', location.pathname + location.search); return; }   // an old pass link: dropped (a code is typed from a print, never taken from a link)
   if (/^songs?=/i.test(h)) return;   // a song's link: the aura's own (aura.js)
   if (/^mix=/i.test(h)) { if (!AURA_ON) location.replace('studio' + location.search + location.hash); return; }   // the radio's song: in the aura's radio window
-  if (!/^(radio|wish|shop|print|showcase|pixel|search|guide|now|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) { location.replace('studio' + location.search + location.hash); return; }
+  if (!/^(radio|wish|shop|print|showcase|pixel|search|guide|now|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) { if (/^x=/i.test(h)) location.replace('studio' + location.search + location.hash); else history.replaceState(null, '', location.pathname + location.search); return; }
   if (/^booth/i.test(h)) { if (!BTH) boothOn(h.split('=')[1]); return; }
   if (BTH) return;
   if (document.body.classList.contains('mapmode')) { mapFrom = ''; mapOn(false); }

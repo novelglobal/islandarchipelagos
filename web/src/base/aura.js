@@ -923,7 +923,7 @@
   /* the kept songs laid with it, as tracks: each kept song can be on, and plays with the desk's song, in its time */
   var layered = function () { return DESK.kept.filter(function (q) { return q.on; }).map(function (q) { return songOf(q.code); }).filter(function (q) { return q && !songEmpty(q); }); };
   function songPlay(on, list, amp) {
-    if (on) { if (!amp) AMP.go = false; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } }
+    if (on) { if (!amp) { AMP.go = false; var L0 = LBA(); if (L0 && L0.now().live) L0.stop(); } if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } }
     clearInterval(DESK.iv); DESK.iv = 0; DESK.list = !!on && !!list && DESK.kept.length > 0; DESK.step = -1;
     if (DESK.list) { DESK.li = Math.min(DESK.li || 0, DESK.kept.length - 1); var s0 = keptSong(DESK.kept[DESK.li]); if (s0) { DESK.song = s0; DESK.mood = s0.m; DESK.src = s0.s; } }
     DESK.play = !!on && (!songEmpty(DESK.song) || (!list && layered().length > 0)); if (DESK.play && songEmpty(DESK.song)) DESK.song = layered()[0]; if (DESK.el) { DESK.el.classList.toggle('playing', DESK.play); DESK.el.classList.toggle('listing', DESK.list && DESK.play); deskSync(); }
@@ -1036,31 +1036,28 @@
     [].forEach.call(ul.querySelectorAll('[data-kv]'), function (b) { b.addEventListener('click', function () { var sg = songOf(DESK.kept[+b.dataset.kv].code); if (!sg) return; b.classList.add('going'); songLoop(sg).then(function (r) { b.classList.remove('going'); if (r) saveWav(r.blob, 'novel-global-tape-' + MOODS[sg.m].k.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + songCode(sg).replace(/[^a-z0-9]/gi, '').slice(-4).toLowerCase() + '.wav'); }); }); });
     [].forEach.call(ul.querySelectorAll('[data-ks]'), function (b) { b.addEventListener('click', function () { DESK.li = +b.dataset.ks; songPlay(true, true); deskKept(); }); });
     [].forEach.call(ul.querySelectorAll('[data-kx]'), function (b) { NG.sureTap(b, function () { DESK.kept.splice(+b.dataset.kx, 1); store.set('da.aura.songs', DESK.kept); deskKept(); }); }); ampDraw(); }
-  /* the player: every song kept here, every loop recorded on the radio and every mixtape, one list, one after another, the bar
-     saying what plays. A recording plays as it was made; a song with none is played by the desk, round until the next is asked */
-  var AMP = { rows: [], i: -1, q: null, go: false };
-  function ampList() {
-    var loops = store.get('da.loops.v1', []) || [], rows = DESK.kept.map(function (k2, i) { var m = MOODS[+k2.code.charAt(2)]; return { k: 'song', i: i, n: k2.name || (m ? m.k : 'SONG'), rec: k2.rec || null, code: k2.code }; });
-    loops.forEach(function (l) { if (l.rec && !DESK.kept.some(function (k2) { return k2.rec === l.id; })) rows.push({ k: 'rec', rec: l.id, n: (l.where && l.where.place) || 'RADIO', s: l.rec.s }); });
-    (store.get('da.tapes.v1', []) || []).forEach(function (t) { var ids = (t.ids || []).filter(function (id) { return loops.some(function (l) { return l.id === id && l.rec; }); }); if (ids.length) rows.push({ k: 'tape', ids: ids, n: t.name || 'MIXTAPE', c: ids.length }); });
-    return rows;
-  }
-  var ampOn = function () { return !!RECA || DESK.play; };
-  function ampStop() { AMP.go = false; AMP.q = null; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false); ampDraw(); deskKept(); }
-  function ampPlay(i) {
-    var r = AMP.rows[i]; if (!r) return; AMP.go = false; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false);
-    AMP.i = i; AMP.go = true; AMP.q = r.k === 'tape' ? r.ids.slice(1) : null;
-    if (r.k === 'tape') recHear(r.ids[0]); else if (r.k === 'rec') recHear(r.rec); else { var sg = keptSong(DESK.kept[r.i] || { code: r.code }); if (sg) { DESK.song = sg; DESK.mood = sg.m; DESK.src = -1; deskSync(); songPlay(true, false, true); } }
-    ampDraw();
-  }
-  function ampEnded() { if (!AMP.go) return; if (AMP.q && AMP.q.length) { recHear(AMP.q.shift()); return; } if (AMP.rows.length) ampPlay((AMP.i + 1) % AMP.rows.length); }
+  /* the player: the site's one library (away.js), the same albums as the radio and the small player on every card: NIGHT FIELD, each
+     mixtape, the songs kept here, the radio's loops. An album picked shows its tracks; one pressed plays from there, on through the
+     album, through the page's one player, so it goes on with the screen locked. The desk's own song (the big key) plays live, alone */
+  var AMP = { rows: [], i: -1, go: false, v: '' }, LBA = function () { return (window.NGAWAY && NGAWAY.lib) || null; };
+  function ampAlb() { var L = LBA(); if (!L) return null; var n = L.now(); return L.album(n.live && n.v ? n.v : AMP.v) || L.album(L.pick()); }
+  var ampOn = function () { var L = LBA(); return !!RECA || DESK.play || !!(L && L.now().live); };
+  function ampStop() { AMP.go = false; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false); var L = LBA(); if (L && L.now().live) L.stop(); ampDraw(); deskKept(); }
+  function ampPlay(i, v) { var L = LBA(), ab = L ? (v ? L.album(v) : ampAlb()) : null; if (!ab) return; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false);
+    AMP.v = ab.v; AMP.go = true; L.play(ab.v, i); ampDraw(); }
+  function ampEnded() { AMP.go = false; ampDraw(); }
   function ampDraw() {
-    var ol = DESK.el && DESK.el.querySelector('.sd-pl'); if (!ol) return; AMP.rows = ampList(); var on = ampOn();
-    DESK.el.classList.toggle('playing', on); var t = DESK.el.querySelector('.sd-ttl'), r0 = AMP.rows[AMP.i]; t.textContent = DESK.play && !AMP.go && DESK.song ? MOODS[DESK.song.m].k + ' · ' + SRCS[DESK.song.s][0] : on && r0 ? r0.n : AMP.rows.length ? '—' : 'NOTHING MADE YET'; DESK.el.querySelector('.sd-amp').classList.toggle('on', on);
-    var g = DESK.el.querySelector('[data-amp="go"]'); g.textContent = on ? '■' : '▶';
-    ol.innerHTML = AMP.rows.map(function (r, i) { return '<li class="' + (on && AMP.go && i === AMP.i ? 'on' : '') + '"><button data-ap="' + i + '" title="' + (r.k === 'tape' ? 'A mixtape: its recordings in turn' : r.rec ? 'A recording from the radio' : 'A song, played here') + '"><b>' + ('0' + (i + 1)).slice(-2) + '</b><span>' + esc(r.n) + '</span><i>' + (r.k === 'tape' ? r.c + '×' : r.s ? Math.floor(r.s / 60) + ':' + ('0' + r.s % 60).slice(-2) : r.rec ? '◉' : '♪') + '</i></button></li>'; }).join('');
+    var ol = DESK.el && DESK.el.querySelector('.sd-pl'); if (!ol) return; var L = LBA(), nw = L ? L.now() : { live: false }, ab = ampAlb(), al = L ? L.albums() : [];
+    AMP.go = nw.live; AMP.rows = ab ? ab.tracks : []; AMP.i = nw.live && ab && nw.v === ab.v ? nw.i : -1; var on = ampOn();
+    DESK.el.classList.toggle('playing', on); var t = DESK.el.querySelector('.sd-ttl'); t.textContent = DESK.play && DESK.song ? MOODS[DESK.song.m].k + ' · ' + SRCS[DESK.song.s][0] : nw.live ? nw.n : al.length ? (ab ? ab.n : '—') : 'NOTHING MADE YET'; DESK.el.querySelector('.sd-amp').classList.toggle('on', on);
+    DESK.el.querySelector('[data-amp="go"]').textContent = on ? '■' : '▶';
+    var cs = DESK.el.querySelector('.sd-albs'); cs.innerHTML = al.map(function (a) { return '<button data-aa="' + esc(a.v) + '" class="' + (ab && a.v === ab.v ? 'on' : '') + (nw.live && nw.v === a.v ? ' pl' : '') + '" title="' + esc(a.n) + '">' + (a.art ? '<img alt="" src="' + esc(a.art) + '">' : '<i class="' + (a.v === 'wish' ? 'w' : '') + '"></i>') + '<span>' + esc(a.n) + '</span></button>'; }).join('');
+    [].forEach.call(cs.querySelectorAll('[data-aa]'), function (b) { b.addEventListener('click', function () { var L2 = LBA(); AMP.v = b.dataset.aa; if (L2) L2.pick(AMP.v); var n2 = L2 ? L2.now() : {}; if (n2.live && n2.v !== AMP.v) ampPlay(0, AMP.v); else ampDraw(); bell(2, 0.08); }); });
+    ol.innerHTML = AMP.rows.map(function (r, i) { return '<li class="' + (on && AMP.go && i === AMP.i ? 'on' : '') + '"><button data-ap="' + i + '" title="' + esc(r.n) + '"><b>' + ('0' + (i + 1)).slice(-2) + '</b><span>' + esc(r.n) + '</span><i>' + (r.s ? Math.floor(r.s / 60) + ':' + ('0' + r.s % 60).slice(-2) : r.k === 'rec' ? '◉' : '♪') + '</i></button></li>'; }).join('');
     [].forEach.call(ol.querySelectorAll('[data-ap]'), function (b) { b.addEventListener('click', function () { var i = +b.dataset.ap; if (ampOn() && AMP.go && i === AMP.i) ampStop(); else ampPlay(i); }); });
   }
+  /* what plays, whichever device started it, shown here as it changes */
+  addEventListener('ng-away', function () { if (DESK.el) ampDraw(); });
   function saveWav(blob, name) { var a = document.createElement('a'); a.download = name; a.target = '_blank'; a.rel = 'noopener'; a.href = URL.createObjectURL(blob); document.body.appendChild(a); a.click(); a.remove(); }
   function deskSync() { if (!DESK.el) return; DESK.el.setAttribute('data-mood', MOODS[DESK.mood].k); [].forEach.call(DESK.el.querySelectorAll('[data-src]'), function (b) { b.classList.toggle('on', +b.dataset.src === DESK.src); }); var kn = DESK.el.querySelector('#sd-mood'); kn.setAttribute('data-fw', MOODS[DESK.mood].k); kn.style.setProperty('--a', (DESK.mood * 110 - 110) + 'deg'); DESK.el.querySelector('#sd-drone').classList.toggle('on', !mute); DESK.el.querySelector('#sd-list').classList.toggle('on', DESK.list && DESK.play);
     [].forEach.call(DESK.el.querySelectorAll('[data-ly]'), function (b) { var q = +b.dataset.ly; b.setAttribute('aria-pressed', String(!DESK.mute[q])); b.classList.toggle('off', DESK.mute[q]); b.setAttribute('data-fw', MOODS[DESK.mood].ins[q]); });
@@ -1078,8 +1075,8 @@
         '<nav class="sd-row sd-play">' + k('sd-k', svgI('again'), 'id="sd-new" data-fw="again" aria-label="Make it again"') + k('sd-big', '<i class="sd-tri"></i>', 'id="sd-go" aria-label="Play or stop"') + k('sd-k', svgI('plus'), 'id="sd-keep" data-fw="keep" aria-label="Keep it"') + k('sd-k', svgI('list'), 'id="sd-list" data-fw="playlist" aria-label="Play every kept song in turn, round and round"') + '</nav>' +
         '<nav class="sd-row sd-layers" aria-label="The four layers">' + [0, 1, 2, 3].map(function (q) { return k('sd-k sd-ly', '<i class="ly ly' + q + '"></i><span class="sd-vu" aria-hidden="true"><i></i></span>', 'data-ly="' + q + '" aria-pressed="true" data-fw="' + MOODS[0].ins[q] + '" aria-label="Layer ' + (q + 1) + ', on or off"'); }).join('') + '</nav>' +
         '<nav class="sd-row">' + k('sd-k', svgI('save'), 'id="sd-loop" data-fw="loop" aria-label="A 45 second loop to save"') + k('sd-k', svgI('pics'), 'id="sd-card" data-fw="card" aria-label="Onto my poster"') + k('sd-k', svgI('copy'), 'id="sd-link" data-fw="link" aria-label="Copy its link"') + k('sd-k', svgI('qrc'), 'id="sd-lcard" data-fw="list card" aria-label="The playlist onto my poster, with one code for all of it"') + k('sd-k', svgI('dfolio'), 'id="sd-folio" data-fw="portfolio" aria-label="The playlist as a mixtape, into the portfolio"') + k('sd-k', svgI('dradio'), 'id="sd-radio" data-fw="radio" aria-label="The radio: layers and moods on the map"') + '</nav>' +
-        '<div class="sd-amp"><i class="sd-led"></i><b class="sd-ttl" title="Playing now">—</b>' + ['prev', 'go', 'next'].map(function (q) { return '<button data-amp="' + q + '" title="' + { prev: 'The one before', go: 'Play or stop', next: 'The next one' }[q] + '" aria-label="' + { prev: 'Before', go: 'Play or stop', next: 'Next' }[q] + '">' + { prev: '⏮', go: '▶', next: '⏭' }[q] + '</button>'; }).join('') + '</div><ol class="sd-pl" aria-label="Every song, loop and mixtape made here"></ol>' +
-        '<ul class="au-kept"></ul>'; DESK.el.querySelector('.sd-now').after(DESK.el.querySelector('.sd-amp'), DESK.el.querySelector('.sd-pl'));
+        '<div class="sd-amp"><i class="sd-led"></i><b class="sd-ttl" title="Playing now">—</b>' + ['prev', 'go', 'next'].map(function (q) { return '<button data-amp="' + q + '" title="' + { prev: 'The one before', go: 'Play or stop', next: 'The next one' }[q] + '" aria-label="' + { prev: 'Before', go: 'Play or stop', next: 'Next' }[q] + '">' + { prev: '⏮', go: '▶', next: '⏭' }[q] + '</button>'; }).join('') + '</div><nav class="sd-albs" aria-label="Albums"></nav><ol class="sd-pl" aria-label="Tracks"></ol>' +
+        '<ul class="au-kept"></ul>'; DESK.el.querySelector('.sd-now').after(DESK.el.querySelector('.sd-amp'), DESK.el.querySelector('.sd-albs'), DESK.el.querySelector('.sd-pl'));
       root.appendChild(DESK.el);
       /* every key says what it does when a pointer rests on it */
       [].forEach.call(DESK.el.querySelectorAll('button[aria-label]'), function (b) { if (!b.title) b.title = b.getAttribute('aria-label'); });
@@ -1089,7 +1086,7 @@
       DESK.el.querySelector('#sd-mood').addEventListener('click', function () { DESK.mood = (DESK.mood + 1) % MOODS.length; if (DESK.song) { DESK.song.m = DESK.mood; deskSync(); if (DESK.play) songPlay(true); } else mk2(); bell(2 + DESK.mood, 0.1); });
       DESK.el.querySelector('#sd-new').addEventListener('click', function () { mk2(); });
       DESK.el.querySelector('#sd-go').addEventListener('click', function () { if (DESK.src < 0 || AMP.go || RECA) { if (ampOn()) ampStop(); else if (AMP.rows.length) ampPlay(Math.max(0, AMP.i)); else mk2(true); return; } if (!DESK.song) mk2(); if (songEmpty(DESK.song) && !DESK.play) { DESK.el.classList.add('empty'); setTimeout(function () { DESK.el.classList.remove('empty'); }, 900); return; } songPlay(!DESK.play); });
-      DESK.el.querySelector('#sd-list').addEventListener('click', function () { if (!DESK.kept.length) { DESK.el.classList.add('empty'); setTimeout(function () { DESK.el.classList.remove('empty'); }, 900); return; } if (ampOn() && AMP.go) ampStop(); else ampPlay(Math.max(0, AMP.i)); });
+      DESK.el.querySelector('#sd-list').addEventListener('click', function () { if (!DESK.kept.length) { DESK.el.classList.add('empty'); setTimeout(function () { DESK.el.classList.remove('empty'); }, 900); return; } if (ampOn() && AMP.go) ampStop(); else ampPlay(0, 'wish'); });
       DESK.el.querySelector('#sd-folio').addEventListener('click', function () { if (!DESK.kept.length) return; keepCanvas(listCard(DESK.kept.map(function (q) { return q.code; })), 'A mixtape · ' + DESK.kept.length + (DESK.kept.length === 1 ? ' song' : ' songs'), 'songs:' + DESK.kept.map(function (q) { return q.code; }).join(',')); made('song', 'mixtape'); harp([0, 4, 7]); NG.toast && NG.toast('✓ IN THE PORTFOLIO'); });
       DESK.el.querySelector('#sd-lcard').addEventListener('click', function () { if (!DESK.kept.length) return; var u = listCard(DESK.kept.map(function (q) { return q.code; })).toDataURL('image/png'); deskClose(); window.postMessage({ ng: 'piece', url: u, crisp: true }, location.origin); });
       DESK.el.querySelector('#sd-keep').addEventListener('click', function () { if (songEmpty(DESK.song)) return; beat('song'); beat('desk-keep'); lvUp(3); made('song', MOODS[DESK.song.m].k + ' · ' + SRCS[DESK.song.s][0]); var code = songCode(DESK.song); if (!DESK.kept.some(function (q) { return q.code === code; })) { DESK.kept.unshift({ code: code, at: Date.now() }); DESK.kept.splice(12); store.set('da.aura.songs', DESK.kept); } deskKept(); bubbles(3); });
@@ -1126,6 +1123,9 @@
   api.songName = function (c) { var m = MOODS[+String(c || '').charAt(2)]; return m ? String(m.k).toUpperCase() : 'SONG'; };
   api.playing = function () { return DESK.play && DESK.song ? songCode(DESK.song) : ''; };
   api.stop = function () { if (DESK.play) songPlay(false); };
+  /* everything this sounds, quiet: the desk's song, a recording heard, an album */
+  api.hush = function () { ampStop(); };
+  api.sounding = function () { return !!RECA || DESK.play; };
   /* a song made ahead as a file, 45 seconds that loop unbroken, for the player that keeps playing with the screen locked */
   api.songFile = function (c) { var sg = songOf(c); return sg ? NG.db().then(function () { return songLoop(sg); }).then(function (r) { return r ? r.blob : null; }, function () { return null; }) : Promise.resolve(null); };
   api.desk = function (o) { if (o === false) deskClose(); else deskOpen(o && o.code ? songOf(o.code) : null); return DESK.song ? { code: songCode(DESK.song), play: DESK.play, kept: DESK.kept.length, loop: S.lastLoop || 0 } : null; };
@@ -1477,7 +1477,7 @@
     'Heat and dry ground stress wildlife first: birds, flying-foxes and possums struggle on days over 35°, and creeks and ponds shrink.',
     'More days of high fire danger. Know your area’s fire danger rating, and check VicEmergency before you go out.'];
   var NINO_WHY = 'El Niño is here and may be one of the strongest on record. Expect hotter, drier days and more fire risk. Wildlife feels it first.';
-  var hint = function (t, cls2) { var long = t.length > 70; return '<p class="au-hint ' + (cls2 || '') + '" data-on="' + ((long ? Math.min(8, 2 + Math.round(t.length / 40)) : 2) + 5) + '" data-off="' + (long ? 28 : 20) + '">' + esc(t) + '</p>'; };
+  var hint = function (t, cls2) { var long = t.length > 70; return '<p class="au-hint ' + (cls2 || '') + '" data-on="' + ((long ? Math.min(8, 2 + Math.round(t.length / 40)) : 2) + 5) + '">' + esc(t) + '</p>'; };
   /* the next step, always at the foot of the page: a dotted line to the next step's own icon, and where it leads */
   var NEXT = [[1, 'wish', 'next: your W.I.S.H.'], [2, 'art', 'next: make the poster'], [3, 'print', 'next: print it']];
   /* a few words in each part before the way on shows: three for the intention, two on every line of the poem */
@@ -1862,13 +1862,13 @@
     var s = S.stage, h = '', pic = P && (P.photo || P.spPhoto);
     if (s === 0) {
       h = (P && P.photo ? '<figure class="au-ph"><img alt="" src="' + P.photo + '"><button class="au-rm" id="au-unph" aria-label="Let the photograph go">×</button></figure>' : '') +
-        '<label class="au-line' + (P && P.say ? ' has' : '') + '" data-fw="' + esc(wd('intention.tab', 'intention')) + '"><span class="au-ask au-hint" data-on="7" data-off="20" aria-hidden="true">' + esc(wd('intention.ask')) + '</span><textarea id="au-say" rows="1" maxlength="200" aria-label="' + esc(wd('intention.ask')) + '" enterkeyhint="next"></textarea></label><p class="au-built" id="au-built" aria-live="polite">' + builtHTML() + '</p>' + hint(wd('intention.say')) + goKey(0);
+        '<label class="au-line' + (P && P.say ? ' has' : '') + '" data-fw="' + esc(wd('intention.tab', 'intention')) + '"><span class="au-ask au-hint" data-on="7" aria-hidden="true">' + esc(wd('intention.ask')) + '</span><textarea id="au-say" rows="1" maxlength="200" aria-label="' + esc(wd('intention.ask')) + '" enterkeyhint="next"></textarea></label><p class="au-built" id="au-built" aria-live="polite">' + builtHTML() + '</p>' + hint(wd('intention.say')) + goKey(0);
     } else if (s === 1) {
       /* what was noticed comes with it: the picture, the life if caught, the day; the line becomes W */
       var L4 = P ? P.lines : ['', '', '', ''], f = P && lifeOf(P), said = P ? [f ? f.cn : '', NG.when(P.at).slice(0, 6)].filter(Boolean).join(' · ') : '';
       /* the intention heads the poem: what one wants to happen, then the four lines under it */
       h = (P && (pic || f) ? '<div class="au-whead">' + (pic ? '<img alt="" src="' + (P.photo || P.spPhoto) + '">' : '') + '<span>' + esc(said) + '</span></div>' : '') + (P && P.say ? '<p class="au-intent">' + esc(P.say) + '</p>' : '') +
-        '<ol class="au-wish">' + [0, 1, 2, 3].map(function (i) { return '<li class="' + (L4[i] ? '' : 'empty') + '"><b data-say="' + esc(WISH_SAYS(i)) + '" data-fw="' + esc(wd(WL[i] + '.word')) + '" tabindex="-1">' + 'WISH'[i] + '</b><textarea data-i="' + i + '" rows="1" maxlength="160" aria-label="' + esc(WISH_SAYS(i) + ': ' + WISH_HOW(i)) + '" enterkeyhint="next">' + esc(L4[i] || '') + '</textarea><span class="au-wtip" aria-hidden="true"><em>' + esc(WISH_SAYS(i)) + '</em> ' + esc(WISH_HOW(i)) + '</span></li>'; }).join('') + '</ol>' + hint(wd('wish.say')) + goKey(1);
+        '<ol class="au-wish">' + [0, 1, 2, 3].map(function (i) { return '<li class="' + (L4[i] ? '' : 'empty') + '"><b data-fw="' + esc(wd(WL[i] + '.word')) + '" tabindex="-1">' + 'WISH'[i] + '</b><textarea data-i="' + i + '" rows="1" maxlength="160" aria-label="' + esc(WISH_SAYS(i) + ': ' + WISH_HOW(i)) + '" enterkeyhint="next">' + esc(L4[i] || '') + '</textarea><span class="au-wtip" aria-hidden="true"><em>' + esc(WISH_SAYS(i)) + '</em> ' + esc(WISH_HOW(i)) + '</span></li>'; }).join('') + '</ol>' + hint(wd('wish.say')) + goKey(1);
     } else if (s === 2) {
       if (ready()) { settle(); var mine = (NG.icons() || []).slice(-6), have = marksHave();
         /* in order of use: the hero photograph, more pictures, paste, words, speech, the lines above or below; then the making */

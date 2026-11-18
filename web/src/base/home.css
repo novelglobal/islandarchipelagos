@@ -793,6 +793,11 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14p
 #hm-sounds .sn-al > button { width: 100%; height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; background: #E2E1DB; text-align: left; }
 #hm-sounds .sn-al > button:hover { background: #D6D5CE; } #hm-sounds .sn-al > button[aria-expanded="true"] { background: #111; color: #EFEEE9 !important; }
 #hm-sounds .sn-al small { font-size: 9px; opacity: .6; letter-spacing: .06em; }
+#hm-sounds .sn-art { display: block; flex: none; width: 20px; height: 20px; border-radius: 3px; object-fit: cover; background: #161718; }
+#hm-sounds .sn-art.w { background: #FF6B1A; }
+#hm-sounds .sn-ad li { display: flex; align-items: center; gap: 2px; } #hm-sounds .sn-ad li > button:first-child { flex: 1; min-width: 0; }
+#hm-sounds .sn-ad li.pl span::after { content: ' \25B8'; }
+#hm-sounds .sn-ad .x { flex: none; width: 28px; padding: 7px 0 !important; justify-content: center; opacity: .6; }
 #hm-sounds .sn-al span, #hm-sounds .sn-ad span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 #hm-sounds .sn-al i, #hm-sounds .sn-ad i { font-style: normal; opacity: .6; } #hm-sounds .sn-al b { font-weight: 400; }
 #hm-sounds .sn-ad { list-style: none; margin: 4px 0 0; padding: 4px; border-radius: 6px; background: #111; color: #EFEEE9; max-height: 32vh; overflow: auto; }

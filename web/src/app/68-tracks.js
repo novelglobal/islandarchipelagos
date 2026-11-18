@@ -210,7 +210,7 @@ $('#view').addEventListener('click', e => {
   const ab = e.target.closest('[data-alb]'); if (ab) { ALB = ALB === ab.dataset.alb ? '' : ab.dataset.alb; snd.tick(1500); refreshFour(); return; }
   if (e.target.closest('[data-alb-mk]')) { albMake(); return; }
   const aa = e.target.closest('[data-alb-all]'); if (aa) { albPlay(aa.dataset.albAll); return; }
-  const atr = e.target.closest('[data-alb-tr]'); if (atr) { const id = atr.dataset.albTr, l = LOOPS.find(x => x.id === id); if (!l) return; if (l.rec) recLoad().then(() => { if (RECURL.has(id)) recPlay(id); else playLoop(id); albSync(); }); else { playLoop(id); albSync(); } return; }
+  const atr = e.target.closest('[data-alb-tr]'); if (atr) { albPlay(atr.dataset.albV, +atr.dataset.albTr); return; }
   const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
   const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
@@ -548,56 +548,48 @@ function fourHTML() {
     + (pages > 1 ? `<button type="button" class="f4m f4pg f4nx" data-t4pg="1" aria-label="Page ${F4P + 1} of ${pages}: the next page" data-tip="Next"><small class="mono">${F4P + 1}/${pages}</small>›</button>` : '') + '</li>'
     + (rec ? '<li class="f4r" role="status"><i aria-hidden="true"></i><span class="mono">REC</span></li>' : '') + '</ol>' + albumsHTML();
 }
-/* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
-const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 12); } catch (e) { return []; } };
 const pAura = () => { try { return parent.AURA || null; } catch (e) { return null; } };
-const sname = q => String(q.name || (pAura() && pAura().songName ? pAura().songName(q.code) : 'SONG')).toUpperCase();
-/* ALBUMS, under the deck: one key that drops down every album: each mixtape (the first track's radar its cover, its name, its
-   tracks) and the songs kept on the W.I.S.H. sound desk as one more. An album tapped opens its tracks under it: ALL plays it
-   whole, a track plays alone. + makes an album of the tracks playing on the deck (every track kept, when none plays) */
-let ALB = '', ALBX = false;   // ALB: the album open, 't:<id>' or 'wish'; ALBX: the drop-down open
-const albOn = a => (a === 'wish' ? !!DS : !!REC && REC.id === a), albAll = a => (a === 'wish' ? !!DS && DS.code === '*' : albOn(a));
+/* ALBUMS, under the deck: the site's one library (away.js), the same albums as the small player on every card and the sound desk:
+   NIGHT FIELD, each mixtape, the W.I.S.H. songs, the radio's loops. One key drops them down; an album tapped opens its tracks under it:
+   ALL plays it from the top, a track plays from there, on through the album. + makes an album of the tracks playing on the deck
+   (every track kept, when none plays) */
+let ALB = '', ALBX = false, ALBN = -1;   // ALB: the album open; ALBX: the drop-down open; ALBN: how many were drawn
+const LIBR = () => (AWAY && AWAY.lib) || null, albNow = () => { const L = LIBR(); return L ? L.now() : { v: '', id: '', live: false }; };
+const albOn = v => { const n = albNow(); return n.live && n.v === v; };
 function albumsHTML() {
-  const ds = DESKSONGS(), tapes = MIXTAPES.slice(0, 12), n2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`, count = tapes.length + (ds.length ? 1 : 0);
-  if (ALB && !(ALB === 'wish' ? ds.length : tapes.some(t => 't:' + t.id === ALB))) ALB = '';
-  if (!count && !DECK().length) return '';
-  const any = !!DS || (!!REC && /^t:/.test(REC.id));
-  const tracks = a => { const on = albAll(a); let trs = '';
-    if (a === 'wish') trs = ds.map((q, i) => `<li><button type="button" class="${DS && DS.code === q.code ? 'on' : ''}" data-dsong="${esc(q.code)}" aria-label="Track ${i + 1}: ${esc(sname(q))}" data-tip="${esc(sname(q))}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(sname(q).slice(0, 10))}</small></button></li>`).join('');
-    else { const t = tapes.find(x => 't:' + x.id === a);
-      trs = tapeLoops(t).map((l, i) => { const nm = String((l.where || {}).place || 'RADIO').toUpperCase(), o = (!!REC && REC.id === l.id) || going(l.id);
-        return `<li><button type="button" class="${o ? 'on' : ''}" data-alb-tr="${esc(l.id)}" aria-label="Track ${i + 1}: ${esc(nm)}" data-tip="${esc(nm)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(nm.slice(0, 10))}</small></button></li>`; }).join('')
-        + `<li><button type="button" class="alb-x" data-tape-x="${esc(t.id)}" aria-label="Let this album go" data-tip="Let it go">×</button></li>`; }
-    return `<ol class="f4d alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a)}" aria-label="${on ? 'Stop the album' : 'Play the whole album'}" data-tip="${on ? 'Stop' : 'Play it all'}">${icon(on ? 'pause' : 'play', 'sm')}<small class="mono">all</small></button></li>${trs}</ol>`; };
-  const item = (a, art, nm, n) => `<li class="alb-i"><button type="button" class="alb-t${ALB === a ? ' alb-open' : ''}${albOn(a) ? ' on' : ''}" data-alb="${esc(a)}" aria-expanded="${ALB === a}" aria-label="Album ${esc(nm)}, ${n2(n, 'track')}">${art}<small class="mono">${esc(String(nm).slice(0, 24))}</small><i class="mono">${n}</i></button>${ALB === a ? tracks(a) : ''}</li>`;
+  const L = LIBR(), al = L ? L.albums() : [], nw = albNow(), n2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`; ALBN = al.length;
+  if (ALB && !al.some(a => a.v === ALB)) ALB = '';
+  if (!al.length && !DECK().length) return '';
+  const art = a => (a.art ? `<img src="${esc(a.art)}" alt="">` : `<b class="alb-c${a.v === 'wish' ? ' alb-w' : ''}"></b>`);
+  const tracks = a => { const on = albOn(a.v);
+    return `<ol class="f4d alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a.v)}" aria-label="${on ? 'Stop the album' : 'Play the album from the top'}" data-tip="${on ? 'Stop' : 'Play it all'}">${icon(on ? 'pause' : 'play', 'sm')}<small class="mono">all</small></button></li>`
+      + a.tracks.map((t, i) => `<li><button type="button" class="${nw.live && nw.v === a.v && nw.id === t.id ? 'on' : ''}" data-alb-tr="${i}" data-alb-v="${esc(a.v)}" data-alb-id="${esc(t.id)}" aria-label="Track ${i + 1}: ${esc(t.n)}" data-tip="${esc(t.n)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(t.n.slice(0, 10))}</small></button></li>`).join('')
+      + (a.tape ? `<li><button type="button" class="alb-x" data-tape-x="${esc(a.tape)}" aria-label="Let this album go" data-tip="Let it go">×</button></li>` : '') + '</ol>'; };
+  const item = a => `<li class="alb-i"><button type="button" class="alb-t${ALB === a.v ? ' alb-open' : ''}${albOn(a.v) ? ' on' : ''}" data-alb="${esc(a.v)}" aria-expanded="${ALB === a.v}" aria-label="Album ${esc(a.n)}, ${n2(a.tracks.length, 'track')}">${art(a)}<small class="mono">${esc(a.n.slice(0, 24))}</small><i class="mono">${a.tracks.length}</i></button>${ALB === a.v ? tracks(a) : ''}</li>`;
   const key = `<ol class="f4d alb-s" role="group" aria-label="Albums">`
-    + (count ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}${any ? ' on' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${count}" data-tip="Albums">${icon('loop', 'sm')}<small class="mono">albums</small><i class="mono">${count}</i><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '')
+    + (al.length ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}${nw.live ? ' on' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${al.length}" data-tip="Albums">${icon('loop', 'sm')}<small class="mono">albums</small><i class="mono">${al.length}</i><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '')
     + (DECK().length ? `<li><button type="button" class="alb-mk" data-alb-mk aria-label="Make an album of the tracks playing on the deck, or of every track kept" data-tip="New album">${icon('plus', 'sm')}<small class="mono">album</small></button></li>` : '') + '</ol>';
-  const list = ALBX && count ? `<ul class="alb-dl" role="list">`
-    + tapes.map(t => { const ls = tapeLoops(t); return item('t:' + t.id, ls[0] ? `<img src="${loopArt(ls[0])}" alt="">` : '<b class="alb-c"></b>', t.name || 'TAPE', ls.length); }).join('')
-    + (ds.length ? item('wish', '<b class="alb-c alb-w"></b>', 'W.I.S.H.', ds.length) : '') + '</ul>' : '';
+  const list = ALBX && al.length ? `<ul class="alb-dl" role="list">${al.map(item).join('')}</ul>` : '';
   return `<div class="f4d f4w alb">${key}${list}</div>`;
 }
-function albSync() { try {
-  $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd]').forEach(b => b.classList.toggle('on', !!DS || (!!REC && /^t:/.test(REC.id))));
-  $$('[data-alb-all]').forEach(b => { const on = albAll(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'play', 'sm') + '<small class="mono">all</small>'; });
-  $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', (!!REC && REC.id === b.dataset.albTr) || going(b.dataset.albTr)));
+function albSync() { try { const nw = albNow();
+  $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd]').forEach(b => b.classList.toggle('on', nw.live));
+  $$('[data-alb-all]').forEach(b => { const on = albOn(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'play', 'sm') + '<small class="mono">all</small>'; });
+  $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', nw.live && nw.v === b.dataset.albV && nw.id === b.dataset.albId));
 } catch (e) { /* not drawn yet */ } }
 function albMake() {
   const sel = inFour() ? [...new Set(LOOP.ms.map(t => t.of))] : [], ids = (sel.length ? sel : DECK().map(l => l.id)).slice(0, 24);
   if (!ids.length) { toast('KEEP A TRACK FIRST'); return; }
-  const l0 = LOOPS.find(l => l.id === ids[0]), t = { id: 'tp' + Date.now().toString(36), at: Date.now(), name: String(((l0 || {}).where || {}).place || 'RADIO').toUpperCase().slice(0, 32), ids, sp: null, pub: false };
+  const l0 = LOOPS.find(l => l.id === ids[0]), t = { id: 'tp' + Date.now().toString(36), at: Date.now(), name: String(((l0 || {}).where || {}).place || 'RADIO').toUpperCase().slice(0, 32), ids, sp: null };
   MIXTAPES.unshift(t); MIXTAPES.splice(12); store.set('da.tapes.v1', MIXTAPES); ALB = 't:' + t.id; ALBX = true; made('song', 'mixtape'); snd.tick(1900); toast('✓ ALBUM'); refreshFour();
 }
-/* an album whole: a mixtape's recordings end to end, or every W.I.S.H. song made ahead and joined, one file in the page's player */
-async function albPlay(a) {
-  if (a !== 'wish') { if (!(REC && REC.id === a)) await recLoad(); recPlay(a); albSync(); return; }
-  if (DS && DS.code === '*') { dsStop(); return; }
-  const A = pAura(), codes = DESKSONGS().map(q => q.code); dsStop(); if (!AWAY || !A || !A.songFile || !codes.length) return; recStop(); try { if (A.stop) A.stop(); } catch (e) { /* none */ }
-  const me = DS = { code: '*', radio: S.radio }; dsSync();
-  Promise.all(codes.map(c => A.songFile(c))).then(fs => AWAY.join(fs)).then(f => { if (DS !== me) return; if (!f) { DS = null; dsSync(); toast('♪'); return; } if (S.radio) setRadio(false);
-    AWAY.play(f, { id: 'ds:*', title: 'W.I.S.H.', album: 'W.I.S.H.', stop: () => { if (DS === me) dsStop(); } }); });
-}
+/* an album played: the radio and anything else here hushed first, so one sound plays at a time; the same again stops it */
+function albPlay(v, i) { const L = LIBR(); if (!L) return; const nw = albNow();
+  if (nw.live && nw.v === v && (i == null || nw.i === i)) { L.stop(); albSync(); return; }
+  dsStop(); recStop(); try { const A = pAura(); if (A && A.stop) A.stop(); } catch (e) { /* none */ } if (S.radio) setRadio(false);
+  L.play(v, i || 0); albSync(); }
+/* an album come in (NIGHT FIELD fetched, a tape kept on another card): drawn again; else only what plays is lit */
+addEventListener('ng-away', () => { const L = LIBR(); if (L && ALBN >= 0 && L.albums().length !== ALBN && $('#view .four')) refreshFour(); else albSync(); });
 let DS = null;   // the W.I.S.H. song going round: { code, radio }
 const dsSync = () => { $$('[data-dsong]').forEach(q => q.classList.toggle('on', !!DS && DS.code === q.dataset.dsong)); albSync(); };
 function dsStop() { if (!DS) return; const d = DS; DS = null; if (AWAY && AWAY.id() === 'ds:' + d.code) AWAY.stop('ds'); if (d.radio && !S.radio) setRadio(true); dsSync(); }
@@ -626,13 +618,12 @@ $('#view').addEventListener('click', async e => {
   const sp = e.target.closest('[data-song-poster]'); if (sp) { const l = LOOPS.find(x => x.id === sp.dataset.songPoster); if (!l) return; const art = mixArt(l, mixURL(l)); if (IN_AURA) toAura(art, true); else { setView(2); setTimeout(() => placeOnPage(art, 'art', 240), 500); } snd.tick(1900); return; }
   const sh = e.target.closest('[data-song-file]'); if (sh) { const l = LOOPS.find(x => x.id === sh.dataset.songFile); if (l) loopFile(l); return; }
   if (e.target.closest('[data-tape-mk]')) { TAPE_MK = !TAPE_MK; refreshPanel(); return; }
-  const tsh = e.target.closest('[data-tape-share]'); if (tsh) { const t = MIXTAPES.find(x => x.id === tsh.dataset.tapeShare); if (t) tapeShare(t); return; }
   const tx = e.target.closest('[data-tape-x]'); if (tx) { const i = MIXTAPES.findIndex(x => x.id === tx.dataset.tapeX); if (i >= 0) { MIXTAPES.splice(i, 1); store.set('da.tapes.v1', MIXTAPES); if (ALB === 't:' + tx.dataset.tapeX) ALB = ''; refreshPanel(); refreshFour(); } return; }
   const rp = e.target.closest('[data-rec-play]'); if (rp) { recPlay(rp.dataset.recPlay); return; }
   const rd = e.target.closest('[data-rec-dl]'); if (rd) { const l = LOOPS.find(x => x.id === rd.dataset.recDl); if (!l || !tapeURL(l)) { e.preventDefault(); toast('NOT ON THIS PHONE'); } }
 });
 /* the songs as a mixtape: a name, a life of the places in them for its cover (its photograph in a tarot card's arched window),
-   kept on this phone (LOCAL) or SHARED as a link that opens it anywhere. Played, the songs' recordings in turn, else the songs together */
+   kept on this phone. Played, the songs' recordings in turn, else the songs together */
 const MIXTAPES = store.get('da.tapes.v1', []);
 let TAPE_MK = false;
 const tapeLoops = t => t.ids.map(id => LOOPS.find(l => l.id === id)).filter(Boolean);
@@ -647,26 +638,20 @@ function tapeMaker() {
   const lv = tapeLives();
   return `<form class="tape-mk" data-tape-form><input name="tn" maxlength="32" autocomplete="off" aria-label="Its name" placeholder="${esc(((LOOPS[0].where || {}).place || 'RADIO').toUpperCase())}">`
     + (lv.length ? `<div class="tape-sp" role="radiogroup" aria-label="A life for its cover">${lv.map(([n, u], i) => `<label><input type="radio" name="sp" value="${i}"${i ? '' : ' checked'}>${u ? `<img src="${esc(u)}" alt="" crossorigin="anonymous">` : '<i></i>'}<span class="mono">${esc(n)}</span></label>`).join('')}</div>` : '')
-    + `<div class="tape-pub" role="radiogroup" aria-label="Who hears it"><label><input type="radio" name="pub" value="0" checked><span class="mono">LOCAL</span></label><label><input type="radio" name="pub" value="1"><span class="mono">SHARED</span></label></div>`
     + `<button type="submit" class="pill" aria-label="Make the mixtape">${icon('check', 'sm')}<span class="mono">${LOOPS.length} SONGS</span></button></form>`;
 }
 const tapeCard = (t, i) => ({ id: 't:' + t.id, img: loopArt(tapeLoops(t)[0] || LOOPS[0]), ph: (t.sp || {}).ph || '', kind: 'tape', name: t.name, n: i, at: t.at });
 const tapesHTML = () => (MIXTAPES.length ? `<ol class="albums tapes">${MIXTAPES.map((t, i) => { const ls = tapeLoops(t), on = REC && REC.id === 't:' + t.id;
   return `<li class="album tape"><button type="button" class="al-sleeve" data-rec-play="t:${esc(t.id)}" aria-label="Play ${esc(t.name)}"><img class="al-art" data-tape-card="${i}" src="${ls[0] ? loopArt(ls[0]) : ''}" alt=""></button>`
-    + `<span class="al-t"><b>${esc(t.name)}</b><small class="mono">${t.pub ? 'SHARED' : 'LOCAL'} · ${ls.length} ${ls.length === 1 ? 'SONG' : 'SONGS'}${t.sp ? ' · ' + esc(t.sp.n) : ''}</small></span>`
+    + `<span class="al-t"><b>${esc(t.name)}</b><small class="mono">${ls.length} ${ls.length === 1 ? 'SONG' : 'SONGS'}${t.sp ? ' · ' + esc(t.sp.n) : ''}</small></span>`
     + `<span class="al-k"><button type="button" class="ib${on ? ' on' : ''}" data-rec-play="t:${esc(t.id)}" aria-label="Play the mixtape" data-tip="Play">${icon(on ? 'pause' : 'play', 'sm')}</button><button type="button" class="ib" data-tape-x="${esc(t.id)}" aria-label="Let it go" data-tip="Let it go">${icon('close', 'sm')}</button></span></li>`; }).join('')}</ol>` : '');
 async function fillTapes() { for (const im of $$('#view img[data-tape-card]')) { const t = MIXTAPES[+im.dataset.tapeCard]; if (!t) continue; try { const c = await cardArt(tapeCard(t, +im.dataset.tapeCard), +im.dataset.tapeCard, 2); if (im.isConnected) im.src = c.toDataURL('image/png'); } catch (e) { /* the sleeve alone */ } } }
-async function tapeShare(t) {
-  const ls = tapeLoops(t); if (!ls.length) { toast('NO SONGS IN IT NOW'); return; }
-  /* shared on novel.global only: never handed to another app */
-  if (!t.pub) { t.pub = true; store.set('da.tapes.v1', MIXTAPES); } toast('✓ SHARED'); refreshPanel();
-}
 $('#view').addEventListener('submit', e => {
   const f = e.target.closest('[data-tape-form]'); if (!f) return; e.preventDefault();
-  const lv = tapeLives(), sp = lv[+((f.querySelector('[name="sp"]:checked') || {}).value || 0)], pub = (f.querySelector('[name="pub"]:checked') || {}).value === '1';
-  const t = { id: 'tp' + Date.now().toString(36), at: Date.now(), name: (f.tn.value.trim() || f.tn.placeholder).slice(0, 32).toUpperCase(), ids: LOOPS.map(l => l.id), sp: sp ? { n: sp[0], ph: sp[1] } : null, pub: false };
+  const lv = tapeLives(), sp = lv[+((f.querySelector('[name="sp"]:checked') || {}).value || 0)];
+  const t = { id: 'tp' + Date.now().toString(36), at: Date.now(), name: (f.tn.value.trim() || f.tn.placeholder).slice(0, 32).toUpperCase(), ids: LOOPS.map(l => l.id), sp: sp ? { n: sp[0], ph: sp[1] } : null };
   MIXTAPES.unshift(t); MIXTAPES.splice(12); store.set('da.tapes.v1', MIXTAPES); TAPE_MK = false; made('song', 'mixtape'); snd.tick(1900);
-  if (pub) tapeShare(t); else { toast('✓ MIXTAPE · LOCAL'); refreshPanel(); }
+  toast('✓ MIXTAPE'); refreshPanel();
 });
 /* ───────── the radio as a link: the place, its reach, and each layer's on, volume and mood, short enough for a code on a
    receipt. Opened, it tunes the radio there; a touch on play and it sounds ───────── */
