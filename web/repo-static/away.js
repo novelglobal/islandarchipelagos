@@ -105,5 +105,9 @@
   function resume() { if (!el || !cur || !el.paused) return; unlock(); try { var p = el.play(); if (p && p.catch) p.catch(function () { tell(); }); } catch (e) { /* asked by a touch */ } }
   window.NGAWAY = { unlock: unlock, play: play, stop: stop, join: join, wavOf: wavOf, id: function () { return cur ? cur.id : ''; }, on: function () { return !!cur && !!el && !el.paused; }, title: function () { return cur ? cur.title : ''; }, state: state, pause: pause, resume: resume,
     lib: { albums: albums, album: album, cover: cover, play: playAlbum, step: step, stop: libStop, now: now, ready: nfLoad,
+      /* the track sounding now: its file (a sound from its place through novel.global, so the page may read it), how fast, and where */
+      src: function () { if (!el || !cur || !cur.lib || el.paused) return null; var u = el.currentSrc || el.src || ''; if (/^https:\/\/(static\.inaturalist\.org|inaturalist-open-data\.s3\.amazonaws\.com)\/sounds\//.test(u)) u = '/api/snd?u=' + encodeURIComponent(u);
+        return u ? { u: u, rate: el.playbackRate || 1, t: el.currentTime || 0, id: cur.id } : null; },
+      quiet: function (on) { if (el) el.muted = !!on; },
       pick: function (v) { if (v !== undefined) { try { localStorage.setItem('da.snd.alb', JSON.stringify(v)); } catch (e) { /* none */ } tell(); } var p = get('da.snd.alb', ''); return album(p) ? p : (albums()[0] || { v: '' }).v; } } };
 })();

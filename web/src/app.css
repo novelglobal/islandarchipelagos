@@ -3605,7 +3605,6 @@ html #sec-heat.band.dev.radio.mod .lyrs .lyr-v{height:20px!important}
 .band.dev.radio .f4w.alb{flex-direction:column;align-items:stretch;gap:4px;overflow:visible}
 .band.dev.radio .f4w.alb>.f4d{overflow-x:auto;max-width:100%}
 .band.dev.radio .alb-s{gap:6px}
-.band.dev.radio .alb-s .alb-np{width:26px;padding:0;justify-content:center;border-radius:50%}
 .band.dev.radio .alb-s .alb-dd{border-color:rgba(0,0,0,.25);gap:6px}
 .band.dev.radio .alb-s .alb-dd small{max-width:150px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .band.dev.radio .alb-v{font:500 8px/1 var(--mono);opacity:.5}

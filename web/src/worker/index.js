@@ -902,6 +902,15 @@ async function imgThrough(url) {
   return new Response(r.body, { headers: { 'content-type': type, 'cache-control': 'public, max-age=86400', 'access-control-allow-origin': '*', 'x-content-type-options': 'nosniff' } });
 }
 
+/* a sound from iNaturalist passed through the same way, so the radio can lay an album's track onto a recording */
+async function sndThrough(url) {
+  let t; try { t = new URL(url.searchParams.get('u') || ''); } catch (e) { return fail(400, 'u'); }
+  if (t.protocol !== 'https:' || !IMG_HOSTS.includes(t.hostname) || !t.pathname.startsWith('/sounds/')) return fail(400, 'u');
+  const r = await fetch(t.toString(), { cf: { cacheEverything: true, cacheTtl: 604800 } }); const type = r.headers.get('content-type') || '';
+  if (!r.ok || !/^(audio\/|video\/mp4)/.test(type) || +(r.headers.get('content-length') || 0) > 16e6) return fail(502, 'snd');
+  return new Response(r.body, { headers: { 'content-type': type, 'cache-control': 'public, max-age=604800', 'access-control-allow-origin': '*', 'x-content-type-options': 'nosniff' } });
+}
+
 /* ───────── live data through novel.global (stage 4): iNaturalist and OpenStreetMap are asked here, once for everyone, and never by
    a visitor's browser. What comes back is kept: iNaturalist's answers at the edge for minutes (sightings) to a week (names), and
    OpenStreetMap's a tile at a time in the database for two weeks (places) or a month (water). A failure is never kept ───────── */
@@ -1474,6 +1483,7 @@ async function api(req, env, url, ctx) {
   tally(url, req.method); settle(env, ctx);
   if (url.pathname === '/api/beat') return new Response(null, { status: 204, headers: TEXT_H });
   if (url.pathname === '/api/img' && req.method === 'GET') return imgThrough(url);
+  if (url.pathname === '/api/snd' && req.method === 'GET') return sndThrough(url);
   if (url.pathname.startsWith('/api/inat/') && req.method === 'GET') return inatThrough(url);
   if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
   if (url.pathname === '/api/news' && req.method === 'GET') return newsThrough();

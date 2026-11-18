@@ -169,7 +169,7 @@ function setRadio(on, quiet) {
   if (on) { snd.wake(); if (!prefs.sound) { prefs.sound = true; savePrefs(); } nudgeWishSoon(); }
   syncTracks(); if (on) life.replay();
   document.querySelectorAll('[data-radio]').forEach(b => { b.setAttribute('aria-pressed', String(on)); b.classList.toggle('on', on); const ic = b.querySelector('svg.i'); if (ic) ic.outerHTML = icon(on ? 'pause' : 'play'); else b.insertAdjacentHTML('beforeend', icon(on ? 'pause' : 'play')); });
-  document.body.classList.toggle('on-air', on); buzz(on ? [8, 30, 8] : 6); life.redraw(); life.moved();
+  document.body.classList.toggle('on-air', on); buzz(on ? [8, 30, 8] : 6); life.redraw(); life.moved(); keySync();
 }
 /* the radio's VU meter, on its studio side: the needle kicks with every cell the sweep plays and falls back */
 let vuT = 0, vuV = 0;
@@ -209,11 +209,9 @@ $('#view').addEventListener('click', e => {
   if (e.target.closest('[data-alb-dd]')) { ALBX = !ALBX; snd.tick(1500); refreshFour(); return; }
   const ab = e.target.closest('[data-alb]'); if (ab) { ALB = ALB === ab.dataset.alb ? '' : ab.dataset.alb; snd.tick(1500); refreshFour(); return; }
   if (e.target.closest('[data-alb-mk]')) { albMake(); return; }
-  const aa = e.target.closest('[data-alb-all]'); if (aa) { albPlay(aa.dataset.albAll); return; }
   const atr = e.target.closest('[data-alb-tr]'); if (atr) { const id = atr.dataset.albId; if ((inFour() || filing) && LOOPS.some(l => l.id === id && !l.off4)) { toggleTrack(id); albSync(); return; } albPlay(atr.dataset.albV, +atr.dataset.albTr); return; }
-  if (e.target.closest('[data-alb-np]')) { const st = npOf(); if (st.on) AWAY.pause(); else if (st.has) AWAY.resume(); snd.tick(1500); return; }
   const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
-  const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
+  const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (albLive()) { AWAY.pause(); if (S.radio) setRadio(false); keySync(); return; } if (!S.radio && albHeld()) { AWAY.resume(); if (LOOP.paused && LOOP.paused.length) setRadio(true); keySync(); return; } if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
   const vb = e.target.closest('[data-vol]'); if (vb) { const k = vb.dataset.vol; const n = (volStep(k) + 1) % VOLS.length; prefs.lvl = { ...(prefs.lvl || {}), [k]: VOLS[n] }; savePrefs(); vb.dataset.v = String(n); snd.tick(1200 + n * 300); return; }
   /* a layer's mood, turned: FOG, RAIN, WEIGHT */
@@ -484,11 +482,22 @@ async function tapeUp(l, b, name) {
   const who = store.get('da.who', ''); if (!/^[A-HJ-NP-Z2-9]{3}$/.test(who) || !navigator.onLine) return;
   try { const r = await fetch(`/api/tapes?who=${who}&name=${encodeURIComponent(name)}`, { method: 'POST', headers: { 'content-type': b.type || 'audio/wav' }, body: b }); if (r.status !== 201) return; const j = await r.json(); l.tape = { url: j.url, until: j.until }; store.set('da.loops.v1', LOOPS); } catch (e) { /* this phone's own, then */ }
 }
+/* the album under a recording: its track now read into the mix where it is, the one player quiet till the tape is done; a track
+   ending, the next laid in after it */
+let OVER = null;
+async function overPrep() { const L = LIBR(), x = L && L.src ? L.src() : null; if (!x) return null;
+  try { const ab = await Promise.race([fetch(x.u).then(r => (r.ok ? r.arrayBuffer() : null)), new Promise(r => setTimeout(() => r(null), 6000))]); if (!ab) return null;
+    return { buf: await snd.decode(ab), x }; } catch (e) { return null; } }
+function overGo(p) { const L = LIBR(); if (!p || !FILING) return; const y = L && L.src ? L.src() : null, at = y && y.id === p.x.id ? y.t : p.x.t;
+  const h = snd.over(p.buf, at, p.x.rate); if (!h) return; OVER = { h }; L.quiet(true);
+  h.s.onended = () => { if (!OVER || OVER.h !== h || !FILING) return; setTimeout(() => overPrep().then(q => { if (q && FILING && OVER && OVER.h === h) overGo(q); }), 500); }; }
+function overEnd() { const L = LIBR(); if (OVER) { OVER.h.stop(); OVER = null; } if (L && L.quiet) L.quiet(false); }
 async function loopFile(l, four) {
   if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop(); dsStop(); awayEnd();
+  const under = albLive() ? await overPrep() : null;
   const ms = tracksOf(l), dur = Math.max(...ms.map(t => loopDur(t.m))), t0 = performance.now() + 150; for (const t of ms) { t.t0 = t0; t.step = null; }
   startPlay(ms); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.add('going')); /* whole turns, to at least 24 seconds: a tape to keep, not a blip */
-  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300, ids: new Set([l.id]) }; refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
+  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300, ids: new Set([l.id]) }; overGo(under); refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
   try { await new Promise(r => setTimeout(r, 150)); const b = await snd.record(len, 3000);
     if (FILING.ids.size > 1) { const ps = [...FILING.ids].map(id => LOOPS.find(x => x.id === id)).filter(Boolean).flatMap(x => (x.parts && x.parts.length ? x.parts : [x]));
       const mx = ps.length > 1 ? mixOf(ps) : null; if (mx && keepLoop(mx)) { made('song', 'mix'); l = mx; } }
@@ -497,7 +506,7 @@ async function loopFile(l, four) {
     /* one save, its key beside the loop: the tape on novel.global (opened in a tab of its own, never leaving this one) */
     await tapeUp(l, b, name); if (l.tape) FILED.url = l.tape.url; toSound(l, l.id); toast('✓ ↓', 3600); made('song', 'loop'); }
   catch (e) { toast('NOT SAVED · TRY AGAIN'); }
-  $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); const was = FILING ? FILING.ids : new Set([l.id]); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id || was.has(t.of))) comeBack(); filing = false; FILING = null;
+  overEnd(); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); const was = FILING ? FILING.ids : new Set([l.id]); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id || was.has(t.of))) comeBack(); filing = false; FILING = null;
   refreshFour(); if (S.view !== 0) refreshPanel();
 }
 /* a kept loop heard again: the file as it was recorded; the radio waits under it and comes back when it ends */
@@ -565,28 +574,28 @@ let ALB = '', ALBX = false, ALBN = -1;   // ALB: the album open; ALBX: the drop-
 const LIBR = () => (AWAY && AWAY.lib) || null, albNow = () => { const L = LIBR(); return L ? L.now() : { v: '', id: '', live: false }; };
 const albOn = v => { const n = albNow(); return n.live && n.v === v; };
 const npOf = () => (AWAY && AWAY.state ? AWAY.state() : { has: false, on: false, title: '' });
-const npHTML = () => { const st = npOf(); return `<li${st.has ? '' : ' hidden'}><button type="button" class="alb-np${st.on ? ' on' : ''}" data-alb-np aria-label="${st.on ? 'Pause' : 'Go on'}: ${esc(st.title)}" data-tip="${st.on ? 'Pause' : 'Play'}">${icon(st.on ? 'pause' : 'play', 'sm')}</button></li>`; };
 const ddName = () => { const st = npOf(); return esc(String(st.has && st.title ? st.title : 'albums').slice(0, 18)); };
 function albumsHTML() {
   const L = LIBR(), al = L ? L.albums() : [], nw = albNow(), n2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`; ALBN = al.length;
   if (ALB && !al.some(a => a.v === ALB)) ALB = '';
   if (!al.length && !DECK().length) return '';
   const art = a => (a.art ? `<img src="${esc(a.art)}" alt="">` : `<b class="alb-c${a.v === 'wish' ? ' alb-w' : ''}"></b>`);
-  const tracks = a => { const on = albOn(a.v);
-    return `<ol class="alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a.v)}" aria-label="${on ? 'Stop the album' : 'Play the album from the top'}" data-tip="${on ? 'Stop' : 'Play it all'}"><small class="mono">${on ? '❚❚' : '▶'} all</small></button></li>`
+  const tracks = a => {
+    return `<ol class="alb-l" role="group" aria-label="Tracks">`
       + a.tracks.map((t, i) => `<li><button type="button" class="${nw.live && nw.v === a.v && nw.id === t.id ? 'on' : ''}" data-alb-tr="${i}" data-alb-v="${esc(a.v)}" data-alb-id="${esc(t.id)}" aria-label="Track ${i + 1}: ${esc(t.n)}" data-tip="${esc(t.n)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(t.n.slice(0, 26))}</small></button></li>`).join('') + '</ol>'; };
   const item = a => `<li class="alb-i"><span class="alb-r"><button type="button" class="alb-t${ALB === a.v ? ' alb-open' : ''}${albOn(a.v) ? ' on' : ''}" data-alb="${esc(a.v)}" aria-expanded="${ALB === a.v}" aria-label="Album ${esc(a.n)}, ${n2(a.tracks.length, 'track')}">${art(a)}<small class="mono">${esc(a.n.slice(0, 24))}</small><i class="mono">${a.tracks.length}</i></button>${a.tape ? `<button type="button" class="alb-x" data-tape-x="${esc(a.tape)}" aria-label="Let this album go" data-tip="Let it go">×</button>` : ''}</span>${ALB === a.v ? tracks(a) : ''}</li>`;
   const key = `<ol class="f4d alb-s" role="group" aria-label="Albums">`
-    + npHTML() + (al.length || DECK().length ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${al.length}" data-tip="Albums"><small class="mono">${ddName()}</small><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '') + '</ol>';
+    + (al.length || DECK().length ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${al.length}" data-tip="Albums"><small class="mono">${ddName()}</small><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '') + '</ol>';
   const mk = DECK().length ? `<li class="alb-i"><span class="alb-r"><button type="button" class="alb-t alb-mk" data-alb-mk aria-label="Make an album of the tracks playing on the deck, or of every track kept" data-tip="New album"><small class="mono">+ album</small></button></span></li>` : '';
   const list = ALBX && (al.length || mk) ? `<ul class="alb-dl" role="list">${al.map(item).join('')}${mk}</ul>` : '';
   return `<div class="f4d f4w alb">${key}${list}</div>`;
 }
-function albSync() { try { const nw = albNow();
+const albLive = () => { const st = npOf(); return !!(st.lib && st.on); }, albHeld = () => { const st = npOf(); return !!(st.lib && st.has && !st.on); };
+function keySync() { const on = S.radio || albLive();
+  document.querySelectorAll('[data-radio]').forEach(b => { b.setAttribute('aria-pressed', String(on)); b.classList.toggle('on', on); const ic = b.querySelector('svg.i'); if (ic) ic.outerHTML = icon(on ? 'pause' : 'play'); }); }
+function albSync() { try { const nw = albNow(); keySync();
   $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd] small').forEach(b => { b.innerHTML = ddName(); });
-  $$('[data-alb-all]').forEach(b => { const on = albOn(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = '<small class="mono">' + (on ? '❚❚' : '▶') + ' all</small>'; });
   const mixing = inFour() || filing; $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', (nw.live && nw.v === b.dataset.albV && nw.id === b.dataset.albId) || (mixing && going(b.dataset.albId))));
-  $$('[data-alb-np]').forEach(b => { const st = npOf(), li = b.parentNode; li.hidden = !st.has; b.classList.toggle('on', st.on); b.setAttribute('aria-label', (st.on ? 'Pause' : 'Go on') + ': ' + st.title); b.dataset.tip = st.on ? 'Pause' : 'Play'; b.innerHTML = icon(st.on ? 'pause' : 'play', 'sm'); });
 } catch (e) { /* not drawn yet */ } }
 function albMake() {
   const sel = inFour() ? [...new Set(LOOP.ms.map(t => t.of))] : [], ids = (sel.length ? sel : DECK().map(l => l.id)).slice(0, 24);
@@ -596,8 +605,8 @@ function albMake() {
 }
 /* an album played: the radio and anything else here hushed first, so one sound plays at a time; the same again stops it */
 function albPlay(v, i) { const L = LIBR(); if (!L) return; const nw = albNow();
-  if (nw.live && nw.v === v && (i == null || nw.i === i)) { L.stop(); albSync(); return; }
-  dsStop(); recStop(); try { const A = pAura(); if (A && A.stop) A.stop(); } catch (e) { /* none */ } if (S.radio) setRadio(false);
+  if (nw.live && nw.v === v && (i == null || nw.i === i)) return;
+  dsStop(); recStop(); try { const A = pAura(); if (A && A.stop) A.stop(); } catch (e) { /* none */ } if (S.radio && !inFour()) setRadio(false);
   L.play(v, i || 0); albSync(); }
 /* an album come in (NIGHT FIELD fetched, a tape kept on another card): drawn again; else only what plays is lit */
 addEventListener('ng-away', () => { const L = LIBR(); if (L && ALBN >= 0 && L.albums().length !== ALBN && $('#view .four')) refreshFour(); else albSync(); });

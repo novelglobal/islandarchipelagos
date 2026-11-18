@@ -587,6 +587,13 @@ const snd = (() => {
       return b;
     },
     /* a made song going round, from `at` seconds into it, on the next sixteenth; into the bus, so the mix (El Niño's heat) still acts on it */
+    decode(ab) { const c = ready(); if (!c) return Promise.reject(new Error('none')); return new Promise((ok, no) => { try { const p = c.decodeAudioData(ab, ok, no); if (p && p.then) p.then(ok, no); } catch (e) { no(e); } }); },
+    /* a file sounded once into the mix from `at` seconds, at its own speed (tuned as the album tunes it), so a recording takes it too */
+    over(buf, at, rate, gain = 0.9) {
+      const c = ready(); if (!c || !buf) return null; const s = c.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate || 1; const g = c.createGain(); g.gain.value = gain;
+      s.connect(g); g.connect(bus); s.start(c.currentTime + 0.02, Math.max(0, Math.min(buf.duration - 0.05, at || 0)));
+      return { s, stop() { try { g.gain.setTargetAtTime(0, c.currentTime, 0.03); s.stop(c.currentTime + 0.2); } catch (e) { /* gone */ } } };
+    },
     loopBuf(buf, at, gain) {
       const c = ready(); if (!c || !buf) return null; const s = c.createBufferSource(); s.buffer = buf; s.loop = true; const g = c.createGain(); g.gain.value = gain;
       s.connect(g); g.connect(bus); const t = onGrid(c.currentTime + 0.05), D = buf.duration; s.start(t, (((at + t - c.currentTime) % D) + D) % D);
