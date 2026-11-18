@@ -1,4 +1,4 @@
-/* island archipelagos: the bench's other benches. SLIP (bench.js) makes a receipt; PAGE makes a phone page that links to it;
+/* island archipelagos: the bench's other benches. RECEIPT (bench.js, mode slip) makes a receipt; PHONE (mode page) makes a phone page that links to it;
    GAME makes a game for the printer and plays it on a console here; CARD sends any of them to the front page */
 (function () {
   'use strict';
@@ -30,12 +30,12 @@
   var swatches = function (cur, attr) { return Object.keys(THEMES).map(function (k) { var t = THEMES[k]; return '<button type="button" ' + attr + '="' + k + '" title="' + t.n.toLowerCase() + ' palette" aria-pressed="' + (k === cur) + '" style="--a:' + t.bg + ';--b:' + t.ink + ';--p:' + t.pat + '"><i></i></button>'; }).join(''); };
 
   /* ───────── the mode bar ───────── */
-  var MODES = [['slip', 'SLIP', 'Design a receipt, part by part, and print it', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6M9 11h6M9 14h3"/>')],
-    ['page', 'PAGE', 'Design a phone page that links to your receipt', I('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4M9 7h6M9 10h6M9 13h4"/>')],
+  var MODES = [['slip', 'RECEIPT', 'Design a receipt, part by part, and print it', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6M9 11h6M9 14h3"/>')],
+    ['page', 'PHONE', 'Design a phone page that links to your receipt', I('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4M9 7h6M9 10h6M9 13h4"/>')],
     ['game', 'GAME', 'Make a game that plays on paper, and test it here', I('<rect x="3" y="7" width="18" height="11" rx="3"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11.5" r="1" class="f"/><circle cx="17.8" cy="13.8" r="1" class="f"/>')],
-    ['live', 'LIVE', 'Write it, or paste past code, and it runs here', I('<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>')],
-    ['card', 'CARD', 'Send what you made to the front page as a card', I('<path d="M5 3h14v18H5z"/><path d="M12 7l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 14l-2.8 1.6.6-3.1-2.3-2.2 3.1-.4z"/>')],
-    ['set', 'SET', 'Choose what joins what on the front page, and its frames', I('<circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 6h8M6 8v8M8 7.5l8.5 9"/>')]];
+    ['live', 'CODE', 'Write it, or paste past code, and it runs here', I('<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>')],
+    ['card', 'SHARE', 'Send what you made to the front page as a card', I('<path d="M5 3h14v18H5z"/><path d="M12 7l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 14l-2.8 1.6.6-3.1-2.3-2.2 3.1-.4z"/>')],
+    ['set', 'LAYOUT', 'Choose what joins what on the front page, and its frames', I('<circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 6h8M6 8v8M8 7.5l8.5 9"/>')]];
   var MI = function (k) { return MODES.filter(function (m) { return m[0] === k; })[0][3]; };
   var hd = $('header'), bar = D.createElement('nav'); bar.id = 'modes'; bar.setAttribute('aria-label', 'What to make');
   bar.innerHTML = MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '" title="' + m[2] + '">' + m[3] + '<span>' + m[1] + '</span></button>'; }).join('') + '<i class="mb-ink" aria-hidden="true"></i>';
@@ -79,8 +79,8 @@
   /* ───────── PAGE: a phone page, block by block, in a poster's palette; it links to the receipt and plugs into flows ───────── */
   var BLOCKS = {
     cover: ['COVER', 'A big photo with the title over it', I('<path d="M3 5h18v14H3z"/><path d="M3 15l5-4 4 3 3-2 6 4"/>')], head: ['HEADING', 'A heading', I('<path d="M6 5v14M18 5v14M6 12h12"/>')],
-    text: ['TEXT', 'A few lines of words', I('<path d="M5 7h14M5 12h14M5 17h9"/>')], receipt: ['RECEIPT', 'A button that prints your slip', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 9h6M9 12h6"/>')],
-    slip: ['SLIP', 'A picture of your slip, as it prints', I('<path d="M7 2h10v20H7z"/><path d="M9.5 6h5M9.5 9h5M9.5 12h3"/>')], gallery: ['PHOTOS', 'A row of photos', I('<path d="M3 6h8v8H3zM13 6h8v8h-8zM3 16h18"/>')],
+    text: ['TEXT', 'A few lines of words', I('<path d="M5 7h14M5 12h14M5 17h9"/>')], receipt: ['PRINT', 'A button that prints your receipt', I('<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 9h6M9 12h6"/>')],
+    slip: ['RECEIPT', 'A picture of your receipt, as it prints', I('<path d="M7 2h10v20H7z"/><path d="M9.5 6h5M9.5 9h5M9.5 12h3"/>')], gallery: ['PHOTOS', 'A row of photos', I('<path d="M3 6h8v8H3zM13 6h8v8h-8zM3 16h18"/>')],
     map: ['MAP', 'Where it is, as a pin', I('<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>')], qr: ['QR', 'A QR code to a link', I('<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2z"/>')],
     moon: ['MOON', 'Tonight’s moon', I('<path d="M15 3a9 9 0 1 0 6 13A7 7 0 0 1 15 3z"/>')], link: ['LINK', 'A button to anywhere', I('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')],
     sound: ['SOUND', 'A key that plays a chord', I('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>')], game: ['GAME', 'Your game’s cartridge, to play', I('<rect x="3" y="7" width="18" height="11" rx="3"/><path d="M7.5 10.5v4M5.5 12.5h4"/>')]
@@ -96,7 +96,7 @@
       if (b.k === 'cover') return '<header class="pv-cov"' + a + (b.src ? ' style="background-image:url(' + b.src + ')"' : '') + '><h1>' + esc(b.t || '') + '</h1></header>';
       if (b.k === 'head') return '<h2' + a + '>' + esc(b.t || '') + '</h2>';
       if (b.k === 'text') return '<p' + a + '>' + esc(b.t || '').replace(/\n/g, '<br>') + '</p>';
-      if (b.k === 'receipt') return '<a class="pv-btn pv-rc"' + a + ' href="' + esc(b.u || 'https://novel.global/') + '"' + (live ? ' data-print' : '') + '><span>' + esc(b.t || 'PRINT MY SLIP') + '</span><i></i></a>';
+      if (b.k === 'receipt') return '<a class="pv-btn pv-rc"' + a + ' href="' + esc(b.u || 'https://novel.global/') + '"' + (live ? ' data-print' : '') + '><span>' + esc(b.t || 'PRINT MY RECEIPT') + '</span><i></i></a>';
       if (b.k === 'link') return '<a class="pv-btn"' + a + ' href="' + esc(b.u || '#') + '">' + esc(b.t || 'OPEN') + ' ↗</a>';
       if (b.k === 'slip') { var u = slipURL(); return u ? '<figure class="pv-slip"' + a + '><img alt="The slip" src="' + u + '"></figure>' : ''; }
       if (b.k === 'gallery') return '<div class="pv-gal"' + a + '>' + (b.srcs || []).map(function (s) { return '<img alt="" src="' + s + '">'; }).join('') + ((b.srcs || []).length ? '' : '<i></i><i></i><i></i>') + '</div>';
@@ -129,7 +129,7 @@
     $$('[data-mod]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(!!pg.mods[b.dataset.mod])); });
     $$('.pg-cfg label', el).forEach(function (l) { l.hidden = !pg.mods[l.dataset.for]; var i = $('input', l); if (D.activeElement !== i) i.value = pg[l.dataset.for] || ''; });
     $('.pg-bl', el).innerHTML = pg.b.map(function (b, i) { var B = BLOCKS[b.k] || BLOCKS.text, f = '';
-      if (/^(cover|head|text|receipt|link|sound)$/.test(b.k)) f += b.k === 'text' ? '<textarea data-bf="t" rows="2" placeholder="words">' + esc(b.t || '') + '</textarea>' : '<input data-bf="t" placeholder="' + (b.k === 'receipt' ? 'PRINT MY SLIP' : 'words') + '" value="' + esc(b.t || '') + '">';
+      if (/^(cover|head|text|receipt|link|sound)$/.test(b.k)) f += b.k === 'text' ? '<textarea data-bf="t" rows="2" placeholder="words">' + esc(b.t || '') + '</textarea>' : '<input data-bf="t" placeholder="' + (b.k === 'receipt' ? 'PRINT MY RECEIPT' : 'words') + '" value="' + esc(b.t || '') + '">';
       if (/^(receipt|link|qr)$/.test(b.k)) f += '<input data-bf="u" placeholder="https://" inputmode="url" value="' + esc(b.u || '') + '">';
       if (b.k === 'cover' || b.k === 'gallery') f += '<button type="button" data-pic title="Choose ' + (b.k === 'cover' ? 'a photo' : 'photos') + '">' + BLOCKS.cover[2] + '</button>';
       if (b.k === 'map') f += '<button type="button" data-here title="Use where you are">' + BLOCKS.map[2] + '</button>';
@@ -145,13 +145,13 @@
     $('.pg-flow svg').innerHTML = '<path class="fl" d="M20 30H' + (w - 20) + '"/>' + nodes.map(function (t, i) { var x = 20 + i * st; return '<g transform="translate(' + x + ' 30)"><circle r="' + (i === 0 || i === n - 1 ? 7 : 5) + '" class="' + (i === 0 ? 'a' : i === n - 1 ? 'z' : '') + '"/><text y="24">' + t + '</text></g>'; }).join('') +
       '<circle class="pk" r="3"><animateMotion dur="' + (1.2 + n * 0.35) + 's" repeatCount="indefinite" path="M20 30H' + (w - 20) + '"/></circle>'; }
   function testPrint(btn) { var u = slipURL(), say = function (s) { var o = $('#pg-pr span'); if (o) o.textContent = s; setTimeout(function () { if (o) o.textContent = 'TEST PRINT'; }, 2600); };
-    if (!u) { say('MAKE A SLIP FIRST'); return; } if (!NG || !NG.printAgain) { say('NO PRINTER HERE'); return; } say('SENDING'); beep(700, 0.05);
+    if (!u) { say('MAKE A RECEIPT FIRST'); return; } if (!NG || !NG.printAgain) { say('NO PRINTER HERE'); return; } say('SENDING'); beep(700, 0.05);
     NG.printAgain(u, 'page').then(function (s) { say(String(s || 'SENT').toUpperCase()); beep(990, 0.08); }).catch(function (e) { say(e && e.status === 400 ? 'NO PRINTER ONLINE' : 'NOT SENT'); }); }
   function pickFiles(multi, then) { var fi = $('#fi'); fi.accept = 'image/*'; fi.multiple = !!multi; fi.onchange = function () { var fs = [].slice.call(fi.files || [], 0, 6); fi.value = ''; fi.multiple = false; Promise.all(fs.map(shrink)).then(then); }; fi.click(); }
   function shrink(f) { return new Promise(function (res) { var rd = new FileReader(); rd.onload = function () { var im = new Image(); im.onload = function () { var k = Math.min(1, 900 / Math.max(im.width, im.height)), c = D.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.78)); }; im.onerror = function () { res(''); }; im.src = rd.result; }; rd.readAsDataURL(f); }); }
   function pageClick(e) { var pg = pageState(), b;
     if ((b = e.target.closest('[data-th]'))) { pg.th = b.dataset.th; save(); page(); beep(660, 0.04); return; }
-    if ((b = e.target.closest('[data-blk]'))) { var nb = { k: b.dataset.blk }; if (nb.k === 'receipt') { nb.t = 'PRINT MY SLIP'; nb.u = 'https://novel.global/'; } if (nb.k === 'qr') nb.u = 'https://novel.global/'; pg.b.push(nb); save(); page(); beep(880, 0.04); var l = $('.pg-bl li:last-child'); if (l) { l.classList.add('hi'); l.scrollIntoView({ block: 'nearest' }); } return; }
+    if ((b = e.target.closest('[data-blk]'))) { var nb = { k: b.dataset.blk }; if (nb.k === 'receipt') { nb.t = 'PRINT MY RECEIPT'; nb.u = 'https://novel.global/'; } if (nb.k === 'qr') nb.u = 'https://novel.global/'; pg.b.push(nb); save(); page(); beep(880, 0.04); var l = $('.pg-bl li:last-child'); if (l) { l.classList.add('hi'); l.scrollIntoView({ block: 'nearest' }); } return; }
     if ((b = e.target.closest('[data-mod]'))) { var k = b.dataset.mod; pg.mods[k] = pg.mods[k] ? 0 : 1; save(); page(); beep(pg.mods[k] ? 990 : 440, 0.05); return; }
     if (e.target.closest('#pg-dl')) { var h = pageHTML(pg, false), meta = { flows: Object.keys(pg.mods).filter(function (m) { return pg.mods[m]; }), hook: pg.mods.hook ? pg.hook : '', repo: pg.mods.git ? pg.git : '', made: 'novel.global bench' };
       var doc = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + esc(((pg.b.filter(function (x) { return x.k === 'cover' || x.k === 'head'; })[0]) || {}).t || 'My island') + '</title><style>' + h.css + '</style><script type="application/json" id="island-flow">' + JSON.stringify(meta).replace(/</g, '\\u003c') + '</script></head><body>' + h.body + '</body></html>';
@@ -261,7 +261,7 @@
   /* ───────── CARD: what you made, as a card on the front page; sent to the archipelagos' SHOW room, where novel.global picks it up ───────── */
   function card() { var cd = P.card, el = $('#cd'); cd.what = cd.what || (P.game ? 'game' : P.page ? 'page' : 'slip'); cd.th = cd.th || 'print';
     if (!el.dataset.on) { el.dataset.on = 1;
-      el.innerHTML = '<div class="cd-pick">' + [['slip', 'YOUR SLIP', 'The receipt from SLIP'], ['page', 'YOUR PAGE', 'The phone page from PAGE'], ['game', 'YOUR GAME', 'The game from GAME']].map(function (w) { return '<button type="button" data-what="' + w[0] + '" title="' + w[2] + '">' + MODES.filter(function (m) { return m[0] === w[0]; })[0][3] + '<span>' + w[1] + '</span></button>'; }).join('') + '</div>' +
+      el.innerHTML = '<div class="cd-pick">' + [['slip', 'YOUR RECEIPT', 'The receipt you made'], ['page', 'YOUR PHONE PAGE', 'The phone page you made'], ['game', 'YOUR GAME', 'The game you made']].map(function (w) { return '<button type="button" data-what="' + w[0] + '" title="' + w[2] + '">' + MODES.filter(function (m) { return m[0] === w[0]; })[0][3] + '<span>' + w[1] + '</span></button>'; }).join('') + '</div>' +
         '<div class="cd-main"><article class="cd-card" aria-label="How the card will look"><div class="cd-art"></div><b class="cd-new">NEW</b><h2 class="cd-t"></h2><p class="cd-l"></p><i class="cd-shine" aria-hidden="true"></i></article>' +
         '<div class="cd-form"><label><span>NAME</span><input data-cf="name" maxlength="28"></label><label><span>ONE LINE</span><input data-cf="line" maxlength="60"></label>' +
         '<div class="cd-th">' + swatches(cd.th, 'data-cth') + '</div>' + frameRow() + '<button type="button" id="cd-send" title="Send it to novel.global to go on the front page">' + MI('card') + '<span>SEND TO THE FRONT PAGE</span></button><p class="cd-say" aria-live="polite"></p></div></div>';
@@ -269,7 +269,7 @@
       $('.cd-card', el).addEventListener('pointermove', function (e) { var r = this.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; this.style.transform = 'perspective(700px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 14) + 'deg)'; this.style.setProperty('--sx', (x + 0.5) * 100 + '%'); this.style.setProperty('--sy', (y + 0.5) * 100 + '%'); });
       $('.cd-card', el).addEventListener('pointerleave', function () { this.style.transform = ''; }); }
     $$('[data-cf]', el).forEach(function (i) { if (D.activeElement !== i) i.value = cd[i.dataset.cf] || ''; }); cardPaint(); }
-  function cardPaint() { var cd = P.card, el = $('#cd'), t = THEMES[cd.th] || THEMES.print, k = $('.cd-card', el), def = { slip: 'MY SLIP', page: 'MY PAGE', game: (P.game && P.game.title) || 'MY GAME' }[cd.what];
+  function cardPaint() { var cd = P.card, el = $('#cd'), t = THEMES[cd.th] || THEMES.print, k = $('.cd-card', el), def = { slip: 'MY RECEIPT', page: 'MY PAGE', game: (P.game && P.game.title) || 'MY GAME' }[cd.what];
     $$('[data-what]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.what === cd.what)); }); $$('[data-cth]', el).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cth === cd.th)); });
     k.style.setProperty('--a', t.bg); k.style.setProperty('--b', t.ink); k.style.setProperty('--p', t.pat); $('.cd-t', el).textContent = (cd.name || def).toUpperCase(); $('.cd-l', el).textContent = cd.line || '';
     var u = cd.what === 'slip' ? slipURL() : ''; $('.cd-art', el).innerHTML = u ? '<img alt="" src="' + u + '">' : cd.what === 'game' ? '<b class="cd-cart">' + (CARTS[(P.game || {}).cart || 'fortune'] || CARTS.fortune).n + '</b>' : '<i class="cd-ph"></i>'; }
@@ -406,7 +406,7 @@
   }
 
   /* one tip for each bench's main thing, the first time it is opened here, and never again */
-  var COACH = { slip: ['#paper', 'tap a part of the slip to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-brief', 'copy the brief, paste code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
+  var COACH = { slip: ['#paper', 'tap a part of the receipt to change it'], page: ['#pg-scr', 'your page, live as you build it'], game: ['.gm-con', 'press play and it prints a turn'], live: ['#lv-brief', 'copy the brief, paste code, it runs'], card: ['#cd-send', 'send it up to the front page'], set: ['.st-sets', 'one press rewires the front page'] };
   function coach(m) { var seen = {}; try { seen = JSON.parse(localStorage.getItem('da.bench.tips') || '{}') || {}; } catch (e) { seen = {}; } if (seen[m] || !COACH[m] || navigator.webdriver) return;
     setTimeout(function () { if (P.m !== m) return; var t = $(COACH[m][0]); if (!t || !t.getBoundingClientRect().width) return; seen[m] = 1; try { localStorage.setItem('da.bench.tips', JSON.stringify(seen)); } catch (e) { /* this visit */ }
       var r = t.getBoundingClientRect(), c = D.createElement('div'); c.className = 'coach'; c.setAttribute('role', 'status'); c.textContent = COACH[m][1]; D.body.appendChild(c);

@@ -51,6 +51,8 @@
   var ISL = 1, SEL = -1, AT = -1;
   var partOn = function (k) { var m = PART[k].mod; return !m || ISL >= (NEED[m] || 0); };
   var filled = function () { return build().some(function (p) { return p.t || p.src || p.pts || p.m || p.lat != null || p.v || p.nm; }); };
+  /* a start asked for in the address (from the archipelago's STORIES): taken only while nothing has been made yet */
+  var sq = /[?&]s=(story|recipe|hike|found|blank)\b/.exec(location.search); if (sq && !filled()) { S.start = sq[1]; S.builds[S.at || '_'] = STARTS[sq[1]].p.map(mk); save(); }
 
   /* ───── the paper ───── */
   function tops() { $('#starts').innerHTML = Object.keys(STARTS).map(function (k) { return '<button type="button" data-s="' + k + '" aria-label="' + k + '" class="' + (k === S.start ? 'on' : '') + '">' + STARTS[k].i + '</button>'; }).join(''); }
@@ -58,8 +60,10 @@
     $('#tray .grid').innerHTML = Object.keys(PART).map(function (k) { var p = PART[k], need = p.mod ? NEED[p.mod] || 0 : 0, on = partOn(k);
       return '<button type="button" data-add="' + k + '" data-g="' + p.g + '"' + (on ? '' : ' disabled') + '>' + (on || !need ? '' : '<span class="pp">' + '●'.repeat(Math.min(ISL, need)) + '○'.repeat(Math.max(0, need - ISL)) + '</span>') + ICON[k] + p.n + '</button>'; }).join('');
   }
-  function field(p, f, cls, multi) { var v = esc(p[f] || '');
-    return multi ? '<textarea data-f="' + f + '" rows="1" placeholder=" "' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</textarea>' : '<input type="text" data-f="' + f + '" placeholder=" " value="' + v + '"' + (cls ? ' class="' + cls + '"' : '') + '>'; }
+  /* an empty box says what goes in it, so a start is half built before a word is typed */
+  var HINT = { title: 'TITLE HERE', text: 'Place words here', list: 'A thing to tick', steps: 'A step', form: 'A question to answer', mesh: 'A line to send', code: 'Sums here', qr: 'Link here' };
+  function field(p, f, cls, multi) { var v = esc(p[f] || ''), ph = esc((f === 't' && HINT[p.k]) || ' ');
+    return multi ? '<textarea data-f="' + f + '" rows="1" placeholder="' + ph + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</textarea>' : '<input type="text" data-f="' + f + '" placeholder="' + ph + '" value="' + v + '"' + (cls ? ' class="' + cls + '"' : '') + '>'; }
   function inner(p) {
     var k = p.k;
     if (k === 'title' || k === 'text') return field(p, 't', '', 1);

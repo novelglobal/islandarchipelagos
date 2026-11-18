@@ -20,9 +20,12 @@
   @keyframes in { from { opacity: 0; transform: translateY(8px); } }
 
   /* the sketches: drawn in by hand each time they come into view */
+  [data-sk] { position: relative; display: block; }
+  .spin { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .sk { display: block; width: 100%; height: 100%; overflow: visible; }
   .sk path { fill: none; stroke: var(--ink); stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
   .sk .ac path, .sk path.ac { stroke: var(--acc); stroke-width: 1.5; }
+  .sk .th path { stroke-width: .7; opacity: .5; }
   .sk .draw { stroke-dasharray: var(--l); stroke-dashoffset: var(--l); animation: draw 1.6s cubic-bezier(.5, 0, .2, 1) forwards; animation-delay: var(--d, 0s); }
   @keyframes draw { to { stroke-dashoffset: 0; } }
   @media (prefers-reduced-motion: reduce) { section { animation: none; } .sk .draw { animation: none; stroke-dashoffset: 0; } }
@@ -101,10 +104,19 @@
   .steps li::before { content: counter(s); display: block; margin-bottom: 4px; color: var(--acc); font: 500 10px/1 'IBM Plex Mono', monospace; }
   .steps b { display: block; font: 600 13px/1.2 'Poppins', 'Helvetica Neue', Arial, sans-serif; }
   .steps span { display: block; margin-top: 3px; color: var(--mid); font-size: 11.5px; line-height: 1.35; }
-  .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 22px; }
-  .modes a { display: grid; place-items: center; min-height: 54px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); }
-  .modes a:hover, .modes a:focus-visible { border-color: var(--acc); color: var(--acc); outline: none; }
-  @media (min-width: 760px) { .modes { grid-template-columns: repeat(6, 1fr); } .hd { grid-template-columns: 170px 1fr; } .hd .pic { height: 130px; } }
+  /* the starts, half built: a picture of each with its gaps showing */
+  .bases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0 0 22px; }
+  .base { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); transition: border-color .2s ease, transform .2s ease; }
+  .base .pic { width: 100%; height: 150px; }
+  .base:hover, .base:focus-visible { border-color: var(--acc); transform: translateY(-2px); outline: none; }
+  .base:hover b { color: var(--acc); }
+  .sk text { fill: var(--low); font: 500 6px 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; }
+  .sk text.ac { fill: var(--acc); }
+  .base .sk text { font-size: 5.2px; letter-spacing: .02em; }
+  .steps li a { display: block; }
+  .steps li:last-child { border-color: var(--acc); }
+  .steps li:last-child:hover { background: var(--bg); }
+  @media (min-width: 760px) { .bases { grid-template-columns: repeat(4, 1fr); } .base .pic { height: 170px; } .hd { grid-template-columns: 170px 1fr; } .hd .pic { height: 130px; } }
 </style>
 </head>
 <body>
@@ -164,20 +176,17 @@
   <section id="stories" hidden aria-label="Developer">
     <div class="top"><button type="button" class="back mono" data-go="">← BACK</button><span class="st mono">MAKE IT BEAUTIFUL</span></div>
     <div class="hd"><span class="pic" data-sk="web"></span><div><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></div></div>
-    <div class="row"><a class="act mono" data-bench="card" href="bench?m=card#b">BUILD A CARD</a></div>
-    <p class="lab mono">OR START WITH</p>
-    <div class="modes mono">
-      <a data-bench="slip" href="bench?m=slip#b" title="Design a receipt, part by part, and print it">SLIP</a>
-      <a data-bench="page" href="bench?m=page#b" title="Design a phone page that links to your receipt">PAGE</a>
-      <a data-bench="game" href="bench?m=game#b" title="Make a game that plays on paper, and test it here">GAME</a>
-      <a data-bench="live" href="bench?m=live#b" title="Write it, or paste past code, and it runs here">LIVE</a>
-      <a data-bench="card" href="bench?m=card#b" title="Send what you made to the front page as a card">CARD</a>
-      <a data-bench="set" href="bench?m=set#b" title="Choose what joins what on the front page, and its frames">SET</a>
+    <p class="lab mono">START WITH</p>
+    <div class="bases">
+      <a class="base" data-bench="slip" data-s="found" href="bench?m=slip&amp;s=found#b" title="Design a receipt, part by part, and print it"><span class="pic" data-base="receipt"></span><b class="mono">RECEIPT</b></a>
+      <a class="base" data-bench="page" href="bench?m=page#b" title="Design a phone page that links to your receipt"><span class="pic" data-base="phone"></span><b class="mono">PHONE PAGE</b></a>
+      <a class="base" data-bench="game" href="bench?m=game#b" title="Make a game that plays on paper, and test it here"><span class="pic" data-base="game"></span><b class="mono">GAME</b></a>
+      <a class="base" data-bench="live" href="bench?m=live#b" title="Write it, or paste past code, and it runs here"><span class="pic" data-base="code"></span><b class="mono">CODE</b></a>
     </div>
     <ol class="steps">
-      <li><b>MAKE</b><span>Pick a start, change anything</span></li>
-      <li><b>TEST</b><span>Print it on an island</span></li>
-      <li><b>SEND</b><span>It goes live on novel.global</span></li>
+      <li><b>MAKE</b><span>Fill in the gaps</span></li>
+      <li><b>PRINT</b><span>Try it on an island</span></li>
+      <li><a data-bench="card" href="bench?m=card#b" title="Send what you made to the front page as a card"><b>SHARE</b><span>Put it on novel.global</span></a></li>
     </ol>
   </section>
 </main>

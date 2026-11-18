@@ -13,41 +13,98 @@
   function poly(p) { return 'M' + p.map(function (a) { return a[0].toFixed(1) + ' ' + a[1].toFixed(1); }).join(' L'); }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  /* a rattan basket: the rim, the body, the weave, the handle wrapped */
-  function basket() { var s = [[ell(100, 54, 70, 13)], ['M33 56 C38 96 50 121 68 128 L132 128 C150 121 162 96 167 56'], ['M68 128 C88 135 112 135 132 128']];
+  /* ───────── the story in three: a basket (make it right), two baskets joined by a rope (make it work), and the Irukandji
+     spinning a web between them (make it beautiful). All in a 200 by 150 box ───────── */
+  /* a rattan basket at (x, y), scale s: the rim, the body, the weave, the handle wrapped */
+  function basket(o) { o = o || { x: 0, y: 0, s: 1 }; var X = function (x) { return (o.x + x * o.s).toFixed(1); }, Y = function (y) { return (o.y + y * o.s).toFixed(1); }, P = function (x, y) { return X(x) + ' ' + Y(y); };
+    var s = [[ell(+X(100), +Y(54), 70 * o.s, 13 * o.s)], ['M' + P(33, 56) + ' C' + P(38, 96) + ' ' + P(50, 121) + ' ' + P(68, 128) + ' L' + P(132, 128) + ' C' + P(150, 121) + ' ' + P(162, 96) + ' ' + P(167, 56)], ['M' + P(68, 128) + ' C' + P(88, 135) + ' ' + P(112, 135) + ' ' + P(132, 128)]];
     var side = function (y) { var t = (y - 56) / 72; return [33 + 35 * Math.pow(t, 1.7), 167 - 35 * Math.pow(t, 1.7)]; };
-    [74, 92, 110].forEach(function (y) { var e = side(y); s.push(['M' + e[0].toFixed(1) + ' ' + y + ' Q100 ' + (y + 13) + ' ' + e[1].toFixed(1) + ' ' + y]); });
+    [74, 92, 110].forEach(function (y) { var e = side(y); s.push(['M' + P(e[0], y) + ' Q' + P(100, y + 13) + ' ' + P(e[1], y)]); });
     for (var i = 1; i < 8; i++) { var tx = 30 + 140 * i / 8, ty = 54 + 13 * Math.sqrt(Math.max(0, 1 - Math.pow((tx - 100) / 70, 2))), bx = 68 + 64 * i / 8, by = 128 + 6 * Math.sqrt(Math.max(0, 1 - Math.pow((bx - 100) / 32, 2)));
-      s.push(['M' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ' Q' + lerp(tx, bx, .5).toFixed(1) + ' ' + ((ty + by) / 2 + 2) + ' ' + bx.toFixed(1) + ' ' + by.toFixed(1)]); }
-    s.push(['M44 51 C50 -6 150 -6 156 51'], ['M53 50 C60 6 140 6 147 50']);
-    for (var k = 0; k < 5; k++) { var x = 74 + k * 13; s.push(['M' + x + ' ' + (11 + Math.abs(x - 100) * .16).toFixed(1) + ' l7 ' + (9 - Math.abs(x - 100) * .03).toFixed(1), 1]); }
+      s.push(['M' + P(tx, ty) + ' Q' + P(lerp(tx, bx, .5), (ty + by) / 2 + 2) + ' ' + P(bx, by)]); }
+    s.push(['M' + P(44, 51) + ' C' + P(50, -6) + ' ' + P(150, -6) + ' ' + P(156, 51)], ['M' + P(53, 50) + ' C' + P(60, 6) + ' ' + P(140, 6) + ' ' + P(147, 50)]);
+    if (o.s > .6) for (var k = 0; k < 5; k++) { var x = 74 + k * 13; s.push(['M' + P(x, 11 + Math.abs(x - 100) * .16) + ' l' + (7 * o.s).toFixed(1) + ' ' + ((9 - Math.abs(x - 100) * .03) * o.s).toFixed(1), 1]); }
     return s; }
+  /* a rope along a centre line: its two edges, the twist hatched, the ends whipped in the accent */
+  function ropeAlong(c, w, step) { var pts = [];
+    for (var j = 0; j < c.length - 1; j++) { var a = c[j], b = c[j + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(L / 1.5)); for (var k = 0; k < n; k++) pts.push([lerp(a[0], b[0], k / n), lerp(a[1], b[1], k / n)]); } pts.push(c[c.length - 1]);
+    var off = function (d) { return pts.map(function (p, i) { var a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [p[0] - dy / l * d, p[1] + dx / l * d]; }); };
+    var L1 = off(w), L2 = off(-w), s = [[poly(L1.filter(function (p, i) { return i % 3 === 0; }))], [poly(L2.filter(function (p, i) { return i % 3 === 0; }))]];
+    for (var h = 4; h < pts.length - 4; h += step) { var A = L1[h], B = L2[Math.min(pts.length - 1, h + 2)]; s.push(['M' + A[0].toFixed(1) + ' ' + A[1].toFixed(1) + ' L' + B[0].toFixed(1) + ' ' + B[1].toFixed(1)]); }
+    [2, pts.length - 8].forEach(function (h0) { for (var q = 0; q < 3; q++) { var A = L1[h0 + q * 2], B = L2[h0 + q * 2]; if (A && B) s.push(['M' + A[0].toFixed(1) + ' ' + A[1].toFixed(1) + ' L' + B[0].toFixed(1) + ' ' + B[1].toFixed(1), 1]); } });
+    return s; }
+  /* the two baskets, and the rope tied round both handles, slack between them */
+  var BA = { x: -6, y: 54, s: .44 }, BB = { x: 106, y: 54, s: .44 }, HA = [38, 57.5], HB = [150, 57.5];
+  function tie(h, from) { var p = [], r = 4.2; for (var i = 0; i <= 24; i++) { var a = from + i / 24 * Math.PI * 2.15; p.push([h[0] + Math.cos(a) * r, h[1] - r * .6 + Math.sin(a) * r]); } return p; }
+  function ropeLine() { var c = [[HA[0] - 10, HA[1] + 20], [HA[0] - 3, HA[1] + 6]].concat(tie(HA, Math.PI * .6));
+    var a = c[c.length - 1], e = [HB[0] - 4, HB[1] + 2];
+    for (var i = 1; i < 30; i++) { var t = i / 30; c.push([lerp(lerp(a[0], 94, t), lerp(94, e[0], t), t), lerp(lerp(a[1], 100, t), lerp(100, e[1], t), t)]); }
+    c = c.concat(tie(HB, Math.PI * .9)); c.push([HB[0] + 3, HB[1] + 6], [HB[0] + 10, HB[1] + 20]); return c; }
+  function one() { return basket(); }
+  function two() { return basket(BA).concat(basket(BB), ropeAlong(ropeLine(), 1.7, 5)); }
+  /* the web's frame: spokes from its hub out to the handles, the rope and the air above */
+  var HUB = [94, 42], ANCH = [[94, 3], [124, 6], [146, 22], [HB[0] - 2, HB[1] - 4], [126, 76], [94, 82], [62, 76], [HA[0] + 2, HA[1] - 4], [42, 22], [64, 6]];
+  function three() { var s = two(); ANCH.forEach(function (a) { s.push(['M' + HUB[0] + ' ' + HUB[1] + ' L' + a[0] + ' ' + a[1], 0, 'thin']); }); return s; }
+  /* the spiral it is spinning: from the hub out, spoke to spoke, a little wider each step */
+  var SPIRAL = (function () { var sp = ANCH.map(function (a) { return [Math.atan2(a[1] - HUB[1], a[0] - HUB[0]), Math.hypot(a[0] - HUB[0], a[1] - HUB[1])]; }).sort(function (a, b) { return a[0] - b[0]; }), n = sp.length, out = [];
+    for (var k = 0; k < n * 6; k++) { var q = sp[k % n], r = Math.min(4 + k * 0.62, q[1] * .9); out.push([HUB[0] + Math.cos(q[0]) * r, HUB[1] + Math.sin(q[0]) * r]); } return out; })();
 
-  /* a rope tied on itself: a loop in the middle, the twist hatched, the ends whipped */
-  function rope() { var c = [], r = 19, dd = 44, x0 = 40 - r * Math.PI, Y = 42, N = 90;
-    c.push([6, Y + r + dd]); for (var i = 0; i <= N; i++) { var th = Math.PI + 2 * Math.PI * i / N; c.push([x0 + r * th - dd * Math.sin(th), Y + r - dd * Math.cos(th)]); } c.push([194, Y + r + dd]);
-    var pts = []; for (var j = 0; j < c.length - 1; j++) { var a = c[j], b = c[j + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(L / 2)); for (var k = 0; k < n; k++) pts.push([lerp(a[0], b[0], k / n), lerp(a[1], b[1], k / n)]); } pts.push(c[c.length - 1]);
-    var off = function (w) { return pts.map(function (p, i) { var a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [p[0] - dy / l * w, p[1] + dx / l * w]; }); };
-    var L1 = off(3.6), L2 = off(-3.6), s = [[poly(L1.filter(function (p, i) { return i % 3 === 0; }))], [poly(L2.filter(function (p, i) { return i % 3 === 0; }))]];
-    for (var h = 6; h < pts.length - 6; h += 4) { var A = L1[h], B = L2[h + 2]; s.push(['M' + A[0].toFixed(1) + ' ' + A[1].toFixed(1) + ' L' + B[0].toFixed(1) + ' ' + B[1].toFixed(1)]); }
-    [10, pts.length - 14].forEach(function (h0) { for (var w = 0; w < 3; w++) { var A = L1[h0 + w * 2], B = L2[h0 + w * 2]; s.push(['M' + A[0].toFixed(1) + ' ' + A[1].toFixed(1) + ' L' + B[0].toFixed(1) + ' ' + B[1].toFixed(1), 1]); } });
-    s.push(['M6 ' + (Y + r + dd - 3) + ' l-4 -3 M6 ' + (Y + r + dd) + ' l-5 0 M6 ' + (Y + r + dd + 3) + ' l-4 3'], ['M194 ' + (Y + r + dd - 3) + ' l4 -3 M194 ' + (Y + r + dd) + ' l5 0 M194 ' + (Y + r + dd + 3) + ' l4 3']);
-    return s; }
-
-  /* a web half made, and the Irukandji spinning it (the one drawing of it, as it is): every spoke, the inner turns round, the outer
-     turns only part way, the last thread running from its tentacle */
-  var SPIN = [55, -2, 2.7], TIP = [17.8, 55.4];
-  function web() { var cx = 44, cy = 60, sp = [], s = [], n = 9;
-    for (var i = 0; i < n; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / n + Math.sin(i * 7.3) * .12, R = 40 + Math.sin(i * 3.1) * 5; sp.push([a, R]); s.push(['M' + cx + ' ' + cy + ' L' + (cx + Math.cos(a) * R).toFixed(1) + ' ' + (cy + Math.sin(a) * R).toFixed(1)]); }
-    var end = null;
-    [[6, 1], [12, 1], [18, 1], [25, .7], [33, .45]].forEach(function (ring) { var rr = ring[0], m = Math.round(n * ring[1]), p = sp.map(function (q) { var r2 = Math.min(rr, q[1]); return [cx + Math.cos(q[0]) * r2, cy + Math.sin(q[0]) * r2]; }), d = 'M' + p[0][0].toFixed(1) + ' ' + p[0][1].toFixed(1);
-      for (var k = 1; k <= m; k++) { var b = p[k % n], a2 = p[k - 1], mx = (a2[0] + b[0]) / 2, my = (a2[1] + b[1]) / 2; d += ' Q' + lerp(cx, mx, .9).toFixed(1) + ' ' + lerp(cy, my, .9).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); end = b; } s.push([d]); });
-    var tx = SPIN[0] + TIP[0] * SPIN[2], ty = SPIN[1] + TIP[1] * SPIN[2];
-    s.push(['M' + end[0].toFixed(1) + ' ' + end[1].toFixed(1) + ' Q' + ((end[0] + tx) / 2).toFixed(1) + ' ' + (Math.max(end[1], ty) + 6).toFixed(1) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1), 1]);
-    s.push(['M' + cx + ' ' + (cy - 42) + ' L' + cx + ' 0'], ['M' + (cx - 36) + ' ' + (cy + 20) + ' L2 146']);
-    return s; }
-  var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8'];
-  var IRUK_T = ['M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
+  /* ───────── the Irukandji, the main one, as it swims on the banner: the box bell in one line with its shadow line, the eye in
+     dots, four dots where the tentacles leave, four fine tentacles beaded at the top. Here it swims the spiral, crown first,
+     and the thread comes off it ───────── */
+  var NTJ = 40, NRJ = 40, RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  var noise = function (a, b, c) { return Math.sin(a * 1.7 + b * 2.3 + c) * 0.5 + Math.sin(a * 0.9 - b * 1.3 + c * 1.9) * 0.3 + Math.sin(b * 3.1 + c * 0.7) * 0.2; };
+  function trace(g, pts) { g.beginPath(); pts.forEach(function (p, i) { if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); }
+  function rgb(v) { v = String(v).trim(); var m = /^#([0-9a-f]{6})$/i.exec(v); if (!m) return '43,42,40'; var n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(','); }
+  function drawJelly(g, J, t, inkRGB, paper) {
+    var S = J.s, ink = function (a) { return 'rgba(' + inkRGB + ',' + a.toFixed(3) + ')'; };
+    var line = function (pts, w, a) { g.strokeStyle = ink(a); g.lineWidth = w; trace(g, pts); g.stroke(); };
+    var dot = function (x, y, r, a) { g.fillStyle = ink(a); g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+    var bw = 15 * S, bh = 12.5 * S, p = RM.matches ? 0 : J.p, w = bw * (1 - 0.07 * p) / 2, h = bh * (1 + 0.045 * p), topY = -h * 0.55 + (bh - h) * 0.3, bot = topY + h;
+    g.save(); g.translate(J.x, J.y); g.rotate(J.a + Math.PI / 2); g.lineCap = 'round'; g.lineJoin = 'round';
+    var ca = Math.cos(-(J.a + Math.PI / 2)), sa = Math.sin(-(J.a + Math.PI / 2)), lvx = J.vx * ca - J.vy * sa, lvy = J.vx * sa + J.vy * ca;
+    var TL = bh * 2.5, ts = RM.matches ? 0 : t * 0.6, ph = J.ph * Math.PI * 2;
+    for (var i = 0; i < 4; i++) {
+      var rx = (i - 1.5) / 1.5 * w * 0.82, pts = [];
+      for (var j = 0; j < NTJ; j++) { var s = j / (NTJ - 1), env = Math.min(1, j / 4);
+        var x = rx + (i - 1.5) * s * TL * 0.05 + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.65 + Math.sin(s * (6 + i) - ts * 2.6 + i * 1.7) * bh * 0.3 + Math.sin(ph - s * 4.5 + i) * bh * 0.16) * s * env - lvx * 0.5 * s * s * S;
+        var y = bot - 1 + s * TL * (1 - Math.min(0.25, Math.abs(lvy) * 0.01)) * (1 - 0.07 * p * (1 - s * 0.6)) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.22 * s;
+        pts.push([x, y]); }
+      var far = i === 1 || i === 2;
+      line(pts, 0.8, far ? 0.4 : 0.55); line(pts.map(function (q) { return [q[0] + 1.3, q[1] - 0.8]; }).slice(0, NTJ - 6), 0.3, 0.16);
+      for (var b = 1; b < NTJ * 0.2; b++) dot(pts[b][0], pts[b][1], b % 3 === 0 ? 1.15 * Math.sqrt(S) : 0.75 * Math.sqrt(S), 0.32 + 0.22 * Math.sin(t * 1.4 - b * 0.5 + i));
+    }
+    var B = [];
+    for (var k = 0; k < NRJ; k++) { var u = k / NRJ, X, Y; if (u < 0.8) { var an = Math.PI * (1 - u / 0.8), cu = Math.cos(an), su = Math.sin(an); X = Math.pow(Math.abs(cu), 0.55) * (cu < 0 ? -1 : 1) * w; Y = bot - Math.pow(su, 0.42) * h * (0.94 + 0.06 * su); } else { var q2 = (u - 0.8) / 0.2; X = w - 2 * w * q2; Y = bot - Math.sin(q2 * Math.PI) * h * 0.09; } B.push([X, Y]); }
+    B.push(B[0]); g.fillStyle = paper; trace(g, B); g.fill(); g.fillStyle = ink(0.06); g.fill();
+    line(B, 1.1 * Math.sqrt(S), 0.92); line(B.map(function (q) { return [q[0] + 1, q[1] + 0.7]; }), 0.35, 0.22);
+    var bk = Math.min(1, Math.abs(((t + 2.2) % 8.3) - 0.14) / 0.14), eh = h * 0.27 * Math.max(0.08, bk), ew = w * 0.74, ey = topY + h * 0.52;
+    for (var e = 0; e < 26; e++) { var ue = e / 26 * Math.PI * 2, ce = Math.cos(ue), se = Math.sin(ue); dot(ce * ew, ey + se * eh * (0.35 + 0.65 * Math.abs(se)), 0.6 * Math.sqrt(S), 0.34); }
+    var pr = h * 0.25 * Math.max(0.08, bk); g.strokeStyle = ink(0.3); g.lineWidth = 0.5; g.beginPath(); g.arc(0, ey, pr, 0, 7); g.stroke(); dot(0, ey, pr * 0.42, 0.38);
+    [-0.62, -0.22, 0.22, 0.62].forEach(function (f) { dot(f * w, bot - bh * 0.1, 0.9 * Math.sqrt(S), 0.8); });
+    g.restore();
+  }
+  /* one loop for every spinner on the page: the spiral grows behind it, holds, fades, and starts again */
+  var SPIN = [], LAST = 0, RUN = 18, HOLD = 3, FADE = 1.2;
+  function spinner(host) { var cv = D.createElement('canvas'); cv.className = 'spin'; cv.setAttribute('aria-hidden', 'true'); host.appendChild(cv);
+    SPIN.push({ cv: cv, t0: performance.now() / 1000, J: { x: HUB[0], y: HUB[1], a: -Math.PI / 2, ph: Math.random(), p: 0, vx: 0, vy: 0, s: 1 } }); if (SPIN.length === 1) requestAnimationFrame(frame); }
+  function frame(ms) { var now = ms / 1000, dt = Math.min(0.05, LAST ? now - LAST : 0.016); LAST = now;
+    SPIN = SPIN.filter(function (o) { return o.cv.isConnected; }); if (!SPIN.length) { LAST = 0; return; }
+    var cs = getComputedStyle(H), inkC = rgb(cs.getPropertyValue('--ink')), acc = cs.getPropertyValue('--acc').trim() || '#E07A57', paper = cs.getPropertyValue('--card').trim() || '#FBFAF7';
+    SPIN.forEach(function (o) { var cv = o.cv, W = cv.clientWidth, Hh = cv.clientHeight; if (!W || !Hh) return; var dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(Hh * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(Hh * dpr); }
+      var k = Math.min(W / 200, Hh / 150), ox = (W - 200 * k) / 2, oy = (Hh - 150 * k) / 2, g = cv.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, Hh); g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
+      var age = RM.matches ? RUN : (now - o.t0) % (RUN + HOLD + FADE), f = Math.min(1, age / RUN), alpha = age > RUN + HOLD ? 1 - (age - RUN - HOLD) / FADE : 1;
+      var n = Math.max(2, Math.floor(f * (SPIRAL.length - 1))), part = f * (SPIRAL.length - 1) - n, a = SPIRAL[n], b = SPIRAL[Math.min(SPIRAL.length - 1, n + 1)], head = [lerp(a[0], b[0], part), lerp(a[1], b[1], part)];
+      g.globalAlpha = Math.max(0, alpha); g.strokeStyle = 'rgba(' + inkC + ',.8)'; g.lineWidth = .9 / Math.max(.6, k) + .35; g.lineJoin = 'round'; trace(g, SPIRAL.slice(0, n + 1).concat([head])); g.stroke();
+      /* it swims just ahead of the thread, crown first, and the thread runs from under its bell */
+      var J = o.J, ang = Math.atan2(b[1] - a[1], b[0] - a[0]), d = Math.atan2(Math.sin(ang - J.a), Math.cos(ang - J.a));
+      J.a += d * Math.min(1, dt * 3); J.ph += dt / 2.4; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
+      var tx = head[0] + Math.cos(J.a) * 12, ty = head[1] + Math.sin(J.a) * 12; J.vx = (tx - J.x) / Math.max(dt, .016) * .2; J.vy = (ty - J.y) / Math.max(dt, .016) * .2; J.x += (tx - J.x) * Math.min(1, dt * 6); J.y += (ty - J.y) * Math.min(1, dt * 6); J.s = 1.6;
+      g.globalAlpha = 1; g.strokeStyle = acc; g.lineWidth = .7; g.beginPath(); g.moveTo(head[0], head[1]); g.lineTo(J.x - Math.cos(J.a) * 3, J.y - Math.sin(J.a) * 8); g.stroke();
+      drawJelly(g, J, now, inkC, paper); });
+    requestAnimationFrame(frame); }
 
   /* the hardware, as plates: 120 by 90 */
   var KIT = {
@@ -62,7 +119,7 @@
     panel: function () { var s = [['M14 66 L30 20 L108 20 L98 66 Z']]; for (var i = 1; i < 4; i++) s.push(['M' + lerp(30, 108, i / 4).toFixed(1) + ' 20 L' + lerp(14, 98, i / 4).toFixed(1) + ' 66']); for (var j = 1; j < 3; j++) s.push(['M' + lerp(30, 14, j / 3).toFixed(1) + ' ' + lerp(20, 66, j / 3).toFixed(1) + ' L' + lerp(108, 98, j / 3).toFixed(1) + ' ' + lerp(20, 66, j / 3).toFixed(1)]); s.push(['M40 66 L36 84 M84 66 L88 84'], ['M60 4 l0 8 M48 8 l4 6 M72 8 l-4 6', 1]); return s; },
     bat: function () { return [[rect(22, 30, 76, 50)], [rect(32, 24, 10, 6)], [rect(78, 24, 10, 6)], ['M33 44 h8 M37 40 v8', 1], ['M79 44 h8'], ['M32 62 L88 62']]; }
   };
-  var SKETCH = { basket: [basket, '0 0 200 150'], rope: [rope, '0 0 200 150'], web: [web, '0 0 200 150'] };
+  var SKETCH = { basket: one, rope: two, web: three };
 
   var seed = 7;
   function paint(host, strokes, box, extra) { host.innerHTML = ''; var svg = D.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', box); svg.setAttribute('class', 'sk'); svg.setAttribute('aria-hidden', 'true'); host.appendChild(svg);
@@ -70,13 +127,11 @@
     strokes.forEach(function (st, i) { var g;
       if (st[2] === 'pins' || !rc) { g = D.createElementNS(NS, 'path'); g.setAttribute('d', st[0]); if (st[2] === 'pins') { g.setAttribute('stroke-dasharray', '1.2 2.4'); g.style.strokeWidth = '3'; } }
       else g = rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.15, seed: seed + i, preserveVertices: true });
-      if (st[1]) g.setAttribute('class', 'ac'); svg.appendChild(g); all.push([g, i / strokes.length]); });
+      if (st[1]) g.setAttribute('class', 'ac'); else if (st[2] === 'thin') g.setAttribute('class', 'th'); svg.appendChild(g); all.push([g, i / strokes.length]); });
     if (extra) extra(svg, all);
     all.forEach(function (p) { var ps = p[0].tagName === 'path' ? [p[0]] : $$('path', p[0]); ps.forEach(function (el) { if (el.getAttribute('stroke-dasharray')) { el.style.opacity = 0; el.style.transition = 'opacity .8s ease ' + (.6 + p[1]).toFixed(2) + 's'; requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.opacity = 1; }); }); return; }
       var l = 0; try { l = el.getTotalLength(); } catch (e) { /* not drawn */ } if (!l) return; el.style.setProperty('--l', Math.ceil(l + 2)); el.style.setProperty('--d', (p[1] * 1.1).toFixed(2) + 's'); el.classList.add('draw'); }); }); }
-  function irukIn(svg, all) { var g = D.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + SPIN[0] + ' ' + SPIN[1] + ') scale(' + SPIN[2] + ')'); g.setAttribute('class', 'ac');
-    IRUK.concat(IRUK_T).forEach(function (d, i) { var p = D.createElementNS(NS, 'path'); p.setAttribute('d', d); p.style.strokeWidth = '1.05'; if (i >= IRUK.length) p.setAttribute('stroke-dasharray', '.1 1.7'); g.appendChild(p); all.push([p, .55 + i * .03]); }); svg.appendChild(g); }
-  function sketch(host) { var k = host.dataset.sk, s = SKETCH[k]; if (!s) return; paint(host, s[0](), s[1], k === 'web' ? irukIn : null); }
+  function sketch(host) { var k = host.dataset.sk, f = SKETCH[k]; if (!f) return; paint(host, f(), '0 0 200 150'); if (k === 'web') spinner(host); }
 
   /* ───────── the plates ───────── */
   var PLATES = {
@@ -98,13 +153,25 @@
   $('#files').innerHTML = FILES.map(function (f) { var href = f[3] === 2 ? f[2] : GH + f[2]; return '<li><a href="' + href + '"' + (f[3] === 2 ? ' download' : ' target="_blank" rel="noopener"') + '><span>' + f[0] + '</span><span class="kd">' + f[1] + '</span><span>' + (f[3] ? '↓' : '↗') + '</span></a></li>'; }).join('');
 
   /* the builder: inside novel.global it opens in this same sheet, so the back key comes home */
-  $$('[data-bench]').forEach(function (a) { a.href = 'bench?' + (IN ? 'in=1&' : '') + 'm=' + a.dataset.bench + (nm ? '&night=' + nm[1] : '') + '#b'; });
+  $$('[data-bench]').forEach(function (a) { a.href = 'bench?' + (IN ? 'in=1&' : '') + 'm=' + a.dataset.bench + (a.dataset.s ? '&s=' + a.dataset.s : '') + (nm ? '&night=' + nm[1] : '') + '#b'; });
+
+  /* ───────── the starts, half built: a receipt, a phone page, a game, some code, each with its gaps marked ───────── */
+  var ZIG = 'M22 6 L78 6 L78 96' + ' l-4 4 l-4 -4'.repeat(7) + ' Z', HILL = function (x, y, w, h) { return 'M' + x + ' ' + (y + h) + ' l' + w * .32 + ' ' + (-h * .45) + ' l' + w * .2 + ' ' + h * .25 + ' l' + w * .2 + ' ' + (-h * .35) + ' l' + w * .28 + ' ' + h * .55; };
+  var BASE = {
+    receipt: [[[ZIG], [rect(30, 22, 40, 20)], [HILL(30, 22, 40, 20)], ['M30 56 h40'], ['M30 62 h40'], ['M30 68 h24'], [ell(36, 82, 5, 5)], [rect(55, 76, 12, 12), 1], ['M57 78 h3 v3 h-3 Z M62 83 h3 v3 h-3 Z', 1]], [[50, 16, 'TITLE HERE'], [50, 51, 'PLACE WORDS HERE']]],
+    phone: [[['M21 6 Q21 2 25 2 L75 2 Q79 2 79 6 L79 104 Q79 108 75 108 L25 108 Q21 108 21 104 Z'], ['M45 6.5 h10'], [rect(28, 12, 44, 24)], [HILL(28, 12, 44, 24)], ['M29 52 h42'], ['M29 58 h30'], [rect(34, 70, 32, 11), 1], [ell(50, 95, 4, 4)]], [[50, 46, 'PLACE COPY HERE'], [50, 77.5, 'PRINT', 1]]],
+    game: [[[ZIG], ['M30 24 h40'], ['M30 30 h30'], [rect(33, 42, 14, 14)], [rect(53, 42, 14, 14)], [rect(44, 68, 12, 12), 1], [ell(47.5, 71.5, .8, .8), 1], [ell(52.5, 76.5, .8, .8), 1]], [[50, 16, 'YOUR GAME'], [40, 51.5, 'A'], [60, 51.5, 'B']]],
+    code: [[[rect(14, 20, 72, 70)], ['M14 29 h72'], [ell(19.5, 24.5, 1.4, 1.4)], [ell(24.5, 24.5, 1.4, 1.4)], [ell(29.5, 24.5, 1.4, 1.4)], ['M33 42 Q27 42 28 49 Q29 55 24 55 Q29 55 28 61 Q27 68 33 68'], ['M67 42 Q73 42 72 49 Q71 55 76 55 Q71 55 72 61 Q73 68 67 68'], ['M42 62 h16', 1]], [[50, 56.5, 'CODE HERE']]]
+  };
+  function baseSketch(host) { var b = BASE[host.dataset.base]; if (!b) return; seed = 29;
+    paint(host, b[0], '0 0 100 110', function (svg) { b[1].forEach(function (t, i) { var x = D.createElementNS(NS, 'text'); x.setAttribute('x', t[0]); x.setAttribute('y', t[1]); x.setAttribute('text-anchor', 'middle'); if (t[3]) x.setAttribute('class', 'ac'); x.textContent = t[2];
+      x.style.opacity = 0; x.style.transition = 'opacity .6s ease ' + (.5 + i * .25) + 's'; svg.appendChild(x); requestAnimationFrame(function () { requestAnimationFrame(function () { x.style.opacity = 1; }); }); }); }); }
 
   /* ───────── the three ways ───────── */
   var WAYS = ['hardware', 'software', 'stories'];
   function show(id) { if (WAYS.indexOf(id) < 0) id = '';
     $$('main > section').forEach(function (s) { s.hidden = s.id !== (id || 'pick'); });
-    var on = $('#' + (id || 'pick')); $$('[data-sk]', on).forEach(function (h, i) { seed = 3 + i; sketch(h); });
+    var on = $('#' + (id || 'pick')); $$('[data-sk]', on).forEach(function (h, i) { seed = 3 + i; sketch(h); }); $$('[data-base]', on).forEach(baseSketch);
     if (id === 'hardware') plates('printers');
     if (id) { var seen = store.get('da.archi.seen'); if (seen.indexOf(id) < 0) { seen.push(id); store.set('da.archi.seen', seen); } }
     var was = store.get('da.archi.seen'); $$('.way').forEach(function (w) { w.classList.toggle('was', was.indexOf(w.dataset.go) >= 0); });
