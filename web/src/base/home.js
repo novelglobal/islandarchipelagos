@@ -708,6 +708,8 @@
   function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
   /* a tap off the note while it is up only puts it away: the card behind does not open with it */
   D.addEventListener('click', function (e) { if (!NT.el || NT.hv || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) { if (NT.el && NT.hv && !NT.el.contains(e.target)) noteOut(); return; } e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
+  /* a tap inside a card's own window (the radio's map, a device) reaches only that window: the page loses focus to it, and the note goes */
+  addEventListener('blur', function () { setTimeout(function () { var a = D.activeElement; if (NT.el && a && a.tagName === 'IFRAME') noteOut(); }, 0); });
   function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
   function noteWait(hv) { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(function () { noteShow(hv); }, hv ? 600 : 900); }
   /* each note once a visit as its page arrives; on a desk, with three cards to a page, the card the pointer rests on shows its own */
@@ -722,7 +724,8 @@
     var mo = null; if (ps.length > show) { mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo); }
     n.title = mo ? 'Tap to read more; tap the card behind to close' : 'Tap the card behind to close';
     n.addEventListener('click', function (e) { e.stopPropagation(); if (e.target.closest && e.target.closest('.lb-v')) return; if (!mo) return; var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); });
-    root.appendChild(n); NT.el = n; NT.id = id; notePlace(); }
+    root.appendChild(n); NT.el = n; NT.id = id; notePlace();
+    $$('iframe').forEach(function (f) { try { f.contentWindow.addEventListener('pointerdown', function () { if (NT.el === n && !NT.hv) noteOut(); }, { capture: true, once: true }); } catch (e) { /* elsewhere */ } }); }
   /* a note stands on its own card, at its foot and inside its edges, whatever the card's size or place */
   function noteBox(c) { var sec = c.closest('.hm-trio.p9'), k = noteKey(c.dataset.id); if (!sec || !k) return c.getBoundingClientRect(); var b = null;
     $$('.hm-card[data-id]', sec).forEach(function (e) { if (noteKey(e.dataset.id) !== k) return; var q = e.getBoundingClientRect(); b = b ? { left: Math.min(b.left, q.left), top: Math.min(b.top, q.top), right: Math.max(b.right, q.right), bottom: Math.max(b.bottom, q.bottom) } : { left: q.left, top: q.top, right: q.right, bottom: q.bottom }; });
@@ -1211,7 +1214,7 @@
   /* the album shown: the one playing, else the one last picked (the pick is kept, so it is the same on every card and device) */
   function sndAlb() { if (!LB) return null; var nw = sndNow(); return LB.album(nw.live && nw.v ? nw.v : LB.pick()); }
   function sndStop() { sndHush(); sndDraw(); }
-  function sndPlay(v, i) { if (!LB) return; if (LB.play(v, i)) airSound(true, 'snd'); sndDraw(); }
+  function sndPlay(v, i) { if (!LB) return; if (LB.play(v, i)) airSound(false, 'snd'); sndDraw(); }
   function sndKeep() { var ids = SND.rows.filter(function (r) { return SND.pick[r.id]; }).map(function (r) { return r.id; }); if (!ids.length) return;
     var inp = SND.el.querySelector('.sn-nm'), ts = sndTapes(), first = SND.rows.filter(function (r) { return r.id === ids[0]; })[0], id = 'tp' + Date.now().toString(36);
     ts.unshift({ id: id, at: Date.now(), name: ((inp && inp.value.trim()) || (first ? first.n : 'MIX')).slice(0, 32).toUpperCase(), ids: ids, sp: null }); ts.splice(12);
@@ -1254,14 +1257,14 @@
         if (b.dataset.snp != null) { var i = +b.dataset.snp, r = SND.rows[i]; if (!r) return; if (SND.mix) { SND.pick[r.id] = !SND.pick[r.id]; beep(SND.pick[r.id] ? 990 : 660, 0.03); sndDraw(); return; }
           if (nw.live && ab && nw.v === ab.v && nw.id === r.id) sndStop(); else if (ab) sndPlay(ab.v, i); return; }
         var q = b.dataset.sn; if (q === 'rec') { b.closest('.none') && (sndOpen(false), xv.classList.contains('on') ? (shut(false), setTimeout(function () { open('radio'); }, 480)) : open('radio')); return; }
-        if (q === 'go') { var st = AW ? AW.state() : { has: false }; if (st.on) { AW.pause(); if (AIR.on || sndAura()) sndHush(); sndDraw(); return; } if (st.has) { AW.resume(); sndDraw(); return; } if (AIR.on || sndAura()) { sndStop(); return; } } if (!ab) return; if (q === 'go') sndPlay(ab.v, nw.v === ab.v ? Math.max(0, nw.i) : 0); else if (nw.live || nw.v === ab.v) { LB.step(q === 'next' ? 1 : -1); airSound(true, 'snd'); } else sndPlay(ab.v, 0); });
+        if (q === 'go') { var st = AW ? AW.state() : { has: false }; if (st.on || AIR.on || sndAura()) { if (st.on) AW.pause(); if (AIR.on) airSound(true, 'snd'); if (sndAura()) { try { AURA.hush(); } catch (e2) { /* none */ } } sndDraw(); return; } if (st.has || AIR.held.snd) { if (st.has) AW.resume(); airSound(false, 'snd'); sndDraw(); return; } } if (!ab) return; if (q === 'go') sndPlay(ab.v, nw.v === ab.v ? Math.max(0, nw.i) : 0); else if (nw.live || nw.v === ab.v) { LB.step(q === 'next' ? 1 : -1); } else sndPlay(ab.v, 0); });
       el.querySelector('.sn-nm').addEventListener('keydown', function (e) { if (e.key === 'Enter') sndKeep(); }); }
     if (!SND.el) return; SND.el.hidden = !on; $('#hm-snd').setAttribute('aria-expanded', String(!!on)); if (on) { beep(1320, 0.03); sndDraw(); } }
   $('#hm-snd').addEventListener('click', function (e) { e.stopPropagation(); sndOpen(!SND.el || SND.el.hidden); });
   addEventListener('click', function (e) { if (SND.el && !SND.el.hidden && !e.target.closest('#hm-sounds, #hm-snd')) sndOpen(false); });
   addEventListener('keydown', function (e) { if (e.key === 'Escape' && SND.el && !SND.el.hidden) sndOpen(false); });
   /* the key's lamp follows what sounds, whichever device started it; the list follows the radio and the desk as they keep */
-  addEventListener('ng-away', function () { var on = sndOn(); airSound(sndNow().live, 'snd'); if (SND.el && !SND.el.hidden) sndDraw(); else { var b = $('#hm-snd'); if (b) b.classList.toggle('on', on || AIR.on || !!RS.nino); } });
+  addEventListener('ng-away', function () { var on = sndOn(); if (SND.el && !SND.el.hidden) sndDraw(); else { var b = $('#hm-snd'); if (b) b.classList.toggle('on', on || AIR.on || !!RS.nino); } });
   setInterval(function () { var b = $('#hm-snd'); if (b) b.classList.toggle('on', sndOn() || AIR.on || !!RS.nino); if (SND.el && !SND.el.hidden) sndDraw(); }, 1500);
   addEventListener('storage', function (e) { if (/^da\.(loops|tapes)\.v1$|^da\.aura\.songs$|^da\.snd\.alb$/.test(e.key || '')) sndDraw(); });
   addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.hm !== 'go' || !/^(research|zine|portfolio)$/.test(d.id) || !byId(d.id)) return; if (xv.classList.contains('on')) { shut(false); setTimeout(function () { open(d.id); }, 480); } else open(d.id); });
