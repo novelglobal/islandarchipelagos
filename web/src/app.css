@@ -3477,11 +3477,12 @@ html.only-print #ph .lockup{display:none}
 #wait-pop.ready b { color: #9BE3A0; }
 
 /* ── the GUIDE key: a small square key, modded on, beside the jellyfish on both faces of the radio ── */
-.gd-k{position:absolute;z-index:4;right:12px;bottom:14px;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px 0 7px;border:0;border-radius:5px;cursor:pointer;font:600 10px/1 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em;color:#E9ECE4;background:linear-gradient(180deg,#3A3F3A,#1E221F);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 3px rgba(0,0,0,.45),0 0 0 1.5px rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.28)}
-.flip-b ~ .gd-k{right:58px}
-.dev.upg .flip-b ~ .gd-k{right:32px;bottom:10px}
+.gd-k{position:absolute;z-index:4;right:12px;bottom:14px;display:inline-flex;align-items:center;gap:3px;height:14px;padding:0 5px 0 4px;border:0;border-radius:3px;cursor:pointer;font:600 6.5px/1 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.12em;color:#E9ECE4;background:linear-gradient(180deg,#3A3F3A,#1E221F);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 3px rgba(0,0,0,.45),0 0 0 1.5px rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.28)}
+.flip-b ~ .gd-k{right:54px;bottom:16px}
+.dev.upg .flip-b ~ .gd-k{right:30px;bottom:17px}
 .gd-k b{font:inherit}
-.gd-k .gd-led{width:6px;height:6px;border-radius:50%;background:#4B524B;box-shadow:inset 0 1px 1px rgba(0,0,0,.5)}
+.gd-k::before{content:"";position:absolute;inset:-10px -6px}
+.gd-k .gd-led{width:4px;height:4px;border-radius:50%;background:#4B524B;box-shadow:inset 0 1px 1px rgba(0,0,0,.5)}
 .gd-k.on .gd-led{background:#9BFF6A;box-shadow:0 0 6px #9BFF6A}
 .gd-k:active{transform:translateY(1px)}
 .gd-k:focus-visible{outline:2px solid #6FE3CF;outline-offset:3px}
