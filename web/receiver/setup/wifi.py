@@ -15,6 +15,11 @@ and link set on the approval page (PRINTERS, THE JOINED SLIP), asked for as it j
 The Pi's green light says where it stands, with no screen: steady when all is well; slow blink with no Wi-Fi yet;
 quick blink while the setup Wi-Fi is open; a heartbeat when the printer is not answering (off, no paper, its cable out).
 
+Wi-Fi bands: the Wi-Fi country is set if none is (WIFI_COUNTRY, AU by default), as 5 GHz stays shut without one. Of the
+Wi-Fi radios here, the one that reaches most joins (a USB Wi-Fi with 5 GHz before a built-in one without); the setup
+Wi-Fi stays on the built-in one. Its page greys out a Wi-Fi the joining radio cannot reach (5 GHz only, on a 2.4 GHz
+radio) and says what to do; the slips say which bands it joins; /run/da-pull/radio tells the bridge.
+
 Built on NetworkManager's own hotspot (Raspberry Pi OS Bookworm and later). Standard library only. Runs as root.
 Settings come from /etc/wifi-setup.env (receiver/setup/install.sh writes it); slips go through printd where this Pi
 has it (/etc/printd.env), else straight to the printer.
@@ -23,7 +28,7 @@ has it (/etc/printd.env), else straight to the printer.
   sudo python3 wifi.py --now    open the setup Wi-Fi now (it drops the Wi-Fi this Pi is on, and an ssh with it)
   python3 wifi.py --demo        the page alone, on http://127.0.0.1:8080, touching nothing: to see it on a computer
 """
-import base64, html, json, os, subprocess, sys, time, urllib.parse, urllib.request
+import base64, html, json, os, re, subprocess, sys, time, urllib.parse, urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -49,6 +54,10 @@ WANT = os.environ.get('WIFI_WANT', '/run/da-pull/wifi')           # CHANGE WI-FI
 QUICK = os.environ.get('WIFI_QUICK', '/var/lib/wifi-setup/quick')  # written at start, gone after two minutes up
 WEAK = 50   # NetworkManager's percent below which the touch screen, a smaller radio, may not reach it
 STATE = os.environ.get('DA_STATE_FILE', '/run/da-pull/state')       # the bridge's word on the printer
+COUNTRY = os.environ.get('WIFI_COUNTRY', 'AU').upper()[:2]          # without a Wi-Fi country most 5 GHz channels stay shut
+RADIO = os.environ.get('WIFI_RADIO', '/run/da-pull/radio')          # what the joining radio reaches, for the bridge to report
+JOIN = os.environ.get('WIFI_JOIN', IFACE)   # the radio that joins: the built-in one, or a USB Wi-Fi that reaches more
+FIVE = True         # whether the joining radio reaches 5 GHz (looked at by pick())
 slipped = False      # the setup slip prints once a start (once it has really printed), however often the setup Wi-Fi opens
 failed = ''          # why the setup Wi-Fi last failed to open, printed once a start
 
@@ -117,6 +126,56 @@ def fields(line):
     return out + [cur]
 
 
+# ───────── bands: 2.4 GHz, and 5 GHz where the radio and the Wi-Fi country allow it ─────────
+def country():
+    """the Wi-Fi country set, when none is: most 5 GHz channels open with it"""
+    try:
+        out = subprocess.run(['iw', 'reg', 'get'], capture_output=True, text=True, timeout=10).stdout
+        m = re.search(r'country (\w\w):', out)
+        if not m or m.group(1) in ('00', '99'):
+            subprocess.run(['iw', 'reg', 'set', COUNTRY], capture_output=True, timeout=10); log('wi-fi country set:', COUNTRY)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def channels(ifc):
+    """the frequencies, in MHz, this radio may use: none above 5000 on a 2.4 GHz radio, or with 5 GHz shut"""
+    try:
+        with open(f'/sys/class/net/{ifc}/phy80211/name') as f:
+            phy = f.read().strip()
+        out = subprocess.run(['iw', 'phy', phy, 'info'], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return {int(float(m.group(1))) for m in re.finditer(r'\*\s+(\d{4}(?:\.\d+)?) MHz \[\d+\]([^\n]*)', out) if 'disabled' not in m.group(2)}
+
+
+def pick():
+    """the radio that joins: of the Wi-Fi radios here, the one with most 5 GHz channels open, the built-in one when even"""
+    global JOIN, FIVE
+    if 'WIFI_JOIN' not in os.environ:
+        try:
+            ifs = sorted(d for d in os.listdir('/sys/class/net') if os.path.isdir(f'/sys/class/net/{d}/wireless'))
+        except OSError:
+            ifs = []
+        best = max(ifs, key=lambda d: (sum(f > 5000 for f in channels(d)), d == IFACE), default=IFACE)
+        if best != JOIN:
+            log('joins with', best)
+        JOIN = best
+    ch = channels(JOIN)
+    FIVE = not ch or any(f > 5000 for f in ch)   # not known (no iw): taken as able
+    try:
+        os.makedirs(os.path.dirname(RADIO), exist_ok=True)
+        with open(RADIO, 'w') as f:
+            f.write('5' if FIVE else '2.4')
+    except OSError:
+        pass
+
+
+def bands():
+    """the bands the joining radio reaches, in words for a slip or the page"""
+    return '2.4 AND 5 GHZ' if FIVE else '2.4 GHZ ONLY'
+
+
 def online():
     """on a Wi-Fi or a cable, other than its own setup Wi-Fi"""
     _, out = nm('-t', '-f', 'NAME,TYPE,STATE', 'connection', 'show', '--active', timeout=15)
@@ -125,16 +184,24 @@ def online():
 
 
 def scan():
-    """the Wi-Fi around: each name once, strongest first, with its signal and whether it has a password"""
-    _, out = nm('-t', '-f', 'SSID,SIGNAL,SECURITY', 'device', 'wifi', 'list', 'ifname', IFACE, '--rescan', 'yes', timeout=40)
-    best = {}
+    """the Wi-Fi around: each name once, with its signal, whether it has a password, and whether the joining radio reaches it
+    (a name on 5 GHz alone is out of reach of a 2.4 GHz radio); those it reaches first, strongest first"""
+    _, out = nm('-t', '-f', 'SSID,SIGNAL,SECURITY,FREQ', 'device', 'wifi', 'list', 'ifname', JOIN, '--rescan', 'yes', timeout=40)
+    ch, best = channels(JOIN), {}
     for f in map(fields, out.splitlines()):
         if len(f) < 3 or not f[0] or f[0] == SSID:
             continue
         sig = int(f[1]) if f[1].isdigit() else 0
-        if f[0] not in best or sig > best[f[0]][0]:
-            best[f[0]] = (sig, f[2] not in ('', '--'))
-    return sorted(((n, s, locked) for n, (s, locked) in best.items()), key=lambda x: -x[1])[:20]
+        mhz = f[3].split()[0] if len(f) > 3 and f[3].split() else ''
+        mhz = int(mhz) if mhz.isdigit() else 0
+        reach = not ch or not mhz or mhz < 3000 or mhz in ch
+        b = best.setdefault(f[0], [0, False, False])   # signal, password, reached
+        b[1] = b[1] or f[2] not in ('', '--')
+        if reach and not b[2]:
+            b[0], b[2] = sig, True
+        elif reach == b[2]:
+            b[0] = max(b[0], sig)
+    return sorted(((n, s, locked, ok) for n, (s, locked, ok) in best.items()), key=lambda x: (not x[3], -x[1]))[:20]
 
 
 def saved():
@@ -184,7 +251,7 @@ def join(name, pw, hidden):
     """add this Wi-Fi to those this Pi knows, and join it; one that fails is taken out again"""
     con = MINE + name
     nm('connection', 'delete', con, timeout=20)
-    args = ['connection', 'add', 'type', 'wifi', 'ifname', IFACE, 'con-name', con, 'ssid', name, 'connection.autoconnect', 'yes']
+    args = ['connection', 'add', 'type', 'wifi', 'ifname', JOIN, 'con-name', con, 'ssid', name, 'connection.autoconnect', 'yes']
     if pw:
         args += ['wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', pw]
     if hidden:
@@ -194,7 +261,7 @@ def join(name, pw, hidden):
         log('not added:', out.strip()[:300])
         return False
     for _ in range(3):  # the radio was a hotspot a moment ago: it looks around first
-        nm('device', 'wifi', 'rescan', 'ifname', IFACE, timeout=20)
+        nm('device', 'wifi', 'rescan', 'ifname', JOIN, timeout=20)
         time.sleep(6)
         code, out = nm('--wait', '45', 'connection', 'up', con, timeout=60)
         if code == 0:
@@ -304,7 +371,7 @@ CSS = """:root{color-scheme:light dark;--fg:#141414;--bg:#f2f1ed;--line:rgba(20,
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em}
 main{max-width:420px;margin:0 auto;padding:28px 16px 40px}h1{font-size:12px;font-weight:600;letter-spacing:.14em;margin:0 0 20px}
 .n{display:flex;align-items:center;gap:12px;padding:14px 2px;border-bottom:1px solid var(--line)}.n:first-of-type{border-top:1px solid var(--line)}
-.n input{margin:0;accent-color:currentColor}.n span{flex:1;overflow-wrap:anywhere}.n i{font-style:normal;opacity:.5;letter-spacing:0}
+.n.x{opacity:.38}.n input{margin:0;accent-color:currentColor}.n span{flex:1;overflow-wrap:anywhere}.n i{font-style:normal;opacity:.5;letter-spacing:0}
 .f{display:block;margin:20px 0 0;font-size:11px;letter-spacing:.14em}
 .f input{display:block;width:100%;margin:6px 0 0;padding:12px;font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:inherit;background:transparent;border:1px solid var(--line);border-radius:4px}
 button{width:100%;margin:26px 0 0;padding:15px;font:inherit;font-weight:600;letter-spacing:.16em;color:var(--bg);background:var(--fg);border:0;border-radius:4px}
@@ -322,8 +389,11 @@ def bars(sig):
 
 def choose_page(nets, error):
     rows = ''.join(f'<label class="n"><input type="radio" name="net" value="{html.escape(n, True)}"{" checked" if i == 0 else ""}>'
-                   f'<span>{html.escape(n)}</span><i>{"" if locked else "OPEN "}{"WEAK " if s < WEAK else ""}{bars(s)}</i></label>' for i, (n, s, locked) in enumerate(nets))
-    tip = '<p>PICK A STRONG ONE: THE SCREEN NEEDS TO REACH IT TOO.</p>' if any(s < WEAK for _, s, _ in nets) else ''
+                   f'<span>{html.escape(n)}</span><i>{"" if locked else "OPEN "}{"WEAK " if s < WEAK else ""}{bars(s)}</i></label>' if ok else
+                   f'<label class="n x"><input type="radio" disabled><span>{html.escape(n)}</span><i>5 GHZ</i></label>' for i, (n, s, locked, ok) in enumerate(nets))
+    tip = '<p>PICK A STRONG ONE: THE SCREEN NEEDS TO REACH IT TOO.</p>' if any(s < WEAK for _, s, _, ok in nets if ok) else ''
+    if not all(ok for *_, ok in nets):
+        tip += '<p>' + ('GREY ONES USE A 5 GHZ CHANNEL THIS PRINTER CANNOT' if FIVE else 'GREY ONES ARE 5 GHZ ONLY. THIS PRINTER JOINS 2.4 GHZ') + ': TURN ON 2.4 GHZ ON THE ROUTER, OR PLUG A USB WI-FI INTO THE PI.</p>'
     known = saved()
     gone = (f'<form method="post" action="/forget"><label class="f">SAVED · TICK TO FORGET</label>' + ''.join(
         f'<label class="n"><input type="checkbox" name="f" value="{html.escape(n, True)}"><span>{html.escape(n[len(MINE):] if n.startswith(MINE) else n)}</span></label>' for n in known)
@@ -372,7 +442,11 @@ class Page(BaseHTTPRequestHandler):
         elif pw and not 8 <= len(pw) <= 63:
             Page.note = 'A WI-FI PASSWORD HAS 8 TO 63 CHARACTERS.'
         else:
-            Page.want = (name, pw, bool(other) and all(n != name for n, _, _ in Page.nets))
+            far = [n for n, _, _, ok in Page.nets if n == name and not ok]
+            if far:
+                Page.note = f'{name} IS ON A 5 GHZ CHANNEL THIS PRINTER CANNOT USE.' if FIVE else f'{name} IS 5 GHZ ONLY. THIS PRINTER JOINS 2.4 GHZ.'
+                return self.reply(303, where='/')
+            Page.want = (name, pw, bool(other) and all(n != name for n, *_ in Page.nets))
             return self.reply(200, joining_page(name))
         self.reply(303, where='/')
 
@@ -408,6 +482,7 @@ def setup_round():
         time.sleep(5)
     else:
         log('no Wi-Fi on this Pi:', IFACE); return None
+    country(); pick()
     nets = scan()   # looked at before the radio becomes a hotspot, as it cannot look around while it is one
     if not make_setup() or not setup_wifi(True):
         return None
@@ -415,7 +490,7 @@ def setup_round():
     log('the setup Wi-Fi is open:', SSID)
     if SLIPS and not slipped:
         slipped = send(slip(NAME, ['NO WI-FI', '', '1  SCAN THIS WITH A PHONE CAMERA', f'   OR JOIN  {SSID}', f'   PASSWORD  {PASS}', '', f'2  A PAGE OPENS. IF NOT: {ADDR}',
-                                   '3  CHOOSE THE WI-FI, TYPE ITS PASSWORD', '', stamp()], qr=wifi_qr(SSID, PASS), at=5))
+                                   '3  CHOOSE THE WI-FI, TYPE ITS PASSWORD', f'   IT JOINS {bands()}', '', stamp()], qr=wifi_qr(SSID, PASS), at=5))
     error = ''
     while True:
         want = serve(nets, error)
@@ -431,8 +506,8 @@ def setup_round():
                 send(joined_slip(name))
             return True
         if SLIPS:
-            send(slip(NAME, ['COULD NOT JOIN', name, 'CHECK ITS PASSWORD, THEN JOIN', SSID, 'AGAIN', '', stamp()]))
-        error = f'COULD NOT JOIN {name}. CHECK ITS PASSWORD.'
+            send(slip(NAME, ['COULD NOT JOIN', name, 'CHECK ITS PASSWORD, THEN JOIN', SSID, 'AGAIN'] + ([] if FIVE else ['', 'THIS PRINTER JOINS 2.4 GHZ ONLY']) + ['', stamp()]))
+        error = f'COULD NOT JOIN {name}. CHECK ITS PASSWORD' + ('' if FIVE else ', AND THAT IT HAS 2.4 GHZ') + '.'
         if not setup_wifi(True):
             return False
 
@@ -481,11 +556,12 @@ def main():
     if DEMO:
         log('the page, as a phone sees it: http://127.0.0.1:8080')
         while True:
-            name, pw, hidden = serve([('Hehe', 84, True), ('Telstra5G-2A1F', 61, True), ('Library Free Wi-Fi', 33, False)], forever=True)
+            name, pw, hidden = serve([('Hehe', 84, True, True), ('Library Free Wi-Fi', 33, False, True), ('Telstra5G-2A1F', 61, True, False)], forever=True)
             log('chosen:', name, '(with a password)' if pw else '(no password)', '(hidden)' if hidden else '')
     if len(PASS) < 8:
         log('WIFI_PASSWORD, of 8 or more characters, is missing from /etc/wifi-setup.env'); return 2
     setup_wifi(False)   # a setup Wi-Fi left open by an earlier run is closed
+    country(); pick()
     force, lost = '--now' in sys.argv or quick_start(), None
     if force:
         log('opening the setup Wi-Fi now')

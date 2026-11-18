@@ -312,7 +312,7 @@
         return el('div', { class: 'note', text: `${pi}  ·  ${scr}  ·  ${mesh}  ·  ${last}${ref}${hint ? '  —  ' + hint : ''}` }); })(),
       /* the Wi-Fi each is on, as each last said: the same, or not; and how strong */
       (() => { const J = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } }; const a = J(p.net), b = J(p.touch_net); if (!a && !b) return null;
-        const bars = r => (r == null ? '' : r > -60 ? ' STRONG' : r > -70 ? ' GOOD' : r > -78 ? ' WEAK' : ' TOO WEAK'); const one = (who, x) => (x ? `${who} ON ${x.n} (${x.rssi} dBm${bars(x.rssi)})${x.ip ? ' AT ' + x.ip : ''}${x.v ? ' · ' + String(x.v).toUpperCase() : ' · OLDER VERSION'} ${when(x.at)}` : `${who} HAS NOT SAID`);
+        const bars = r => (r == null ? '' : r > -60 ? ' STRONG' : r > -70 ? ' GOOD' : r > -78 ? ' WEAK' : ' TOO WEAK'); const one = (who, x) => (x ? `${who} ON ${x.n} (${x.rssi} dBm${bars(x.rssi)})${x.ip ? ' AT ' + x.ip : ''}${x.g ? ' · ' + x.g + ' GHZ' : ''}${x.c === '2.4' ? ' (JOINS 2.4 GHZ ONLY)' : x.c === '5' ? ' (JOINS 2.4 AND 5 GHZ)' : ''}${x.v ? ' · ' + String(x.v).toUpperCase() : ' · OLDER VERSION'} ${when(x.at)}` : `${who} HAS NOT SAID`);
         const same = a && b ? (a.n === b.n ? '✓ THE SAME WI-FI' : '✗ NOT THE SAME WI-FI: SET THE SCREEN (HOLD BOOT 3 S) OR THE PI (CHANGE WI-FI) TO ONE BOTH REACH') : '';
         const where = a && a.w ? `ASKS FROM ${a.w}` : '', moved = a && a.moved ? `✗ MOVED ${when(a.moved.at)} FROM ${a.moved.from}` : '', used = `${p.day || 0} PRINTED IN THE LAST DAY`;
         const paper = a && a.p === 0 ? '✗ THE PRINTER IS NOT ANSWERING: CHECK IT IS ON, HAS PAPER AND ITS CABLE IS IN. SLIPS WAIT FOR IT' : a && a.p === 1 ? '✓ THE PRINTER ANSWERS' : '';

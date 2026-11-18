@@ -210,15 +210,24 @@ def here():
         return HERE['q']
     q = {} if PAPER['ok'] is None else {'prn': '1' if PAPER['ok'] else '0'}
     try:
-        out = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID,SIGNAL', 'device', 'wifi', 'list', '--rescan', 'no'], capture_output=True, text=True, timeout=10).stdout
+        out = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID,SIGNAL,FREQ', 'device', 'wifi', 'list', '--rescan', 'no'], capture_output=True, text=True, timeout=10).stdout
         for line in out.splitlines():
             if line.startswith('yes:'):
-                name, _, sig = line[4:].replace('\\:', '\0').rpartition(':')
+                rest, _, mhz = line[4:].replace('\\:', '\0').rpartition(':')
+                name, _, sig = rest.rpartition(':')
+                mhz = mhz.split()[0] if mhz.split() else ''
+                if mhz.isdigit():
+                    q['ghz'] = '5' if int(mhz) > 4000 else '2.4'
                 q['net'] = name.replace('\0', ':')[:40]
                 if sig.isdigit():
                     q['rssi'] = str(int(sig) // 2 - 100)
                 break
     except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        with open(os.environ.get('WIFI_RADIO', '/run/da-pull/radio')) as f:   # what the radio reaches, from wifi.py
+            q['can'] = f.read().strip()[:3]
+    except OSError:
         pass
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

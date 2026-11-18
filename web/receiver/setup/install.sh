@@ -32,6 +32,11 @@ echo 'address=/#/10.42.0.1' | sudo tee /etc/NetworkManager/dnsmasq-shared.d/wifi
 CFG=/boot/firmware/config.txt; [ -f "$CFG" ] || CFG=/boot/config.txt
 grep -q '^dtoverlay=gpio-shutdown' "$CFG" || printf '\n[all]\ndtoverlay=gpio-shutdown\n' | sudo tee -a "$CFG" >/dev/null
 
+# the Wi-Fi country, once, where none is set: 5 GHz opens with it (AU unless WIFI_COUNTRY says otherwise)
+if command -v raspi-config >/dev/null 2>&1 && ! iw reg get 2>/dev/null | grep -Eq 'country [A-Z]{2}:'; then
+  sudo raspi-config nonint do_wifi_country "${WIFI_COUNTRY:-AU}" >/dev/null 2>&1 || true
+fi
+
 # 3. The novel.global receiver, where there is one
 if [ -f /opt/da-pull/pull.py ]; then
   # the bridge writes to the printer itself, so a printer that wakes after the Pi is found at once
