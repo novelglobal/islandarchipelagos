@@ -86,3 +86,16 @@ export const WELCOME = {
     "SCAN TO START"
   ]
 };
+
+/* a note for each card, met once as it is first reached; the approval page (LABEL, CARD NOTES) changes the words */
+export const NOTES = {
+  "on": true,
+  "radio": "DIRECT ACTION RADIO\n\nThis project started out as an intervention to help make people (governments and businesses) feel responsible for El Niño and climate adaptation.\n\nThe technology stack is open-source satellite photography, Moog synths and citizen science data from iNaturalist.\n\nThe direction was inspired by Donna Haraway's String Figures, Cosmopolitics, Geontopolitics and the Parliament of Things.\n\nA good walk with a camera and pencil is better: listen to nature (including traffic) as the song.",
+  "wish": "BLUEPAPER strategic storytelling and I W.I.S.H.\n\nThis is the method from RMIT's Sustainable Innovation Strategies class. It's been developed for over 15 years as an industry thinking tool, winning and directing over 250 million in investment globally, and as an award-winning design and innovation framework.\n\nI W.I.S.H. is a praxis poem with reflection baked into the narrative, connecting theories, beliefs, principles and behaviours for direct action.\n\nIt's basically the opposite of mindfulness, so feel free to take a break and explore other cards as you develop your Bluepaper.",
+  "research": "A place for organising or scrapbooking, or starting a local investigation into a dead tree that spans layers of stakeholders, dodgy deals, concrete pourers and the first inn or pub to be made in the north of Melbourne.\n\nFollow the money. You're an explorer of the world around you: collect what you notice here.",
+  "zine": "A zine or dream maker space! I use this for quickly making letters, signs, art, lists, or printing photos.\n\nThe main point of these simple boards is that the art is used and connected to every other card (or future cards or experiences you make).",
+  "kit": "Make your own! I give away all the tools and code for free. All you need is a rescued thermal printer, a Raspberry Pi and an 8 GB micro SD card running our custom OS as a one-click install.\n\nOnce plugged in, your printer guides you by printing a QR code to get connected to Wi-Fi (like at an airport). It then prints a code and a link to get on novel.global, and instantly lets you use all current apps, modify your settings or island, and create new apps.\n\nYou can rebuild, modify, make it private, or remove any element. I hope you'll share it as a community tool in a third space.",
+  "utils": "Silly basic utilities that add function linked to the direct action and climate adaptation theme. They were all made in the Island Archipelagos builder card.",
+  "soon": "There are so many new use cases and possibilities to unlock: fundraising, merchandise, in-store experiences, promotion. It's all about direct action and new media from a more physical, local internet.\n\nI'll spare the manifesto. Just know if you have an idea, you can make it.",
+  "dev": "If you make an app, you'll see it here. It's live: no accounts, no approvals (I can turn them on, but for now it's open to break and test)."
+};

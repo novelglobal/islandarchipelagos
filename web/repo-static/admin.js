@@ -664,7 +664,7 @@
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'THE ISLANDS' }), el('small', { class: 'hint', text: 'The page people are sent to: novel.global/islands. Each paired printer, whether it is on, and whether it is open. Where it is shows only while it is open (a pop-up is open on it, or it is ticked open here).' }),
       ...(rows.length ? rows : [el('p', { class: 'empty', text: 'NO PRINTER IS PAIRED YET' })]),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => put({ isles: JSON.stringify(I) }) }), el('button', { type: 'button', text: 'SEE IT', onclick: () => window.open('/islands', '_blank', 'noopener') })));
-    main.replaceChildren(...head('Label'), lab, isl);
+    main.replaceChildren(...head('Label'), lab, notesCard(st), isl);
   }
   /* a picture of a place made small enough to keep (a jpeg, 900 across at most); and a data URL as a blob, since this page shows no data: pictures */
   function islePic(file) { return new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { let k = Math.min(1, 900 / Math.max(im.width, im.height)), q = 0.8, d = ''; const c = document.createElement('canvas'); for (;;) { c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); d = c.toDataURL('image/jpeg', q); if (d.length < 110e3 || k < 0.2) break; k *= 0.82; } URL.revokeObjectURL(u); res(d); }; im.onerror = rej; im.src = u; }); }
@@ -736,6 +736,17 @@
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), ...list.map(printerCard)); }
   /* the slip every printer prints once it joins a Wi-Fi: its words, one line each, and the link its code opens. Each printer asks for them
      as it joins, so a change here reaches every printer the next time one joins; with none to be had it prints the last it had */
+  /* the note each card brings up once, as it is first reached: a blank line between paragraphs; a short first line is its heading */
+  function notesCard(st) {
+    let N = {}; try { N = JSON.parse(st.notes || '{}') || {}; } catch (e) { N = {}; }
+    const on = el('input', { type: 'checkbox' }); on.checked = N.on !== false; const say = el('small', { class: 'hint' });
+    const F = [['radio', 'DIRECT ACTION RADIO'], ['wish', 'BLUEPAPER'], ['research', 'RESEARCH BOARD'], ['zine', 'DESIGN PRINT'], ['kit', 'ISLAND (MAKE YOUR OWN)'], ['utils', 'FIRST 3 × 3 (WEATHER TO CARDS)'], ['soon', 'SECOND 3 × 3 (COMING)'], ['dev', 'YOUR APPS']]
+      .map(([k, t]) => { const x = el('textarea', { rows: '6' }); x.value = N[k] || ''; return [k, t, x]; });
+    const save = async () => { const o = { on: on.checked }; F.forEach(([k, , x]) => { o[k] = x.value.replace(/\r/g, '').trim(); }); await api('settings', { method: 'POST', body: JSON.stringify({ notes: JSON.stringify(o) }) }); say.textContent = 'SAVED'; };
+    return el('section', { class: 'ed' }, el('h3', { text: 'CARD NOTES' }), el('small', { class: 'hint', text: 'Each comes up once, small, as its card is first reached; one tap puts it away. A turn from day to night brings them back. A blank line between paragraphs; a short first line is the heading; the first paragraph shows, the rest under More. Empty: no note.' }),
+      el('label', { class: 'check' }, on, 'SHOWN'), ...F.map(([, t, x]) => el('label', {}, t, x)),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: save }), say)); }
+
   async function welcomeCard() {
     let w = {}; try { w = await (await fetch('/api/welcome', { cache: 'no-store' })).json(); } catch (e) { w = {}; }
     const on = el('input', { type: 'checkbox' }); on.checked = w.on !== false;

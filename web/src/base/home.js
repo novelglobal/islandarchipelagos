@@ -639,7 +639,7 @@
   function idleWatch() { if (!('IntersectionObserver' in window)) { $$('.hm-pics img[data-src]', col).forEach(function (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }); return; } if (IDLE) IDLE.disconnect(); if (WAKE) WAKE.disconnect();
     WAKE = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) return; var bx = e.target.querySelector('.hm-pics'); if (bx && bx._wake) { bx._wake.splice(0).forEach(function (f) { f(); }); } }); }, { threshold: 0.2 }); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); WAKE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (j.label) labelShow(j.label); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (j.label) labelShow(j.label); if (j.notes) noteSet(j.notes); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
     var o2 = { talk: j.smallTalk === true, find: j.smallFind === true, one: j.oneIsland !== false, stamp: j.jellyStamp === true, carts: j.cartridges === true }, re = o2.talk !== OPT.talk || o2.find !== OPT.find || o2.one !== OPT.one || o2.carts !== OPT.carts; OPT = o2; if (re) applyCards(null); }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -692,6 +692,24 @@
   /* THE LABEL: what a first visit meets, set like the label beside a work in a gallery, a film under it. Every word of it comes from the approval
      page (LABEL). It is a part of this page, never a new window, so nothing can block it. It goes when it has been read: a long press or a
      double tap on it. Shown once each visit until the visitor says never again */
+  /* CARD NOTES: each card has a note, met once as the card is first reached; set like the label, half its size. One tap puts it away;
+     a turn from day to night (or back) brings them all back. Every word comes from the approval page (LABEL, CARD NOTES) */
+  var NT = { t: null, w: 0, el: null };
+  var NT_G = { week: 'utils', read: 'utils', deck: 'utils', soon: 'soon', dev: 'dev' };
+  function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } noteWait(); }
+  function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
+  function noteOut() { var n = NT.el; NT.el = null; if (!n) return; n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
+  function noteWait() { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(noteShow, 900); }
+  function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '', seen = store.get('da.notes.seen', []) || [];
+    if (!t || seen.indexOf(k) >= 0 || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
+    seen.push(k); store.set('da.notes.seen', seen);
+    var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
+    n.className = 'hm-note'; n.setAttribute('role', 'note'); n.title = 'Tap to put away';
+    ps.forEach(function (s, i) { var p = D.createElement('p'); p.textContent = s; if (i === 0 && head) p.className = 'nt-h'; else if (i >= show) p.className = 'nt-x'; n.appendChild(p); });
+    if (ps.length > show) { var mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo);
+      mo.addEventListener('click', function (e) { e.stopPropagation(); var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); }); }
+    n.addEventListener('click', function () { if (NT.el === n) noteOut(); });
+    root.appendChild(n); NT.el = n; }
   function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
@@ -1010,7 +1028,7 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
-    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; CUR = cur ? cur.dataset.id : ''; $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
@@ -1090,7 +1108,7 @@
   var SH = { up: 0, top: 0, gone: [] };
   function sheet(title, fill) {
     clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
-    xv.setAttribute('aria-label', title); $('#hm-mine').setAttribute('aria-pressed', String(title === 'HOME')); var body = xv.querySelector('.hm-body');
+    noteOut(); xv.setAttribute('aria-label', title); $('#hm-mine').setAttribute('aria-pressed', String(title === 'HOME')); var body = xv.querySelector('.hm-body');
     if (AIR.fr && !AIR.kept) { if (AIR.on) { AIR.kept = true; AIR.fr.classList.add('hm-air'); } else { AIR.fr = null; AIR.on = false; } }
     [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME' && n !== AIR.fr && WARM.indexOf(n) < 0) n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
     fill(body); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'), done = false;
@@ -1481,7 +1499,7 @@
   /* ───────── the sea: the banner is its surface; pressed, the sea opens down into the reef, one water with no line between ───────── */
   var top = $('#hm-top'), tcv = top.querySelector('canvas'), tx = tcv.getContext('2d'), dpr = 1, TOPH = 52, CH = 52, VW = 360;
   var NIGHT = store.get('da.hm.night', null); if (NIGHT == null) { var a0 = AU(); NIGHT = !!(a0 && a0.dark && a0.dark()); }
-  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); D.documentElement.classList.toggle('hm-night', NIGHT); var tm = D.querySelector('meta[name="theme-color"]'); if (tm) tm.content = NIGHT ? '#06152A' : '#17457F'; warmDrop(); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) beep(NIGHT ? 392 : 523, 0.05); }
+  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); D.documentElement.classList.toggle('hm-night', NIGHT); var tm = D.querySelector('meta[name="theme-color"]'); if (tm) tm.content = NIGHT ? '#06152A' : '#17457F'; warmDrop(); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) { beep(NIGHT ? 392 : 523, 0.05); store.set('da.notes.seen', []); noteWait(); } }
   setNight(NIGHT, true);
   function reefH() { return Math.round(Math.min(innerHeight * 0.68, 640)); }
   function seaSize() {

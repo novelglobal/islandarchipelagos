@@ -1715,3 +1715,13 @@ html.hm-night #lb .lb-c { background: #3B3736; color: #F4F2EE; }
 /* the label's More: a small key under the words */
 #lb .lb-c:not(.lb-open) .lb-x { display: none; }
 #lb .lb-mo { display: block; margin: .5em 0 0; padding: .35em 0; min-height: 32px; font: inherit; font-size: .9em; font-weight: 700; color: inherit; background: none; border: 0; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
+/* CARD NOTES: the label's paper and type, half its size, low on the screen; one tap puts one away */
+#hm .hm-note { position: fixed; right: calc(env(safe-area-inset-right) + 22px); bottom: calc(env(safe-area-inset-bottom) + 20px); z-index: 50; width: min(62vw, 240px); max-height: min(60vh, 460px); overflow: auto; padding: 1.05em 1.1em .95em; background: #F3F2EE; color: #161514; font: 400 12px/1.38 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; text-align: left; cursor: pointer; box-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 18px 36px -16px rgba(0, 0, 0, .65); animation: nt-in .35s ease both; transition: opacity .26s ease, translate .26s ease; -webkit-tap-highlight-color: transparent; }
+@keyframes nt-in { from { opacity: 0; translate: 0 10px; } }
+#hm .hm-note.nt-out { opacity: 0; translate: 0 8px; pointer-events: none; }
+#hm .hm-note p { margin: 0; } #hm .hm-note p + p { margin-top: .6em; }
+#hm .hm-note .nt-h { font-size: 1.12em; font-weight: 700; line-height: 1.18; letter-spacing: -.01em; }
+#hm .hm-note:not(.nt-open) .nt-x { display: none; }
+#hm .hm-note .nt-mo { display: block; margin: .4em 0 0; padding: .3em 0; min-height: 28px; font: inherit; font-size: .92em; font-weight: 700; color: inherit; background: none; border: 0; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
+html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
+@media (prefers-reduced-motion: reduce) { #hm .hm-note { animation: none; transition: none; } }
