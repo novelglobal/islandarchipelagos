@@ -24,8 +24,8 @@ function gdList() {
 function gdHTML() {
   const l = gdList(), got = SP.all(), n = l.filter(f => got[f.id]).length, h = SP.hunt(), on = h && h.k === GD.k;
   return `<div class="gd-in" role="dialog" aria-label="Guide"><header><b>GUIDE</b><span class="gd-n mono" title="Spotted on this list">${n}/${l.length}</span><button type="button" class="gd-x" data-gd-x aria-label="Close the guide">×</button></header>`
+    + `<input class="gd-q" type="search" autocomplete="off" enterkeyhint="search" aria-label="Search every species, or add one" placeholder="search or add" value="${esc(GD.q)}">`
     + `<nav class="gd-t">${GD_TABS.map(k => `<button type="button" data-gd-tab="${k}" aria-pressed="${GD.k === k}"${k === 'birds' ? ` title="The ${SP.mon()} challenge: the same ten for everyone"` : ''}>${k === 'birds' ? `BIRDS · ${SP.mon()}` : SP.names[k]}</button>`).join('')}</nav>`
-    + (GD.k === 'all' || GD.k === 'added' ? `<input class="gd-q" type="search" autocomplete="off" aria-label="Search, or add a species" placeholder="search or add" value="${esc(GD.q)}">` : '')
     + `<ol class="gd-l">${l.map(f => gdRow(f, got)).join('') || (GD.q.trim().length > 2 ? '' : '<li class="none">—</li>')}${gdAddRows()}</ol>`
     + `<footer>${GD.k === 'local' ? '<button type="button" data-gd-again title="Ten more, at random">AGAIN</button>' : ''}${GD.k !== 'all' && GD.k !== 'added' ? `<button type="button" data-gd-hunt aria-pressed="${!!on}" title="Watch for this list: it turns on the radio's screen">WATCH</button>` : ''}<button type="button" class="go" data-gd-print title="Print it on the SPECIES LIST card">PRINT</button></footer></div>`;
 }
@@ -54,9 +54,9 @@ function gdPaint(keepScroll) {
 function guideOpen(k) {
   if (!SP) return; const h = SP.hunt(); GD.k = k || (h && h.k) || GD.k; GD.open = null;
   let ov = $('#gd-ov'); if (!ov) { ov = document.createElement('div'); ov.id = 'gd-ov'; document.body.appendChild(ov); }
-  ov.hidden = false; gdPaint(); requestAnimationFrame(() => ov.classList.add('on')); try { snd.tick(1500); } catch (e) { /* quiet */ }
+  ov.hidden = false; document.documentElement.classList.add('gd-open'); gdPaint(); requestAnimationFrame(() => ov.classList.add('on')); try { snd.tick(1500); } catch (e) { /* quiet */ }
 }
-function guideShut() { const ov = $('#gd-ov'); if (!ov) return; ov.classList.remove('on'); setTimeout(() => { if (!ov.classList.contains('on')) ov.hidden = true; }, 220); paintGuideKeys(); }
+function guideShut() { const ov = $('#gd-ov'); if (!ov) return; ov.classList.remove('on'); document.documentElement.classList.remove('gd-open'); setTimeout(() => { if (!ov.classList.contains('on')) ov.hidden = true; }, 220); paintGuideKeys(); }
 /* the list being looked for: kept, so the radio's screen and the card show it too */
 function gdHunt() { const l = gdList(); SP.hunt({ k: GD.k, ids: l.map(f => f.id), at: Date.now() }); }
 function gdPrint() {
@@ -72,7 +72,7 @@ document.addEventListener('click', e => {
   if (t.closest('[data-guide]')) { e.preventDefault(); guideOpen(); return; }
   const ov = t.closest('#gd-ov'); if (!ov) return;
   if (t === ov || t.closest('[data-gd-x]')) { guideShut(); return; }
-  const tb = t.closest('[data-gd-tab]'); if (tb) { GD.k = tb.dataset.gdTab; GD.open = null; gdPaint(); return; }
+  const tb = t.closest('[data-gd-tab]'); if (tb) { GD.k = tb.dataset.gdTab; GD.open = null; if (GD.k !== 'all' && GD.k !== 'added') GD.q = ''; gdPaint(); return; }
   const sp = t.closest('[data-gd-spot]'); if (sp) { const f = gdBy(sp.dataset.gdSpot); const on = SP.set(sp.dataset.gdSpot, f && f.cn); try { snd.tick(on ? 1900 : 900); } catch (er) { /* quiet */ } gdPaint(true); paintGuideKeys(); return; }
   const op = t.closest('[data-gd-open]'); if (op) { GD.open = GD.open === op.dataset.gdOpen ? null : op.dataset.gdOpen; gdPaint(true); return; }
   if (t.closest('[data-gd-again]')) { GD.ids = null; const h = SP.hunt(); if (h && h.k === 'local') SP.hunt(null); gdPaint(); return; }
@@ -82,7 +82,7 @@ document.addEventListener('click', e => {
   const dr = t.closest('[data-gd-drop]'); if (dr) { SP.dropMine(dr.dataset.gdDrop); GD.open = null; gdPaint(true); return; }
   if (t.closest('[data-gd-print]')) { gdPrint(); }
 });
-document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('gd-q')) { GD.q = e.target.value; gdPaint(); gdFind(); } });
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('gd-q')) { GD.q = e.target.value; if (GD.q.trim() && GD.k !== 'all' && GD.k !== 'added') GD.k = 'all'; gdPaint(); gdFind(); } });
 /* added: it stands in ADDED, ready to tick */
 function gdAdded(f) { if (!f) return; if (GD.k !== 'all') SP.keep(GD.k, f, true); GD.q = ''; GD.open = f.id; try { snd.tick(1700); } catch (e) { /* quiet */ } gdPaint(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#gd-ov.on')) { e.stopPropagation(); guideShut(); } }, true);

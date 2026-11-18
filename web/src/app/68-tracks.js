@@ -204,7 +204,9 @@ $('#view').addEventListener('click', e => {
   if (e.target.closest('[data-loop-next]')) { nextLoop(); return; }
   if (e.target.closest('[data-t4all]')) { playFour(); return; }
   const fk = e.target.closest('[data-t4k]'); if (fk) { toggleTrack(fk.dataset.t4k); return; }
-  if (e.target.closest('[data-t4save]')) { saveFour(); return; }
+  if (e.target.closest('[data-t4save]')) { if (!FILING) saveFour(); return; }
+  const pg = e.target.closest('[data-t4pg]'); if (pg) { const n = f4Pages(); F4P = (F4P + +pg.dataset.t4pg + n) % n; snd.tick(1500); refreshFour(); return; }
+  const tp = e.target.closest('[data-f4tp]'); if (tp) { recPlay('t:' + tp.dataset.f4tp); return; }
   const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
   const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
@@ -344,7 +346,7 @@ function loopTrim() { const held = new Set(); try { (store.get('da.tapes.v1', []
   LOOPS.splice(16); }
 /* a song kept: newest first, eight at most, smaller and smaller until this phone has room for it */
 function keepLoop(m) {
-  LOOPS.unshift(m); loopTrim(); setTimeout(soundSync, 0);
+  LOOPS.unshift(m); F4P = 0; loopTrim(); setTimeout(soundSync, 0);
   const thin = L => { if ((L.cells || []).length > 24) L.cells = L.cells.filter((c, i) => i % 2 === 0); };
   if (!store.set('da.loops.v1', LOOPS)) for (const l of LOOPS) for (const p of [l, ...(l.parts || [])]) Object.values(p.layers || {}).forEach(thin);
   while (!store.set('da.loops.v1', LOOPS) && LOOPS.length > 1) LOOPS.pop();
@@ -354,9 +356,12 @@ function keepLoop(m) {
 const trackOf = (m, t0) => ({ m, t0: t0 != null ? t0 : performance.now() - ((life.sweepAt ? life.sweepAt() : 0) / 360) * loopDur(m), step: null, live: false, of: m.id });
 const tracksOf = (m, t0) => { const ps = m.parts && m.parts.length ? m.parts : [m]; const a = trackOf(ps[0], t0); return ps.map((p, i) => ({ ...(i ? trackOf(p, a.t0) : a), of: m.id })); };
 const going = id => LOOP.ms.some(t => t.of === id);
-/* the four-track: the four songs kept last (a mix kept together sits with the songs, not here) */
-const FOUR = () => LOOPS.filter(l => !l.parts && !l.off4).slice(0, 4);
-const inFour = () => LOOP.ms.length > 0 && LOOP.ms.every(t => !t.live && FOUR().some(l => l.id === t.of));
+/* the deck: every track kept, newest first (a section kept is a track; a mix saved is one more), four to a page */
+const DECK = () => LOOPS.filter(l => !l.off4);
+let F4P = 0;
+const f4Pages = () => Math.max(1, Math.ceil(DECK().length / 4));
+const FOUR = () => { F4P = Math.min(F4P, f4Pages() - 1); return DECK().slice(F4P * 4, F4P * 4 + 4); };
+const inFour = () => !filing && LOOP.ms.length > 0 && LOOP.ms.every(t => !t.live && DECK().some(l => l.id === t.of));
 /* what plays now, kept to come back to */
 const snapOf = () => ({ radio: S.radio, ms: LOOP.ms.map(t => ({ m: t.m, live: t.live, of: t.of })) });
 const rebeat = ms => { let t0 = null; return ms.map(x => { const tr = { ...trackOf(x.m, t0), live: x.live, of: x.of }; if (t0 == null) t0 = tr.t0; return tr; }); };
@@ -431,7 +436,7 @@ function saveFour() {
 }
 /* a song as a sound file: it plays alone from the top of its turn, one turn is taken as it sounds, its tail folded over its head, a WAV that loops on itself without a seam, and kept on this phone with its song (IndexedDB, rec:<id>), to be heard again in SONGS and saved at any time. A
    computer downloads it at once; a phone saves a file only from a tap, so the four-track shows a link to it, ready to press */
-let filing = false, FILED = null;   // FILED: the last loop the four-track recorded, its link waiting: { id, url, name }
+let filing = false, FILED = null, FILING = null;   // FILING: the recording going now, { t0, len }   // FILED: the last loop the four-track recorded, its link waiting: { id, url, name }
 /* a tape's one name, wherever it is saved from: the place it was made, and four of its own */
 const recName = (l, type) => `novel-global-tape-${String((l.where || {}).place || 'radio').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'radio'}-${String(l.id || '').replace(/[^a-z0-9]/gi, '').slice(-4).toLowerCase() || '0000'}.${/wav/.test(type || '') ? 'wav' : /mp4/.test(type || '') ? 'm4a' : 'webm'}`;
 /* the tape kept on novel.global for half a moon, so any phone can save it (a phone saves nothing from inside a window); after, this phone's own */
@@ -444,13 +449,13 @@ async function loopFile(l, four) {
   if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop();
   const ms = tracksOf(l), dur = Math.max(...ms.map(t => loopDur(t.m))), t0 = performance.now() + 150; for (const t of ms) { t.t0 = t0; t.step = null; }
   startPlay(ms); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.add('going')); /* whole turns, to at least 24 seconds: a tape to keep, not a blip */
-  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; toast('RECORDING', len + 4200);
+  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300 }; refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
   try { await new Promise(r => setTimeout(r, 150)); const b = await snd.record(len, 3000); await big.set('rec:' + l.id, b); l.rec = { at: Date.now(), type: b.type, s: Math.round(len / 1000) }; store.set('da.loops.v1', LOOPS);
     const name = recName(l, b.type); FILED = { id: l.id, url: URL.createObjectURL(b), name, four: !!four }; RECURL.set(l.id, FILED.url);
     /* one save, its key beside the loop: the tape on novel.global (opened in a tab of its own, never leaving this one) */
     await tapeUp(l, b, name); if (l.tape) FILED.url = l.tape.url; toSound(l, l.id); toast('✓ ↓', 3600); made('song', 'loop'); }
   catch (e) { toast('NOT SAVED · TRY AGAIN'); }
-  $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id)) comeBack(); filing = false;
+  $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id)) comeBack(); filing = false; FILING = null;
   refreshFour(); if (S.view !== 0) refreshPanel();
 }
 /* a kept loop heard again: the file as it was recorded; the radio waits under it and comes back when it ends */
@@ -465,7 +470,7 @@ function recPlay(id) {
   on(q[0]); recSync(); tellSound(true, 'rec');
 }
 function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); tellSound(false, 'rec'); }
-const recSync = () => $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); });
+const recSync = () => { $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); }); $$('[data-f4tp]').forEach(b => b.classList.toggle('on', !!REC && REC.id === 't:' + b.dataset.f4tp)); };
 /* each kept loop's file made ready as SONGS is drawn, so a press plays or saves it at once */
 async function recLoad() { for (const l of LOOPS) { if (!l.rec || RECURL.has(l.id)) continue; const b = await big.get('rec:' + l.id); if (b) RECURL.set(l.id, URL.createObjectURL(b)); else delete l.rec; }
   $$('[data-rec-dl]').forEach(a => { const u = RECURL.get(a.dataset.recDl); if (u) a.href = u; }); }
@@ -489,18 +494,26 @@ function toSound(l, rec, quiet) {
 function soundSync() { try { [...LOOPS].reverse().forEach(l => toSound(l, l.rec ? l.id : null, true)); } catch (e) { /* as it was */ } }
 /* a recording playing (a life's own call): what the radio plays waits under it, and comes back when it ends */
 function hush(on) { LOOP.hush = !!on; }
-/* the four-track on the radio: + keeps the sound now; the four songs kept last, each in or out of the mix; ALL; SHARE */
+/* the four-track on the radio: a page of the deck, each track in or out of the mix; + keeps the sound now; ‹ › the other pages;
+   ALL; SAVE records live, one whole turn, the strip under the keys filling as it goes, then FILE */
 function fourHTML() {
-  const four = FOUR(), all = inFour() && four.length > 1 && four.every(l => going(l.id));
-  return `<ol class="four" role="group" aria-label="Four-track">${[0, 1, 2, 3].map(i => { const l = four[i]; if (!l) return i === four.length ? `<li><button type="button" class="f4 f4s f4p" data-song-keep aria-label="Keep the radar's sound now" data-tip="Keep the sound now">${icon('plus')}<small class="mono">keep</small></button></li>` : `<li><span class="f4 none mono" aria-hidden="true">${i + 1}</span></li>`;
-    const on = going(l.id), nm = esc((l.where || {}).place || 'RADIO');
-    return `<li><button type="button" class="f4${on ? ' on' : ''}" data-t4k="${esc(l.id)}" aria-pressed="${on}" aria-label="Track ${i + 1}: ${nm}" data-tip="${nm}"><img src="${loopArt(l)}" alt=""><small class="mono">${i + 1}</small></button><button type="button" class="f4x" data-t4x="${esc(l.id)}" aria-label="Let track ${i + 1} go">×</button></li>`; }).join('')}`
-    + `<li class="f4k"><button type="button" class="f4m${all ? ' on' : ''}" data-t4all aria-pressed="${all}" aria-label="The four together" data-tip="All four together"${four.length > 1 ? '' : ' disabled'}>${icon('loop', 'sm')}<small class="mono">all</small></button>`
-    + `<button type="button" class="f4m" data-t4save aria-label="Record what plays, one whole turn, as a sound file" data-tip="Record the whole loop"${four.length ? '' : ' disabled'}>${icon('download', 'sm')}<small class="mono">save</small></button>`
-    + (FILED && FILED.four ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '') + '</li></ol>' + deskHTML();
+  const four = FOUR(), all = inFour() && four.length > 1 && four.every(l => going(l.id)), pages = f4Pages(), o = F4P * 4, rec = FILING;
+  const el = rec ? Math.min(rec.len, Date.now() - rec.t0) : 0;
+  return `<ol class="four${rec ? ' rec' : ''}" role="group" aria-label="Four-track"${rec ? ` style="--rl:${rec.len}ms;--rd:-${el}ms"` : ''}>${[0, 1, 2, 3].map(i => { const l = four[i]; if (!l) return i === four.length ? `<li><button type="button" class="f4 f4s f4p" data-song-keep aria-label="Keep the radar's sound now" data-tip="Keep the sound now">${icon('plus')}<small class="mono">keep</small></button></li>` : `<li><span class="f4 none mono" aria-hidden="true">${o + i + 1}</span></li>`;
+    const on = going(l.id), nm = esc((l.where || {}).place || 'RADIO'), n = o + i + 1;
+    return `<li><button type="button" class="f4${on ? ' on' : ''}${l.parts ? ' mx' : ''}" data-t4k="${esc(l.id)}" aria-pressed="${on}" aria-label="Track ${n}: ${nm}" data-tip="${nm}${l.parts ? ' · MIX' : ''}"><img src="${loopArt(l)}" alt=""><small class="mono">${n}</small>${l.rec ? '<i class="f4rd" aria-hidden="true"></i>' : ''}</button><button type="button" class="f4x" data-t4x="${esc(l.id)}" aria-label="Let track ${n} go">×</button></li>`; }).join('')}`
+    + `<li class="f4k">${pages > 1 ? `<button type="button" class="f4m f4pg" data-t4pg="-1" aria-label="The page before" data-tip="Before">‹</button>` : ''}`
+    + (four.length >= 4 ? `<button type="button" class="f4m" data-song-keep aria-label="Keep the radar's sound now" data-tip="Keep the sound now">${icon('plus', 'sm')}<small class="mono">keep</small></button>` : '')
+    + `<button type="button" class="f4m${all ? ' on' : ''}" data-t4all aria-pressed="${all}" aria-label="The page together" data-tip="All together"${four.length > 1 ? '' : ' disabled'}>${icon('loop', 'sm')}<small class="mono">all</small></button>`
+    + `<button type="button" class="f4m${rec ? ' going' : ''}" data-t4save aria-label="${rec ? 'Recording live, one whole turn' : 'Record what plays live, one whole turn, as a sound file'}" data-tip="${rec ? 'Recording live' : 'Record live'}"${four.length || rec ? '' : ' disabled'}>${rec ? '<i class="f4dot" aria-hidden="true"></i>' : icon('download', 'sm')}<small class="mono">${rec ? 'live' : 'save'}</small></button>`
+    + (FILED && FILED.four && !rec ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '')
+    + (pages > 1 ? `<button type="button" class="f4m f4pg f4nx" data-t4pg="1" aria-label="Page ${F4P + 1} of ${pages}: the next page" data-tip="Next"><small class="mono">${F4P + 1}/${pages}</small>›</button>` : '') + '</li>'
+    + (rec ? '<li class="f4r" role="status"><i aria-hidden="true"></i><span class="mono">REC</span></li>' : '') + '</ol>' + ((tp, dk) => (tp || dk ? `<div class="f4d f4w">${dk}${tp}</div>` : ''))(tapesRow(), deskHTML());
 }
+/* the mixtapes, under the deck: each plays its recordings in turn (or its songs together) */
+const tapesRow = () => (MIXTAPES.length ? `<ol class="f4d f4t" role="group" aria-label="Mixtapes"><li class="f4dl mono">TAPES</li>${MIXTAPES.slice(0, 12).map(t => `<li><button type="button" class="${REC && REC.id === 't:' + t.id ? 'on' : ''}" data-f4tp="${esc(t.id)}" aria-label="Mixtape ${esc(t.name)}" data-tip="${esc(t.name)}">${icon('play', 'sm')}<small class="mono">${esc(String(t.name || 'TAPE').slice(0, 10))}</small></button></li>`).join('')}</ol>` : '');
 /* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
-const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 4); } catch (e) { return []; } };
+const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 12); } catch (e) { return []; } };
 const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs"><li class="f4dl mono">W.I.S.H.</li>${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
 document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; try { const r = parent.AURA && parent.AURA.play ? parent.AURA.play([b.dataset.dsong]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
 function refreshFour() { const f = $('#view .four'); if (f) { $$('#view .f4d').forEach(d => d.remove()); f.outerHTML = fourHTML(); } $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }

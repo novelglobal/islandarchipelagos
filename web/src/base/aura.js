@@ -1122,6 +1122,10 @@
     var li = DESK.kept.findIndex(function (q) { return q.code === cs[0]; }); if (li >= 0) DESK.li = li;
     songPlay(true, cs.length > 1 && cs.every(function (c) { return DESK.kept.some(function (q) { return q.code === c; }); }));
     try { var c = NG.ac(); deskOut(c).in.gain.setTargetAtTime(1, c.currentTime, 0.2); } catch (e) { /* none */ } return 'play'; };
+  /* a song's name, and the one playing, for the players elsewhere on the page; stop, from them */
+  api.songName = function (c) { var m = MOODS[+String(c || '').charAt(2)]; return m ? String(m.k).toUpperCase() : 'SONG'; };
+  api.playing = function () { return DESK.play && DESK.song ? songCode(DESK.song) : ''; };
+  api.stop = function () { if (DESK.play) songPlay(false); };
   api.desk = function (o) { if (o === false) deskClose(); else deskOpen(o && o.code ? songOf(o.code) : null); return DESK.song ? { code: songCode(DESK.song), play: DESK.play, kept: DESK.kept.length, loop: S.lastLoop || 0 } : null; };
   api.songLoop = function () { return DESK.song ? songLoop(DESK.song).then(function (r) { return r ? { bytes: r.blob.size, seconds: r.seconds } : null; }) : Promise.resolve(null); };
   /* seven devices, each earned on its own and never opening another: the simple ones (the music, INTENTION with W.I.S.H.'s lines,

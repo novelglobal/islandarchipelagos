@@ -3541,3 +3541,65 @@ html.only-radio .band.dev.radio.mod .b-emerg .cd.stp{font-size:20px!important;li
 .simple-r .rd-led{top:8px}
 /* on a desk the guide's lists all show, two lines if need be: no sideways scroll a mouse cannot do */
 @media (hover:hover) and (pointer:fine){#gd-ov .gd-t{flex-wrap:wrap;overflow:visible}}
+/* ── the guide: its head, the search and the lists stand still; only the species scroll; the page under it waits ── */
+html.gd-open,html.gd-open body{overflow:hidden!important;overscroll-behavior:none}
+#gd-ov{overscroll-behavior:contain;height:100%;height:100dvh}
+#gd-ov .gd-in>header,#gd-ov .gd-in>.gd-q,#gd-ov .gd-in>.gd-t,#gd-ov .gd-in>footer{flex:none}
+#gd-ov .gd-q{display:block;margin:0 14px 10px;min-width:0}
+#gd-ov .gd-t{padding-top:2px;padding-bottom:10px;align-items:center}
+#gd-ov .gd-l{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+/* ── the GUIDE key stands well clear of the switch beside it ── */
+.flip-b ~ .gd-k{right:84px}
+.dev.upg .flip-b ~ .gd-k{right:60px}
+/* ── the deck: its pages, a track recorded (a red point), a mix (a corner), the strip that fills while it records live ── */
+.band.dev.radio .four{position:relative}
+.band.dev.radio .four .f4k{flex-wrap:nowrap;gap:4px}
+.band.dev.radio .four .f4m{padding:0 7px;flex:none}
+.band.dev.radio .four .f4pg{padding:0 6px;font:400 18px/1 VT323,ui-monospace,monospace}
+.band.dev.radio .four .f4nx small{margin-right:2px;font:400 13px/1 VT323,ui-monospace,monospace;opacity:.7}
+.band.dev.radio .four .f4 .f4rd{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:#C8341E}
+.band.dev.radio .four .f4.mx::after{content:"";position:absolute;left:0;top:0;border:7px solid transparent;border-left-color:#1F2A20;border-top-color:#1F2A20;opacity:.55}
+.band.dev.radio .four .f4m.going{background:#C8341E;color:#FFFFFF}
+.band.dev.radio .four .f4dot{width:8px;height:8px;border-radius:50%;background:#FFFFFF;animation:f4blink 1s steps(2,jump-none) infinite}
+.band.dev.radio .four.rec{box-shadow:inset 0 0 0 2px #C8341E,inset 0 3px 10px rgba(0,0,0,.2)}
+.band.dev.radio .four .f4r{grid-column:1/-1;display:flex;align-items:center;gap:6px;height:9px;margin-top:0}
+.band.dev.radio .four .f4r i{position:relative;flex:1;height:4px;border-radius:2px;background:rgba(31,42,32,.15);overflow:hidden}
+.band.dev.radio .four .f4r i::after{content:"";position:absolute;inset:0;background:#C8341E;transform-origin:0 50%;transform:scaleX(0);animation:f4fill var(--rl,24s) linear var(--rd,0s) forwards}
+.band.dev.radio .four .f4r span{font:400 14px/1 VT323,ui-monospace,monospace;color:#C8341E;letter-spacing:.08em}
+@keyframes f4fill{to{transform:scaleX(1)}}
+@keyframes f4blink{50%{opacity:.15}}
+@media (prefers-reduced-motion:reduce){.band.dev.radio .four .f4dot{animation:none}}
+/* the tapes and the W.I.S.H. songs under the deck: one row each, sliding sideways when they are many */
+.band.dev.radio .f4d{overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;max-width:100%}
+.band.dev.radio .f4d::-webkit-scrollbar{display:none}
+.band.dev.radio .f4d li{flex:none}
+.band.dev.radio .f4d button small{font:600 9px/1 var(--mono);letter-spacing:.06em}
+.band.dev.radio .f4t{margin-top:4px}
+/* ── the opened radio on a phone: every part kept, the big ones smaller, so the whole device fits the screen ── */
+@media (max-width:520px){
+html #sec-heat.band.dev.radio.mod{padding-top:30px!important;padding-bottom:40px!important}
+html #sec-heat.band.dev.radio.mod .pager{margin-bottom:2px!important}
+html #sec-heat.band.dev.radio.mod .b-emerg{margin:0 0 4px!important}
+html #sec-heat.band.dev.radio.mod .b-emerg .cd{height:26px!important;min-height:0!important;line-height:26px!important}
+html #sec-heat.band.dev.radio.mod .mstrip.eq{margin:2px 0 2px!important;padding:8px 8px 4px!important}
+html #sec-heat.band.dev.radio.mod .mstrip.eq .eq-c{height:44px!important}
+html #sec-heat.band.dev.radio.mod .hp-row{margin:0!important}
+html #sec-heat.band.dev.radio.mod .hp-row .hero-play{width:52px!important;height:52px!important;margin:6px 0 12px!important}
+html #sec-heat.band.dev.radio.mod .hp-k{width:36px;height:36px}
+html #sec-heat.band.dev.radio.mod .hp-k small{top:calc(100% + 3px)}
+html #sec-heat.band.dev.radio.mod .four{margin:2px auto 6px!important;padding:5px 6px 4px!important;gap:5px!important}
+html #sec-heat.band.dev.radio.mod .four .f4{height:40px!important;aspect-ratio:auto!important}
+html #sec-heat.band.dev.radio.mod .four .f4k{padding-top:3px!important}
+html #sec-heat.band.dev.radio.mod .four .f4m{height:22px}
+html #sec-heat.band.dev.radio.mod .f4d{margin-top:2px}
+html #sec-heat.band.dev.radio.mod .f4d button{height:22px;padding:0 7px}
+html #sec-heat.band.dev.radio.mod .lyrs{margin:4px 0 2px!important;padding:5px 8px!important;gap:2px!important}
+html #sec-heat.band.dev.radio.mod .lyrs>*{height:22px!important}
+html #sec-heat.band.dev.radio.mod .lyrs .lyr-k{height:22px!important}
+html #sec-heat.band.dev.radio.mod .lyrs .lyr-m{width:22px!important;height:22px!important}
+html #sec-heat.band.dev.radio.mod .lyrs .lyr-v{height:20px!important}
+}
+/* the W.I.S.H. songs and the tapes share one row under the deck */
+.band.dev.radio .f4w{display:flex;align-items:center;gap:12px;margin:6px 0 0;padding:0;overflow-x:auto;scrollbar-width:none}
+.band.dev.radio .f4w::-webkit-scrollbar{display:none}
+.band.dev.radio .f4w>.f4d{flex:none;margin:0;overflow:visible}
