@@ -528,7 +528,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
-    '<button id="hm-mine" aria-label="Home" title="Your home: your code, your pass, your cards"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
+    '<button id="hm-mine" aria-label="Home" aria-pressed="false" title="Your home: your code, your pass, your cards"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
     '<section id="hm-sb" class="low" aria-label="Switchboard"><button class="grab" aria-label="The switchboard, larger or smaller"></button><span class="cb" aria-hidden="true"></span><button class="rs">RESET</button><ol class="oc" aria-live="polite" hidden></ol><div class="jk"></div><canvas class="cab" aria-hidden="true"></canvas></section>';
@@ -1090,7 +1090,7 @@
   var SH = { up: 0, top: 0, gone: [] };
   function sheet(title, fill) {
     clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
-    xv.setAttribute('aria-label', title); var body = xv.querySelector('.hm-body');
+    xv.setAttribute('aria-label', title); $('#hm-mine').setAttribute('aria-pressed', String(title === 'HOME')); var body = xv.querySelector('.hm-body');
     if (AIR.fr && !AIR.kept) { if (AIR.on) { AIR.kept = true; AIR.fr.classList.add('hm-air'); } else { AIR.fr = null; AIR.on = false; } }
     [].slice.call(xv.children).forEach(function (n) { if (n.tagName === 'IFRAME' && n !== AIR.fr && WARM.indexOf(n) < 0) n.remove(); }); body.hidden = false; body.innerHTML = ''; body.className = 'hm-body';
     fill(body); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'), done = false;
@@ -1098,7 +1098,7 @@
     if (fr && fr.dataset.ld) go(); else if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
     if (SH.swap) { SH.swap = false; history.replaceState({ hm: 'x' }, ''); } else history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
-  function shut(fromPop) { tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
+  function shut(fromPop) { $('#hm-mine').setAttribute('aria-pressed', 'false'); tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
     var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME' && WARM.indexOf(n) < 0; });
     if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
     old = old.filter(function (n) { if (n === AIR.fr || !warmable(n)) return true; WARM.push(n); setTimeout(function () { if (WARM.indexOf(n) >= 0) n.classList.add('hm-warm'); }, 460); return false; });
@@ -1645,7 +1645,8 @@
       keep(l); };
     draw(); }
   WIDE.addEventListener('change', function () { applyCards(null); });
-  $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); sheet('HOME', mineIn); });
+  $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); var up = xv.classList.contains('on');
+    if (up && xv.getAttribute('aria-label') === 'HOME') { shut(); return; } if (up) { shut(true); SH.swap = true; setTimeout(function () { sheet('HOME', mineIn); }, 480); return; } sheet('HOME', mineIn); });
 
 
   /* ───────── the reef: the forms rounded and lit, in their own colours; the life on it in white line, alive to a touch ───────── */

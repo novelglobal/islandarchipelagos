@@ -933,7 +933,7 @@ async function ceDay(d) {
 }
 async function moreNews(day, news) {
   const a = day.split('-').map(Number), d0 = Date.UTC(a[0], a[1] - 1, a[2]), seen = new Set(news.map(s => s.slice(0, 40)));
-  let pool = []; for (let i = 0; i < 2 && pool.length < 12; i++) pool = pool.concat(await ceDay(new Date(d0 - i * 864e5)));
+  let pool = []; for (let i = 0; i < 3 && pool.length < 12; i++) pool = pool.concat(await ceDay(new Date(d0 - i * 864e5)));
   pool = pool.filter(s => { const k = s.slice(0, 40); if (seen.has(k)) return false; seen.add(k); return true; });
   const more = pool.slice(0, 5);
   if (![...news, ...more].some(s => ECO.test(s))) { let eco = pool.find(s => ECO.test(s)); for (let i = 2; !eco && i < 5; i++) eco = (await ceDay(new Date(d0 - i * 864e5))).find(s => ECO.test(s)); if (eco) more.splice(Math.min(4, more.length), 1, eco); }
@@ -944,7 +944,9 @@ async function newsThrough() {
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
   let j = null; try { const r = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/featured/${day.replace(/-/g, '/')}`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) j = await r.json(); } catch (e) { /* none */ }
   if (!j) return NEWS.s ? new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'no-store' } }) : fail(502, 'news');
-  const news = (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean), more = await moreNews(day, news);
+  /* the day's own events lead (In the news keeps its stories for a week or more); In the news follows */
+  const itn = (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean), fresh = await moreNews(day, []);
+  const fk = new Set(fresh.map(s => s.slice(0, 40))), news = fresh.length ? fresh : itn, more = fresh.length ? itn.filter(s => !fk.has(s.slice(0, 40))) : [];
   NEWS.s = JSON.stringify({ day, news, more,
     otd: (j.onthisday || []).slice(0, 3).map(o => ({ y: +o.year || 0, t: plain(o.text).slice(0, 240) })).filter(o => o.t) }); NEWS.t = Date.now();
   return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
