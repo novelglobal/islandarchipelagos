@@ -1541,12 +1541,15 @@ if (run('cards')) try {
   const wav = (() => { const n = 8000, b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24); b.writeUInt32LE(8000, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; })();
   await ctx.route(u => u.host === 'static.inaturalist.org' && u.pathname.startsWith('/sounds'), r => r.fulfill({ status: 200, body: wav, headers: { 'content-type': 'audio/wav' } }));
   await page.goto('https://oan.test/cart.html?c=tape'); await sleep(1600);
-  const tp = await page.evaluate(() => ({ rows: document.querySelectorAll('#tpov button[data-i]').length, obs: [...document.querySelectorAll('#tpov a')].filter(a => /^https:\/\/www\.inaturalist\.org\/observations\/\d+$/.test(a.href)).length, h: document.querySelector('#paper canvas').height }));
-  check('the mixtape shows ten tracks, each leading to the observation its sound came from', tp.rows === 10 && tp.obs === 10 && tp.h > 1200, JSON.stringify(tp));
+  const tp = await page.evaluate(() => ({ rows: document.querySelectorAll('#tpov button[data-i]').length, obs: [...document.querySelectorAll('#tpov a')].filter(a => /\/studio#[0-9a-z]+$/.test(a.href) && a.target === '_top').length, go: !!document.querySelector('#tpov .tp-go'), h: document.querySelector('#paper canvas').height }));
+  check('the mixtape shows ten tracks, each leading to the radar where its sound was heard, and a play key on its cover', tp.rows === 10 && tp.obs === 10 && tp.go && tp.h > 1200, JSON.stringify(tp));
   await page.click('#opts [data-a="play"]'); await sleep(500);
   check('PLAY plays it from the first track', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'true' && !!document.querySelector('#tpov button.on[data-i="0"]')));
   await page.click('#opts [data-a="play"]'); await sleep(200);
   check('and stops', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'false'));
+  await page.click('#tpov .tp-go'); await sleep(500);
+  check('the key on the cover plays it too', await page.evaluate(() => document.querySelector('#tpov .tp-go').getAttribute('aria-pressed') === 'true' && !!document.querySelector('#tpov button.on[data-i="0"]')));
+  await page.click('#tpov .tp-go'); await sleep(200);
   /* the showcase with a hundred made: one nine, paged through to the last with none missed; a shelf, an island's picks and FIND group them */
   const AB = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', hund = [...Array(100)].map((_, i) => ({ c: 'PL-' + AB[(i / 900 | 0) % 30] + AB[(i / 30 | 0) % 30] + AB[i % 30] + 'Z', n: 'APP ' + i, th: 'cyan', lk: 0, ...(i ? {} : { star: true }) }));
   await ctx.route(u => u.pathname === '/api/plays' && u.host === 'oan.test', r => { const q = new URL(r.request().url()).searchParams, off = +q.get('off') || 0, n = +q.get('n') || 9, l = q.get('q') ? hund.filter(x => x.n.includes(q.get('q').toUpperCase())) : q.get('sh') ? hund.slice(0, 5) : q.get('isle') ? hund.slice(5, 8) : hund;

@@ -601,7 +601,7 @@
 
   /* ───────── MIXTAPE: its tracks, each one's sound traced to where it was heard and who heard it; played here, tuned down,
      a sound's own echo where it has one, nothing under them. Its cover is the lines from the city out to each place ───────── */
-  var TQ = (location.search.match(/[?&]t=([\w-]{1,40})/) || [])[1] || '', TPH = [], TP = { a: null, e: null, i: -1, f: 0, u: '', t: 0 };
+  var TQ = (location.search.match(/[?&]t=([\w-]{1,40})/) || [])[1] || '', TPH = [], TPC = null, TP = { a: null, e: null, i: -1, f: 0, u: '', t: 0 };
   /* a tape kept on this phone: its tracks are the radio's loops recorded here, each with its place and the lives in it */
   function tapeOwn(id) { var ts = [], ls = []; try { ts = JSON.parse(localStorage.getItem('da.tapes.v1') || '[]') || []; ls = JSON.parse(localStorage.getItem('da.loops.v1') || '[]') || []; } catch (e) { return null; }
     var t = ts.filter(function (x) { return x && x.id === id; })[0]; if (!t) return null; var n = 0;
@@ -623,7 +623,7 @@
     act: function (a) { if (a === 'play') { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); } else if (a === 'share') tpShare(); else if (a === 'save') paperSave('mixtape-' + String((S.data || {}).name || 'tape').toLowerCase().replace(/[^a-z0-9]+/g, '-')); else if (a === 'board' || a === 'design') paperPlace(a, 'tp'); return false; },
     draw: function (k, d) { var L = d.tracks || []; TPH = [];
       var y = k.head('MIXTAPE', d.name || '', phase(age(today()))) + 16;
-      tapeCover(k, d, y, 420); y += 420 + 40;
+      TPC = { y: y, h: 420 }; tapeCover(k, d, y, 420); y += 420 + 40;
       if (!L.length) { k.txt('—', M + 4, y, '600 20px ' + MONO); y += 30; }
       L.forEach(function (t) { var y0 = y - 30, w0 = W - 2 * M - 92;
         k.txt(('0' + t.n).slice(-2), M, y, '600 22px ' + MONO); k.fit(String(t.cn), M + 48, y, '700', 27, w0, SANS);
@@ -631,10 +631,12 @@
         var tune = t.st ? (t.st > 0 ? '+' : '−') + Math.abs(t.st) + ' ST' : '', len = t.s ? Math.floor(t.s / 60) + ':' + ('0' + Math.round(t.s % 60)).slice(-2) : '';
         k.fit([t.by, t.lic, tune, t.echo ? 'ECHO' : '', len, t.rec && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
         var hh = 58; if (t.obs) { k.fit('inaturalist.org/observations/' + (+t.obs), M + 48, y + 68, '600', 15, W - 2 * M - 52, MONO); hh = 80; }
-        y += hh + 14; k.box(M + 48, y - 14, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: y - 14 - y0, obs: t.obs, cn: t.cn }); });
+        y += hh + 14; k.box(M + 48, y - 14, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: y - 14 - y0, obs: t.obs, cn: t.cn, go: tpWhere(t) }); });
       return k.foot(y + 14, TQ ? '' : 'https://novel.global/x#tape', '', 'MIXTAPE · NOVEL.GLOBAL'); }
   };
   Object.defineProperty(tape, 'tall', { get: function () { var n = S && S.data && S.data.tracks ? S.data.tracks.length : 10; return 760 + 420 + n * 96; } });
+  /* where a track was made, on the radar: a sound heard, the sighting on the map; a loop of this phone's, the radio tuned there as it was */
+  function tpWhere(t) { return t.obs ? '/studio#' + (+t.obs).toString(36) : t.rec ? '/studio#loop=' + encodeURIComponent(t.rec) : ''; }
   /* playing: one track after the other, tuned, faded in; a sound's own echo comes in after it, quieter */
   function tpBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
     q.onsuccess = function () { try { var r = q.result.transaction('kv').objectStore('kv').get('rec:' + id); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
@@ -651,12 +653,13 @@
   function tpKeys() { if (!S.stack || S.stack.kind !== 'tape') return; var IN0 = window.parent !== window;
     [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { var a = b.dataset.a; if (a === 'play') b.setAttribute('aria-pressed', String(!!TP.on)); if (a === 'design') b.hidden = !IN0; });
     var pp = $('#paper'), ov = $('#tpov'); if (!pp) return; if (!ov) { ov = document.createElement('div'); ov.id = 'tpov'; pp.appendChild(ov);
-      ov.addEventListener('click', function (e) { var b = e.target.closest('button[data-i]'); if (!b) return; var i = +b.dataset.i; if (TP.on && TP.i === i) tpStop(); else tpPlay(i); }); }
+      ov.addEventListener('click', function (e) { if (e.target.closest('[data-go]')) { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); return; } var b = e.target.closest('button[data-i]'); if (!b) return; var i = +b.dataset.i; if (TP.on && TP.i === i) tpStop(); else tpPlay(i); }); }
     var sx = cv.offsetWidth / cv.width, sy = cv.offsetHeight / cv.height, px = function (v, k) { return (v * k).toFixed(1) + 'px'; };
     ov.style.cssText = 'left:' + cv.offsetLeft + 'px;top:' + cv.offsetTop + 'px;width:' + cv.offsetWidth + 'px;height:' + cv.offsetHeight + 'px';
-    ov.innerHTML = TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
-      return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W - (h.obs ? 56 : 0), sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>' +
-        (h.obs ? '<a href="https://www.inaturalist.org/observations/' + (+h.obs) + '" target="_blank" rel="noopener" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="Where ' + esc(h.cn) + ' was heard" title="Where it was heard">↗</a>' : ''); }).join(''); }
+    var go = TPC ? '<button type="button" class="tp-go" data-go aria-pressed="' + !!TP.on + '" aria-label="' + (TP.on ? 'Stop the mixtape' : 'Play the mixtape') + '" style="left:' + px(W - M - 100, sx) + ';top:' + px(TPC.y + TPC.h - 100, sy) + ';width:' + px(80, sx) + ';height:' + px(80, sx) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + (TP.on ? 'M7 5h4v14H7zM13 5h4v14h-4z' : 'M8 5l11 7-11 7z') + '"/></svg></button>' : '';
+    ov.innerHTML = go + TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
+      return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W - (h.go ? 56 : 0), sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>' +
+        (h.go ? '<a href="' + h.go + '" target="_top" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="' + esc(h.cn) + ' on the radar" title="On the radar">↗</a>' : ''); }).join(''); }
   /* SHARE: the paper and its link where the phone can send them, else the link copied; a tape of this phone's own goes as its picture */
   function tpShare() { var st = $('#st'), url = location.origin + '/cart.html?c=tape', nm = String((S.data || {}).name || 'MIXTAPE');
     cv.toBlob(function (b) { var fl = null; try { fl = b && new File([b], 'mixtape.png', { type: 'image/png' }); } catch (e) { fl = null; }

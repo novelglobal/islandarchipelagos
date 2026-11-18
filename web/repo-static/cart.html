@@ -43,12 +43,17 @@
   /* on the cards, ART stands in the row as a third key of the same shape */
   #opts:has(button[data-a="deck"]) button[data-a="art"] { flex: 1 1 0; order: 0; margin-left: 0; border-radius: 0; }
   #opts button[data-a="biz"] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
-  /* MIXTAPE: a track tapped plays from there; ↗ goes to where its sound was heard */
+  /* MIXTAPE: the round key on the cover plays it all; a track tapped plays from there (▶ under its number); ↗ the radar where it was made */
   #tpov { position: absolute; z-index: 2; }
   #tpov button, #tpov a { position: absolute; min-height: 0; padding: 0; border: 0; background: none; color: #111; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   #tpov button:hover { background: rgba(0, 0, 0, .04); } #tpov button.on { background: rgba(232, 145, 58, .16); box-shadow: inset 4px 0 0 #E8913A; }
   #tpov a { display: grid; place-items: center; font: 600 18px/1 sans-serif; text-decoration: none; opacity: .45; } #tpov a:hover, #tpov a:focus-visible { opacity: 1; }
   #tpov button:focus-visible, #tpov a:focus-visible { outline: 2px solid #1D9A55; outline-offset: -2px; }
+  #tpov button[data-i]::after { content: '\25B6'; position: absolute; left: 9px; bottom: 14px; font: 400 11px/1 sans-serif; opacity: .3; }
+  #tpov button[data-i].on::after { content: '\275A\275A'; letter-spacing: -1px; color: #E8913A; opacity: 1; }
+  #tpov .tp-go { display: grid; place-items: center; border-radius: 50%; background: #F4F1E8; color: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .45); }
+  #tpov .tp-go:hover { background: #fff; } #tpov .tp-go[aria-pressed="true"] { background: #E8913A; }
+  #tpov .tp-go svg { width: 24px; height: 24px; }
   #spq { flex: 1 1 100%; max-width: 512px; margin: 0 auto 4px; min-height: 40px; padding: 8px 10px; font: inherit; font-size: 16px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 0; }
   /* SPECIES LIST: taps laid over the paper's rows; a tick and a line through for what is spotted, × to take a species off */
   #spov { position: absolute; z-index: 2; } #spov[hidden] { display: none; }

@@ -3,7 +3,7 @@
    #U… a record placed here; #E01 a gathering; any other code an iNaturalist sighting ───────── */
 let pendingHash = location.hash.replace(/^#/, '');
 const viewOfHash = h => { const p = PARTS[String(h).toLowerCase()]; return p ? p[0] : -1; };
-const isLocalHash = h => viewOfHash(h) >= 0 || /^(T\d{2}|E\d{2}|DA-[0-9A-Z]{4}|P-[a-z0-9-]+|x=.+|mix=.+)$/i.test(h);
+const isLocalHash = h => viewOfHash(h) >= 0 || /^(T\d{2}|E\d{2}|DA-[0-9A-Z]{4}|P-[a-z0-9-]+|x=.+|mix=.+|loop=.+)$/i.test(h);
 async function handleHash() {
   const h = decodeURIComponent(pendingHash || ''); pendingHash = ''; if (!h) return;
   /* a link someone was sent, on a first visit: the radio is there for it (43-journey.js) */
@@ -12,6 +12,8 @@ async function handleHash() {
   if (/^x=/.test(h)) { await receive('#' + h); linkArm(); return; }
   /* the radio tuned where the link was made, its layers as they were: a touch on play and it sounds */
   if (/^mix=/i.test(h)) { const m = mixOfCode(h.slice(4)); if (m) { tuneMix(m, false); if (!LOOPS.some(l => mixCode(l) === mixCode(m))) { keepLoop(m); toast('✓ KEPT'); } const b = $('#view .hero-play'); if (b) b.classList.add('cue'); linkArm(); } else tick(600); return; }
+  /* a loop of this phone's, from its mixtape: the radio tuned where it was made, as it was */
+  if (/^loop=/i.test(h)) { const l = LOOPS.find(x => x.id === h.slice(5)); if (l) { tuneMix(l, false); const b = $('#view .hero-play'); if (b) b.classList.add('cue'); linkArm(); } else toast('NOT ON THIS PHONE'); return; }
   if (/^DA-[0-9A-Z]{4}$/i.test(h)) { const s = S.signals.find(x => x.code === h.toUpperCase()); if (s) openSignal(s.key); else receiveCode(h.toUpperCase()); linkArm(); return; }
   if (/^P-[a-z0-9-]+$/i.test(h)) { selectPartner(h.slice(2).toLowerCase()); return; }
   if (/^T\d{2}$/i.test(h)) { const id = 'tribe:' + h.toUpperCase(); if (S.byId.has(id)) selectTribe(id); return; }
