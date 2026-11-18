@@ -181,15 +181,44 @@
     paint(host, b[0], '0 0 100 110', function (svg) { b[1].forEach(function (t, i) { var x = D.createElementNS(NS, 'text'); x.setAttribute('x', t[0]); x.setAttribute('y', t[1]); x.setAttribute('text-anchor', 'middle'); if (t[3]) x.setAttribute('class', 'ac'); x.textContent = t[2];
       x.style.opacity = 0; x.style.transition = 'opacity .6s ease ' + (.5 + i * .25) + 's'; svg.appendChild(x); requestAnimationFrame(function () { requestAnimationFrame(function () { x.style.opacity = 1; }); }); }); }); }
 
+  /* ───────── projects: each holds every part at once (receipt, phone page, game, code), kept in the builder's own two stores.
+     Three at most. Switching puts the open one away and takes the other out ───────── */
+  var BK = ['da.bench.v2', 'da.bench.plus.v2'], PJ = 'da.archi.projects', MAXP = 3;
+  var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* private */ } } };
+  function pj() { var o = null; try { o = JSON.parse(ls.get(PJ) || 'null'); } catch (e) { o = null; } if (!o || !o.ids || !o.ids.length) o = { on: 1, ids: [1], next: 2 }; return o; }
+  function pjSave(o) { ls.set(PJ, JSON.stringify(o)); }
+  function away(id) { ls.set('da.archi.p' + id, JSON.stringify(BK.map(function (k) { return ls.get(k); }))); }
+  function out(id) { var v = []; try { v = JSON.parse(ls.get('da.archi.p' + id) || '[]') || []; } catch (e) { v = []; } BK.forEach(function (k, i) { ls.set(k, v[i] == null ? null : v[i]); }); }
+  function parts(id, o) { var v = id === o.on ? BK.map(function (k) { return ls.get(k); }) : (function () { try { return JSON.parse(ls.get('da.archi.p' + id) || '[]') || []; } catch (e) { return []; } })(), b = {}, p = {};
+    try { b = JSON.parse(v[0] || '{}') || {}; } catch (e) { b = {}; } try { p = JSON.parse(v[1] || '{}') || {}; } catch (e) { p = {}; }
+    var full = function (x) { return !!x && JSON.stringify(x).length > 40; };
+    return { slip: Object.keys(b.builds || {}).some(function (k) { return (b.builds[k] || []).length; }), page: full(p.page), game: full(p.game), live: !!(p.live && String(p.live.src || '').trim()) }; }
+  function projs() { var o = pj(), host = $('#projs'); if (!host) return;
+    host.innerHTML = o.ids.map(function (id, n) { var pt = parts(id, o); return '<button type="button" data-pj="' + id + '" aria-pressed="' + (id === o.on) + '" title="Project ' + (n + 1) + '">' + (n + 1) +
+      '<span class="pt">' + ['slip', 'page', 'game', 'live'].map(function (k) { return '<i' + (pt[k] ? ' class="on"' : '') + '></i>'; }).join('') + '</span>' + (o.ids.length > 1 && id === o.on ? '<span class="x" data-px="' + id + '" title="Delete">×</span>' : '') + '</button>'; }).join('') +
+      (o.ids.length < MAXP ? '<button type="button" data-pj="new" title="New project">+ NEW</button>' : '');
+    var pt = parts(o.on, o); $$('[data-part]').forEach(function (a) { a.classList.toggle('made', !!pt[a.dataset.part]); }); }
+  D.addEventListener('click', function (e) { var b = e.target.closest('[data-px],[data-pj]'); if (!b) return; var o = pj();
+    if (b.dataset.px) { if (!confirm('Delete project ' + (o.ids.indexOf(+b.dataset.px) + 1) + '?')) return; var gone = +b.dataset.px; o.ids = o.ids.filter(function (i) { return i !== gone; }); ls.set('da.archi.p' + gone, null); o.on = o.ids[0]; out(o.on); pjSave(o); projs(); return; }
+    var to = b.dataset.pj === 'new' ? 0 : +b.dataset.pj; if (to === o.on) return; away(o.on);
+    if (!to) { if (o.ids.length >= MAXP) return; to = o.next++; o.ids.push(to); }
+    o.on = to; out(to); pjSave(o); projs(); });
+
+  /* the nine starters, each opening in CODE ready to change */
+  var STARTS = [['ghost', 'GHOST CAPTURE'], ['armband', 'ARMBAND'], ['quest', 'TEXT GAME'], ['comic', 'COMICS'], ['memo', 'SPEECH PRINT'], ['pobox', 'PO BOX'], ['album', 'PHOTO SEND'], ['link', 'LINK PLAY'], ['sky', 'ASTRONOMY']];
+  $('#starts').innerHTML = STARTS.map(function (t) { return '<a href="bench?' + (IN ? 'in=1&' : '') + 'm=live&t=' + t[0] + (nm ? '&night=' + nm[1] : '') + '#b">' + t[1] + '</a>'; }).join('');
+
   /* ───────── the three ways ───────── */
   var WAYS = ['hardware', 'software', 'stories'];
   function show(id) { if (WAYS.indexOf(id) < 0) id = '';
     $$('main > section').forEach(function (s) { s.hidden = s.id !== (id || 'pick'); });
     var on = $('#' + (id || 'pick')); $$('[data-sk]', on).forEach(function (h, i) { seed = 3 + i; sketch(h); }); $$('[data-base]', on).forEach(baseSketch);
     if (id === 'hardware') plates('printers');
-    if (id) { var seen = store.get('da.archi.seen'); if (seen.indexOf(id) < 0) { seen.push(id); store.set('da.archi.seen', seen); } }
-    var was = store.get('da.archi.seen'); $$('.way').forEach(function (w) { w.classList.toggle('was', was.indexOf(w.dataset.go) >= 0); });
+    if (id === 'stories') projs();
     history.replaceState(null, '', location.pathname + location.search + '#' + (id || 'a')); scrollTo(0, 0); }
   $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go); }); });
   show(location.hash.slice(1));
+  /* opened again from the front page: back to the start */
+  addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+  addEventListener('pageshow', function (e) { if (e.persisted) projs(); });
 })();

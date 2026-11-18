@@ -42,16 +42,15 @@
   .way { position: relative; display: grid; grid-template-columns: 38% 1fr; align-items: center; gap: 14px; min-height: 148px; padding: 14px 16px 14px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); text-align: left; transition: transform .25s ease, border-color .25s ease; }
   .way:hover, .way:focus-visible { transform: translateY(-2px); border-color: var(--acc); outline: none; }
   .way .pic { height: 120px; }
+  .way .im { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .way .stg { color: var(--low); font-size: 8.5px; letter-spacing: .1em; white-space: nowrap; }
   .way .k { color: var(--low); }
   .way h2 { margin: 6px 0 6px; font: 600 clamp(18px, 5.2vw, 23px)/1.05 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .01em; }
   .way p { margin: 0; color: var(--mid); font-size: 12.5px; max-width: 24em; }
   .way .go { position: absolute; right: 12px; bottom: 10px; color: var(--low); transition: color .25s ease, transform .25s ease; }
   .way:hover .go { color: var(--acc); transform: translateX(3px); }
-  .way .seen { position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); opacity: 0; transition: opacity .4s ease; }
-  .way.was .seen { opacity: 1; }
   .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 18px 0 0; padding: 0; list-style: none; }
   .tags li { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 99px; color: var(--mid); cursor: default; }
-  .tags li::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 7px 1px 0; border-radius: 50%; background: var(--acc); vertical-align: middle; }
   @media (min-width: 760px) {
     .ways { grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .way { grid-template-columns: 1fr; align-content: start; min-height: 0; padding: 18px 20px 44px; }
@@ -116,6 +115,24 @@
   .steps li a { display: block; }
   .steps li:last-child { border-color: var(--acc); }
   .steps li:last-child:hover { background: var(--bg); }
+  /* one project, every part: a receipt, a phone page, a game and code, made together; three at most */
+  .projs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+  .projs button { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); color: var(--mid); font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .08em; }
+  .projs button[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); }
+  .projs .pt { display: inline-flex; gap: 2px; }
+  .projs .pt i { width: 4px; height: 4px; border: 1px solid currentColor; border-radius: 1px; opacity: .45; }
+  .projs .pt i.on { background: currentColor; opacity: .9; }
+  .projs .x { margin-left: 2px; opacity: .5; }
+  .projs .x:hover { opacity: 1; color: var(--acc); }
+  .base { position: relative; }
+  .base.made::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--mid); font: 500 11px/1 'IBM Plex Mono', monospace; }
+  .bases .base + .base::before { content: '+'; position: absolute; left: -9px; top: 50%; transform: translateY(-50%); color: var(--low); font: 500 12px/1 'IBM Plex Mono', monospace; }
+  .bases .base:nth-child(3)::before { content: none; }
+  /* the nine starters: each a card still to be made, ready to change and put up */
+  .starts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0 0 22px; }
+  .starts a { display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 8px 4px; border: 1px dashed var(--rule); border-radius: 6px; background: var(--card); color: var(--mid); text-align: center; font: 500 clamp(8.5px, 2.5vw, 10.5px)/1.25 'IBM Plex Mono', monospace; letter-spacing: .06em; transition: border-color .2s ease, color .2s ease; }
+  .starts a:hover, .starts a:focus-visible { border-style: solid; border-color: var(--acc); color: var(--acc); outline: none; }
+  @media (min-width: 760px) { .bases .base:nth-child(3)::before { content: '+'; } .starts a { min-height: 64px; } }
   @media (min-width: 760px) { .bases { grid-template-columns: repeat(4, 1fr); } .base .pic { height: 170px; } .hd { grid-template-columns: 170px 1fr; } .hd .pic { height: 130px; } }
 </style>
 </head>
@@ -123,11 +140,10 @@
 <main>
   <section id="pick" aria-label="Island Archipelagos">
     <h1>island archipelagos</h1>
-    <nav class="stages mono" aria-label="Stages"><button type="button" data-go="hardware">MAKE IT RIGHT</button><button type="button" data-go="software">MAKE IT WORK</button><button type="button" data-go="stories">MAKE IT BEAUTIFUL</button></nav>
     <div class="ways">
-      <button type="button" class="way" data-go="hardware"><i class="seen"></i><span class="pic" data-sk="basket"></span><span><span class="mono k">HARDWARE</span><h2>ISLAND</h2><p>Unearth a thermal printer island. Get a parts list.</p></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="software"><i class="seen"></i><span class="pic" data-sk="rope"></span><span><span class="mono k">SOFTWARE</span><h2>ARCHIPELAGOS</h2><p>Download Island Archipelagos OS.</p></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="stories"><i class="seen"></i><span class="pic" data-sk="web"></span><span><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="hardware"><span class="im"><span class="pic" data-sk="basket"></span><span class="stg mono">MAKE IT RIGHT</span></span><span><span class="mono k">HARDWARE</span><h2>ISLAND</h2><p>Unearth a thermal printer island. Get a parts list.</p></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="software"><span class="im"><span class="pic" data-sk="rope"></span><span class="stg mono">MAKE IT WORK</span></span><span><span class="mono k">SOFTWARE</span><h2>ARCHIPELAGOS</h2><p>Download Island Archipelagos OS.</p></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="stories"><span class="im"><span class="pic" data-sk="web"></span><span class="stg mono">MAKE IT BEAUTIFUL</span></span><span><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></span><span class="go mono">→</span></button>
     </div>
     <ul class="tags mono">
       <li title="All the code and blueprints, free: AGPL-3.0 and MIT">OPEN SOURCE</li>
@@ -176,18 +192,16 @@
   <section id="stories" hidden aria-label="Developer">
     <div class="top"><button type="button" class="back mono" data-go="">← BACK</button><span class="st mono">MAKE IT BEAUTIFUL</span></div>
     <div class="hd"><span class="pic" data-sk="web"></span><div><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></div></div>
-    <p class="lab mono">START WITH</p>
+    <p class="lab mono">PROJECTS</p>
+    <div class="projs" id="projs"></div>
     <div class="bases">
-      <a class="base" data-bench="slip" data-s="found" href="bench?m=slip&amp;s=found#b" title="Design a receipt, part by part, and print it"><span class="pic" data-base="receipt"></span><b class="mono">RECEIPT</b></a>
-      <a class="base" data-bench="page" href="bench?m=page#b" title="Design a phone page that links to your receipt"><span class="pic" data-base="phone"></span><b class="mono">PHONE PAGE</b></a>
-      <a class="base" data-bench="game" href="bench?m=game#b" title="Make a game that plays on paper, and test it here"><span class="pic" data-base="game"></span><b class="mono">GAME</b></a>
-      <a class="base" data-bench="live" href="bench?m=live#b" title="Write it, or paste past code, and it runs here"><span class="pic" data-base="code"></span><b class="mono">CODE</b></a>
+      <a class="base" data-part="slip" data-bench="slip" data-s="found" href="bench?m=slip&amp;s=found#b" title="Design a receipt, part by part, and print it"><span class="pic" data-base="receipt"></span><b class="mono">RECEIPT</b></a>
+      <a class="base" data-part="page" data-bench="page" href="bench?m=page#b" title="Design a phone page that links to your receipt"><span class="pic" data-base="phone"></span><b class="mono">PHONE PAGE</b></a>
+      <a class="base" data-part="game" data-bench="game" href="bench?m=game#b" title="Make a game that plays on paper, and test it here"><span class="pic" data-base="game"></span><b class="mono">GAME</b></a>
+      <a class="base" data-part="live" data-bench="live" href="bench?m=live#b" title="Write it, or paste past code, and it runs here"><span class="pic" data-base="code"></span><b class="mono">CODE</b></a>
     </div>
-    <ol class="steps">
-      <li><b>MAKE</b><span>Fill in the gaps</span></li>
-      <li><b>PRINT</b><span>Try it on an island</span></li>
-      <li><a data-bench="card" href="bench?m=card#b" title="Send what you made to the front page as a card"><b>SHARE</b><span>Put it on novel.global</span></a></li>
-    </ol>
+    <p class="lab mono">STARTERS</p>
+    <div class="starts" id="starts"></div>
   </section>
 </main>
 <script src="vendor/rough.js"></script>

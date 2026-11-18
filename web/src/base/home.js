@@ -1108,7 +1108,8 @@
     fr.addEventListener('load', function () { [600, 1800, 3600].forEach(function (t) { setTimeout(tell, t); }); }); }
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'remix' && typeof e.data.img === 'string') { SH.swap = true; remixIn(e.data.img); } });
   function inFrame(src) { return function (b) { b.hidden = true; var url = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'), w = WARM.filter(function (f) { return f.dataset.src === url && f.isConnected; })[0];
-    if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label'); return; }
+    if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label');
+      if (/^archipelagos/.test(src)) { try { var cw = w.contentWindow; if (/\/archipelagos$/.test(cw.location.pathname)) cw.location.hash = 'a'; else w.src = url; } catch (e) { w.src = url; } } return; }
     var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = url; fr.dataset.src = url; fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
   /* the radio on air: once playing, it keeps playing under the home and every other card until stopped, and waits under any other sound */
   var AIR = { fr: null, on: false, kept: false, held: {} };
