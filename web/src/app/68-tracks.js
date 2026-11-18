@@ -260,7 +260,7 @@ function playMix(id) { const m = MIXES.find(x => x.id === id) || LOOPS.find(x =>
 const LOOPS = store.get('da.loops.v1', []);
 /* ms: the tracks going round, { m, t0, step, live, of } (of: the song they belong to); back: what was playing before, to come
    back when what replaced it stops; paused: what went round when the radio was paused; hush: quiet under a recording */
-const LOOP = { on: false, live: false, m: null, t0: 0, timer: 0, ms: [], back: [], paused: null, hush: false };
+const LOOP = { on: false, live: false, m: null, t0: 0, timer: 0, ms: [], back: [], paused: null, hush: false, away: null };   // away: the deck as one file in the page's player
 const loopDur = m => Math.max(2, +((m && m.loop) || CONFIG.SCAN.turn || 8)) * 1000 / ((life.tempo && life.tempo()) || 1);
 const loopBearing = () => (LOOP.m ? ((performance.now() - LOOP.t0) % loopDur(LOOP.m)) / loopDur(LOOP.m) * 360 : 0);
 /* a song as a score: its turn cut into sixteenths, each cell in the sixteenth it lies in, those in danger and the bright ones
@@ -292,9 +292,9 @@ function loopTick() {
     const i = ((st % n) + n) % n; due.push({ tr, notes: sc[i], turn: Math.floor(st / n), figs: figs[i], st });
   }
   if (late && now - LOAD.at > 1500) { LOAD.lv = Math.min(LOAD_B.length - 1, LOAD.lv + 1); LOAD.at = now; } else if (LOAD.lv && now - LOAD.at > 8000) { LOAD.lv--; LOAD.at = now; }
-  bakedSync(hold, now, share);
+  awaySync(hold, now, share); bakedSync(hold, now, share);
   let left = LOAD_B[LOAD.lv]; const r0 = due.length ? ((due[0].st % due.length) + due.length) % due.length : 0;
-  for (let j = 0; j < due.length; j++) { const d = due[(j + r0) % due.length], bk = d.tr.bk; if (bk) loopStep(d.tr, d.notes, d.turn, share, B, null, true);
+  for (let j = 0; j < due.length; j++) { const d = due[(j + r0) % due.length], bk = d.tr.bk || awayOn(); if (bk) loopStep(d.tr, d.notes, d.turn, share, B, null, true);
     else left -= loopStep(d.tr, d.notes, d.turn, share, Math.min(B, Math.max(0, left))); for (const id of d.figs) strings.playFig(id); }
 }
 /* two kept songs or more, each made once ahead (snd.bake) and played as that recording going round: every note, voice, echo and
@@ -311,7 +311,7 @@ async function bakeOf(m, key) {
     .then(buf => buf, () => false).then(buf => { if (buf === null) return; BAKED.set(m, { key, buf: buf || null }); BAKE_KEEP.splice(0, BAKE_KEEP.length, ...BAKE_KEEP.filter(x => x !== m), m); while (BAKE_KEEP.length > 6) BAKED.delete(BAKE_KEEP.shift()); });
 }
 function bakedSync(hold, now, share) {
-  const kept = LOOP.ms.filter(t => !t.live), on = !hold && kept.length > 0;
+  const kept = LOOP.ms.filter(t => !t.live), on = !hold && kept.length > 0 && !awayOn();
   for (const tr of LOOP.ms) {
     const got = BAKED.get(tr.m), key = on && !tr.live ? bakeKey(tr.m) : null, fit = key && got && got.key === key;
     if (tr.bk && (!fit || tr.bk.c !== snd.ac || tr.bk.buf !== got.buf)) { tr.bk.stop(); tr.bk = null; }
@@ -320,6 +320,36 @@ function bakedSync(hold, now, share) {
     if (key && !fit && !baking) baking = bakeOf(tr.m, key).catch(() => {}).then(() => { baking = null; });
   }
 }
+/* the deck handed to the page's one player (away.js) once every track is made ahead: the same recordings summed into one file
+   going round, so it plays on with the screen locked or another app in front. The live loop, the sweep and a recording stay live */
+const AWAY = window.NGAWAY || null;
+const awayOn = () => !!(LOOP.away && LOOP.away.ready);
+function awayEnd() { const a = LOOP.away; if (!a) return; LOOP.away = null; if (AWAY && AWAY.id() === a.id) AWAY.stop('deck'); }
+function awaySync(hold, now, share) {
+  if (!AWAY || document.hidden) return;
+  const ms = LOOP.ms, other = AWAY.on() && AWAY.id().indexOf('deck:') !== 0;
+  let parts = null, sig = '';
+  if (!hold && !filing && !other && ms.length && ms.every(t => !t.live)) {
+    parts = []; for (const tr of ms) { const got = BAKED.get(tr.m); if (!got || !got.buf || got.key !== bakeKey(tr.m)) { parts = null; break; } parts.push({ tr, buf: got.buf }); }
+    if (parts) sig = ms.map(t => `${t.of}@${Math.round(t.t0)}#${bakeKey(t.m)}`).join(',');
+  }
+  const a = LOOP.away;
+  if (a && a.sig === sig) { if (a.ready && AWAY.id() === a.id && !AWAY.on()) setRadio(false); return; }   // paused from the lock screen: the radio shows it
+  awayEnd(); if (!parts) return;
+  /* one file as long as the tracks take to line up again (48 seconds at most), each from where it is in its turn now */
+  const sr = parts[0].buf.sampleRate, lens = parts.map(p => p.buf.length), lcm = (x, y) => x / gcd(x, y) * y;
+  let L = lens.reduce((x, y) => lcm(x, y)); if (L > sr * 48) L = Math.max(...lens);
+  const T = performance.now(), out = [new Float32Array(L), new Float32Array(L)];
+  for (const p of parts) { const n = p.buf.length, o = ((Math.round((T - p.tr.t0) / 1000 * sr) % n) + n) % n;
+    for (let c = 0; c < 2; c++) { const d = p.buf.getChannelData(Math.min(c, p.buf.numberOfChannels - 1)), w = out[c]; for (let i = 0, k = o; i < L; i++, k = k + 1 === n ? 0 : k + 1) w[i] += d[k] * share; } }
+  const id = 'deck:' + T.toFixed(0), place = [...new Set(ms.map(t => (t.m.where || {}).place).filter(Boolean))].slice(0, 3).join(' + ') || 'RADIO';
+  const f = AWAY.wavOf({ numberOfChannels: 2, length: L, sampleRate: sr, getChannelData: c => out[c] }), me = LOOP.away = { sig, id, ready: false };
+  AWAY.play(f, { id, title: String(place).toUpperCase(), album: 'RADIO', at: (performance.now() - T) / 1000,
+    stop: why => { if (LOOP.away === me) LOOP.away = null; if (why === 'stop') setRadio(false); } })
+    .then(ok => { if (LOOP.away !== me) return; if (ok) me.ready = true; else { me.failed = true; AWAY.stop('deck'); LOOP.away = me; } });
+}
+/* a touch anywhere wakes the page's player, as a phone asks, and lets a deck that could not start try again */
+document.addEventListener('click', () => { if (!AWAY) return; AWAY.unlock(); if (LOOP.away && LOOP.away.failed) LOOP.away = null; }, true);
 /* songs taken off: their recordings stop with them */
 function bakedStop() { for (const t of BAKED_ON) if (!LOOP.ms.includes(t) && t.bk) { t.bk.stop(); t.bk = null; } BAKED_ON.length = 0; BAKED_ON.push(...LOOP.ms); }
 const BAKED_ON = [];
@@ -376,7 +406,7 @@ function comeBack() {
 /* the tracks going round, said to every key that shows them, the ring on the map and the timer */
 function loopSync(on) {
   LOOP.on = LOOP.ms.length > 0; LOOP.live = LOOP.ms.some(t => t.live); LOOP.m = LOOP.on ? LOOP.ms[0].m : null; LOOP.t0 = LOOP.on ? LOOP.ms[0].t0 : 0;
-  bakedStop(); clearInterval(LOOP.timer); if (LOOP.on) { LOOP.timer = setInterval(loopTick, snd.lite ? 60 : 30); if (!S.radio) setRadio(true); }
+  bakedStop(); clearInterval(LOOP.timer); if (!LOOP.on) awayEnd(); if (LOOP.on) { LOOP.timer = setInterval(loopTick, snd.lite ? 60 : 30); if (!S.radio) setRadio(true); }
   const four = inFour(), all = four && FOUR().length > 1 && FOUR().every(l => going(l.id));
   $$('[data-loop]').forEach(b => { b.setAttribute('aria-pressed', String(LOOP.live)); b.classList.toggle('on', LOOP.live); });
   $$('[data-t4k]').forEach(b => { const o = going(b.dataset.t4k); b.setAttribute('aria-pressed', String(o)); b.classList.toggle('on', o); });
@@ -446,7 +476,7 @@ async function tapeUp(l, b, name) {
   try { const r = await fetch(`/api/tapes?who=${who}&name=${encodeURIComponent(name)}`, { method: 'POST', headers: { 'content-type': b.type || 'audio/wav' }, body: b }); if (r.status !== 201) return; const j = await r.json(); l.tape = { url: j.url, until: j.until }; store.set('da.loops.v1', LOOPS); } catch (e) { /* this phone's own, then */ }
 }
 async function loopFile(l, four) {
-  if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop();
+  if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop(); dsStop(); awayEnd();
   const ms = tracksOf(l), dur = Math.max(...ms.map(t => loopDur(t.m))), t0 = performance.now() + 150; for (const t of ms) { t.t0 = t0; t.step = null; }
   startPlay(ms); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.add('going')); /* whole turns, to at least 24 seconds: a tape to keep, not a blip */
   const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300 }; refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
@@ -463,13 +493,17 @@ const RECURL = new Map();
 let REC = null;
 function recPlay(id) {
   if (REC) { const was = REC.id; recStop(); if (was === id) return; }
-  const tp = /^t:/.test(id) ? MIXTAPES.find(t => 't:' + t.id === id) : null, q = (tp ? tapeLoops(tp).map(l => RECURL.get(l.id)) : [RECURL.get(id)]).filter(Boolean);
+  const tp = /^t:/.test(id) ? MIXTAPES.find(t => 't:' + t.id === id) : null, ids = (tp ? tapeLoops(tp).map(l => l.id) : [id]).filter(i => RECURL.has(i)), q = ids.map(i => RECURL.get(i));
   if (!q.length) { if (tp && tapeLoops(tp).length) { startPlay(tracksOf(mixOf(tapeLoops(tp)))); loopSync(true); return; } toast('NOT ON THIS PHONE'); return; }
-  REC = { id, q: q.slice(1), radio: S.radio }; if (S.radio) setRadio(false);
+  REC = { id, q: q.slice(1), radio: S.radio }; if (S.radio) setRadio(false); recSync(); tellSound(true, 'rec');
+  if (AWAY) { const me = REC, l = tp ? null : LOOPS.find(x => x.id === id), title = String(tp ? tp.name || 'TAPE' : ((l && l.where) || {}).place || 'RADIO').toUpperCase();
+    Promise.all(ids.map(i => big.get('rec:' + i))).then(bs => AWAY.join(bs)).then(f => { if (REC !== me) return; if (!f) { recStop(); toast('NOT ON THIS PHONE'); return; }
+      me.away = 'rec:' + id; AWAY.play(f, { id: me.away, title, album: tp ? 'MIXTAPE' : 'RADIO', stop: () => { if (REC === me) recStop(); } }); }, () => { if (REC === me) recStop(); });
+    return; }
   const on = u => { const a = new Audio(u); REC.a = a; a.onended = () => { if (REC && REC.q.length) on(REC.q.shift()); else recStop(); }; a.play().catch(() => recStop()); };
-  on(q[0]); recSync(); tellSound(true, 'rec');
+  on(q[0]);
 }
-function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); tellSound(false, 'rec'); }
+function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); if (r.away && AWAY && AWAY.id() === r.away) AWAY.stop('rec'); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); tellSound(false, 'rec'); }
 const recSync = () => { $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); }); $$('[data-f4tp]').forEach(b => b.classList.toggle('on', !!REC && REC.id === 't:' + b.dataset.f4tp)); };
 /* each kept loop's file made ready as SONGS is drawn, so a press plays or saves it at once */
 async function recLoad() { for (const l of LOOPS) { if (!l.rec || RECURL.has(l.id)) continue; const b = await big.get('rec:' + l.id); if (b) RECURL.set(l.id, URL.createObjectURL(b)); else delete l.rec; }
@@ -515,7 +549,14 @@ const tapesRow = () => (MIXTAPES.length ? `<ol class="f4d f4t" role="group" aria
 /* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
 const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 12); } catch (e) { return []; } };
 const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs"><li class="f4dl mono">W.I.S.H.</li>${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
-document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; try { const r = parent.AURA && parent.AURA.play ? parent.AURA.play([b.dataset.dsong]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
+let DS = null;   // the W.I.S.H. song going round: { code, radio }
+const dsSync = () => $$('[data-dsong]').forEach(q => q.classList.toggle('on', !!DS && DS.code === q.dataset.dsong));
+function dsStop() { if (!DS) return; const d = DS; DS = null; if (AWAY && AWAY.id() === 'ds:' + d.code) AWAY.stop('ds'); if (d.radio && !S.radio) setRadio(true); dsSync(); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; const code = b.dataset.dsong; let A = null; try { A = parent.AURA; } catch (er) { /* alone */ }
+  if (AWAY && A && A.songFile) { const was = DS && DS.code; dsStop(); if (was === code) return; recStop(); try { if (A.stop) A.stop(); } catch (er) { /* none */ }
+    const me = DS = { code, radio: S.radio }; dsSync(); A.songFile(code).then(f => { if (DS !== me) return; if (!f) { DS = null; dsSync(); toast('♪'); return; } if (S.radio) setRadio(false);
+      AWAY.play(f, { id: 'ds:' + code, title: A.songName ? A.songName(code) : 'W.I.S.H.', album: 'W.I.S.H.', stop: () => { if (DS === me) dsStop(); } }); }); return; }
+  try { const r = A && A.play ? A.play([code]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
 function refreshFour() { const f = $('#view .four'); if (f) { $$('#view .f4d').forEach(d => d.remove()); f.outerHTML = fourHTML(); } $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }
 /* the loops kept, in the portfolio: each its picture, its place and its day; pressed, it plays again */
 const LART = new Map();

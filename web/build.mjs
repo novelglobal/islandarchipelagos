@@ -102,6 +102,7 @@ ${body}
 <script src="vendor/maplibre-gl.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="spot.js"></script>
+<script src="away.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
