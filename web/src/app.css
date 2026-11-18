@@ -3603,3 +3603,21 @@ html #sec-heat.band.dev.radio.mod .lyrs .lyr-v{height:20px!important}
 .band.dev.radio .f4w{display:flex;align-items:center;gap:12px;margin:6px 0 0;padding:0;overflow-x:auto;scrollbar-width:none}
 .band.dev.radio .f4w::-webkit-scrollbar{display:none}
 .band.dev.radio .f4w>.f4d{flex:none;margin:0;overflow:visible}
+/* ALBUMS: a shelf of covers, the one open its tracks in a row under it */
+.band.dev.radio .f4w.alb{flex-direction:column;align-items:stretch;gap:4px;overflow:visible}
+.band.dev.radio .f4w.alb>.f4d{overflow-x:auto;max-width:100%}
+.band.dev.radio .alb-t{padding:0 8px 0 3px}
+.band.dev.radio .alb-t img,.band.dev.radio .alb-c{display:block;flex:none;width:20px;height:20px;border-radius:50%;object-fit:cover;background:#2A2A28}
+.band.dev.radio .alb-w{background:#FF6B1A}
+.band.dev.radio .alb-t i{font:500 8px/1 var(--mono);font-style:normal;opacity:.6}
+.band.dev.radio .alb-t.alb-open:not(.on){background:rgba(0,0,0,.08)}
+.band.dev.radio .alb-mk{border-style:dashed}
+.band.dev.radio .alb-l{padding-left:10px}
+.band.dev.radio .alb-x{padding:0 8px;opacity:.6}
+.band.dev.radio .alb-dd i,.band.dev.radio .alb-dd .alb-v{font:500 8px/1 var(--mono);font-style:normal;opacity:.6}
+.band.dev.radio .alb-dd.alb-open:not(.on){background:rgba(0,0,0,.08)}
+.band.dev.radio .alb-dl{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto;overscroll-behavior:contain;border:1px solid rgba(0,0,0,.18);border-radius:10px;background:rgba(255,255,255,.35)}
+.band.dev.radio .alb-dl .alb-i{display:flex;flex-direction:column;gap:4px}
+.band.dev.radio .alb-dl .alb-t{align-self:flex-start;max-width:100%}
+.band.dev.radio .alb-dl .alb-l{margin:0 0 2px;overflow-x:auto}
+html #sec-heat.band.dev.radio.mod .alb-t img,html #sec-heat.band.dev.radio.mod .alb-c{width:17px;height:17px}

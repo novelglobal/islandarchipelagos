@@ -206,7 +206,11 @@ $('#view').addEventListener('click', e => {
   const fk = e.target.closest('[data-t4k]'); if (fk) { toggleTrack(fk.dataset.t4k); return; }
   if (e.target.closest('[data-t4save]')) { if (!FILING) saveFour(); return; }
   const pg = e.target.closest('[data-t4pg]'); if (pg) { const n = f4Pages(); F4P = (F4P + +pg.dataset.t4pg + n) % n; snd.tick(1500); refreshFour(); return; }
-  const tp = e.target.closest('[data-f4tp]'); if (tp) { recPlay('t:' + tp.dataset.f4tp); return; }
+  if (e.target.closest('[data-alb-dd]')) { ALBX = !ALBX; snd.tick(1500); refreshFour(); return; }
+  const ab = e.target.closest('[data-alb]'); if (ab) { ALB = ALB === ab.dataset.alb ? '' : ab.dataset.alb; snd.tick(1500); refreshFour(); return; }
+  if (e.target.closest('[data-alb-mk]')) { albMake(); return; }
+  const aa = e.target.closest('[data-alb-all]'); if (aa) { albPlay(aa.dataset.albAll); return; }
+  const atr = e.target.closest('[data-alb-tr]'); if (atr) { const id = atr.dataset.albTr, l = LOOPS.find(x => x.id === id); if (!l) return; if (l.rec) recLoad().then(() => { if (RECURL.has(id)) recPlay(id); else playLoop(id); albSync(); }); else { playLoop(id); albSync(); } return; }
   const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
   const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
@@ -504,7 +508,7 @@ function recPlay(id) {
   on(q[0]);
 }
 function recStop() { if (!REC) return; const r = REC; REC = null; try { if (r.a) r.a.pause(); if (r.away && AWAY && AWAY.id() === r.away) AWAY.stop('rec'); } catch (e) { /* gone */ } if (r.radio && !S.radio) setRadio(true); recSync(); tellSound(false, 'rec'); }
-const recSync = () => { $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); }); $$('[data-f4tp]').forEach(b => b.classList.toggle('on', !!REC && REC.id === 't:' + b.dataset.f4tp)); };
+const recSync = () => { $$('[data-rec-play]').forEach(b => { const on = !!REC && REC.id === b.dataset.recPlay; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'sound', 'sm'); }); albSync(); };
 /* each kept loop's file made ready as SONGS is drawn, so a press plays or saves it at once */
 async function recLoad() { for (const l of LOOPS) { if (!l.rec || RECURL.has(l.id)) continue; const b = await big.get('rec:' + l.id); if (b) RECURL.set(l.id, URL.createObjectURL(b)); else delete l.rec; }
   $$('[data-rec-dl]').forEach(a => { const u = RECURL.get(a.dataset.recDl); if (u) a.href = u; }); }
@@ -542,15 +546,60 @@ function fourHTML() {
     + `<button type="button" class="f4m${rec ? ' going' : ''}" data-t4save aria-label="${rec ? 'Recording live, one whole turn' : 'Record what plays live, one whole turn, as a sound file'}" data-tip="${rec ? 'Recording live' : 'Record live'}"${four.length || rec ? '' : ' disabled'}>${rec ? '<i class="f4dot" aria-hidden="true"></i>' : icon('download', 'sm')}<small class="mono">${rec ? 'live' : 'save'}</small></button>`
     + (FILED && FILED.four && !rec ? `<a class="f4m ready" href="${FILED.url}" download="${esc(FILED.name)}" target="_blank" rel="noopener" aria-label="Save the recorded loop to this phone" data-tip="Save the file">${icon('out', 'sm')}<small class="mono">file</small></a>` : '')
     + (pages > 1 ? `<button type="button" class="f4m f4pg f4nx" data-t4pg="1" aria-label="Page ${F4P + 1} of ${pages}: the next page" data-tip="Next"><small class="mono">${F4P + 1}/${pages}</small>›</button>` : '') + '</li>'
-    + (rec ? '<li class="f4r" role="status"><i aria-hidden="true"></i><span class="mono">REC</span></li>' : '') + '</ol>' + ((tp, dk) => (tp || dk ? `<div class="f4d f4w">${dk}${tp}</div>` : ''))(tapesRow(), deskHTML());
+    + (rec ? '<li class="f4r" role="status"><i aria-hidden="true"></i><span class="mono">REC</span></li>' : '') + '</ol>' + albumsHTML();
 }
-/* the mixtapes, under the deck: each plays its recordings in turn (or its songs together) */
-const tapesRow = () => (MIXTAPES.length ? `<ol class="f4d f4t" role="group" aria-label="Mixtapes"><li class="f4dl mono">TAPES</li>${MIXTAPES.slice(0, 12).map(t => `<li><button type="button" class="${REC && REC.id === 't:' + t.id ? 'on' : ''}" data-f4tp="${esc(t.id)}" aria-label="Mixtape ${esc(t.name)}" data-tip="${esc(t.name)}">${icon('play', 'sm')}<small class="mono">${esc(String(t.name || 'TAPE').slice(0, 10))}</small></button></li>`).join('')}</ol>` : '');
 /* the W.I.S.H. desk's songs, on the radio when the two are joined: each plays where it is, a tap again stops it */
 const DESKSONGS = () => { if (!IN_AURA || /[?&]solo=1/.test(location.search)) return []; try { return (JSON.parse(localStorage.getItem('da.aura.songs') || '[]') || []).filter(q => q && q.code).slice(0, 12); } catch (e) { return []; } };
-const deskHTML = () => { const l = DESKSONGS(); return l.length ? `<ol class="f4d" role="group" aria-label="W.I.S.H. songs"><li class="f4dl mono">W.I.S.H.</li>${l.map((q, i) => `<li><button type="button" data-dsong="${esc(q.code)}" aria-label="W.I.S.H. song ${i + 1}" data-tip="W.I.S.H. song ${i + 1}">${icon('play', 'sm')}<small class="mono">${i + 1}</small></button></li>`).join('')}</ol>` : ''; };
+const pAura = () => { try { return parent.AURA || null; } catch (e) { return null; } };
+const sname = q => String(q.name || (pAura() && pAura().songName ? pAura().songName(q.code) : 'SONG')).toUpperCase();
+/* ALBUMS, under the deck: one key that drops down every album: each mixtape (the first track's radar its cover, its name, its
+   tracks) and the songs kept on the W.I.S.H. sound desk as one more. An album tapped opens its tracks under it: ALL plays it
+   whole, a track plays alone. + makes an album of the tracks playing on the deck (every track kept, when none plays) */
+let ALB = '', ALBX = false;   // ALB: the album open, 't:<id>' or 'wish'; ALBX: the drop-down open
+const albOn = a => (a === 'wish' ? !!DS : !!REC && REC.id === a), albAll = a => (a === 'wish' ? !!DS && DS.code === '*' : albOn(a));
+function albumsHTML() {
+  const ds = DESKSONGS(), tapes = MIXTAPES.slice(0, 12), n2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`, count = tapes.length + (ds.length ? 1 : 0);
+  if (ALB && !(ALB === 'wish' ? ds.length : tapes.some(t => 't:' + t.id === ALB))) ALB = '';
+  if (!count && !DECK().length) return '';
+  const any = !!DS || (!!REC && /^t:/.test(REC.id));
+  const tracks = a => { const on = albAll(a); let trs = '';
+    if (a === 'wish') trs = ds.map((q, i) => `<li><button type="button" class="${DS && DS.code === q.code ? 'on' : ''}" data-dsong="${esc(q.code)}" aria-label="Track ${i + 1}: ${esc(sname(q))}" data-tip="${esc(sname(q))}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(sname(q).slice(0, 10))}</small></button></li>`).join('');
+    else { const t = tapes.find(x => 't:' + x.id === a);
+      trs = tapeLoops(t).map((l, i) => { const nm = String((l.where || {}).place || 'RADIO').toUpperCase(), o = (!!REC && REC.id === l.id) || going(l.id);
+        return `<li><button type="button" class="${o ? 'on' : ''}" data-alb-tr="${esc(l.id)}" aria-label="Track ${i + 1}: ${esc(nm)}" data-tip="${esc(nm)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(nm.slice(0, 10))}</small></button></li>`; }).join('')
+        + `<li><button type="button" class="alb-x" data-tape-x="${esc(t.id)}" aria-label="Let this album go" data-tip="Let it go">×</button></li>`; }
+    return `<ol class="f4d alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a)}" aria-label="${on ? 'Stop the album' : 'Play the whole album'}" data-tip="${on ? 'Stop' : 'Play it all'}">${icon(on ? 'pause' : 'play', 'sm')}<small class="mono">all</small></button></li>${trs}</ol>`; };
+  const item = (a, art, nm, n) => `<li class="alb-i"><button type="button" class="alb-t${ALB === a ? ' alb-open' : ''}${albOn(a) ? ' on' : ''}" data-alb="${esc(a)}" aria-expanded="${ALB === a}" aria-label="Album ${esc(nm)}, ${n2(n, 'track')}">${art}<small class="mono">${esc(String(nm).slice(0, 24))}</small><i class="mono">${n}</i></button>${ALB === a ? tracks(a) : ''}</li>`;
+  const key = `<ol class="f4d alb-s" role="group" aria-label="Albums">`
+    + (count ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}${any ? ' on' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${count}" data-tip="Albums">${icon('loop', 'sm')}<small class="mono">albums</small><i class="mono">${count}</i><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '')
+    + (DECK().length ? `<li><button type="button" class="alb-mk" data-alb-mk aria-label="Make an album of the tracks playing on the deck, or of every track kept" data-tip="New album">${icon('plus', 'sm')}<small class="mono">album</small></button></li>` : '') + '</ol>';
+  const list = ALBX && count ? `<ul class="alb-dl" role="list">`
+    + tapes.map(t => { const ls = tapeLoops(t); return item('t:' + t.id, ls[0] ? `<img src="${loopArt(ls[0])}" alt="">` : '<b class="alb-c"></b>', t.name || 'TAPE', ls.length); }).join('')
+    + (ds.length ? item('wish', '<b class="alb-c alb-w"></b>', 'W.I.S.H.', ds.length) : '') + '</ul>' : '';
+  return `<div class="f4d f4w alb">${key}${list}</div>`;
+}
+function albSync() { try {
+  $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd]').forEach(b => b.classList.toggle('on', !!DS || (!!REC && /^t:/.test(REC.id))));
+  $$('[data-alb-all]').forEach(b => { const on = albAll(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'play', 'sm') + '<small class="mono">all</small>'; });
+  $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', (!!REC && REC.id === b.dataset.albTr) || going(b.dataset.albTr)));
+} catch (e) { /* not drawn yet */ } }
+function albMake() {
+  const sel = inFour() ? [...new Set(LOOP.ms.map(t => t.of))] : [], ids = (sel.length ? sel : DECK().map(l => l.id)).slice(0, 24);
+  if (!ids.length) { toast('KEEP A TRACK FIRST'); return; }
+  const l0 = LOOPS.find(l => l.id === ids[0]), t = { id: 'tp' + Date.now().toString(36), at: Date.now(), name: String(((l0 || {}).where || {}).place || 'RADIO').toUpperCase().slice(0, 32), ids, sp: null, pub: false };
+  MIXTAPES.unshift(t); MIXTAPES.splice(12); store.set('da.tapes.v1', MIXTAPES); ALB = 't:' + t.id; ALBX = true; made('song', 'mixtape'); snd.tick(1900); toast('✓ ALBUM'); refreshFour();
+}
+/* an album whole: a mixtape's recordings end to end, or every W.I.S.H. song made ahead and joined, one file in the page's player */
+async function albPlay(a) {
+  if (a !== 'wish') { if (!(REC && REC.id === a)) await recLoad(); recPlay(a); albSync(); return; }
+  if (DS && DS.code === '*') { dsStop(); return; }
+  const A = pAura(), codes = DESKSONGS().map(q => q.code); dsStop(); if (!AWAY || !A || !A.songFile || !codes.length) return; recStop(); try { if (A.stop) A.stop(); } catch (e) { /* none */ }
+  const me = DS = { code: '*', radio: S.radio }; dsSync();
+  Promise.all(codes.map(c => A.songFile(c))).then(fs => AWAY.join(fs)).then(f => { if (DS !== me) return; if (!f) { DS = null; dsSync(); toast('♪'); return; } if (S.radio) setRadio(false);
+    AWAY.play(f, { id: 'ds:*', title: 'W.I.S.H.', album: 'W.I.S.H.', stop: () => { if (DS === me) dsStop(); } }); });
+}
 let DS = null;   // the W.I.S.H. song going round: { code, radio }
-const dsSync = () => $$('[data-dsong]').forEach(q => q.classList.toggle('on', !!DS && DS.code === q.dataset.dsong));
+const dsSync = () => { $$('[data-dsong]').forEach(q => q.classList.toggle('on', !!DS && DS.code === q.dataset.dsong)); albSync(); };
 function dsStop() { if (!DS) return; const d = DS; DS = null; if (AWAY && AWAY.id() === 'ds:' + d.code) AWAY.stop('ds'); if (d.radio && !S.radio) setRadio(true); dsSync(); }
 document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; const code = b.dataset.dsong; let A = null; try { A = parent.AURA; } catch (er) { /* alone */ }
   if (AWAY && A && A.songFile) { const was = DS && DS.code; dsStop(); if (was === code) return; recStop(); try { if (A.stop) A.stop(); } catch (er) { /* none */ }
@@ -578,7 +627,7 @@ $('#view').addEventListener('click', async e => {
   const sh = e.target.closest('[data-song-file]'); if (sh) { const l = LOOPS.find(x => x.id === sh.dataset.songFile); if (l) loopFile(l); return; }
   if (e.target.closest('[data-tape-mk]')) { TAPE_MK = !TAPE_MK; refreshPanel(); return; }
   const tsh = e.target.closest('[data-tape-share]'); if (tsh) { const t = MIXTAPES.find(x => x.id === tsh.dataset.tapeShare); if (t) tapeShare(t); return; }
-  const tx = e.target.closest('[data-tape-x]'); if (tx) { const i = MIXTAPES.findIndex(x => x.id === tx.dataset.tapeX); if (i >= 0) { MIXTAPES.splice(i, 1); store.set('da.tapes.v1', MIXTAPES); refreshPanel(); } return; }
+  const tx = e.target.closest('[data-tape-x]'); if (tx) { const i = MIXTAPES.findIndex(x => x.id === tx.dataset.tapeX); if (i >= 0) { MIXTAPES.splice(i, 1); store.set('da.tapes.v1', MIXTAPES); if (ALB === 't:' + tx.dataset.tapeX) ALB = ''; refreshPanel(); refreshFour(); } return; }
   const rp = e.target.closest('[data-rec-play]'); if (rp) { recPlay(rp.dataset.recPlay); return; }
   const rd = e.target.closest('[data-rec-dl]'); if (rd) { const l = LOOPS.find(x => x.id === rd.dataset.recDl); if (!l || !tapeURL(l)) { e.preventDefault(); toast('NOT ON THIS PHONE'); } }
 });
