@@ -207,6 +207,25 @@ try {
   check('the showcase: nine in an order, a like once a code, opens and likes for the maker, only the maker changes it', sc_pm.status === 201 && sc_sl.json.o === 'liked' && Array.isArray(sc_sl.json.plays) && sc_sl.json.plays.length <= 9 && sc_l1.json.n === 1 && sc_l2.json.n === 1 && sc_e0.status === 404 && sc_e1.status === 201 && sc_mn && sc_mn.th === 'pink' && sc_mn.lk === 1 && sc_mn.op >= 1 && sc_sl2.json.plays[1].c === sc_pc,
     JSON.stringify({ sc_pm: sc_pm.status, l: [sc_l1.json, sc_l2.json], e: [sc_e0.status, sc_e1.status], sc_mn, first: sc_sl2.json.plays.map(x => x.c).slice(0, 3) }));
 
+  /* the showcase at scale: thirty more made at once, paged nine at a time with none lost or twice, found by name or code, grouped on a shelf,
+     a star first, one kept off, a hero always with the big cards, and as many as novel.global allows */
+  const SCN = []; for (let i = 0; i < 30; i++) { const r = await call('/api/plays', { method: 'POST', key: KEY, ip: '10.9.' + i + '.1', body: { who: 'Q7M', n: 'scale ' + (i < 10 ? 'kite ' : 'lamp ') + i, th: 'cyan', src: 'print(1)' } }); SCN.push(r.json && r.json.code); }
+  const scA = (await call('/api/plays?o=fresh&n=7&off=0')).json, seen = new Set(scA.plays.filter(x => !x.first).map(x => x.c)); let scOff = 7, scP = 0;
+  while (scOff < scA.total && scP++ < 20) { const j = (await call(`/api/plays?o=fresh&n=9&off=${scOff}`)).json; j.plays.forEach(x => seen.add(x.c)); scOff += 9; }
+  check('a hundred made at once still page through: every one once, nine a page, after the first page’s own cards', SCN.every(Boolean) && scA.total >= 31 && seen.size === scA.total && SCN.every(c => seen.has(c)), JSON.stringify({ total: scA.total, seen: seen.size }));
+  const scQ = (await call('/api/plays?q=kite')).json, scC = (await call('/api/plays?q=' + SCN[25])).json;
+  check('FIND: by name or by its code', scQ.total === 10 && scQ.plays.every(x => /KITE/.test(x.n)) && !scQ.plays.some(x => x.first) && scC.total === 1 && scC.plays[0].c === SCN[25], JSON.stringify({ q: scQ.total, c: scC.total }));
+  const scW = async (c, o) => { const w = (await call('/api/admin/stories?status=shown', { key: KEY })).json.stories.find(x => x.code === c); return call(`/api/admin/stories/${w.id}`, { method: 'POST', key: KEY, body: o }); };
+  await scW(SCN[3], { action: 'star' }); await scW(SCN[4], { action: 'off' }); await scW(SCN[5], { action: 'shelf', shelf: 'Games!' }); await scW(SCN[6], { action: 'shelf', shelf: 'games' }); await scW(SCN[7], { action: 'big' });
+  const scS = (await call('/api/plays?o=fresh&n=8&off=0')).json, scG = (await call('/api/plays?sh=GAMES')).json, scO = (await call('/api/plays?q=' + SCN[4])).json, scH = (await call('/api/plays?pg=3')).json;
+  check('curated: a star first, OFF out of it, a shelf to group by, a hero with the big cards on every page', scS.plays.filter(x => !x.first)[0].c === SCN[3] && scS.plays[1].star && scO.total === 0 && scG.total === 2 && scS.shelves.some(x => x.sh === 'GAMES' && x.n === 2) && scH.heroes.some(x => x.c === SCN[7]) && !scS.plays.some(x => x.c === SCN[7]),
+    JSON.stringify({ first: scS.plays.slice(0, 2).map(x => x.c), sh: scS.shelves, g: scG.total, off: scO.total, h: scH.heroes.map(x => x.c) }));
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { showcase: JSON.stringify({ cap: 18, heroes: 0 }) } });
+  const scK = (await call('/api/plays?n=9&off=9')).json, scK2 = (await call('/api/plays?n=9&off=18')).json;
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { showcase: JSON.stringify({ star: true }) } }); const scT = (await call('/api/plays?n=8&off=0')).json, scT2 = (await call('/api/plays?q=lamp')).json;
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { showcase: '' } });
+  check('novel.global limits it: at most so many, or the starred only (a search still finds the rest)', scK.total === 18 && !scK.more && scK2.plays.length === 0 && !scK.heroes.length && scT.total === 1 && scT.plays.filter(x => !x.first).every(x => x.star) && scT2.total >= 19, JSON.stringify({ cap: [scK.total, scK.more, scK2.plays.length], star: scT.total, q: scT2.total }));
+
   /* a pack of cells: waits like any story, then everyone has it */
   const PACK = JSON.stringify({ title: 'Fruit and radios', by: 'neighbours', cells: [{ k: 'fruit', n: 'Lemon tree', lat: -37.7701, lng: 144.9602 }, { k: 'node', n: 'Rooftop repeater', lat: -37.7664, lng: 144.9731 }] });
   const c0 = await call('/api/stories', { method: 'POST', ip: '10.0.0.7', body: { kind: 'cells', code: 'DA-C3KS', body: PACK, lat: -37.768, lng: 144.967 } });
@@ -341,6 +360,12 @@ try {
       no.status === 403 && [200, 201].includes(own.status) && on.json.links.join() === 'wish' && [200, 201].includes(yes.status), JSON.stringify([no.status, own.status, on.json && on.json.links, yes.status]));
     /* passes: no screen ever sees a code; the printer gets it on paper; the reader knows it; it sends one print straight out, once */
     const PT = got.json.token, codeOf = async () => { for (let i = 0; i < 8; i++) { const r = await call(`/api/printers/${id}/next`, { token: PT }); const e = r.json && r.json.escpos; if (!e) return ''; const m = /[A-Z]{3}-[A-Z]{3}/.exec(Buffer.from(e, 'base64').toString('latin1')); if (r.json.code === 'DA-PASS' && m) return m[0]; } return ''; };
+    /* the island's own picks: its keeper holds up plays, the showcase groups them under its name */
+    const ipk1 = await call('/api/island', { method: 'POST', token: K, body: { action: 'picks', play: SCN[10] } }), ipk0 = await call('/api/island', { method: 'POST', token: K, body: { action: 'picks', play: 'PL-ZZZZ' } });
+    const ipkS = (await call('/api/plays?isle=' + id)).json, ipkA = (await call('/api/plays')).json;
+    const ipkB = await call('/api/island', { method: 'POST', token: K, body: { action: 'picks', play: SCN[10], on: false } }), ipkX = await call('/api/island', { method: 'POST', body: { action: 'picks', play: SCN[11] } });
+    check('an island keeper picks plays for its own shelf, and takes them off', ipk1.status === 200 && ipk1.json.picks.length === 1 && ipk0.status === 404 && ipkS.total === 1 && ipkS.plays[0].c === SCN[10] && ipkA.isles.some(x => x.id === id && x.n === 1) && ipkB.json.picks.length === 0 && ipkX.status === 401,
+      JSON.stringify({ ipk1: ipk1.status, ipk0: ipk0.status, s: ipkS.total, isles: ipkA.isles, ipkB: ipkB.json, x: ipkX.status }));
     const lk = await call('/api/island', { method: 'POST', token: K, body: { action: 'look' } }), ps = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), pc = await codeOf();
     const rd = await call('/api/c/' + pc), bad = await call('/api/c/' + (pc ? pc.slice(0, 4) + (pc[4] === 'A' ? 'B' : 'A') + pc.slice(5) : 'AAA-AAA'));
     const p1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPA', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });

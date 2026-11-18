@@ -828,7 +828,7 @@
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
     else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<a class="hm-tag sp-inst" data-gh href="https://github.com/novelglobal/islandarchipelagos/tree/main/kit" target="_blank" rel="noopener" title="The island OS"><i></i>ONE CLICK INSTALL</a><button type="button" class="hm-tag sp-inst sp-parts" data-kitopen title="Every part, to tick off"><i></i>PARTS LIST</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
-    else if (sk === 'play') inner = '<span class="hm-sp"></span><h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
+    else if (sk === 'play') inner = '<span class="hm-sp"></span>' + (c.star ? '<i class="pl-star" title="Starred by novel.global" aria-label="Starred">★</i>' : '') + '<h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') { var nm = (t.charAt(0) + t.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
       inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><i class="wx-a" aria-hidden="true"></i><i class="wx-b" aria-hidden="true"></i>' + (c.g === 'week' ? '<span class="wx-wk" aria-hidden="true"></span>' : '') + '<b class="wx-k">' + nm + '</b>' +
         (c.g === 'read' ? '<div class="wx-bk" aria-hidden="true"><i></i><i></i><p><b class="wx-h"></b><span class="wx-s"></span></p></div>' :
@@ -978,31 +978,57 @@
     for (var j = CARDS.length - 1; j >= 0; j--) if (CARDS[j].ph && ++k > want) CARDS.splice(j, 1);
     applyCards(''); }
   var PLAY_TH = ['dots', 'lilac', 'cyan', 'coral', 'pink', 'print'];
-  /* the showcase: what people made, nine at a time in one 3x3 under the unmade nine; its order LIKED, FRESH or ARCHIVE, NEXT swaps the nine in place */
-  var DEV = { o: /^(liked|fresh|archive)$/.test(store.get('da.hm.dev', 'fresh')) ? store.get('da.hm.dev', 'fresh') : 'fresh', pg: 0, more: false, keep: null };
-  function playCards(j) { j = j || {}; DEV.more = !!j.more;
+  /* the showcase: what people made, nine at a time in one 3x3 under the unmade nine; its order LIKED, FRESH or ARCHIVE, NEXT swaps the nine in place.
+     However many are made, it stays one nine: FIND looks through them all by name or code, the shelves novel.global curates and the islands' own picks
+     group them, BACK and NEXT page through with how far along; a starred play stands first, a hero with the big cards */
+  var DEV = { o: /^(liked|fresh|archive)$/.test(store.get('da.hm.dev', 'fresh')) ? store.get('da.hm.dev', 'fresh') : 'fresh', pg: 0, more: false, keep: null, q: '', sh: '', isle: '', total: 0, L: 0, shelves: [], isles: [], find: false, t: 0 };
+  /* the cards made here and kept on this phone stand beside BUSINESS on the first nine: SPECIES LIST, the mixtapes */
+  function devLocals() { var l = [{ id: 'species', g: 'dev', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', skin: 'play', art: 'slot', pal: 6, motion: 'shadow', where: [-37.77, 144.96] },
+      { id: 'tape', g: 'dev', size: 'small', title: 'NIGHT FIELD', opens: 'stack:tape', skin: 'play', art: 'slot', pal: 6, pic: 'tapes/night-field.svg', motion: 'shadow', where: [-37.8136, 144.9631] }];
+    (store.get('da.tapes.v1', []) || []).slice(0, 3).forEach(function (t) { if (!t || !/^[\w-]{1,40}$/.test(t.id || '')) return; var ph = String((t.sp || {}).ph || ''); l.push({ id: 'tp-' + t.id.toLowerCase().replace(/[^a-z0-9-]/g, ''), g: 'dev', size: 'small', title: String(t.name || 'MIXTAPE').toUpperCase().slice(0, 24), opens: 'stack:tape', tp: t.id, skin: 'play', art: 'slot', pal: 6, pic: /^(https:\/\/|\/[^/])/.test(ph) ? ph : '', motion: 'shadow', where: [-37.8136, 144.9631] }); });
+    if (DEV.sh || DEV.isle) return []; var q = DEV.q.toUpperCase(); return l.filter(function (o) { return !q || o.title.indexOf(q) >= 0; }); }
+  function playCards(j, loc) { j = j || {}; loc = loc || []; DEV.more = !!j.more; DEV.total = +j.total || 0; if (Array.isArray(j.shelves)) DEV.shelves = j.shelves; if (Array.isArray(j.isles)) DEV.isles = j.isles;
     for (var q = CARDS.length - 1; q >= 0; q--) if (CARDS[q].g === 'dev' || CARDS[q].dvBig) CARDS.splice(q, 1); var bigs = [];
     var last = -1; CARDS.forEach(function (c, i) { if (c.g === 'soon') last = i; }); var at = last < 0 ? CARDS.length : last + 1, add = [];
-    (j.plays || []).slice(0, 9).forEach(function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return;
-      var o = { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', motion: 'shadow', where: [-37.8136, 144.9631] };
+    var card = function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return null;
+      return { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', star: !!p.star, motion: 'shadow', where: [-37.8136, 144.9631] }; };
+    (j.plays || []).slice(0, 10).forEach(function (p) { var o = card(p); if (!o) return;
       /* a play novel.global made big stands with the big cards, before the nine */
       if (p.big) { o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); } else add.push(o); });
-    var spc = { id: 'species', g: 'dev', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', skin: 'play', art: 'slot', pal: 6, motion: 'shadow', where: [-37.77, 144.96] };
-    /* beside it the mixtapes: the example, its ten sounds traced to where they were heard, then those kept on this phone, each its own card with its cover */
-    var tps = [{ id: 'tape', g: 'dev', size: 'small', title: 'NIGHT FIELD', opens: 'stack:tape', skin: 'play', art: 'slot', pal: 6, pic: 'tapes/night-field.svg', motion: 'shadow', where: [-37.8136, 144.9631] }];
-    (store.get('da.tapes.v1', []) || []).slice(0, 3).forEach(function (t) { if (!t || !/^[\w-]{1,40}$/.test(t.id || '')) return; var ph = String((t.sp || {}).ph || ''); tps.push({ id: 'tp-' + t.id.toLowerCase().replace(/[^a-z0-9-]/g, ''), g: 'dev', size: 'small', title: String(t.name || 'MIXTAPE').toUpperCase().slice(0, 24), opens: 'stack:tape', tp: t.id, skin: 'play', art: 'slot', pal: 6, pic: /^(https:\/\/|\/[^/])/.test(ph) ? ph : '', motion: 'shadow', where: [-37.8136, 144.9631] }); });
-    if (!byId('species')) { var bz = -1; add.forEach(function (o, i) { if (bz < 0 && /BUSINESS|CARD/.test(o.title)) bz = i; }); add.splice.apply(add, [bz < 0 ? add.length : bz + 1, 0, spc].concat(tps.filter(function (o) { return !byId(o.id); }))); if (add.length > 9) add.length = 9; }
+    (j.heroes || []).forEach(function (p) { var o = card(p); if (!o || bigs.some(function (b) { return b.id === o.id; })) return; o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); });
+    if (!DEV.pg && loc.length) { var bz = -1; add.forEach(function (o, i) { if (bz < 0 && /BUSINESS|CARD/.test(o.title)) bz = i; }); add.splice.apply(add, [bz < 0 ? add.length : bz + 1, 0].concat(loc.filter(function (o) { return !byId(o.id); }))); }
+    if (add.length > 9) add.length = 9;
     for (var k = 0; add.length < 9; k++) add.push({ id: 'dev-mk-' + (k ? k : 'a'), g: 'dev', size: 'small', title: 'MAKE', skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] });
     CARDS.splice.apply(CARDS, [at, 0].concat(add)); if (bigs.length) { var s0 = -1; CARDS.forEach(function (c, i) { if (s0 < 0 && c.g === 'soon') s0 = i; }); CARDS.splice.apply(CARDS, [s0 < 0 ? at : s0, 0].concat(bigs)); } applyCards(''); }
-  function devLoad() { fetch('/api/plays?o=' + DEV.o + '&pg=' + DEV.pg).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(playCards).catch(function () { /* none yet */ }); }
+  /* a page asked for from where it starts: the first nine leaves room for the cards of this phone, every later nine is nine */
+  function devLoad() { var loc = devLocals(), L = Math.min(8, loc.length), my = ++DEV.t; DEV.L = L;
+    var u = '/api/plays?o=' + DEV.o + '&pg=' + DEV.pg + '&n=' + (DEV.pg ? 9 : 9 - L) + '&off=' + (DEV.pg ? 9 - L + (DEV.pg - 1) * 9 : 0) + (DEV.q ? '&q=' + encodeURIComponent(DEV.q) : '') + (DEV.sh ? '&sh=' + encodeURIComponent(DEV.sh) : '') + (DEV.isle ? '&isle=' + encodeURIComponent(DEV.isle) : '');
+    fetch(u).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { if (my === DEV.t) playCards(j, loc); }).catch(function () { if (my === DEV.t) playCards({}, loc); }); }
+  var devPages = function () { return 1 + Math.ceil(Math.max(0, DEV.total - (9 - DEV.L)) / 9); };
   function devBar() { var d0 = CARDS.filter(function (c) { return c.g === 'dev'; })[0], f = d0 && col.querySelector('.hm-card[data-id="' + d0.id + '"]'), sec = f && f.closest('.hm-trio'); if (!sec) return;
-    var nv = D.createElement('nav'); nv.className = 'dv-bar'; nv.setAttribute('aria-label', 'Showcase');
+    var nv = D.createElement('nav'); nv.className = 'dv-bar'; nv.setAttribute('aria-label', 'Showcase'); var pgs = devPages(), grp = DEV.shelves.length || DEV.isles.length;
     nv.innerHTML = [['liked', 'LIKED'], ['fresh', 'FRESH'], ['archive', 'ARCHIVE']].map(function (o) { return '<button type="button" data-dv="' + o[0] + '" aria-pressed="' + (DEV.o === o[0]) + '">' + o[1] + '</button>'; }).join('') +
-      '<button type="button" class="dv-nx" data-dv="next"' + (DEV.more || DEV.pg ? '' : ' hidden') + '>' + (DEV.more ? 'NEXT' : 'FIRST') + '</button>';
+      '<button type="button" class="dv-fd" data-dv="find" aria-pressed="' + !!(DEV.find || DEV.q) + '" aria-expanded="' + !!(DEV.find || DEV.q) + '" title="Find by name or code">FIND</button>' +
+      '<button type="button" class="dv-bk" data-dv="back"' + (DEV.pg ? '' : ' hidden') + ' aria-label="The nine before">BACK</button>' +
+      '<b class="dv-n"' + (pgs > 1 ? '' : ' hidden') + ' title="' + DEV.total + ' made">' + (DEV.pg + 1) + '/' + pgs + '</b>' +
+      '<button type="button" class="dv-nx" data-dv="next"' + (DEV.more || DEV.pg ? '' : ' hidden') + '>' + (DEV.more ? 'NEXT' : 'FIRST') + '</button>' +
+      (DEV.find || DEV.q ? '<form class="dv-q" role="search"><input type="search" enterkeyhint="search" maxlength="24" autocomplete="off" aria-label="Find a card by its name or code" placeholder="name or PL-code" value="' + esc(DEV.q) + '"></form>' : '') +
+      (grp ? '<div class="dv-sh" role="group" aria-label="Shelves">' + '<button type="button" data-sh="" aria-pressed="' + !(DEV.sh || DEV.isle) + '">ALL</button>' +
+        DEV.shelves.map(function (x) { return '<button type="button" data-sh="' + esc(x.sh) + '" aria-pressed="' + (DEV.sh === x.sh) + '" title="' + x.n + '">' + esc(x.sh) + '</button>'; }).join('') +
+        DEV.isles.map(function (x) { return '<button type="button" class="dv-is" data-isle="' + esc(x.id) + '" aria-pressed="' + (DEV.isle === x.id) + '" title="' + x.n + ' picked by ' + esc(x.name) + '">' + esc(String(x.name).toUpperCase().slice(0, 16)) + '</button>'; }).join('') + '</div>' : '');
     sec.insertBefore(nv, sec.firstChild); sec.classList.add('dv-nine');
-    nv.addEventListener('click', function (e) { var b = e.target.closest('[data-dv]'); if (!b) return; var v = b.dataset.dv;
-      if (v === 'next') DEV.pg = DEV.more ? DEV.pg + 1 : 0; else { if (v === DEV.o && !DEV.pg) return; DEV.o = v; DEV.pg = 0; store.set('da.hm.dev', v); }
-      beep(600, 0.04); DEV.keep = nv.getBoundingClientRect().top; devLoad(); });
+    var go = function () { beep(600, 0.04); DEV.keep = nv.getBoundingClientRect().top; devLoad(); };
+    nv.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.sh != null) { if (DEV.sh === b.dataset.sh && !DEV.isle) return; DEV.sh = b.dataset.sh; DEV.isle = ''; DEV.pg = 0; go(); return; }
+      if (b.dataset.isle) { if (DEV.isle === b.dataset.isle) return; DEV.isle = b.dataset.isle; DEV.sh = ''; DEV.pg = 0; go(); return; }
+      var v = b.dataset.dv; if (!v) return;
+      if (v === 'find') { DEV.find = !(DEV.find || DEV.q); if (!DEV.find && DEV.q) { DEV.q = ''; DEV.pg = 0; go(); return; } beep(700, 0.03); DEV.keep = nv.getBoundingClientRect().top; applyCards(''); if (DEV.find) { var i = col.querySelector('.dv-q input'); if (i) i.focus({ preventScroll: true }); } return; }
+      if (v === 'next') DEV.pg = DEV.more ? DEV.pg + 1 : 0; else if (v === 'back') DEV.pg = Math.max(0, DEV.pg - 1); else { if (v === DEV.o && !DEV.pg) return; DEV.o = v; DEV.pg = 0; store.set('da.hm.dev', v); }
+      go(); });
+    /* found on ENTER (or as the field is left): typing never redraws the nine under the keyboard */
+    var fm = nv.querySelector('.dv-q'); if (fm) { var inp = fm.querySelector('input'), ask = function () { var q = inp.value.trim().slice(0, 24); if (q === DEV.q) return; DEV.q = q; DEV.find = true; DEV.pg = 0; go(); };
+      fm.addEventListener('submit', function (e) { e.preventDefault(); ask(); inp.blur(); }); inp.addEventListener('change', ask);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') { inp.value = ''; DEV.find = false; ask(); if (!DEV.q) applyCards(''); } }); }
     /* swapped in place: the nine stays where it was on the screen */
     if (DEV.keep != null) { var d = nv.getBoundingClientRect().top - DEV.keep; DEV.keep = null; if (Math.abs(d) > 1) { var x = col; while (x && x !== D.body && !(x.scrollHeight > x.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(x).overflowY))) x = x.parentElement; (x && x !== D.body ? x : D.scrollingElement).scrollTop += d; } } }
   devLoad();
@@ -1459,6 +1485,7 @@
       '<p class="hm-h">CONNECTIONS</p><div class="hm-row">' + (p.all || []).map(function (k) { return '<button class="hm-btn' + ((p.links || []).indexOf(k) >= 0 ? ' on' : '') + '" data-ln="' + k + '" aria-pressed="' + ((p.links || []).indexOf(k) >= 0) + '">' + ({ wish: 'W.I.S.H.', radio: 'RADIO', art: 'ART', words: 'WORDS', cards: 'CARDS', codes: 'CODES' }[k] || k.toUpperCase()) + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h" title="Up to ten pictures on its card">PICTURES</p><div class="hm-pgrid">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { var q = (p.pics || []).filter(function (x) { return x.slot === n; })[0]; return '<button class="hm-pslot' + (q ? ' on' : '') + '" data-ps="' + n + '" aria-label="' + (q ? 'Take this picture away' : 'Add a picture') + '">' + (q ? '<img alt="" src="' + esc(q.url) + '">' : '+') + '</button>'; }).join('') + '</div>' +
       '<div class="hm-row">' + [2, 3, 5, 8].map(function (n) { return '<button class="hm-btn' + ((p.speed || 2) === n ? ' on' : '') + '" data-sp="' + n + '">' + n + ' S</button>'; }).join('') + '</div>' +
+      '<p class="hm-h" title="Plays picked for this island: they stand together in the showcase under its name">PICKS</p><form class="hm-row hm-pk"><input class="hm-pkq" maxlength="24" autocomplete="off" enterkeyhint="search" placeholder="name or PL-code" aria-label="Find a play to pick"></form><ol class="hm-list hm-pkl"></ol>' +
       '<p class="hm-h">PASSES</p><div class="hm-row"><button class="hm-btn" data-pass title="Passes for today' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'PRINT</button></div>' +
       '<div class="hm-row"><button class="hm-btn" data-rn>RENAME</button><button class="hm-btn" data-out title="Forget this island’s key on this phone">FORGET</button></div>';
       $$('[data-ln]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (p.links || []).slice(), k = b.dataset.ln, i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); call({ method: 'POST', body: JSON.stringify({ links: l }) }).then(fill); beep(i >= 0 ? 330 : 660, 0.05); }); });
@@ -1467,6 +1494,15 @@
         filePick(false, function (file) { b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n, { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); }); });
       $$('[data-sp]', box).forEach(function (b) { b.addEventListener('click', function () { call({ method: 'POST', body: JSON.stringify({ speed: +b.dataset.sp }) }).then(fill); beep(550, 0.05); }); });
       $('[data-pass]', box).addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
+      /* PICKS: what this island holds up, and a search through everything made to add to it */
+      var pkl = $('.hm-pkl', box), mine = [], found = [];
+      var pkDraw = function () { var on = {}; mine.forEach(function (x) { on[x.c] = 1; });
+        pkl.innerHTML = mine.map(function (x) { return '<li class="on"><i></i><span>' + esc(x.n || x.c) + '</span><button class="hm-btn" data-pk="' + esc(x.c) + '" data-on="0" aria-label="Take ' + esc(x.n || x.c) + ' off">×</button></li>'; }).join('') +
+          found.filter(function (x) { return !on[x.c]; }).map(function (x) { return '<li><i></i><span>' + esc(x.n || x.c) + '</span><button class="hm-btn" data-pk="' + esc(x.c) + '" data-on="1" aria-label="Pick ' + esc(x.n || x.c) + '">+</button></li>'; }).join('') || '<li>—</li>'; };
+      var pick = function (o) { return call({ method: 'POST', body: JSON.stringify(Object.assign({ action: 'picks' }, o || {})) }).then(function (j) { mine = (j && j.picks) || []; pkDraw(); }); };
+      pick(); pkl.addEventListener('click', function (e) { var b = e.target.closest('[data-pk]'); if (!b) return; beep(b.dataset.on === '1' ? 660 : 330, 0.05); pick({ play: b.dataset.pk, on: b.dataset.on === '1' }).then(function () { DEV.isles = []; devLoad(); }); });
+      $('.hm-pk', box).addEventListener('submit', function (e) { e.preventDefault(); var q = $('.hm-pkq', box).value.trim(); if (!q) { found = []; pkDraw(); return; }
+        fetch('/api/plays?n=9&off=0&q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) { found = (j.plays || []).filter(function (x) { return !x.first; }); pkDraw(); }); });
       $('[data-rn]', box).addEventListener('click', function () { var n = prompt('Its name', p.name); if (n && n.trim()) call({ method: 'POST', body: JSON.stringify({ name: n.trim() }) }).then(fill); });
       $('[data-out]', box).addEventListener('click', function () { if (confirm('Forget this island’s key on this phone? The slip still has it.')) { store.set('da.hm.key', ''); box.innerHTML = ''; } }); };
     box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say">· · ·</p>'; call().then(fill, function () { box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say" title="The key did not open it">LOCKED</p>'; });

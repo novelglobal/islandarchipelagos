@@ -167,6 +167,13 @@
       const sz = (a) => async () => { await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: a }) }); j.big = a === 'big' ? 'yes' : ''; szSay.textContent = a === 'big' ? 'BIG CARD' : 'SMALL CARD'; };
       body = [el('h3', { text: `PLAY · ${j.n || ''}` }), el('div', { class: 'meta', text: meta }), pic,
         el('div', { class: 'acts', style: 'margin:6px 0' }, szSay, el('button', { type: 'button', text: 'BIG', title: 'A big card on novel.global', onclick: sz('big') }), el('button', { type: 'button', text: 'SMALL', title: 'A small card in the showcase', onclick: sz('small') })),
+        (() => { /* the showcase, curated: STAR stands it first, a SHELF groups it, OFF keeps its link but out of the showcase */
+          const say = el('span', { class: 'note' }), cur = () => { say.textContent = [j.star ? '★ STARRED' : '', j.off ? 'OFF THE SHOWCASE' : '', j.shelf ? 'SHELF · ' + j.shelf : ''].filter(Boolean).join(' · ') || 'IN THE SHOWCASE'; };
+          const act = (a, extra) => async () => { const r = await api('stories/' + x.id, { method: 'POST', body: JSON.stringify({ action: a, ...(extra || {}) }) }); const k = await r.json(); if (r.ok) { j.star = k.star ? 1 : 0; j.off = k.off ? 1 : 0; j.shelf = k.shelf || ''; cur(); } };
+          const shf = el('input', { maxlength: 16, placeholder: 'SHELF', 'aria-label': 'Its shelf', value: j.shelf || '', style: 'width:9em;text-transform:uppercase' }); cur();
+          return el('div', { class: 'acts', style: 'margin:6px 0' }, say, el('button', { type: 'button', text: 'STAR', title: 'First in the showcase', onclick: () => act(j.star ? 'unstar' : 'star')() }),
+            el('button', { type: 'button', text: 'OFF', title: 'Out of the showcase (its link still opens it); again to put it back', onclick: () => act(j.off ? 'on' : 'off')() }),
+            shf, el('button', { type: 'button', text: 'SHELF', title: 'Group it under this shelf; empty takes it off any', onclick: () => act('shelf', { shelf: shf.value })() })); })(),
         el('pre', { class: 'note', style: 'max-height:260px;overflow:auto;white-space:pre-wrap', text: String(j.src || '').slice(0, 40000) })];
     } else if (x.kind === 'cells') {
       /* a pack of cells: its title, who sent it, and every cell, to check before it goes on the map */
@@ -734,7 +741,16 @@
     const spl = el('textarea', { rows: 8, style: 'width:100%', placeholder: 'Tawny Frogmouth\nSuperb Fairywren\nLaughing Kookaburra\nPowerful Owl' }); spl.value = st.species || '';
     const spEd = el('section', { class: 'ed' }, el('h3', { text: 'SPECIES LIST' }), el('label', {}, 'CURATED', spl), hint('One a line, up to twenty. Empty: ten chosen by novel.global.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ species: lines(spl).slice(0, 20).join('\n') }) })));
-    main.replaceChildren(...head('Home'), opener, bizEd, spEd, cardsEd, look, note);
+    /* the showcase of what people make: how much of it shows, and in what groups */
+    let sc = {}; try { sc = JSON.parse(st.showcase || '{}') || {}; } catch (e) { sc = {}; }
+    const scCap = el('input', { type: 'number', min: 0, max: 5000, step: 9, value: sc.cap || '', placeholder: 'ALL', style: 'width:7em' }), scHero = el('input', { type: 'number', min: 0, max: 6, value: sc.heroes == null ? 3 : sc.heroes, style: 'width:5em' });
+    const scSh = el('textarea', { rows: 4, style: 'width:100%', placeholder: 'GAMES\nTOOLS\nPRINTS' }); scSh.value = (sc.shelves || []).join('\n');
+    const scEd = el('section', { class: 'ed' }, el('h3', { text: 'SHOWCASE' }), el('label', {}, 'AT MOST ', scCap), hint('How many made cards show, nine to a page. Empty: all of them.'),
+      chk('sc-star', !!sc.star, 'STARRED ONLY'), hint('On: only the plays starred here show; a search, a shelf or an island still finds the rest.'),
+      el('label', {}, 'HEROES ', scHero), hint('Big cards (BIG on a play) shown with the big cards, starred first.'),
+      el('label', {}, 'SHELVES', scSh), hint('One a line, in the order they stand. A play joins one with SHELF on its approval.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ showcase: JSON.stringify({ cap: Math.max(0, Math.round(+scCap.value || 0)), star: $('#sc-star').checked, heroes: Math.max(0, Math.min(6, Math.round(+scHero.value))), shelves: lines(scSh).map(v => v.toUpperCase().slice(0, 16)).slice(0, 12) }) }) })));
+    main.replaceChildren(...head('Home'), opener, bizEd, spEd, scEd, cardsEd, look, note);
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), ...list.map(printerCard)); }

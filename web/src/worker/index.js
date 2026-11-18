@@ -500,7 +500,7 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000 };
 /* texts the public settings never show: the pop-up's private link */
 const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
@@ -723,7 +723,7 @@ async function keeper(db, env, req) {
   const k = bearer(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
   const p = await db.prepare('SELECT id, name, paper, number, two, links, seen, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN (\'queued\', \'held\')) AS queued, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = \'printed\') AS printed FROM printers WHERE owner = ?').bind(await sha256(k)).first();
   if (!p || p.id === 'novelglobal') return fail(401, 'key');
-  if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096); if (b.action) return passDo(db, env, p, b); const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
+  if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096); if (b.action === 'picks') return islePick(db, p, b); if (b.action) return passDo(db, env, p, b); const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
     if (b.speed != null) await cardSet(db, p.id, { speed: b.speed });
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); } }
   const cps = (await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, cst = (await db.prepare('SELECT speed FROM cardset WHERE card = ?').bind(p.id).first()) || {};
@@ -786,6 +786,13 @@ async function admin(db, env, req, parts) {
     if (b.action === 'refuse') { await db.batch([db.prepare("UPDATE stories SET status = 'refused', decided = ? WHERE id = ?").bind(t, id), db.prepare("DELETE FROM jobs WHERE story = ? AND status IN ('held', 'queued')").bind(id)]); return json({ ok: true }); }
     if (b.action === 'big' || b.action === 'small') { const r = await db.prepare("SELECT body FROM stories WHERE id = ? AND kind = 'play'").bind(id).first(); if (!r) return fail(404, 'not found'); let j = {}; try { j = JSON.parse(r.body) || {}; } catch (e) { return fail(400, 'play'); }
       if (b.action === 'big') j.big = 'yes'; else delete j.big; await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), id).run(); return json({ ok: true, big: j.big || '' }); }
+    /* the showcase, curated: a star stands first; a shelf groups it; off keeps its link but out of the showcase */
+    const pr = ['star', 'unstar', 'off', 'on', 'shelf'].includes(b.action) ? await db.prepare("SELECT body FROM stories WHERE id = ? AND kind = 'play'").bind(id).first() : null;
+    if (!pr && ['off', 'on', 'shelf'].includes(b.action)) return fail(404, 'not found');
+    if (pr) { const r = pr; let j = {}; try { j = JSON.parse(r.body) || {}; } catch (e) { return fail(400, 'play'); }
+      if (b.action === 'star') j.star = 1; if (b.action === 'unstar') delete j.star; if (b.action === 'off') j.off = 1; if (b.action === 'on') delete j.off;
+      if (b.action === 'shelf') { const v = shelfName(b.shelf); if (v) j.shelf = v; else delete j.shelf; }
+      await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), id).run(); return json({ ok: true, star: !!j.star, off: !!j.off, shelf: j.shelf || '' }); }
     if (b.action === 'ungone') { await db.prepare('UPDATE stories SET gone = NULL WHERE id = ?').bind(id).run(); return json({ ok: true }); }   // taken down by its maker, put back
     /* its words changed on the approval page (a record's words; a packed story is left as it was sent) */
     if (b.action === 'edit') { const text = typeof b.text === 'string' ? b.text.trim().slice(0, 280) : null; const r = await db.prepare('SELECT kind, body FROM stories WHERE id = ?').bind(id).first(); if (text == null || !r || r.kind === 'story' || r.kind === 'message') return fail(400, 'edit');
@@ -1263,15 +1270,47 @@ async function linkSet(db, env, req) {
 const playTables = new WeakMap();
 const playTable = db => { if (!playTables.has(db)) playTables.set(db, db.batch([db.prepare('CREATE TABLE IF NOT EXISTS play_likes (code TEXT NOT NULL, who TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (code, who))'), db.prepare('CREATE TABLE IF NOT EXISTS play_stats (code TEXT PRIMARY KEY, opens INTEGER NOT NULL DEFAULT 0)')]).catch(e => { playTables.delete(db); throw e; })); return playTables.get(db); };
 const PLAY_ORDER = { fresh: 's.decided DESC', archive: 's.decided ASC', liked: 'lk DESC, s.decided DESC' };
+/* the island's own picks: a keeper's shelf of plays, shown as its own group */
+const islePlays = new WeakMap();
+const islePlayTable = db => { if (!islePlays.has(db)) islePlays.set(db, db.prepare('CREATE TABLE IF NOT EXISTS isle_plays (isle TEXT NOT NULL, code TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (isle, code))').run().catch(e => { islePlays.delete(db); throw e; })); return islePlays.get(db); };
+/* how the showcase stands, set by novel.global: how many it shows at most, starred only, the shelves in order */
+function showcaseOf(st) { let j = {}; try { j = JSON.parse(st.showcase || '{}') || {}; } catch (e) { j = {}; }
+  return { cap: Math.max(0, Math.min(5000, Math.round(+j.cap || 0))), star: !!j.star, shelves: Array.isArray(j.shelves) ? j.shelves.map(x => String(x).toUpperCase().replace(/[^A-Z0-9 &-]/g, '').trim().slice(0, 16)).filter(Boolean).slice(0, 12) : [], heroes: Math.max(0, Math.min(6, j.heroes == null ? 3 : Math.round(+j.heroes))) }; }
+const shelfName = v => String(v || '').toUpperCase().replace(/[^A-Z0-9 &-]/g, '').trim().slice(0, 16);
+const playOut = (r, j) => ({ c: r.code, n: j.n, th: j.th, fr: j.fr || '', lk: r.lk, pic: playPicV(j), big: j.big === 'yes', ...(j.star ? { star: true } : {}), ...(j.shelf ? { sh: j.shelf } : {}) });
 async function playList(db, url) {
-  await playTable(db); const o = PLAY_ORDER[url.searchParams.get('o')] ? url.searchParams.get('o') : 'fresh', pg = Math.max(0, Math.min(500, Math.round(+url.searchParams.get('pg') || 0)));
-  const off = Math.max(0, pg * 9 - 1), lim = (pg ? 9 : 8) + 1;
-  const { results } = await db.prepare(`SELECT s.code, s.body, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk FROM stories s WHERE s.kind = 'play' AND s.status = 'shown' AND s.gone IS NULL AND s.code != ? ORDER BY ${PLAY_ORDER[o]} LIMIT ? OFFSET ?`).bind(FIRST_PLAY.code, lim, off).all();
-  const l = results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', lk: r.lk, pic: playPicV(j), big: j.big === 'yes' }; } catch (e) { return null; } }).filter(Boolean);
-  const more = l.length > lim - 1; l.length = Math.min(l.length, lim - 1);
-  if (!pg) { const fl = await db.prepare('SELECT count(*) AS n FROM play_likes WHERE code = ?').bind(FIRST_PLAY.code).first(); l.unshift({ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true, lk: fl ? fl.n : 0 }); }
-  return json({ plays: l, o, pg, more });
+  await playTable(db); await islePlayTable(db); const q0 = url.searchParams, o = PLAY_ORDER[q0.get('o')] ? q0.get('o') : 'fresh', pg = Math.max(0, Math.min(500, Math.round(+q0.get('pg') || 0)));
+  const SC = showcaseOf(await settingsOf(db)), q = String(q0.get('q') || '').trim().slice(0, 24), sh = shelfName(q0.get('sh')), isle = /^[a-z0-9-]{1,40}$/.test(q0.get('isle') || '') ? q0.get('isle') : '', all = !q && !sh && !isle;
+  /* a page from where the phone says (the cards of its own take the first places), or nine at a time */
+  const n = q0.has('n') ? Math.max(1, Math.min(9, Math.round(+q0.get('n') || 9))) : (pg || !all ? 9 : 8), off = q0.has('off') ? Math.max(0, Math.min(5000, Math.round(+q0.get('off') || 0))) : all ? Math.max(0, pg * 9 - 1) : pg * 9;
+  const w = ["s.kind = 'play'", "s.status = 'shown'", 's.gone IS NULL', 's.code != ?', "json_extract(s.body, '$.off') IS NULL", "COALESCE(json_extract(s.body, '$.big'), '') != 'yes'"], b = [FIRST_PLAY.code];
+  if (q) { w.push("(upper(json_extract(s.body, '$.n')) LIKE ? OR s.code = ?)"); b.push('%' + q.toUpperCase().replace(/[%_]/g, '') + '%', q.toUpperCase()); }
+  if (sh) { w.push("json_extract(s.body, '$.shelf') = ?"); b.push(sh); }
+  if (isle) { w.push('s.code IN (SELECT code FROM isle_plays WHERE isle = ?)'); b.push(isle); }
+  if (SC.star && all) w.push("json_extract(s.body, '$.star') IS NOT NULL");
+  const W0 = w.join(' AND '), { t } = await db.prepare(`SELECT count(*) AS t FROM stories s WHERE ${W0}`).bind(...b).first(), total = SC.cap && all ? Math.min(SC.cap, t) : t;
+  const lim = Math.max(0, Math.min(n, total - off));
+  const { results } = lim ? await db.prepare(`SELECT s.code, s.body, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk FROM stories s WHERE ${W0} ORDER BY (json_extract(s.body, '$.star') IS NOT NULL) DESC, ${PLAY_ORDER[o]} LIMIT ? OFFSET ?`).bind(...b, lim, off).all() : { results: [] };
+  const l = results.map(r => { try { return playOut(r, JSON.parse(r.body)); } catch (e) { return null; } }).filter(Boolean);
+  const more = off + l.length < total;
+  if (!pg && !off && all) { const fl = await db.prepare('SELECT count(*) AS n FROM play_likes WHERE code = ?').bind(FIRST_PLAY.code).first(); l.unshift({ c: FIRST_PLAY.code, n: FIRST_PLAY.n, th: FIRST_PLAY.th, fr: FIRST_PLAY.fr, first: true, lk: fl ? fl.n : 0 }); }
+  /* the heroes stand with the big cards whatever the page; the shelves and islands to group by, with how many each holds */
+  const hr = SC.heroes ? (await db.prepare(`SELECT s.code, s.body, 0 AS lk FROM stories s WHERE s.kind = 'play' AND s.status = 'shown' AND s.gone IS NULL AND json_extract(s.body, '$.off') IS NULL AND json_extract(s.body, '$.big') = 'yes' ORDER BY (json_extract(s.body, '$.star') IS NOT NULL) DESC, s.decided DESC LIMIT ?`).bind(SC.heroes).all()).results : [];
+  const heroes = hr.map(r => { try { return playOut(r, JSON.parse(r.body)); } catch (e) { return null; } }).filter(Boolean);
+  const shc = (await db.prepare("SELECT json_extract(body, '$.shelf') AS sh, count(*) AS n FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND json_extract(body, '$.off') IS NULL AND json_extract(body, '$.shelf') IS NOT NULL GROUP BY sh").all()).results;
+  const shelves = shc.sort((x, y) => { const a = SC.shelves.indexOf(x.sh), c = SC.shelves.indexOf(y.sh); return (a < 0 ? 99 : a) - (c < 0 ? 99 : c) || y.n - x.n; }).slice(0, 12).map(r => ({ sh: r.sh, n: r.n }));
+  const isles = (await db.prepare("SELECT i.isle AS id, COALESCE(p.name, i.isle) AS name, count(*) AS n FROM isle_plays i JOIN stories s ON s.code = i.code AND s.kind = 'play' AND s.status = 'shown' AND s.gone IS NULL LEFT JOIN printers p ON p.id = i.isle GROUP BY i.isle ORDER BY n DESC LIMIT 8").all()).results;
+  return json({ plays: l, o, pg, more, total, off, heroes, shelves, isles, q, sh, isle });
 }
+/* an island's keeper picks plays for its own shelf, or takes them off: forty at most */
+async function islePick(db, p, b) { await islePlayTable(db);
+  if (b.play != null) { const c = String(b.play).toUpperCase(); if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code');
+    if (b.on === false) await db.prepare('DELETE FROM isle_plays WHERE isle = ? AND code = ?').bind(p.id, c).run();
+    else { if (!(await db.prepare("SELECT 1 AS y FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(c).first())) return fail(404, 'not found');
+      const { k } = await db.prepare('SELECT count(*) AS k FROM isle_plays WHERE isle = ?').bind(p.id).first(); if (k >= 40) return fail(429, 'enough');
+      await db.prepare('INSERT OR IGNORE INTO isle_plays (isle, code, at) VALUES (?, ?, ?)').bind(p.id, c, now()).run(); } }
+  const { results } = await db.prepare("SELECT i.code AS c, json_extract(s.body, '$.n') AS n FROM isle_plays i JOIN stories s ON s.code = i.code AND s.kind = 'play' WHERE i.isle = ? ORDER BY i.at DESC").bind(p.id).all();
+  return json({ picks: results }); }
 /* a like: one for each code, on each play */
 async function playLike(db, env, req, c) {
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (await tooMany(db, env, req, 'like', 40, 10 * 60e3)) return fail(429, 'slow down');

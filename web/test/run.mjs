@@ -1547,6 +1547,18 @@ if (run('cards')) try {
   check('PLAY plays it from the first track', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'true' && !!document.querySelector('#tpov button.on[data-i="0"]')));
   await page.click('#opts [data-a="play"]'); await sleep(200);
   check('and stops', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'false'));
+  /* the showcase with a hundred made: one nine, paged through to the last with none missed; a shelf, an island's picks and FIND group them */
+  const AB = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', hund = [...Array(100)].map((_, i) => ({ c: 'PL-' + AB[(i / 900 | 0) % 30] + AB[(i / 30 | 0) % 30] + AB[i % 30] + 'Z', n: 'APP ' + i, th: 'cyan', lk: 0, ...(i ? {} : { star: true }) }));
+  await ctx.route(u => u.pathname === '/api/plays' && u.host === 'oan.test', r => { const q = new URL(r.request().url()).searchParams, off = +q.get('off') || 0, n = +q.get('n') || 9, l = q.get('q') ? hund.filter(x => x.n.includes(q.get('q').toUpperCase())) : q.get('sh') ? hund.slice(0, 5) : q.get('isle') ? hund.slice(5, 8) : hund;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plays: l.slice(off, off + n), more: off + n < l.length, total: l.length, heroes: [], shelves: [{ sh: 'GAMES', n: 5 }], isles: [{ id: 'milkbar', name: 'Milk Bar', n: 3 }] }) }); });
+  await page.goto('https://oan.test/'); await sleep(2500);
+  const walk = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), seen = new Set(), ids = () => [...document.querySelectorAll('.dv-nine .hm-card[data-id^="pl-"]')].map(c => c.dataset.id);
+    const star = !!document.querySelector('.dv-nine .pl-star'); let pages = 0; for (; pages < 14; pages++) { ids().forEach(x => seen.add(x)); const nx = document.querySelector('.dv-bar [data-dv="next"]'); if (!nx || nx.hidden || nx.textContent !== 'NEXT') break; nx.click(); await z(700); }
+    const count = document.querySelector('.dv-bar .dv-n').textContent; document.querySelector('.dv-bar [data-sh="GAMES"]').click(); await z(700); const sh = ids().length;
+    document.querySelector('.dv-bar [data-isle="milkbar"]').click(); await z(700); const isle = ids().length; document.querySelector('.dv-bar [data-sh=""]').click(); await z(700);
+    document.querySelector('.dv-bar [data-dv="find"]').click(); await z(200); const f = document.querySelector('.dv-q'); f.querySelector('input').value = 'APP 4'; f.requestSubmit(); await z(800); const found = ids().length, nine = document.querySelectorAll('.dv-nine .hm-card').length;
+    return { seen: seen.size, pages: pages + 1, count, sh, isle, found, nine, star }; });
+  check('a hundred made cards stay one nine, paged through with none missed, grouped by shelf and island, found by name', walk.seen === 100 && walk.star && walk.pages === 12 && walk.count === '12/12' && walk.sh === 5 && walk.isle === 3 && walk.found === 9 && walk.nine === 9, JSON.stringify(walk));
   await page.setViewportSize({ width: 375, height: 812 }); await sleep(400);
   check('both papers fit a phone', await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0);
   await ctx.close();

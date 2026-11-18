@@ -1630,6 +1630,15 @@ html.hm-on.hm-nocab { --hm-sbh: 0px; }
 #hm .dv-bar button { min-height: 30px; padding: 4px 10px; border: 1px solid var(--hm-line); border-radius: 15px; background: none; color: var(--hm-ink); font: 600 10px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .1em; cursor: pointer; }
 #hm .dv-bar button[aria-pressed="true"] { background: var(--hm-ink); color: var(--hm-bg); border-color: var(--hm-ink); }
 #hm .dv-bar .dv-nx { margin-left: 10px; } #hm .dv-bar [hidden] { display: none; }
+#hm .dv-bar .dv-bk { margin-left: 10px; } #hm .dv-bar .dv-bk + .dv-n, #hm .dv-bar .dv-n + .dv-nx { margin-left: 0; }
+#hm .dv-bar .dv-n { font: 600 10px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; color: var(--hm-ink); opacity: .7; padding: 0 4px; }
+#hm .dv-bar .dv-q { flex: 1 1 100%; display: flex; justify-content: center; margin: 2px 0 0; }
+#hm .dv-bar .dv-q input { width: min(100%, 320px); min-height: 32px; padding: 4px 12px; border: 1px solid var(--hm-line); border-radius: 16px; background: none; color: var(--hm-ink); font: 500 16px/1.2 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em; }
+#hm .dv-bar .dv-sh { flex: 1 1 100%; display: flex; gap: 6px; justify-content: center; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+#hm .dv-bar .dv-sh::-webkit-scrollbar { display: none; }
+#hm .dv-bar .dv-sh button { flex: none; min-height: 26px; padding: 3px 9px; font-size: 9.5px; }
+#hm .dv-bar .dv-sh .dv-is { border-style: dashed; }
+#hm .pl-star { position: absolute; top: 7px; right: 8px; z-index: 3; font: 600 15px/1 'IBM Plex Mono', ui-monospace, monospace; text-shadow: 0 0 3px rgba(0, 0, 0, .45); font-style: normal; color: #E8913A; pointer-events: none; }
 #hm .hm-card[data-id^="dev-mk-"]:not([data-id="dev-mk-a"]) .sl-mk { visibility: hidden; }
 #hm .hm-card[data-id^="dev-mk-"]:not([data-id="dev-mk-a"]) { background: transparent !important; box-shadow: none !important; outline: 1px dashed var(--hm-line); outline-offset: -1px; }
 #hm .hm-card[data-id^="dev-mk-"]:not([data-id="dev-mk-a"]) > * { visibility: hidden; }
@@ -1736,3 +1745,6 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 
 /* a gap left in a part-full row of a nine: the theme after it starts on a row of its own */
 .hm-trio .hm-gap { display: block; min-width: 0; min-height: 0; pointer-events: none; }
+/* an island's PICKS: its own shelf in the showcase */
+.hm-pk { margin: 0 0 4px; } .hm-pkq { flex: 1; min-width: 0; min-height: 36px; padding: 6px 12px; border: 1px solid var(--hm-line); border-radius: 18px; background: none; color: var(--hm-ink); font: 500 16px/1.2 'IBM Plex Mono', ui-monospace, monospace; }
+.hm-pkl li { padding: 6px 4px; cursor: default; } .hm-pkl li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hm-pkl li.on i { background: var(--hm-ink); } .hm-pkl .hm-btn { min-width: 32px; min-height: 30px; padding: 2px 8px; }
