@@ -483,7 +483,50 @@
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); });
   }
 
-  var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass };
+  /* ───────── SPECIES LIST: a checklist to go out with. The month's birds (the same ten for everyone), the season, ten local at
+     random, the curated (set on the approval page), or all that is spotted; ticked here, on the radio's guide or on any species
+     card. PRINT puts it on paper with a box for each; SHARE takes what is spotted to the card's talk ───────── */
+  var SPF = null;
+  function fieldDb() { if (!SPF) SPF = Promise.all([fetch('base-db.json').then(function (r) { return r.json(); }), fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })])
+    .then(function (r) { var cur = String(r[1].species || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); try { if (cur.length) localStorage.setItem('da.species.cur', JSON.stringify(cur)); else localStorage.removeItem('da.species.cur'); } catch (e) { /* none */ } return { F: (r[0] && r[0].field) || [], cur: cur }; });
+    return SPF; }
+  var SPK = { local: 'LOCAL 10', season: 'SEASON', birds: 'BIRDS', curated: 'CURATED', mine: 'SPOTTED' };
+  function spList(d, o) { var SP = window.SPOT, F = d.F || []; if (!SP) return [];
+    if (o.k === 'local') { if (!o.ids) { var h = SP.hunt(); o.ids = h && h.k === 'local' && h.ids ? h.ids : SP.list('local', F).map(function (f) { return f.id; }); } var by = {}; F.forEach(function (f) { by[f.id] = f; }); return o.ids.map(function (id) { return by[id]; }).filter(Boolean); }
+    return SP.list(o.k, F, d.cur); }
+  var species = {
+    tall: 3400, opts: [['local', 'LOCAL'], ['season', 'SEASON'], ['birds', 'BIRDS'], ['curated', 'CURATED'], ['mine', 'SPOTTED'], ['share', 'SHARE']],
+    init: function (o) { var h = window.SPOT && SPOT.hunt(); o.k = h && SPK[h.k] ? h.k : 'birds'; },
+    local: function () { return fieldDb(); },
+    act: function (a, s, o) { if (a === 'share') { spShare(); return false; } if (!SPK[a]) return false; if (a === 'local' && o.k === 'local') o.ids = null; o.k = a; return true; },
+    draw: function (k, d, s, o) {
+      var SP = window.SPOT, l = spList(d, o), got = SP ? SP.all() : {}, g = k.g, n = l.filter(function (f) { return got[f.id]; }).length;
+      var y = k.head('SPECIES', o.k === 'birds' && SP ? 'BIRDS · ' + SP.mon() : SPK[o.k], phase(age(today()))) + 30;
+      if (!l.length) { k.txt(o.k === 'mine' ? 'NOTHING SPOTTED YET' : '—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
+      l.slice(0, 40).forEach(function (f) { var on = !!got[f.id];
+        g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeRect(M + 6, y - 2, 28, 28);
+        if (on) { k.box(M + 6, y - 2, 28, 28); g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(M + 12, y + 12); g.lineTo(M + 18, y + 19); g.lineTo(M + 29, y + 5); g.stroke(); }
+        k.fit(String(f.cn), M + 48, y + 22, '700', 27, W - 2 * M - 52, SANS);
+        k.fit([f.n, f.event].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
+        y += 66; k.box(M + 48, y - 10, W - 2 * M - 48, 1); });
+      y += 10; k.txt('SPOTTED ' + n + ' / ' + l.length, M, y + 20, '600 22px ' + MONO);
+      return k.foot(y + 26, 'https://novel.global/x#species', '', 'FIELD GUIDE · NOVEL.GLOBAL');
+    }
+  };
+  /* what is spotted on this list, said in the card's own talk (its SHOW room), where the sightings are counted */
+  function spShare() { var SP = window.SPOT; if (!SP || window.parent === window) return; var got = SP.all(), l = spList(S.data || {}, S.o).filter(function (f) { return got[f.id]; }), names = (l.length ? l : Object.keys(got).map(function (id) { return got[id]; })).map(function (f) { return f.cn; });
+    if (!names.length) { var st = $('#st'); if (st) st.textContent = 'TICK ONE'; return; }
+    try { window.parent.postMessage({ ng: 'talk', sec: 'c.species.show', k: 'spot', say: ('SPOTTED · ' + names.slice(0, 6).join(', ') + (names.length > 6 ? ' +' + (names.length - 6) : '')).slice(0, 280) }, location.origin); } catch (e) { /* alone */ } }
+  /* the list as boxes to tick, above the paper */
+  function spKeys() { if (S.stack.kind !== 'species') return; var SP = window.SPOT;
+    [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { if (SPK[b.dataset.a]) b.setAttribute('aria-pressed', String(b.dataset.a === S.o.k)); if (b.dataset.a === 'share') b.hidden = window.parent === window; });
+    var pk = $('#pick'), f = $('#spf'); if (!pk || !SP) return; if (!f) { f = document.createElement('ol'); f.id = 'spf'; pk.appendChild(f);
+      f.addEventListener('change', function (e) { var c = e.target.closest('input'); if (!c) return; SP.set(c.dataset.id, c.dataset.n, c.checked); paint(); }); }
+    var got = SP.all(); f.innerHTML = spList(S.data || {}, S.o).slice(0, 40).map(function (x) { return '<li><label><input type="checkbox" data-id="' + x.id + '" data-n="' + String(x.cn).replace(/["<&]/g, '') + '"' + (got[x.id] ? ' checked' : '') + '><span>' + String(x.cn).replace(/[<&]/g, '') + '</span></label></li>'; }).join('');
+    if (SPK[S.o.k] && S.o.k !== 'mine') SP.hunt({ k: S.o.k, ids: spList(S.data || {}, S.o).map(function (x) { return x.id; }), at: Date.now() }); }
+  addEventListener('da-spot', function () { if (S.stack && S.stack.kind === 'species' && S.ready) paint(); });
+
+  var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass, species: species };
   /* the prints with no art of their own take one at their head */
   ['week', 'news', 'events', 'book'].forEach(function (n) { var K = KINDS[n]; K.opts = (K.opts || []).concat([['art', 'ART', false]]); K.head = true; });
   function draw(cv, kind, data, stack, o) {
@@ -510,7 +553,7 @@
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
   function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { var pg = s.dataset.a === 'go', L = pg ? d.plist : d.all, v = String((pg ? d.p : d.b) || 1); if (!L || !L.length) return;
     var sig = L.length + '|' + L[0] + '|' + L[L.length - 1]; if (s._sig !== sig) { s.innerHTML = L.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s._sig = sig; } s.value = v; }); }
-  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); bizKeys(); }
+  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); bizKeys(); spKeys(); }
   function bizKeys() { if (S.stack.kind !== 'cards') return; [].forEach.call(document.querySelectorAll('#opts [data-a="deck"], #opts [data-a="biz"]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.a === 'biz' ? !!S.o.biz : !!S.o.deck)); });
     var f = $('#bizf'), pk = $('#pick'); if (!f && pk) { var v = bizText(); f = document.createElement('div'); f.id = 'bizf';
       f.innerHTML = ['name', 'what you do', 'where to find you'].map(function (p, i) { return '<input data-b="' + i + '" maxlength="40" autocomplete="off" placeholder="' + p + '" aria-label="' + p + '" value="' + String(v[i] || '').replace(/["<&]/g, '') + '">'; }).join('');

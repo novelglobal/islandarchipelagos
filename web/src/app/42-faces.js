@@ -86,7 +86,7 @@ const ninoSwitch = () => `<button type="button" class="rd-nino${prefs.nino ? ' o
 function radioFront() {
   return `<section class="band front-r simple-r" id="sec-heat"><div class="dev radio jr-dev${upCls()}"><i class="hack h-jump" aria-hidden="true"></i>${SCREWS}${ninoSwitch()}`
     + `<i class="rd-grille" aria-hidden="true"></i><button type="button" class="rd-play${S.radio ? ' on' : ''}" data-radio aria-pressed="${S.radio}" aria-label="${!S.started && !prefs.placed ? 'Play the example' : 'Play'}"><i class="rd-led" aria-hidden="true"></i>${icon(S.radio ? 'pause' : 'play')}</button>`
-    + `${knobsHTML()}${upMods()}${flipBtn()}</div></section>`;
+    + `${knobsHTML()}${upMods()}${flipBtn()}${guideKey()}</div></section>`;
 }
 /* a knob for each layer: off, then three levels, its ticks lit as far as it is turned, its layer's mark under it */
 const knobsHTML = () => `<ol class="rd-knobs">${LAYERS.map(L => { const p = knobPos(L.k); return `<li class="rd-k${p ? ' on' : ''}" data-lyr="${L.k}"><button type="button" class="rd-knob" data-knob="${L.k}" role="slider" aria-label="${L.w}" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${p}" aria-valuetext="${p ? FXS[p - 1].toUpperCase() : 'OFF'}" data-tip="${L.w} · ${p ? FXS[p - 1].toUpperCase() : 'OFF'}" style="--a:${KNOB_A[p]}deg"><i class="kn-ind"></i></button>`

@@ -805,3 +805,7 @@ html.aura-on #booth .eye { position: relative !important; z-index: 1; }
 @keyframes bt-strand { from { transform: translate(0, 0) rotate(-8deg); } to { transform: translate(30px, 140vh) rotate(8deg); } }
 html:has(.au-plain) #booth .bt-sea { display: none; }
 @media (prefers-reduced-motion: reduce) { #booth .bt-sea { display: none; } #booth .eye > .bt-jel { animation: none; } }
+
+/* SPOTTED on a species sheet: one small key, kept with the radio's and the SPECIES LIST card's */
+.spot-k { display: block; margin: 22px auto 0; height: 32px; padding: 0 16px; border: 1.5px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: 600 11px/1 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .14em; cursor: pointer; }
+.spot-k.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }

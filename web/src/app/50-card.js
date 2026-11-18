@@ -256,6 +256,7 @@ function fillFront(o, quiet) {
     voice ? `<button type="button" class="c play" data-u="${esc(voice)}" aria-label="Play the call">${icon('play')}</button>` : '',
   ].join('');
   if (o.user && o.said && nameOf(o) !== o.said) $('#r-chips').insertAdjacentHTML('afterbegin', `<q class="said">${esc(o.said)}</q>`);
+  if (kindLife(o) && SP) $('#r-chips').insertAdjacentHTML('beforeend', spotChip(o));
   if (o.hero) $('#r-chips').insertAdjacentHTML('beforeend', `<button type="button" class="c swap" data-five="${o.slot}" data-tip="Change this one">${icon('remix', 'sm')}CHANGE</button>`);
   $('#r-five').hidden = true; $('#r-note').value = noteOf(o);
   /* the threat, in a line; the hero's own reason under the pointer */
@@ -294,6 +295,10 @@ function urgentOf(o) {
   return L.join('');
 }
 /* a record placed here, shared: for everyone once approved; its contact stays on this device */
+/* SPOTTED: a tick on any species card, kept on this phone and shown on the SPECIES LIST card */
+function spotKey(o) { const sub = subjectOf(o), n = sub.tx && sub.tx.n, cn = nameOf(o), f = FIELD.find(x => (n && x.n === n) || String(x.cn).toLowerCase() === String(cn).toLowerCase()); return f ? [f.id, f.cn] : ['x-' + String(n || cn).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40), cn]; }
+function spotChip(o) { const [k, cn] = spotKey(o), on = SP.has(k); return `<button type="button" class="c spot${on ? ' on' : ''}" data-spot-k="${esc(k)}" data-spot-n="${esc(cn)}" aria-pressed="${on}" data-tip="${on ? 'Spotted: on the SPECIES LIST card' : 'Spotted it? Keep it on the SPECIES LIST card'}">${on ? '✓ SPOTTED' : 'SPOTTED'}</button>`; }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-spot-k]'); if (!b || !SP) return; const on = SP.set(b.dataset.spotK, b.dataset.spotN, undefined, typeof map !== 'undefined' && map && map.getCenter ? [map.getCenter().lat, map.getCenter().lng] : null); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.textContent = on ? '✓ SPOTTED' : 'SPOTTED'; try { snd.tick(on ? 1900 : 900); } catch (er) { /* quiet */ } });
 function shareRow(o) {
   if (!o.user || !o.ev) return ''; const v = SENT['rec:' + o.ev.key];
   const w = !v ? 'FOR EVERYONE · ONCE APPROVED' : v.status === 'shown' ? 'SHOWN TO EVERYONE' : v.status === 'refused' ? 'NOT SHOWN' : v.status === 'outbox' ? 'SENDS WHEN THERE IS A SIGNAL' : 'WAITING FOR APPROVAL';

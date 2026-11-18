@@ -332,8 +332,11 @@ const stepWords = () => { const st = stepNow(); return st.now >= 0 ? String(st.w
 let cdT = 0;
 setInterval(() => {
   const el = document.querySelector('#sec-heat .cd'); if (!el || document.hidden) return; cdT++; let st = null; try { st = JSON.parse(el.dataset.st || 'null'); } catch (e) { st = null; }
-  const showSt = st && st.now >= 0 && (cdT % 8 >= 4 || !el.dataset.to);
-  if (showSt) { el.textContent = stepWords(); el.classList.add('stp'); } else { if (el.dataset.to) el.textContent = countText(+el.dataset.to); el.classList.remove('stp'); }
+  if (el.dataset.base == null) el.dataset.base = el.textContent; const ph = cdT % 12, sw = ph >= 8 ? spotWords() : '';
+  const showSt = !sw && st && st.now >= 0 && (ph >= 4 || !el.dataset.to);
+  el.classList.toggle('gd', !!sw);
+  if (sw) { el.textContent = sw; el.classList.add('stp'); el.title = 'Open the guide'; }
+  else if (showSt) { el.textContent = stepWords(); el.classList.add('stp'); el.title = ''; } else { el.textContent = el.dataset.to ? countText(+el.dataset.to) : el.dataset.base; el.classList.remove('stp'); el.title = ''; }
 }, 1000);
 /* the clues, the only words on the radio: find yourself; tie something to something; then the signal */
 /* the steps: one thin line, a dot for each, the words small under it. Done, the dot is filled; the one waiting is a ring that
@@ -408,7 +411,7 @@ function viewRadio() {
   const ex = extremeAhead();
   /* no words but the clues: El Niño's emergency counting down, in orange; the months as an equaliser; the one button; the
      layers as marks; the three clues. Every name is there on a long hover */
-  return `<section class="band dev radio mod${upCls()}" id="sec-heat">${mods('DIRECT ACTION', 'RADIO')}${upMods()}${flipBtn()}
+  return `<section class="band dev radio mod${upCls()}" id="sec-heat">${mods('DIRECT ACTION', 'RADIO')}${upMods()}${flipBtn()}${guideKey()}
       ${pagerHTML()}<div class="vu" aria-hidden="true"><i class="vu-n"></i></div><p class="b-emerg mono" data-tip="El Niño emergency in"><b class="cd"${ex && !ex.now ? ` data-to="${ex.to}"` : ''}${stepAttr()}>${ex ? (ex.now ? 'NOW' : countText(ex.to)) : stepWords()}</b></p>
       ${monthStrip()}
       <div class="hp-row"><button type="button" class="hp-k${LOOP.live ? ' on' : ''}" data-loop aria-pressed="${LOOP.live}" aria-label="Loop: keep this sound playing wherever the radar goes">${icon('loop')}<small>loop</small></button>`

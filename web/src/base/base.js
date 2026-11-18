@@ -1208,10 +1208,16 @@ function lifeSheet(id) {
     '<dl class="spec"><dt>Status</dt><dd>' + esc(STATUS_OF[f.st] || f.st || '—') + '</dd><dt>Where</dt><dd>' + esc(f.where || '—') + '</dd>' + (f.event ? '<dt>Watch for</dt><dd>' + esc(f.event) + '</dd>' : '') + (f.heat ? '<dt>Heat</dt><dd>' + '■■■'.slice(0, f.heat) + '□□□'.slice(f.heat) + '</dd>' : '') + '</dl>' +
     monthsTable(f) + alertHTML(r) + '<ul class="plain">' + lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
     (r.rel.length ? '<div class="lbl">Near it, now</div><ul class="list">' + r.rel.map(function (o) { return o.brief ? caseLi(o.brief, o.label, o.sub) : '<li><button data-sp="' + esc(o.id) + '"><span>' + esc(o.label) + '</span><small>' + esc(o.sub) + '</small></button></li>'; }).join('') + '</ul>' : '') +
+    '<button type="button" class="spot-k' + (spotHas(f.id) ? ' on' : '') + '" data-spot-k aria-pressed="' + spotHas(f.id) + '">' + (spotHas(f.id) ? '✓ SPOTTED' : 'SPOTTED') + '</button>' +
     '<label class="cam sm solo" aria-label="Photograph one"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="2"/><path d="M22 18l4-7h12l4 7"/><circle cx="32" cy="35" r="10"/></svg><input class="shot" type="file" accept="image/*" capture="environment"></label>', false, 'wide');
   backTo(); $$('#sheet [data-sp]').forEach(function (b) { b.addEventListener('click', function () { lifeSheet(b.dataset.sp); }); });
   var inp = $('.shot', sheet); inp.addEventListener('change', function () { onShot(inp.files[0]); });
+  var sk = $('[data-spot-k]', sheet); if (sk) sk.addEventListener('click', function () { var on = spotSet(f.id, f.cn); sk.classList.toggle('on', on); sk.setAttribute('aria-pressed', String(on)); sk.textContent = on ? '✓ SPOTTED' : 'SPOTTED'; });
 }
+/* spotted: the same store the radio and the SPECIES LIST card keep (repo-static/spot.js) */
+function spotHas(id) { try { return !!(JSON.parse(localStorage.getItem('da.spotted.v1') || '{}') || {})[id]; } catch (e) { return false; } }
+function spotSet(id, cn) { var s = {}; try { s = JSON.parse(localStorage.getItem('da.spotted.v1') || '{}') || {}; } catch (e) { s = {}; } var on = !s[id]; if (on) s[id] = { cn: String(cn || id).slice(0, 60), at: Date.now(), lat: +map.lat.toFixed(3), lng: +map.lng.toFixed(3) }; else delete s[id];
+  try { localStorage.setItem('da.spotted.v1', JSON.stringify(s)); } catch (e) { /* this visit only */ } return on; }
 function needSheet(k) {
   var i = ISSUES.filter(function (x) { return x.k === k; })[0]; if (!i) return; var c = callOf(i.call);
   var lives = DB ? related(null, null, i).map(function (f) { return '<li><button data-sp="' + esc(f.id) + '"><span>' + esc(f.cn) + '</span><small>' + esc(KINDS[f.g] || f.g) + '</small></button></li>'; }).join('') : '';

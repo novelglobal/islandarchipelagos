@@ -730,7 +730,11 @@
     const bizEd = el('section', { class: 'ed' }, el('h3', { text: 'BUSINESS CARD' }), el('label', {}, 'MADE BY NOVEL.GLOBAL', bzl), hint('One a line, up to seven.'), el('label', {}, 'PARTNERS', bzp),
       hint('One a line, up to five: a logo on the site such as /logos/rmit.png, or a name set in type. Empty: the words shown in grey stay. Hold BUSINESS on the playing cards to see it.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; if (lines(bzl).length) o.list = lines(bzl).slice(0, 7); if (lines(bzp).length) o.partners = lines(bzp).slice(0, 5); save({ bizcard: JSON.stringify(o) }); } })));
-    main.replaceChildren(...head('Home'), opener, bizEd, cardsEd, look, note);
+    /* the SPECIES LIST card's curated list: one name a line, as the guide writes it, or its id */
+    const spl = el('textarea', { rows: 8, style: 'width:100%', placeholder: 'Tawny Frogmouth\nSuperb Fairywren\nLaughing Kookaburra\nPowerful Owl' }); spl.value = st.species || '';
+    const spEd = el('section', { class: 'ed' }, el('h3', { text: 'SPECIES LIST' }), el('label', {}, 'CURATED', spl), hint('One a line, up to twenty. Empty: ten chosen by novel.global.'),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ species: lines(spl).slice(0, 20).join('\n') }) })));
+    main.replaceChildren(...head('Home'), opener, bizEd, spEd, cardsEd, look, note);
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), ...list.map(printerCard)); }

@@ -1526,10 +1526,14 @@ if (run('static')) try {
   const priv = path.join(ROOT, 'test/.private-words'); const words = ['co-authored', 'generated with', 'ai-generated', 'utm_source', ...(fs.existsSync(priv) ? fs.readFileSync(priv, 'utf8').split(/\r?\n/).map(w => w.trim()).filter(Boolean) : [])];
   const bad = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i'); const hits = [];
   const left = /DA_DEMO|demo\.js|specimen|sign-up sheet|signed up|upvote/i; const old = [];
-  for (const f of fs.readdirSync(DIST, { recursive: true })) { const p = path.join(DIST, f); if (fs.statSync(p).isDirectory() || /\.(png|woff2)$/.test(f) || /maplibre|qrcode/.test(f)) continue; const t = fs.readFileSync(p, 'utf8'); const m = t.match(bad); if (m) hits.push(`${f}: ${m[0]}`); const o = t.match(left); if (o) old.push(`${f}: ${o[0]}`); }
+  /* AI is said in three places only, all chosen by the owner: the class's name (Fashion AI), the Ethics and AI disclosure, and the label;
+     the label's own words are taken out before looking */
+  const LBL = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'src/worker/label.js'), 'utf8').match(/export const LABEL = (\{[\s\S]*?\n\});/)[1]).body || ''; } catch (e) { return ''; } })();
+  const unLabel = t => (LBL ? t.split(LBL).join('').split(JSON.stringify(LBL).slice(1, -1)).join('') : t);
+  for (const f of fs.readdirSync(DIST, { recursive: true })) { const p = path.join(DIST, f); if (fs.statSync(p).isDirectory() || /\.(png|woff2)$/.test(f) || /maplibre|qrcode/.test(f)) continue; const t = fs.readFileSync(p, 'utf8'); const m = unLabel(t).match(bad); if (m) hits.push(`${f}: ${m[0]}`); const o = t.match(left); if (o) old.push(`${f}: ${o[0]}`); }
   /* and every file a commit would carry, because the repository is public; this file holds the list, so it is skipped */
   let repo = []; try { repo = require('child_process').execSync('git ls-files --cached --others --exclude-standard', { cwd: ROOT }).toString().split('\n'); } catch (e) { /* no git: the site alone is checked */ }
-  for (const f of repo) { const p = path.join(ROOT, f); if (!f || f === 'test/run.mjs' || /\.(png|woff2)$/.test(f) || !fs.existsSync(p)) continue; const m = fs.readFileSync(p, 'utf8').match(bad); if (m) hits.push(`${f}: ${m[0]}`); }
+  for (const f of repo) { const p = path.join(ROOT, f); if (!f || f === 'test/run.mjs' || /\.(png|woff2)$/.test(f) || !fs.existsSync(p)) continue; const m = unLabel(fs.readFileSync(p, 'utf8')).match(bad); if (m) hits.push(`${f}: ${m[0]}`); }
   check('no names or authorship traces in the site or the repository', !hits.length, hits.join(' · '));
   check('no demo data, sign-up, votes or specimens left in the repository', !old.length, old.join(' · '));
   const readme = fs.readFileSync(path.join(DIST, 'README.md'), 'utf8');

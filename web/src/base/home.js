@@ -57,6 +57,7 @@
     { id: 'nonfiction', size: 'small', title: 'NON-FICTION', opens: 'stack:nonfiction', cart: 'read', shelf: 'non', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'survival', size: 'small', title: 'SURVIVAL', opens: 'stack:survival', cart: 'read', shelf: 'how', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'cards', size: 'small', title: 'PLAYING', opens: 'stack:cards', cart: 'cards', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
+    { id: 'species', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', cart: 'species', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'tarot', size: 'small', title: 'TAROT', opens: 'stack:tarot', cart: 'tarot', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
@@ -624,6 +625,9 @@
     if (k === 'events') { if (EVT === null) return set('', '', '');
       var e1 = String(EVT).split('\n').map(function (x) { return x.split('|').map(function (q) { return q.trim(); }); }).filter(function (x) { return x[1]; })[0];
       return e1 ? set(e1[1], '', [e1[0], e1[2]].filter(Boolean).join(' · ').toUpperCase(), true) : set('Soon', '', '', true); }
+    if (k === 'species') { var got = 0; try { got = Object.keys(JSON.parse(localStorage.getItem('da.spotted.v1') || '{}') || {}).length; } catch (e) { got = 0; }
+      $('.wx-ic svg', el).innerHTML = '<rect x="4.5" y="4.5" width="15" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.2l2.8 2.8L16.4 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+      el.title = got + ' spotted'; return set(String(got), '', 'SPOTTED'); }
     if (k === 'tarot') { var i = cartSeed(day + 'tarot', 22); return set(ROMAN[i], '', ARCANA[i]); }
     if (k === 'cards') { var n = cartSeed(day + 'cards0', 52), r = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][n % 13], s = Math.floor(n / 13);
       $('.wx-ic svg', el).innerHTML = SUITS[s]; el.classList.toggle('wx-red', s === 1 || s === 2); el.title = ({ A: 'Ace', J: 'Jack', Q: 'Queen', K: 'King' }[r] || r) + ' of ' + ['spades', 'hearts', 'diamonds', 'clubs'][s]; return set(r, '', ''); }
@@ -699,12 +703,14 @@
   function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } noteWait(); }
   function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
   /* a tap off the note while it is up only puts it away: the card behind does not open with it */
-  D.addEventListener('click', function (e) { if (!NT.el || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) return; e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
+  D.addEventListener('click', function (e) { if (!NT.el || NT.hv || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) { if (NT.el && NT.hv && !NT.el.contains(e.target)) noteOut(); return; } e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
   function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
-  function noteWait() { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(noteShow, 900); }
-  function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '', seen = store.get('da.notes.seen', []) || [];
-    if (!t || seen.indexOf(k) >= 0 || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
-    seen.push(k); store.set('da.notes.seen', seen);
+  function noteWait(hv) { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(function () { noteShow(hv); }, hv ? 600 : 900); }
+  /* each note once a visit as its page arrives; on a desk, with three cards to a page, the card the pointer rests on shows its own */
+  var NT_SEEN = {};
+  function noteShow(hv) { var id = hv ? NT.hov : CUR, k = noteKey(id), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '';
+    if (!t || (!hv && NT_SEEN[k]) || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
+    NT_SEEN[k] = 1; NT.hv = !!hv;
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
     n.className = 'hm-note'; n.setAttribute('role', 'note');
     var nf = NT.t.films && NT.t.films[k]; if (nf && nf.file) { var fv = filmEl(nf, k, function () {}); n.appendChild(fv); n.classList.add('nt-f'); }
@@ -712,7 +718,12 @@
     var mo = null; if (ps.length > show) { mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo); }
     n.title = mo ? 'Tap to read more; tap the card behind to close' : 'Tap the card behind to close';
     n.addEventListener('click', function (e) { e.stopPropagation(); if (e.target.closest && e.target.closest('.lb-v')) return; if (!mo) return; var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); });
-    root.appendChild(n); NT.el = n; NT.id = CUR; }
+    root.appendChild(n); NT.el = n; NT.id = id; notePlace(); }
+  /* a note stands on its own card, at its foot and inside its edges, whatever the card's size or place */
+  function notePlace() { var n = NT.el, c = n && NT.id && col.querySelector('.hm-card[data-id="' + NT.id + '"]'); if (!c) return; var r = c.getBoundingClientRect(), pad = r.width < 220 ? 6 : 10, w = Math.max(150, Math.min(r.width - 2 * pad, n.classList.contains('nt-f') ? 300 : 260));
+    n.style.left = Math.round(Math.max(8, Math.min(r.left + r.width - pad - w, innerWidth - w - 8))) + 'px'; n.style.right = 'auto'; n.style.width = w + 'px';
+    n.style.bottom = Math.round(Math.max(8, innerHeight - r.bottom + pad)) + 'px'; n.style.maxHeight = Math.round(Math.max(120, Math.min(r.height - 2 * pad, innerHeight - 16))) + 'px'; }
+  addEventListener('resize', function () { if (NT.el) notePlace(); });
   /* a film from the films bucket in its own few keys: asked for when play is first pressed, counted, played here only. k: whose film, '' the label's */
   function filmEl(F, k, fit) { var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (to) to.appendChild(e); return e; };
       var v = mk('div', 'lb-v'), pl = mk('button', 'lb-vp', null, v), bar = mk('div', 'lb-vb', null, v), tr = mk('i', '', null, bar), fl = mk('u', '', null, tr), mu = mk('button', 'lb-vm', null, bar), asked = 0;
@@ -1046,6 +1057,8 @@
     if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || nr.bottom < vh * 0.4 || nr.top > vh * 0.6) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
+  if (matchMedia('(hover: hover)').matches) col.addEventListener('pointerover', function (e) { var c = e.target.closest && e.target.closest('.hm-card[data-id]'); if (!c || !c.closest('.hm-trio') || c.dataset.id === NT.hov) return;
+    NT.hov = c.dataset.id; if (NT.el && NT.id === NT.hov) return; if (noteKey(NT.hov) && (!NT.el || noteKey(NT.id) !== noteKey(NT.hov))) noteWait(true); });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
   /* a key turns the page, as a swipe does */
   addEventListener('keydown', function (e) { if (H.classList.contains('hm-away') || xv.classList.contains('on') || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
@@ -1331,14 +1344,17 @@
   function tkFill(l) { var ol = tkp.querySelector('.tk-l'), top = l.filter(function (t) { return !t.re; }), kids = function (id) { return l.filter(function (t) { return t.re === id; }).reverse(); };
     var li = function (t, sub) { var kk = t.k === 'ng' ? { n: 'novel.global', m: 0 } : (window.NG && NG.kin ? NG.kin(t.kin) : null) || { n: '', m: 0 };
       return '<li data-id="' + esc(t.id) + '"' + (sub ? ' class="sub"' : '') + ' style="--m:' + (kk.m || 0) + '"><i></i><b>' + esc(kk.n || 'someone') + '</b><small>' + (window.NG && NG.moonTag ? NG.moonTag(t.at, -37.8) : '') + '</small><span>' + esc(t.text) + '</span></li>'; };
-    ol.innerHTML = top.length ? top.map(function (t) { return li(t) + kids(t.id).map(function (c) { return li(c, 1); }).join(''); }).join('') : '<li class="none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/></svg><span>be the first</span></li>';
+    var board = '', sp = /^c\.species\./.test(TKH.sec || '') ? l.filter(function (t) { return t.k === 'spot'; }) : [];
+    if (sp.length) { var tally = {}; sp.forEach(function (t) { var kk = (window.NG && NG.kin ? NG.kin(t.kin) : null) || { n: 'someone' }, nm = kk.n || 'someone', c = (String(t.text).replace(/^SPOTTED\s*·\s*/i, '').split(/,\s*/).length) || 1; tally[nm] = (tally[nm] || 0) + c; });
+      board = '<li class="board"><b>BOARD</b>' + Object.keys(tally).sort(function (a, b) { return tally[b] - tally[a]; }).slice(0, 5).map(function (nm, i) { return '<span><em>' + (i + 1) + '</em>' + esc(nm) + '<small>' + tally[nm] + '</small></span>'; }).join('') + '</li>'; }
+    ol.innerHTML = board + (top.length ? top.map(function (t) { return li(t) + kids(t.id).map(function (c) { return li(c, 1); }).join(''); }).join('') : '<li class="none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/></svg><span>be the first</span></li>');
     $$('li[data-id]:not(.sub)', ol).forEach(function (e) { e.addEventListener('click', function () { TKH.re = TKH.re === e.dataset.id ? null : e.dataset.id; $$('li', ol).forEach(function (q) { q.classList.toggle('re', q.dataset.id === TKH.re); }); var i = tkp.querySelector('input'); i.placeholder = TKH.re ? 'reply' : 'say something'; i.focus(); }); }); }
   function tkShow(sec) { if (!sec) return; var piece = /^p\./.test(sec); TKH.sec = sec; TKH.re = null; var c = TKH.card && byId(TKH.card);
     tkp.querySelector('.tk-t').textContent = c ? c.title : 'TALK'; var pb = tkp.querySelector('[data-room="piece"]'); if (piece) { pb.hidden = false; pb.dataset.sec = sec; } else if (!pb.dataset.sec) pb.hidden = true;
     $$('[data-room]', tkp).forEach(function (b) { b.setAttribute('aria-pressed', String(piece ? b.dataset.room === 'piece' : sec === 'c.' + TKH.card + '.' + b.dataset.room)); });
     tkp.hidden = false; requestAnimationFrame(function () { tkp.classList.add('on'); }); tkk.classList.add('open'); tkp.querySelector('.tk-say').textContent = '';
     tkp.querySelector('.tk-l').innerHTML = '<li class="none"><span>· · ·</span></li>'; tkLock(!TKOK);
-    tkOk().then(function (ok) { if (TKH.sec !== sec) return; tkLock(!ok); if (ok) tkGet(sec).then(function (l) { if (TKH.sec === sec) tkFill(l); }); }); }
+    tkOk().then(function (ok) { if (TKH.sec !== sec) return; tkLock(!ok); if (ok && TKH.say) { tkp.querySelector('input').value = TKH.say; TKH.say = null; } if (ok) tkGet(sec).then(function (l) { if (TKH.sec === sec) tkFill(l); }); }); }
   function tkHome() { var el = tkp.closest('.hm-card'); if (!el) return; el.classList.remove('talking'); tkp.classList.remove('in-card', 'on'); tkp.hidden = true; root.appendChild(tkp); TKH.card = null; }
   function cardTalk(id) { var el = col.querySelector('.hm-card[data-id="' + id + '"]'); if (!el) return; if (el.classList.contains('talking')) { turn(el, -1, tkHome); return; }
     tkHome(); var bc = el.querySelector('.hm-bcn'), rk = el.querySelector('[data-radar].on'); if (bc && !bc.hidden) { bc.hidden = true; BCN = null; if (rk) rk.classList.remove('on'); }
@@ -1354,14 +1370,16 @@
       NG.useCode(t).then(function (ok) { return ok ? tkOk() : false; }).then(function (ok) { i.disabled = false; i.value = ''; say.textContent = ok ? '✓' : '∅'; beep(ok ? 880 : 220, 0.05); if (ok) { tkShow(sec); tkCount(); } }).catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); return; }
     var who = tkWho(); if (!who) return;
     i.disabled = true; say.textContent = '· · ·';
-    (window.NG && NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: sec, who: who, text: t, re: re, cf: cf }) }); })
+    (window.NG && NG.human ? NG.human() : Promise.resolve('')).then(function (cf) { return fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: sec, who: who, text: t, re: re, cf: cf, k: TKH.k && /^SPOTTED/i.test(t) ? TKH.k : undefined }) }); })
       .then(function (r) { i.disabled = false; if (r.status === 401) { TKOK = false; store.set('da.who.ok', 0); tkLock(true); return; } if (r.status !== 201) { say.textContent = TKWHY[r.status] || 'NOT SENT'; return; }
-        return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); careEarn('talk'); i.value = ''; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
+        return r.json().then(function (j) { var l = [{ id: j.id, sec: sec, text: t, re: re, at: j.at, kin: j.kin }].concat(store.get('da.talk.' + sec, []) || []); store.set('da.talk.' + sec, l.slice(0, 40)); careEarn('talk'); i.value = ''; TKH.k = null; say.textContent = '✓'; beep(880, 0.05); tkGet(sec).then(function (l2) { if (TKH.sec === sec) tkFill(l2); }); tkCount(); }); })
       .catch(function () { i.disabled = false; say.textContent = 'OFFLINE'; }); });
   /* a piece's own talk, asked for from inside an experience */
   addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'talk' || !xv.classList.contains('on')) return;
-    if (/^(c\.[a-z0-9-]{1,24}\.(open|help|show|make)|p\.(DA-[0-9A-Z]{4}|S-[0-9a-z]{6}))$/.test(d.sec || '')) tkShow(d.sec); });
-  addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'open' && d.id === 'kit') { SH.swap = true; open('kit'); } });
+    if (/^(c\.[a-z0-9-]{1,24}\.(open|help|show|make)|p\.(DA-[0-9A-Z]{4}|S-[0-9a-z]{6}))$/.test(d.sec || '')) { var cm = /^c\.([a-z0-9-]+)\./.exec(d.sec); if (cm && !tkp.classList.contains('in-card')) TKH.card = cm[1];
+      /* the words wait until the talk is open (a phone with no code yet is asked for one first) */
+      if (typeof d.say === 'string' && d.say) { TKH.say = d.say.slice(0, 280); TKH.k = d.k === 'spot' ? 'spot' : null; } tkShow(d.sec); } });
+  addEventListener('message', function (e) { var d = e.data; if (e.origin === location.origin && d && d.hm === 'open' && (d.id === 'kit' || d.id === 'species')) { SH.swap = true; open(d.id); } });
   function kitIn(body) {
     var a = AU(), list = (a && a.isle ? a.isle() : []) || [], got = store.get('da.isle.v1', []) || [];
     var GH = 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit';

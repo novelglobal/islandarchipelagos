@@ -7,17 +7,17 @@ export const LABEL = {
   "meta": "",
   "credit": "",
   "num": "",
-  "body": "This is a teaching tool and an ethical challenge on loan from RMIT University’s Fashion AI class (Sustainable Innovation).\n\nWhat does responsible innovation look like when the technology itself is contaminated?\n\nOne human sent 612 messages, 79,000 words, 198 drawings and photographs, and connected more than 30 open-source projects made by other people.\n\nAI wrote the code to join them, estimating the equivalent of $4 million in coding labour (10 people, 18 months, 27,000 hours) and a carbon footprint comparable to a domestic flight.\n\nThese are estimates. But who benefits? Who gets excluded?\n\nThis project proposes rescuing and repurposing 150 thermal printer islands from landfill, creating an archipelago to raise AU$4 million for local creatives and coders working towards climate adaptation.",
+  "body": "This teaching tool is on loan from RMIT University's Fashion and Textiles School, developed by novel.global for the Fashion AI course within the Sustainable Innovation program.\n\nIt brings together human-led creative and strategic thinking, open-source contributions and AI-generated code.\n\nWhat does responsible innovation look like when the technology itself is contaminated?\n\nOne person sent 612 messages, 79,000 words, 198 drawings and photographs, and connected more than 30 open-source projects.\n\nAI wrote the code to join them, estimating the equivalent of $4 million in coding labour (10 people, 18 months, 27,000 hours) and a carbon footprint comparable to a domestic flight.\n\nThese are estimates. But whose work went into it? What did it consume? And who gets to benefit?\n\nWe celebrate what technology creates without asking what it takes to make it.\n\nThe project proposes rescuing and repurposing 150 thermal printer islands from landfill, creating an archipelago to raise AU$4 million for local creatives and coders working towards climate adaptation.",
   "links": [
     {
-      "b": "Read the full report at",
+      "b": "Read the report",
       "t": "novel.global",
       "to": "card",
       "u": ""
     },
     {
-      "b": "Find a thermal printer island:",
-      "t": "the islands",
+      "b": "Find a thermal printer:",
+      "t": "islands",
       "to": "islands",
       "u": ""
     },
@@ -49,7 +49,7 @@ export const LABEL = {
   "never": "",
   "hold": "Hold, or double tap, when read.",
   "fold": 3,
-  "cnt": "more",
+  "cnt": "open",
   "at": "mid",
   "film": {
     "on": true,
@@ -59,7 +59,9 @@ export const LABEL = {
     "vol": 80,
     "max": 300,
     "each": 6
-  }
+  },
+  "more": "",
+  "less": ""
 };
 
 /* the slip a printer prints once it joins a Wi-Fi: its words and the link its code opens, until the approval page (PRINTERS) changes them */
@@ -98,5 +100,12 @@ export const NOTES = {
   "space": "",
   "utils": "UTILITIES\n\nSimple, slightly silly tools that add function to the direct action and climate adaptation theme. Every one was made with the Island Archipelagos builder card.",
   "soon": "POSSIBILITIES\n\nSo many uses are still waiting to be discovered. It all comes back to direct action and new media from a more physical, local internet.\n\nI'll spare you the manifesto. If you have an idea, you can make it.",
-  "dev": "YOUR APPS\n\nMake an app and it appears here, live: no accounts, no approvals. I can switch those on, but for now it's open, so break it and test it."
+  "dev": "YOUR CARDS\n\nMake an card and it appears here, live: no accounts, no approvals. I can switch those on, but for now it's open, so break it and test it."
+};
+
+/* the other words set on the approval page, as they stood when made the base: a reset comes back to these */
+export const BASE_TEXTS = {
+  "opener": "{\"lede\":\"Independent web2print publishing. Open source.\"}",
+  "curations": "[{\"name\":\"water\",\"about\":\"h2o\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"}]",
+  "printq": "{\"preset\":\"soft\",\"dither\":\"atkinson\"}"
 };
