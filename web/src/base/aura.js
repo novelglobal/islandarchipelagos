@@ -1041,16 +1041,16 @@
      album, through the page's one player, so it goes on with the screen locked. The desk's own song (the big key) plays live, alone */
   var AMP = { rows: [], i: -1, go: false, v: '' }, LBA = function () { return (window.NGAWAY && NGAWAY.lib) || null; };
   function ampAlb() { var L = LBA(); if (!L) return null; var n = L.now(); return L.album(n.live && n.v ? n.v : AMP.v) || L.album(L.pick()); }
-  var ampOn = function () { var L = LBA(); return !!RECA || DESK.play || !!(L && L.now().live); };
+  var ampOn = function () { var L = LBA(); return !!RECA || DESK.play || !!(L && L.now().live) || !!(window.NGAWAY && NGAWAY.on()); };
   function ampStop() { AMP.go = false; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false); var L = LBA(); if (L && L.now().live) L.stop(); ampDraw(); deskKept(); }
   function ampPlay(i, v) { var L = LBA(), ab = L ? (v ? L.album(v) : ampAlb()) : null; if (!ab) return; if (RECA) { try { RECA.a.pause(); } catch (e) { /* gone */ } RECA = null; } if (DESK.play) songPlay(false);
     AMP.v = ab.v; AMP.go = true; L.play(ab.v, i); ampDraw(); }
   function ampEnded() { AMP.go = false; ampDraw(); }
   function ampDraw() {
     var ol = DESK.el && DESK.el.querySelector('.sd-pl'); if (!ol) return; var L = LBA(), nw = L ? L.now() : { live: false }, ab = ampAlb(), al = L ? L.albums() : [];
-    AMP.go = nw.live; AMP.rows = ab ? ab.tracks : []; AMP.i = nw.live && ab && nw.v === ab.v ? nw.i : -1; var on = ampOn();
-    DESK.el.classList.toggle('playing', on); var t = DESK.el.querySelector('.sd-ttl'); t.textContent = DESK.play && DESK.song ? MOODS[DESK.song.m].k + ' · ' + SRCS[DESK.song.s][0] : nw.live ? nw.n : al.length ? (ab ? ab.n : '—') : 'NOTHING MADE YET'; DESK.el.querySelector('.sd-amp').classList.toggle('on', on);
-    DESK.el.querySelector('[data-amp="go"]').textContent = on ? '■' : '▶';
+    AMP.go = nw.live; AMP.rows = ab ? ab.tracks : []; AMP.i = (nw.live || nw.held) && ab && nw.v === ab.v ? nw.i : -1; var on = ampOn();
+    DESK.el.classList.toggle('playing', on); var t = DESK.el.querySelector('.sd-ttl'); var st = window.NGAWAY && NGAWAY.state ? NGAWAY.state() : { has: false }; t.textContent = DESK.play && DESK.song ? MOODS[DESK.song.m].k + ' · ' + SRCS[DESK.song.s][0] : nw.live || nw.held ? nw.n : st.has ? st.title : al.length ? (ab ? ab.n : '—') : 'NOTHING MADE YET'; DESK.el.querySelector('.sd-amp').classList.toggle('on', on);
+    DESK.el.querySelector('[data-amp="go"]').textContent = on ? '❚❚' : '▶';
     var cs = DESK.el.querySelector('.sd-albs'); cs.innerHTML = al.map(function (a) { return '<button data-aa="' + esc(a.v) + '" class="' + (ab && a.v === ab.v ? 'on' : '') + (nw.live && nw.v === a.v ? ' pl' : '') + '" title="' + esc(a.n) + '">' + (a.art ? '<img alt="" src="' + esc(a.art) + '">' : '<i class="' + (a.v === 'wish' ? 'w' : '') + '"></i>') + '<span>' + esc(a.n) + '</span></button>'; }).join('');
     [].forEach.call(cs.querySelectorAll('[data-aa]'), function (b) { b.addEventListener('click', function () { var L2 = LBA(); AMP.v = b.dataset.aa; if (L2) L2.pick(AMP.v); var n2 = L2 ? L2.now() : {}; if (n2.live && n2.v !== AMP.v) ampPlay(0, AMP.v); else ampDraw(); bell(2, 0.08); }); });
     ol.innerHTML = AMP.rows.map(function (r, i) { return '<li class="' + (on && AMP.go && i === AMP.i ? 'on' : '') + '"><button data-ap="' + i + '" title="' + esc(r.n) + '"><b>' + ('0' + (i + 1)).slice(-2) + '</b><span>' + esc(r.n) + '</span><i>' + (r.s ? Math.floor(r.s / 60) + ':' + ('0' + r.s % 60).slice(-2) : r.k === 'rec' ? '◉' : '♪') + '</i></button></li>'; }).join('');
@@ -1080,7 +1080,7 @@
       root.appendChild(DESK.el);
       /* every key says what it does when a pointer rests on it */
       [].forEach.call(DESK.el.querySelectorAll('button[aria-label]'), function (b) { if (!b.title) b.title = b.getAttribute('aria-label'); });
-      [].forEach.call(DESK.el.querySelectorAll('[data-amp]'), function (b) { b.addEventListener('click', function () { var q = b.dataset.amp, n = AMP.rows.length; if (!n) return; if (q === 'go') { if (ampOn()) ampStop(); else ampPlay(Math.max(0, AMP.i)); } else ampPlay(((AMP.i < 0 ? 0 : AMP.i) + (q === 'next' ? 1 : -1) + n) % n); }); });
+      [].forEach.call(DESK.el.querySelectorAll('[data-amp]'), function (b) { b.addEventListener('click', function () { var q = b.dataset.amp, n = AMP.rows.length; if (!n && q !== 'go') return; if (q === 'go') { var st = window.NGAWAY && NGAWAY.state ? NGAWAY.state() : { has: false }; if (st.on && !DESK.play && !RECA) NGAWAY.pause(); else if (ampOn()) ampStop(); else if (st.has) NGAWAY.resume(); else ampPlay(Math.max(0, AMP.i)); ampDraw(); } else ampPlay(((AMP.i < 0 ? 0 : AMP.i) + (q === 'next' ? 1 : -1) + n) % n); }); });
       var mk2 = function (go) { if (DESK.src < 0) DESK.src = Math.floor(Math.random() * SRCS.length); DESK.song = songMake(DESK.src, DESK.mood); deskSync(); if (DESK.play || go) songPlay(true); };
       [].forEach.call(DESK.el.querySelectorAll('[data-src]'), function (b) { b.addEventListener('click', function () { if (DESK.src === +b.dataset.src) { DESK.src = -1; if (DESK.play && !AMP.go) songPlay(false); deskSync(); return; } DESK.src = +b.dataset.src; NG.db().then(function () { var was = ampOn(); if (AMP.go || RECA) ampStop(); mk2(was); }); }); });
       DESK.el.querySelector('#sd-mood').addEventListener('click', function () { DESK.mood = (DESK.mood + 1) % MOODS.length; if (DESK.song) { DESK.song.m = DESK.mood; deskSync(); if (DESK.play) songPlay(true); } else mk2(); bell(2 + DESK.mood, 0.1); });

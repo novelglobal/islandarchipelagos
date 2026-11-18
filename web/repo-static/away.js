@@ -41,10 +41,12 @@
     return Promise.all(blobs.map(function (b) { return b.arrayBuffer(); })).then(function (abs) { var ps = abs.map(parse).filter(Boolean); if (!ps.length) return blobs[0]; var f = ps[0].f;
       ps = ps.filter(function (p) { return p.f.ch === f.ch && p.f.sr === f.sr && p.f.bits === f.bits; }); var n = ps.reduce(function (a, p) { return a + p.d.length; }, 0);
       return new Blob([head(f, n)].concat(ps.map(function (p) { return p.d; })), { type: 'audio/wav' }); }); }
-  /* sound made ahead (an AudioBuffer) as a file: 16-bit, as it was made */
-  function wavOf(buf) { var ch = Math.min(2, buf.numberOfChannels), N = buf.length, n = N * ch * 2, b = new ArrayBuffer(44 + n), v = new DataView(b), cs = [];
-    new Uint8Array(b).set(new Uint8Array(head({ ch: ch, sr: buf.sampleRate, bits: 16 }, n)), 0); for (var c = 0; c < ch; c++) cs.push(buf.getChannelData(c));
-    for (var i = 0, o = 44; i < N; i++) for (c = 0; c < ch; c++, o += 2) { var x = Math.max(-1, Math.min(1, cs[c][i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
+  /* sound made ahead (an AudioBuffer) as a file: 16-bit, as it was made; tracks summed past full scale brought just under it, whole,
+     so a blend never cracks (one pass to find the peak, nothing done when it fits) */
+  function wavOf(buf) { var ch = Math.min(2, buf.numberOfChannels), N = buf.length, n = N * ch * 2, b = new ArrayBuffer(44 + n), v = new DataView(b), cs = [], pk = 0, i, c, o;
+    new Uint8Array(b).set(new Uint8Array(head({ ch: ch, sr: buf.sampleRate, bits: 16 }, n)), 0); for (c = 0; c < ch; c++) cs.push(buf.getChannelData(c));
+    for (c = 0; c < ch; c++) for (i = 0; i < N; i++) { var a0 = cs[c][i] < 0 ? -cs[c][i] : cs[c][i]; if (a0 > pk) pk = a0; } var g = pk > 0.97 ? 0.97 / pk : 1;
+    for (i = 0, o = 44; i < N; i++) for (c = 0; c < ch; c++, o += 2) { var x = Math.max(-1, Math.min(1, cs[c][i] * g)); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
     return new Blob([b], { type: 'audio/wav' }); }
   /* ───────── the library: one set of albums for every player on the site (the small one on every card, the radio, the sound desk).
      NIGHT FIELD, each mixtape, the W.I.S.H. songs, the radio's loops. An album plays track after track through the one player, the next
@@ -96,8 +98,12 @@
   function playAlbum(v, i) { var ab = album(v); if (!ab || !ab.tracks.length) return false; unlock(); LIB.v = v; LIB.list = ab.tracks; try { localStorage.setItem('da.snd.alb', JSON.stringify(v)); } catch (e) { /* none */ } go(i || 0); return true; }
   function step(d) { if (!LIB.v) return; var ab = album(LIB.v); if (ab) LIB.list = ab.tracks; go(LIB.i + d); }
   function libStop() { LIB.g++; LIB.wait = false; free(LIB.pre && LIB.pre.s); LIB.pre = null; if (cur && cur.lib) stop('stop'); else tell(); }
-  function now() { var on = !!cur && !!cur.lib && !!el && !el.paused, t = LIB.list[LIB.i]; return { v: LIB.v, i: LIB.i, id: t ? t.id : '', n: t ? t.n : '', on: on, wait: !!LIB.wait, live: on || !!LIB.wait }; }
-  window.NGAWAY = { unlock: unlock, play: play, stop: stop, join: join, wavOf: wavOf, id: function () { return cur ? cur.id : ''; }, on: function () { return !!cur && !!el && !el.paused; }, title: function () { return cur ? cur.title : ''; },
+  function now() { var on = !!cur && !!cur.lib && !!el && !el.paused, t = LIB.list[LIB.i]; return { v: LIB.v, i: LIB.i, id: t ? t.id : '', n: t ? t.n : '', on: on, wait: !!LIB.wait, live: on || !!LIB.wait, held: !!cur && !!cur.lib && !!el && el.paused }; }
+  /* what the one player holds, whoever started it: every device shows it, and any of them pauses or goes on with it */
+  function state() { return { has: !!cur, on: !!cur && !!el && !el.paused, id: cur ? cur.id : '', title: cur ? cur.title : '', album: cur ? cur.album || '' : '', lib: !!(cur && cur.lib) }; }
+  function pause() { if (el && cur && !el.paused) el.pause(); }
+  function resume() { if (!el || !cur || !el.paused) return; unlock(); try { var p = el.play(); if (p && p.catch) p.catch(function () { tell(); }); } catch (e) { /* asked by a touch */ } }
+  window.NGAWAY = { unlock: unlock, play: play, stop: stop, join: join, wavOf: wavOf, id: function () { return cur ? cur.id : ''; }, on: function () { return !!cur && !!el && !el.paused; }, title: function () { return cur ? cur.title : ''; }, state: state, pause: pause, resume: resume,
     lib: { albums: albums, album: album, cover: cover, play: playAlbum, step: step, stop: libStop, now: now, ready: nfLoad,
       pick: function (v) { if (v !== undefined) { try { localStorage.setItem('da.snd.alb', JSON.stringify(v)); } catch (e) { /* none */ } tell(); } var p = get('da.snd.alb', ''); return album(p) ? p : (albums()[0] || { v: '' }).v; } } };
 })();

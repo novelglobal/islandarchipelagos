@@ -210,7 +210,8 @@ $('#view').addEventListener('click', e => {
   const ab = e.target.closest('[data-alb]'); if (ab) { ALB = ALB === ab.dataset.alb ? '' : ab.dataset.alb; snd.tick(1500); refreshFour(); return; }
   if (e.target.closest('[data-alb-mk]')) { albMake(); return; }
   const aa = e.target.closest('[data-alb-all]'); if (aa) { albPlay(aa.dataset.albAll); return; }
-  const atr = e.target.closest('[data-alb-tr]'); if (atr) { albPlay(atr.dataset.albV, +atr.dataset.albTr); return; }
+  const atr = e.target.closest('[data-alb-tr]'); if (atr) { const id = atr.dataset.albId; if ((inFour() || filing) && LOOPS.some(l => l.id === id && !l.off4)) { toggleTrack(id); albSync(); return; } albPlay(atr.dataset.albV, +atr.dataset.albTr); return; }
+  if (e.target.closest('[data-alb-np]')) { const st = npOf(); if (st.on) AWAY.pause(); else if (st.has) AWAY.resume(); snd.tick(1500); return; }
   const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
   const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
@@ -408,16 +409,16 @@ function comeBack() {
   if (s && !s.radio && !LOOP.ms.length && S.radio) setRadio(false);
 }
 /* the tracks going round, said to every key that shows them, the ring on the map and the timer */
-function loopSync(on) {
+function loopSync(on, quiet) {
   LOOP.on = LOOP.ms.length > 0; LOOP.live = LOOP.ms.some(t => t.live); LOOP.m = LOOP.on ? LOOP.ms[0].m : null; LOOP.t0 = LOOP.on ? LOOP.ms[0].t0 : 0;
   bakedStop(); clearInterval(LOOP.timer); if (!LOOP.on) awayEnd(); if (LOOP.on) { LOOP.timer = setInterval(loopTick, snd.lite ? 60 : 30); if (!S.radio) setRadio(true); }
   const four = inFour(), all = four && FOUR().length > 1 && FOUR().every(l => going(l.id));
   $$('[data-loop]').forEach(b => { b.setAttribute('aria-pressed', String(LOOP.live)); b.classList.toggle('on', LOOP.live); });
   $$('[data-t4k]').forEach(b => { const o = going(b.dataset.t4k); b.setAttribute('aria-pressed', String(o)); b.classList.toggle('on', o); });
   $$('[data-loop-play]').forEach(b => { const o = going(b.dataset.loopPlay); b.classList.toggle('on', o); b.setAttribute('aria-pressed', String(o)); if (b.classList.contains('ib')) b.innerHTML = icon(o ? 'pause' : 'play', 'sm'); });
-  $$('[data-t4all]').forEach(b => { b.setAttribute('aria-pressed', String(all)); b.classList.toggle('on', all); });
+  $$('[data-t4all]').forEach(b => { b.setAttribute('aria-pressed', String(all)); b.classList.toggle('on', all); }); albSync();
   $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; });
-  document.body.classList.toggle('looping', LOOP.on); snd.tick(on ? 1900 : 1100); buzz(on ? [6, 30, 6] : 5); life.redraw();
+  document.body.classList.toggle('looping', LOOP.on); if (!quiet) snd.tick(on ? 1900 : 1100); buzz(on ? [6, 30, 6] : 5); life.redraw();
 }
 /* LOOP: the radio as it sounds now, kept and going round alone; pressed again, what played before comes back. (null: all stops) */
 function setLoop(on, kept) {
@@ -443,6 +444,10 @@ function nextLoop() {
    together; pressed while something else plays, it plays alone in its place. Every track out, what played before comes back */
 function toggleTrack(id) {
   const m = LOOPS.find(l => l.id === id); if (!m) return;
+  if (filing && FILING) {
+    if (going(id)) { if (new Set(LOOP.ms.map(t => t.of)).size > 1) { LOOP.ms = LOOP.ms.filter(t => t.of !== id); loopSync(false, true); } }
+    else { LOOP.ms = LOOP.ms.concat(tracksOf(m, LOOP.ms.length ? LOOP.ms[0].t0 : undefined)); FILING.ids.add(id); loopSync(true, true); }
+    return; }
   if (!inFour()) { startPlay(tracksOf(m)); return; }
   if (going(id)) { LOOP.ms = LOOP.ms.filter(t => t.of !== id); if (LOOP.ms.length) loopSync(false); else comeBack(); return; }
   LOOP.ms = LOOP.ms.concat(tracksOf(m, LOOP.ms[0].t0)); loopSync(true);
@@ -483,13 +488,16 @@ async function loopFile(l, four) {
   if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop(); dsStop(); awayEnd();
   const ms = tracksOf(l), dur = Math.max(...ms.map(t => loopDur(t.m))), t0 = performance.now() + 150; for (const t of ms) { t.t0 = t0; t.step = null; }
   startPlay(ms); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.add('going')); /* whole turns, to at least 24 seconds: a tape to keep, not a blip */
-  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300 }; refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
-  try { await new Promise(r => setTimeout(r, 150)); const b = await snd.record(len, 3000); await big.set('rec:' + l.id, b); l.rec = { at: Date.now(), type: b.type, s: Math.round(len / 1000) }; store.set('da.loops.v1', LOOPS);
+  const turns = Math.max(1, Math.ceil(24000 / dur)), len = dur * turns; FILING = { t0: Date.now(), len: len + 300, ids: new Set([l.id]) }; refreshFour(); if (!$('#view .four')) toast('RECORDING', len + 4200);
+  try { await new Promise(r => setTimeout(r, 150)); const b = await snd.record(len, 3000);
+    if (FILING.ids.size > 1) { const ps = [...FILING.ids].map(id => LOOPS.find(x => x.id === id)).filter(Boolean).flatMap(x => (x.parts && x.parts.length ? x.parts : [x]));
+      const mx = ps.length > 1 ? mixOf(ps) : null; if (mx && keepLoop(mx)) { made('song', 'mix'); l = mx; } }
+    await big.set('rec:' + l.id, b); l.rec = { at: Date.now(), type: b.type, s: Math.round(len / 1000) }; store.set('da.loops.v1', LOOPS);
     const name = recName(l, b.type); FILED = { id: l.id, url: URL.createObjectURL(b), name, four: !!four }; RECURL.set(l.id, FILED.url);
     /* one save, its key beside the loop: the tape on novel.global (opened in a tab of its own, never leaving this one) */
     await tapeUp(l, b, name); if (l.tape) FILED.url = l.tape.url; toSound(l, l.id); toast('✓ ↓', 3600); made('song', 'loop'); }
   catch (e) { toast('NOT SAVED · TRY AGAIN'); }
-  $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id)) comeBack(); filing = false; FILING = null;
+  $$('[data-t4save], [data-song-file]').forEach(b => b.classList.remove('going')); const was = FILING ? FILING.ids : new Set([l.id]); if (LOOP.ms.length && LOOP.ms.every(t => t.of === l.id || was.has(t.of))) comeBack(); filing = false; FILING = null;
   refreshFour(); if (S.view !== 0) refreshPanel();
 }
 /* a kept loop heard again: the file as it was recorded; the radio waits under it and comes back when it ends */
@@ -556,26 +564,29 @@ const pAura = () => { try { return parent.AURA || null; } catch (e) { return nul
 let ALB = '', ALBX = false, ALBN = -1;   // ALB: the album open; ALBX: the drop-down open; ALBN: how many were drawn
 const LIBR = () => (AWAY && AWAY.lib) || null, albNow = () => { const L = LIBR(); return L ? L.now() : { v: '', id: '', live: false }; };
 const albOn = v => { const n = albNow(); return n.live && n.v === v; };
+const npOf = () => (AWAY && AWAY.state ? AWAY.state() : { has: false, on: false, title: '' });
+const npHTML = () => { const st = npOf(); return `<li${st.has ? '' : ' hidden'}><button type="button" class="alb-np${st.on ? ' on' : ''}" data-alb-np aria-label="${st.on ? 'Pause' : 'Go on'}: ${esc(st.title)}" data-tip="${st.on ? 'Pause' : 'Play'}">${icon(st.on ? 'pause' : 'play', 'sm')}</button></li>`; };
+const ddName = () => { const st = npOf(); return esc(String(st.has && st.title ? st.title : 'albums').slice(0, 18)); };
 function albumsHTML() {
   const L = LIBR(), al = L ? L.albums() : [], nw = albNow(), n2 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`; ALBN = al.length;
   if (ALB && !al.some(a => a.v === ALB)) ALB = '';
   if (!al.length && !DECK().length) return '';
   const art = a => (a.art ? `<img src="${esc(a.art)}" alt="">` : `<b class="alb-c${a.v === 'wish' ? ' alb-w' : ''}"></b>`);
   const tracks = a => { const on = albOn(a.v);
-    return `<ol class="f4d alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a.v)}" aria-label="${on ? 'Stop the album' : 'Play the album from the top'}" data-tip="${on ? 'Stop' : 'Play it all'}">${icon(on ? 'pause' : 'play', 'sm')}<small class="mono">all</small></button></li>`
-      + a.tracks.map((t, i) => `<li><button type="button" class="${nw.live && nw.v === a.v && nw.id === t.id ? 'on' : ''}" data-alb-tr="${i}" data-alb-v="${esc(a.v)}" data-alb-id="${esc(t.id)}" aria-label="Track ${i + 1}: ${esc(t.n)}" data-tip="${esc(t.n)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(t.n.slice(0, 10))}</small></button></li>`).join('')
-      + (a.tape ? `<li><button type="button" class="alb-x" data-tape-x="${esc(a.tape)}" aria-label="Let this album go" data-tip="Let it go">×</button></li>` : '') + '</ol>'; };
-  const item = a => `<li class="alb-i"><button type="button" class="alb-t${ALB === a.v ? ' alb-open' : ''}${albOn(a.v) ? ' on' : ''}" data-alb="${esc(a.v)}" aria-expanded="${ALB === a.v}" aria-label="Album ${esc(a.n)}, ${n2(a.tracks.length, 'track')}">${art(a)}<small class="mono">${esc(a.n.slice(0, 24))}</small><i class="mono">${a.tracks.length}</i></button>${ALB === a.v ? tracks(a) : ''}</li>`;
+    return `<ol class="alb-l" role="group" aria-label="Tracks"><li><button type="button" class="${on ? 'on' : ''}" data-alb-all="${esc(a.v)}" aria-label="${on ? 'Stop the album' : 'Play the album from the top'}" data-tip="${on ? 'Stop' : 'Play it all'}"><small class="mono">${on ? '❚❚' : '▶'} all</small></button></li>`
+      + a.tracks.map((t, i) => `<li><button type="button" class="${nw.live && nw.v === a.v && nw.id === t.id ? 'on' : ''}" data-alb-tr="${i}" data-alb-v="${esc(a.v)}" data-alb-id="${esc(t.id)}" aria-label="Track ${i + 1}: ${esc(t.n)}" data-tip="${esc(t.n)}"><small class="mono">${('0' + (i + 1)).slice(-2)} ${esc(t.n.slice(0, 26))}</small></button></li>`).join('') + '</ol>'; };
+  const item = a => `<li class="alb-i"><span class="alb-r"><button type="button" class="alb-t${ALB === a.v ? ' alb-open' : ''}${albOn(a.v) ? ' on' : ''}" data-alb="${esc(a.v)}" aria-expanded="${ALB === a.v}" aria-label="Album ${esc(a.n)}, ${n2(a.tracks.length, 'track')}">${art(a)}<small class="mono">${esc(a.n.slice(0, 24))}</small><i class="mono">${a.tracks.length}</i></button>${a.tape ? `<button type="button" class="alb-x" data-tape-x="${esc(a.tape)}" aria-label="Let this album go" data-tip="Let it go">×</button>` : ''}</span>${ALB === a.v ? tracks(a) : ''}</li>`;
   const key = `<ol class="f4d alb-s" role="group" aria-label="Albums">`
-    + (al.length ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}${nw.live ? ' on' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${al.length}" data-tip="Albums">${icon('loop', 'sm')}<small class="mono">albums</small><i class="mono">${al.length}</i><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '')
-    + (DECK().length ? `<li><button type="button" class="alb-mk" data-alb-mk aria-label="Make an album of the tracks playing on the deck, or of every track kept" data-tip="New album">${icon('plus', 'sm')}<small class="mono">album</small></button></li>` : '') + '</ol>';
-  const list = ALBX && al.length ? `<ul class="alb-dl" role="list">${al.map(item).join('')}</ul>` : '';
+    + npHTML() + (al.length || DECK().length ? `<li><button type="button" class="alb-dd${ALBX ? ' alb-open' : ''}" data-alb-dd aria-expanded="${ALBX}" aria-label="Albums, ${al.length}" data-tip="Albums"><small class="mono">${ddName()}</small><b class="alb-v" aria-hidden="true">${ALBX ? '▴' : '▾'}</b></button></li>` : '') + '</ol>';
+  const mk = DECK().length ? `<li class="alb-i"><span class="alb-r"><button type="button" class="alb-t alb-mk" data-alb-mk aria-label="Make an album of the tracks playing on the deck, or of every track kept" data-tip="New album"><small class="mono">+ album</small></button></span></li>` : '';
+  const list = ALBX && (al.length || mk) ? `<ul class="alb-dl" role="list">${al.map(item).join('')}${mk}</ul>` : '';
   return `<div class="f4d f4w alb">${key}${list}</div>`;
 }
 function albSync() { try { const nw = albNow();
-  $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd]').forEach(b => b.classList.toggle('on', nw.live));
-  $$('[data-alb-all]').forEach(b => { const on = albOn(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = icon(on ? 'pause' : 'play', 'sm') + '<small class="mono">all</small>'; });
-  $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', nw.live && nw.v === b.dataset.albV && nw.id === b.dataset.albId));
+  $$('[data-alb]').forEach(b => b.classList.toggle('on', albOn(b.dataset.alb))); $$('[data-alb-dd] small').forEach(b => { b.innerHTML = ddName(); });
+  $$('[data-alb-all]').forEach(b => { const on = albOn(b.dataset.albAll); b.classList.toggle('on', on); b.innerHTML = '<small class="mono">' + (on ? '❚❚' : '▶') + ' all</small>'; });
+  const mixing = inFour() || filing; $$('[data-alb-tr]').forEach(b => b.classList.toggle('on', (nw.live && nw.v === b.dataset.albV && nw.id === b.dataset.albId) || (mixing && going(b.dataset.albId))));
+  $$('[data-alb-np]').forEach(b => { const st = npOf(), li = b.parentNode; li.hidden = !st.has; b.classList.toggle('on', st.on); b.setAttribute('aria-label', (st.on ? 'Pause' : 'Go on') + ': ' + st.title); b.dataset.tip = st.on ? 'Pause' : 'Play'; b.innerHTML = icon(st.on ? 'pause' : 'play', 'sm'); });
 } catch (e) { /* not drawn yet */ } }
 function albMake() {
   const sel = inFour() ? [...new Set(LOOP.ms.map(t => t.of))] : [], ids = (sel.length ? sel : DECK().map(l => l.id)).slice(0, 24);

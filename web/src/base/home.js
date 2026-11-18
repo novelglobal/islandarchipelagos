@@ -1225,15 +1225,15 @@
     el.querySelector('.sn-air').classList.toggle('on', AIR.on); el.querySelector('.sn-air small').textContent = AIR.on ? 'ON AIR' : 'TUNE IN';
     el.querySelector('.sn-sea').classList.toggle('on', !!RS.nino); el.querySelector('.sn-sea').hidden = !nino || away; el.querySelector('.sn-sea small').textContent = RS.nino ? 'ON' : 'OFF';
     el.querySelector('.sn-mx').classList.toggle('on', SND.mix); el.querySelector('.sn-mx small').textContent = SND.mix ? Object.keys(SND.pick).filter(function (k) { return SND.pick[k]; }).length + ' IN' : 'TAPE';
-    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = nw.live ? nw.n : on ? (AW && AW.on() && AW.title()) || (AIR.on ? 'RADIO' : 'SOUND') : al.length ? 'LISTEN' : 'EMPTY';
+    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = nw.live || nw.held ? nw.n : AW && AW.state().has ? AW.title() : on ? (AW && AW.on() && AW.title()) || (AIR.on ? 'RADIO' : 'SOUND') : al.length ? 'LISTEN' : 'EMPTY';
     var kb = el.querySelector('[data-sn="alb"]'), ad = el.querySelector('.sn-ad');
     kb.innerHTML = sndArt(ab) + '<span>' + esc(ab ? ab.n : '—') + '</span><i>' + (ab ? ab.tracks.length : 0) + '</i><b aria-hidden="true">' + (SND.ad ? '▴' : '▾') + '</b>'; kb.setAttribute('aria-expanded', String(SND.ad)); kb.hidden = !al.length;
     ad.hidden = !SND.ad; ad.innerHTML = al.map(function (a) { return '<li class="' + (ab && a.v === ab.v ? 'on' : '') + (nw.live && a.v === nw.v ? ' pl' : '') + '"><button data-sna="' + esc(a.v) + '">' + sndArt(a) + '<span>' + esc(a.n) + '</span><i>' + a.tracks.length + '</i></button>' +
       (a.tape ? '<button class="x" data-snx="' + esc(a.tape) + '" aria-label="Let this mixtape go">×</button>' : '') + '</li>'; }).join('');
-    el.querySelector('[data-sn="go"]').textContent = on ? '■' : '▶';
+    var st0 = AW ? AW.state() : { on: false }; el.querySelector('[data-sn="go"]').textContent = st0.on || AIR.on || sndAura() ? '❚❚' : '▶'; el.classList.toggle('held', !!st0.has && !st0.on);
     /* MIX lists every recording to pick from; otherwise the album's tracks */
     var mixA = SND.mix && LB ? LB.album('radio') : null, rows = SND.rows = SND.mix ? (mixA ? mixA.tracks : []) : ab ? ab.tracks : [], ol = el.querySelector('.sn-pl');
-    ol.innerHTML = rows.length ? rows.map(function (r, i) { var pk = !!SND.pick[r.id], lit = nw.live && ab && nw.v === ab.v && nw.id === r.id && !SND.mix;
+    ol.innerHTML = rows.length ? rows.map(function (r, i) { var pk = !!SND.pick[r.id], lit = (nw.live || nw.held) && ab && nw.v === ab.v && nw.id === r.id && !SND.mix;
       return '<li class="' + (lit ? 'on' : '') + '"><button data-snp="' + i + '"' + (SND.mix ? ' aria-pressed="' + pk + '"' : '') + '><b>' + (SND.mix ? (pk ? '■' : '□') : ('0' + (i + 1)).slice(-2)) + '</b><span>' + esc(r.n) + '</span><i>' + (r.k === 'song' ? '♪' : sndLen(r.s)) + '</i></button></li>'; }).join('')
       : '<li class="none"><button data-sn="rec"><b>●</b><span>RECORD A LOOP ON THE RADIO</span><i>→</i></button></li>';
     var kp = el.querySelector('.sn-keep'); kp.hidden = !SND.mix; kp.querySelector('button').disabled = !Object.keys(SND.pick).some(function (k) { return SND.pick[k]; }); }
@@ -1254,7 +1254,7 @@
         if (b.dataset.snp != null) { var i = +b.dataset.snp, r = SND.rows[i]; if (!r) return; if (SND.mix) { SND.pick[r.id] = !SND.pick[r.id]; beep(SND.pick[r.id] ? 990 : 660, 0.03); sndDraw(); return; }
           if (nw.live && ab && nw.v === ab.v && nw.id === r.id) sndStop(); else if (ab) sndPlay(ab.v, i); return; }
         var q = b.dataset.sn; if (q === 'rec') { b.closest('.none') && (sndOpen(false), xv.classList.contains('on') ? (shut(false), setTimeout(function () { open('radio'); }, 480)) : open('radio')); return; }
-        if (q === 'go' && (sndOn() || AIR.on)) { sndStop(); return; } if (!ab) return; if (q === 'go') sndPlay(ab.v, nw.v === ab.v ? Math.max(0, nw.i) : 0); else if (nw.live || nw.v === ab.v) { LB.step(q === 'next' ? 1 : -1); airSound(true, 'snd'); } else sndPlay(ab.v, 0); });
+        if (q === 'go') { var st = AW ? AW.state() : { has: false }; if (st.on) { AW.pause(); if (AIR.on || sndAura()) sndHush(); sndDraw(); return; } if (st.has) { AW.resume(); sndDraw(); return; } if (AIR.on || sndAura()) { sndStop(); return; } } if (!ab) return; if (q === 'go') sndPlay(ab.v, nw.v === ab.v ? Math.max(0, nw.i) : 0); else if (nw.live || nw.v === ab.v) { LB.step(q === 'next' ? 1 : -1); airSound(true, 'snd'); } else sndPlay(ab.v, 0); });
       el.querySelector('.sn-nm').addEventListener('keydown', function (e) { if (e.key === 'Enter') sndKeep(); }); }
     if (!SND.el) return; SND.el.hidden = !on; $('#hm-snd').setAttribute('aria-expanded', String(!!on)); if (on) { beep(1320, 0.03); sndDraw(); } }
   $('#hm-snd').addEventListener('click', function (e) { e.stopPropagation(); sndOpen(!SND.el || SND.el.hidden); });

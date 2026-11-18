@@ -647,8 +647,8 @@
   var tpLib = function () { var A = window.NGAWAY; return A && A.lib ? A.lib : null; }, tpV = function () { return TQ ? 't:' + TQ : 'nf'; }, tpId = function (t) { return TQ ? t.rec : 'nf' + t.n; };
   /* a track of this paper in the site's library: its album and its place there (a loop never recorded has none) */
   function tpAt(i) { var Lb = tpLib(), t = ((S.data && S.data.tracks) || [])[i], ab = Lb && t ? Lb.album(tpV()) : null; if (!ab) return -1; for (var j = 0; j < ab.tracks.length; j++) if (ab.tracks[j].id === tpId(t)) return j; return -1; }
-  function tpStop() { TP.f++; TP.on = false; tpHush(); var Lb = tpLib(); if (Lb && Lb.now().v === tpV()) Lb.stop(); tpKeys(); }
-  function tpPlay(i) { var Lb = tpLib(); if (Lb) { var L0 = (S.data && S.data.tracks) || [], k = i, j = -1; for (var n0 = 0; n0 < L0.length && j < 0; n0++, k = (k + 1) % L0.length) j = tpAt(k);
+  function tpStop() { TP.f++; TP.on = false; tpHush(); var Lb = tpLib(); if (Lb && Lb.now().v === tpV() && Lb.now().on) window.NGAWAY.pause(); tpKeys(); }
+  function tpPlay(i) { var Lb = tpLib(); if (Lb && Lb.now().held && Lb.now().v === tpV() && i === TP.i) { window.NGAWAY.resume(); tpKeys(); return; } if (Lb) { var L0 = (S.data && S.data.tracks) || [], k = i, j = -1; for (var n0 = 0; n0 < L0.length && j < 0; n0++, k = (k + 1) % L0.length) j = tpAt(k);
       if (j >= 0) { TP.f++; tpHush(); Lb.play(tpV(), j); tpKeys(); return; }
       if (!TQ && Lb.ready) { Lb.ready().then(function () { if (tpAt(i) >= 0) tpPlay(i); }); return; } }
     var L = (S.data && S.data.tracks) || [], t = L[i]; TP.f++; tpHush(); if (!t) { TP.i = -1; TP.on = false; tpKeys(); return; } TP.i = i; TP.on = true; var my = TP.f, rate = Math.pow(2, (+t.st || 0) / 12);
@@ -658,7 +658,7 @@
       if (t.echo) { var e = tpAudio(u, rate); TP.e = e; a.addEventListener('playing', function () { clearTimeout(TP.t); if (my === TP.f && e.paused) TP.t = setTimeout(function () { if (my === TP.f) e.play().then(function () { tpFade(e, 0.3, 2400); }, function () {}); }, t.echo); }, { once: true }); }
       tpKeys(); }); tpKeys(); }
   function tpKeys() { if (!S.stack || S.stack.kind !== 'tape') return; var IN0 = window.parent !== window, Lb = tpLib();
-    if (Lb && !TP.a) { var nw = Lb.now(), L1 = (S.data && S.data.tracks) || []; TP.on = nw.v === tpV() && nw.live; if (TP.on) for (var q = 0; q < L1.length; q++) if (tpId(L1[q]) === nw.id) TP.i = q; }
+    if (Lb && !TP.a) { var nw = Lb.now(), L1 = (S.data && S.data.tracks) || []; TP.on = nw.v === tpV() && nw.live; if (TP.on || (nw.v === tpV() && nw.held)) for (var q = 0; q < L1.length; q++) if (tpId(L1[q]) === nw.id) TP.i = q; }
     [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { var a = b.dataset.a; if (a === 'play') b.setAttribute('aria-pressed', String(!!TP.on)); if (a === 'design') b.hidden = !IN0; });
     var pp = $('#paper'), ov = $('#tpov'); if (!pp) return; if (!ov) { ov = document.createElement('div'); ov.id = 'tpov'; pp.appendChild(ov);
       ov.addEventListener('click', function (e) { if (e.target.closest('[data-go]')) { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); return; } var b = e.target.closest('button[data-i]'); if (!b) return; var i = +b.dataset.i; if (TP.on && TP.i === i) tpStop(); else tpPlay(i); }); }

@@ -559,7 +559,8 @@ const snd = (() => {
     const n = out[0].length, ch = out.length, ab = new ArrayBuffer(44 + n * ch * 2), v = new DataView(ab), str = (p, s) => { for (let i = 0; i < s.length; i++) v.setUint8(p + i, s.charCodeAt(i)); };
     str(0, 'RIFF'); v.setUint32(4, 36 + n * ch * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
     v.setUint32(24, R, true); v.setUint32(28, R * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * ch * 2, true);
-    for (let k = 0, o = 44; k < n; k++) for (let j = 0; j < ch; j++, o += 2) { const x = Math.max(-1, Math.min(1, out[j][k])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
+    let pk = 0; for (let j = 0; j < ch; j++) for (let k = 0; k < n; k++) { const a = Math.abs(out[j][k]); if (a > pk) pk = a; } const g = pk > 0.97 ? 0.97 / pk : 1;
+    for (let k = 0, o = 44; k < n; k++) for (let j = 0; j < ch; j++, o += 2) { const x = Math.max(-1, Math.min(1, out[j][k] * g)); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
     return new Blob([ab], { type: 'audio/wav' });
   }
   return {
