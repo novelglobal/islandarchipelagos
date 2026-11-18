@@ -1615,6 +1615,8 @@ html.hm-night .sn-ask { background: rgba(18, 16, 14, .9); }
 /* THE OPENER, big: the whole photograph laid on a lit box, a margin all round; its lights and the print stay where they are on it */
 #hm .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #FFFFFF 0%, #F3F2EE 55%, #E2E1DC 100%); }
 #hm.night .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #2A2A28 0%, #191918 60%, #0E0E0D 100%); }
+/* at night the card under its dark front is dark too, so no pale edge shows round the corners */
+#hm.night .hm-card.sk-intro:not(.small):not(.flip) { background: #0E0E0D; }
 #hm .hm-card.sk-intro:not(.small) { --in-t: 104px; --in-b: 108px; --in-h: min(84cqw * 4 / 3, 100cqh - var(--in-t) - var(--in-b)); --in-c: calc(var(--in-t) + (100cqh - var(--in-t) - var(--in-b)) / 2); }
 #hm .hm-card.sk-intro:not(.small) .in-prn { top: var(--in-c); left: 50%; width: auto; height: var(--in-h); aspect-ratio: 900 / 1200; transform: translate(-50%, -50%); }
 #hm .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #FFFFFF, 0 18px 34px -16px rgba(0, 0, 0, .45); border-radius: 1px; }

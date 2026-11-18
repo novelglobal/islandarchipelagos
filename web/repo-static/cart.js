@@ -625,16 +625,19 @@
       var y = k.head('MIXTAPE', d.name || '', phase(age(today()))) + 16;
       TPC = { y: y, h: 420 }; tapeCover(k, d, y, 420); y += 420 + 40;
       if (!L.length) { k.txt('—', M + 4, y, '600 20px ' + MONO); y += 30; }
-      L.forEach(function (t) { var y0 = y - 30, w0 = W - 2 * M - 92;
+      /* each track its own room: the name clear of the rule above it, every line clear of the corner key */
+      L.forEach(function (t) { var y0 = y - 32, w0 = W - 2 * M - 48 - 60;
         k.txt(('0' + t.n).slice(-2), M, y, '600 22px ' + MONO); k.fit(String(t.cn), M + 48, y, '700', 27, w0, SANS);
-        k.fit([t.sci, t.where, t.at].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 24, '500', 15, W - 2 * M - 52, MONO);
         var tune = t.st ? (t.st > 0 ? '+' : '−') + Math.abs(t.st) + ' ST' : '', len = t.s ? Math.floor(t.s / 60) + ':' + ('0' + Math.round(t.s % 60)).slice(-2) : '';
-        k.fit([t.by, t.lic, tune, t.echo ? 'ECHO' : '', len, t.rec && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
-        var hh = 58; if (t.obs) { k.fit('inaturalist.org/observations/' + (+t.obs), M + 48, y + 68, '600', 15, W - 2 * M - 52, MONO); hh = 80; }
-        y += hh + 14; k.box(M + 48, y - 14, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: y - 14 - y0, obs: t.obs, cn: t.cn, go: tpWhere(t) }); });
+        var la = [t.sci, t.where, t.at].filter(Boolean), lb = [t.by, t.lic, tune, t.echo ? 'ECHO' : '', len, t.rec && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean);
+        /* a line too long to print at its size goes onto two, never smaller */
+        var ls = [], put = function (l) { var s = l.join(' · ').toUpperCase(); k.g.font = '500 15px ' + MONO; if (l.length > 1 && k.g.measureText(s).width > w0) { var h = Math.max(1, Math.floor(l.length / 2)); ls.push(l.slice(0, h).join(' · ').toUpperCase(), l.slice(h).join(' · ').toUpperCase()); } else if (s) ls.push(s); };
+        put(la); put(lb); var ly = y + 30; ls.forEach(function (s) { k.fit(s, M + 48, ly, '500', 15, w0, MONO); ly += 24; });
+        if (t.obs) { k.fit('inaturalist.org/observations/' + (+t.obs), M + 48, ly, '600', 15, w0, MONO); ly += 24; } var hh = ly - 24 + 12 - y;
+        var sep = y + hh; k.box(M + 48, sep, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: sep - y0, obs: t.obs, cn: t.cn, go: tpWhere(t) }); y = sep + 46; });
       return k.foot(y + 14, TQ ? '' : 'https://novel.global/x#tape', '', 'MIXTAPE · NOVEL.GLOBAL'); }
   };
-  Object.defineProperty(tape, 'tall', { get: function () { var n = S && S.data && S.data.tracks ? S.data.tracks.length : 10; return 760 + 420 + n * 96; } });
+  Object.defineProperty(tape, 'tall', { get: function () { var n = S && S.data && S.data.tracks ? S.data.tracks.length : 10; return 760 + 420 + n * 200; } });
   /* where a track was made, on the radar: a sound heard, the sighting on the map; a loop of this phone's, the radio tuned there as it was */
   function tpWhere(t) { return t.obs ? '/studio#' + (+t.obs).toString(36) : t.rec ? '/studio#loop=' + encodeURIComponent(t.rec) : ''; }
   /* playing: one track after the other, tuned, faded in; a sound's own echo comes in after it, quieter */
@@ -659,7 +662,7 @@
     var go = TPC ? '<button type="button" class="tp-go" data-go aria-pressed="' + !!TP.on + '" aria-label="' + (TP.on ? 'Stop the mixtape' : 'Play the mixtape') + '" style="left:' + px(W - M - 100, sx) + ';top:' + px(TPC.y + TPC.h - 100, sy) + ';width:' + px(80, sx) + ';height:' + px(80, sx) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + (TP.on ? 'M7 5h4v14H7zM13 5h4v14h-4z' : 'M8 5l11 7-11 7z') + '"/></svg></button>' : '';
     ov.innerHTML = go + TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
       return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W - (h.go ? 56 : 0), sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>' +
-        (h.go ? '<a href="' + h.go + '" target="_top" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="' + esc(h.cn) + ' on the radar" title="On the radar">↗</a>' : ''); }).join(''); }
+        (h.go ? '<a href="' + h.go + '" target="_top" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="' + esc(h.cn) + ' on the radar" title="On the radar">↗&#xFE0E;</a>' : ''); }).join(''); }
   /* SHARE: the paper and its link where the phone can send them, else the link copied; a tape of this phone's own goes as its picture */
   function tpShare() { var st = $('#st'), url = location.origin + '/cart.html?c=tape', nm = String((S.data || {}).name || 'MIXTAPE');
     cv.toBlob(function (b) { var fl = null; try { fl = b && new File([b], 'mixtape.png', { type: 'image/png' }); } catch (e) { fl = null; }
