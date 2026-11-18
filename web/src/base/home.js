@@ -1121,6 +1121,8 @@
     if (xv.classList.contains('on')) shut(true); if (IN.id === 'wish') { intro(false); IN.id = null; } if (!away) return; away = false; H.classList.remove('hm-away'); var a = AU(); if (a && a.sleep) a.sleep(); lamps(); parallax();
   }
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
+  /* a printed receipt's code (#x=…): opened in DESIGN PRINT, the card that prints it */
+  if (/^#x=/i.test(location.hash)) { var XIN = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ } setTimeout(function () { var c = byId('zine'); if (!c) return; IN.id = 'zine'; sheet(c.title, inFrame('studio?from=aura&only=print' + XIN)); }, 0); }
   setTimeout(function () { var a = AU(); if ((location.hash || (a && a.linked)) && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   /* a card still to be built: start one from it? yes opens the maker on its kind */

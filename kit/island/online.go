@@ -65,11 +65,14 @@ func (a *App) pairStep(i int) time.Duration {
 			return time.Minute
 		}
 		l.Printer, l.Token = printer, token
-		key := str(r.Body, "key")
+		key, pk := str(r.Body, "key"), str(r.Body, "pass")
 		a.update(func(c *Config) {
 			c.setLink(i, l)
 			if i == 0 && key != "" {
 				c.Key = key
+			}
+			if i == 0 && pk != "" {
+				c.PassKey = pk
 			}
 		})
 		if i == 0 {
@@ -111,6 +114,9 @@ func (a *App) pullStep(i int) (time.Duration, string) {
 	q := url.Values{"v": {version}}
 	if i == 0 {
 		q.Set("can", "off wifi")
+		if c.PassKey == "" {
+			q.Set("pk", "1")
+		}
 	}
 	if n, sig := current(); n != "" {
 		q.Set("net", n)
@@ -124,6 +130,13 @@ func (a *App) pullStep(i int) (time.Duration, string) {
 	if err != nil {
 		log.Printf("no signal: %v", err)
 		return 15 * time.Second, ""
+	}
+	if i == 0 && r.PK != "" && r.Status != 401 && r.PK != c.PassKey {
+		pk := r.PK
+		a.update(func(c *Config) { c.PassKey = pk })
+	}
+	if i == 0 && (r.Status == 200 || r.Status == 204) {
+		a.sendUsed(l)
 	}
 	wait := r.Wait
 	if wait == 0 {

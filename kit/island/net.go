@@ -55,6 +55,7 @@ type Reply struct {
 	Body   map[string]any
 	Wait   time.Duration
 	Island int
+	PK     string
 }
 
 func call(method, url, token string, body any) (*Reply, error) {
@@ -88,6 +89,7 @@ func call(method, url, token string, body any) (*Reply, error) {
 	if w, err := time.ParseDuration(res.Header.Get("x-wait") + "s"); err == nil && w >= time.Second && w <= 5*time.Minute {
 		r.Wait = w
 	}
+	r.PK = res.Header.Get("x-pk")
 	if n, err := strconv.Atoi(res.Header.Get("x-island")); err == nil && n > 0 {
 		r.Island = n
 	}

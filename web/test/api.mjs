@@ -18,7 +18,7 @@ const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip, 
   /* one print a minute for each person: each test print comes from a person of its own, unless the test is about that minute */
   if (!gap && method === 'POST' && p === '/api/stories' && body && body.dest) headers['cf-connecting-ip'] = (ip || '10.77.0') + '.' + (++GAPN); if (body !== undefined) headers['content-type'] = 'application/json'; if (key) headers.authorization = `Bearer ${key}`; if (token) headers.authorization = `Bearer ${token}`;
   const r = await server.fetch(new URL(p, O), { method, headers, body: raw != null ? raw : body !== undefined ? JSON.stringify(body) : undefined });
-  const t = r.headers.get('content-type') || ''; return { status: r.status, type: t, island: r.headers.get('x-island'), json: /json/.test(t) ? await r.json() : null, text: /text/.test(t) ? await r.text() : null, bin: /image/.test(t) ? Buffer.from(await r.arrayBuffer()) : null };
+  const t = r.headers.get('content-type') || ''; return { status: r.status, type: t, island: r.headers.get('x-island'), pk: r.headers.get('x-pk'), json: /json/.test(t) ? await r.json() : null, text: /text/.test(t) ? await r.text() : null, bin: /image/.test(t) ? Buffer.from(await r.arrayBuffer()) : null };
 };
 const SIG = Buffer.from(JSON.stringify({ c: 'DA-7K2Q', t: 'hs0d7', p: [-37.77, 144.96, 'bird', 'Noisy Miner', 'Manorina melanocephala', 'BRUNSWICK', 0], l: ['A line', '', '', ''], k: [], e: [] })).toString('base64url');
 const JPEG_B = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0xFF, 0xD9]), JPEG = 'data:image/jpeg;base64,' + JPEG_B.toString('base64');
@@ -27,7 +27,7 @@ const story = (code, extra = {}) => ({ kind: 'story', code, body: SIG, lat: -37.
 try {
   /* what is made is a draft until the approval page shows it on the site: these checks show it */
   { const st0 = await call('/api/settings'); check('what people make starts hidden from visitors, the example shown', st0.json.madeShow === false && st0.json.exampleShow === true, JSON.stringify(st0.json));
-    check('free printing on and the print pass off, to begin with', st0.json.freePrint === true && st0.json.passOn === false, JSON.stringify([st0.json.freePrint, st0.json.passOn]));
+    check('free printing on and the print pass on, short codes, to begin with', st0.json.freePrint === true && st0.json.passOn === true && st0.json.codeLen === 3 && st0.json.touchPass === '', JSON.stringify([st0.json.freePrint, st0.json.passOn, st0.json.codeLen, st0.json.touchPass]));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true, freePrint: false, passOn: true } }); }
   const h = await call('/api/health');
   check('health answers ok with the build', h.status === 200 && /^ok \w+/.test(h.text), h.text);
@@ -185,6 +185,15 @@ try {
   const pr = await call(`/api/touch/kines/${tA.json.job.id}`, { method: 'POST', token: TT, body: { action: 'print' } });
   const sq = await call(`/api/touch/kines/${tB.json.job.id}`, { method: 'POST', token: TT, body: { action: 'squash' } });
   const rA = await call(`/api/receipts/${tA.json.id}`); const rB = await call(`/api/receipts/${tB.json.id}`); const tl2 = await call('/api/touch/kines', { token: TT });
+  /* v0.7: the screen shows a pass to use once today, or takes one typed; a code used there is gone */
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchPass: 'show' } }); const ts1 = await call('/api/touch/kines', { token: TT }), tsc = ts1.json && ts1.json.pass;
+  const tsT = await call('/api/touch/kines/pass', { method: 'POST', token: TT, body: { action: 'type', code: tsc } });
+  await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchPass: 'type' } }); const tsT2 = await call('/api/touch/kines/pass', { method: 'POST', token: TT, body: { action: 'type', code: tsc } }), ts2 = await call('/api/touch/kines', { token: TT });
+  const tsShow = await (async () => { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchPass: 'show' } }); return (await call('/api/touch/kines', { token: TT })).json.pass; })();
+  const tsBad = await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchPass: 'loud', codeLen: 5 } }); await call('/api/admin/settings', { method: 'POST', key: KEY, body: { touchPass: '' } });
+  check('a touch screen shows a short pass (a letter and a number) when set to, takes one typed once, then shows the next; only the choices given are kept',
+    /^(?=.*[2-9])(?=.*[A-Z])[A-Z2-9]{3}$/.test(tsc || '') && tsT.status === 403 && tsT2.status === 200 && ts2.json.pass === 'type' && tsShow && tsShow !== tsc && tsBad.json.touchPass === 'show' && tsBad.json.codeLen === 3,
+    JSON.stringify({ tsc, tsT: tsT.status, tsT2: tsT2.json, ts2: ts2.json && ts2.json.pass, tsShow, bad: [tsBad.json.touchPass, tsBad.json.codeLen] }));
   await call('/api/admin/printers/kines', { method: 'POST', key: KEY, body: { action: 'touch', on: false } }); const tl3 = await call('/api/touch/kines', { token: TT });
   check('one press prints (queued), a long press squashes (gone); turned off, the token stops at once', pr.status === 200 && sq.status === 200 && rA.json.job.status === 'queued' && !rB.json.job && tl2.json.held.every(h => h.job !== tA.json.job.id && h.job !== tB.json.job.id) && tl3.status === 401,
     JSON.stringify({ pr: pr.status, sq: sq.status, a: rA.json.job, b: rB.json.job, tl3: tl3.status }));
@@ -366,6 +375,7 @@ try {
     const ipkB = await call('/api/island', { method: 'POST', token: K, body: { action: 'picks', play: SCN[10], on: false } }), ipkX = await call('/api/island', { method: 'POST', body: { action: 'picks', play: SCN[11] } });
     check('an island keeper picks plays for its own shelf, and takes them off', ipk1.status === 200 && ipk1.json.picks.length === 1 && ipk0.status === 404 && ipkS.total === 1 && ipkS.plays[0].c === SCN[10] && ipkA.isles.some(x => x.id === id && x.n === 1) && ipkB.json.picks.length === 0 && ipkX.status === 401,
       JSON.stringify({ ipk1: ipk1.status, ipk0: ipk0.status, s: ipkS.total, isles: ipkA.isles, ipkB: ipkB.json, x: ipkX.status }));
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { codeLen: 6 } });
     const lk = await call('/api/island', { method: 'POST', token: K, body: { action: 'look' } }), ps = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), pc = await codeOf();
     const rd = await call('/api/c/' + pc), bad = await call('/api/c/' + (pc ? pc.slice(0, 4) + (pc[4] === 'A' ? 'B' : 'A') + pc.slice(5) : 'AAA-AAA'));
     const p1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.78', body: story('DA-5TPA', { kind: 'record', body: JSON.stringify(WISH), dest: id, escpos: esc, pass: pc }) });
@@ -384,6 +394,22 @@ try {
     check('a pass from a slip makes a code a printed one, once; only a printed code may link a way back, and only the admin page sees it',
       /^[A-Z]{3}-[A-Z]{3}$/.test(pc2) && lk0.status === 401 && mk1.status === 201 && mk2.status === 409 && lk1.status === 201 && lk2.status === 400 && al.status === 200 && al.json.links.some(l => l.who === 'QX7' && l.v === 'a@b.org'),
       JSON.stringify([pc2, lk0.status, mk1.status, mk2.status, lk1.status, lk2.status, al.json]));
+    /* v0.7: short passes, from the island's own key: the island is handed the key when it pairs (or asks), and works out the same codes and mark */
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { codeLen: 3 } });
+    const { createHmac } = await import('crypto'), IK = createHmac('sha256', KEY).update('island:' + id).digest('hex'), mc = (k, m) => createHmac('sha256', k).update(m).digest();
+    const PCs = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', p3 = n => { const b = mc(IK, `p3:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date())}:${n}`); const c = [PCs[b[0] % 22], PCs[22 + b[1] % 8], PCs[b[2] % 30]]; if (b[3] & 1) [c[0], c[1]] = [c[1], c[0]]; return c.join(''); };
+    const nk = await call(`/api/printers/${id}/next?pk=1`, { token: PT }), nk0 = await call(`/api/printers/${id}/next`, { token: PT });
+    const sp = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), sc1 = await (async () => { for (let i = 0; i < 8; i++) { const r = await call(`/api/printers/${id}/next`, { token: PT }); const e = r.json && r.json.escpos; if (!e) return ''; const m = /\x1d!3([A-Z2-9]{3})\n/.exec(Buffer.from(e, 'base64').toString('latin1')); if (r.json.code === 'DA-PASS' && m) return m[1]; } return ''; })();
+    const sr = await call('/api/c/' + sc1.toLowerCase()), sr2 = await call(`/api/c/${sc1}?at=${id}`), sOff = p3(31), sMk = await call('/api/maker', { method: 'POST', ip: '10.0.0.82', body: { who: 'QX9', pass: sc1 } });
+    const uo = await call(`/api/printers/${id}/used`, { method: 'POST', token: PT, body: { day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date()), codes: [sOff] } }), uoX = await call(`/api/printers/${id}/used`, { method: 'POST', body: { day: '2026-01-01', codes: [] } });
+    const sOffR = await call('/api/c/' + sOff), cart3 = await call('/api/c/ZZZ');
+    check('short passes: the island is given its key once it asks; a pass printed is 3, a letter and a number, from the island\'s key; read by the reader at any island or this one; used once; one used at the island offline is told and never good again',
+      (got.json.pass || '') === IK && nk.pk === IK && !nk0.pk && sp.status === 200 && /^[A-Z2-9]{3}$/.test(sc1) && [0, 1, 2, 3].map(p3).includes(sc1) && sr.json.kind === 'pass' && sr.json.island === id && sr2.json.kind === 'pass'
+      && sMk.status === 201 && uo.status === 200 && uo.json.n === 1 && uoX.status === 401 && sOffR.json.kind === 'pass' && sOffR.json.used === true && cart3.status === 404,
+      JSON.stringify({ gotPass: !!got.json.pass, nk: nk.pk === IK, nk0: nk0.pk, sp: sp.status, sc1, sr: sr.json, sr2: sr2.status, sMk: sMk.status, uo: uo.json, uoX: uoX.status, sOffR: sOffR.json, cart3: cart3.status }));
+    /* v0.7: a code is kept two weeks from when it was given; something made with it keeps it a month from then */
+    const kp0 = (await call('/api/mine/QX9')).json.keep, DY = 864e5; await call('/api/stories', { method: 'POST', ip: '10.0.0.83', body: story('DA-5KPA', { who: 'QX9' }) }); const kp1 = (await call('/api/mine/QX9')).json.keep;
+    check('a code is kept two weeks, and a month from when something is made with it', Math.abs(kp0 - Date.now() - 14 * DY) < DY && Math.abs(kp1 - Date.now() - 30 * DY) < DY, JSON.stringify([(kp0 - Date.now()) / DY, (kp1 - Date.now()) / DY]));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));

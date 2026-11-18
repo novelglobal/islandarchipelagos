@@ -479,7 +479,7 @@ const recName = (l, type) => `novel-global-tape-${String((l.where || {}).place |
 /* the tape kept on novel.global for half a moon, so any phone can save it (a phone saves nothing from inside a window); after, this phone's own */
 const tapeURL = l => (l.tape && Date.now() < l.tape.until ? l.tape.url : '') || RECURL.get(l.id) || '';
 async function tapeUp(l, b, name) {
-  const who = store.get('da.who', ''); if (!/^[A-HJ-NP-Z2-9]{3}$/.test(who) || !navigator.onLine) return;
+  const who = store.get('da.who', ''); if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who) || !navigator.onLine) return;
   try { const r = await fetch(`/api/tapes?who=${who}&name=${encodeURIComponent(name)}`, { method: 'POST', headers: { 'content-type': b.type || 'audio/wav' }, body: b }); if (r.status !== 201) return; const j = await r.json(); l.tape = { url: j.url, until: j.until }; store.set('da.loops.v1', LOOPS); } catch (e) { /* this phone's own, then */ }
 }
 /* the album under a recording: its track now read into the mix where it is, the one player quiet till the tape is done; a track

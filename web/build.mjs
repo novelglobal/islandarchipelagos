@@ -86,6 +86,9 @@ fs.writeFileSync(path.join(out, 'studio.html'), `<!doctype html>
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
 <script>
+/* the old studio is only an engine inside the cards: opened on its own it goes home, a printed receipt or a radio song with it */
+(function () { var h = location.hostname, dev = h === 'localhost' || h === '127.0.0.1' || h.slice(-5) === '.test', framed = false; try { framed = window.parent !== window && window.parent.location.origin === location.origin; } catch (e) { framed = false; }
+  if (!dev && !framed) location.replace('/' + (/^#(x|mix)=/i.test(location.hash) ? location.hash : '')); })();
 /* the studio is the devices site, the one for class: its devices on unless turned off in Settings; a link from the base still skips the first visit */
 try { var dp = JSON.parse(localStorage.getItem('da.prefs') || '{}'); if (localStorage.getItem('da.devices.v2') === '0') document.documentElement.classList.add('plain');
   if ((function (h) { return h === 'localhost' || h === '127.0.0.1' || h.slice(-5) === '.test'; })(location.hostname) && /[?&]from=base/.test(location.search)) { window.__fromBase = true; if ((dp.journey || 0) < 4) { dp.journey = 4; localStorage.setItem('da.prefs', JSON.stringify(dp)); } history.replaceState(null, '', location.pathname + location.hash); } } catch (e) { document.documentElement.classList.add('plain'); }

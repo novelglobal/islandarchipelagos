@@ -278,7 +278,7 @@
     k.style.setProperty('--a', t.bg); k.style.setProperty('--b', t.ink); k.style.setProperty('--p', t.pat); $('.cd-t', el).textContent = (cd.name || def).toUpperCase(); $('.cd-l', el).textContent = cd.line || '';
     var u = cd.what === 'slip' ? slipURL() : ''; $('.cd-art', el).innerHTML = u ? '<img alt="" src="' + u + '">' : cd.what === 'game' ? '<b class="cd-cart">' + (CARTS[(P.game || {}).cart || 'fortune'] || CARTS.fortune).n + '</b>' : '<i class="cd-ph"></i>'; }
   /* ───────── the code a print gave: what puts a thing up. Asked for when the site wants it; a pass from a printer's slip makes this phone's code a printed one ───────── */
-  function whoNow() { try { if (NG && NG.me) return NG.me(); } catch (e) { /* away */ } try { var c = JSON.parse(localStorage.getItem('da.who') || '""'); return /^[A-HJ-NP-Z2-9]{3}$/.test(c) ? c : ''; } catch (e) { return ''; } }
+  function whoNow() { try { if (NG && NG.me) return NG.me(); } catch (e) { /* away */ } try { var c = JSON.parse(localStorage.getItem('da.who') || '""'); return /^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(c) ? c : ''; } catch (e) { return ''; } }
   function codeAsk(host, again) {
     var box = host.querySelector('.ng-code'); if (!box) { box = D.createElement('div'); box.className = 'ng-code'; host.appendChild(box); }
     box.hidden = false; box.innerHTML = '<b title="Put things up with a code from a print: the three on any slip, or a pass a printer left">CODE</b><input maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC or ABC-DEF" aria-label="The code from a print"><button type="button" title="Use it">OK</button><span aria-live="polite"></span>';
@@ -287,7 +287,7 @@
       if (/^[A-HJKMNP-TV-Z]{6}$/.test(v)) { var w = whoNow(); if (!w) { sp.textContent = '×'; return; } sp.textContent = '···';
         fetch('/api/maker', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w, pass: v.slice(0, 3) + '-' + v.slice(3) }) })
           .then(function (r) { if (r.status === 201) done(); else { sp.textContent = r.status === 409 ? 'USED' : r.status === 404 ? 'UNKNOWN' : r.status === 429 ? 'WAIT' : '×'; sp.title = r.status === 409 ? 'This pass was used already' : r.status === 404 ? 'Not a pass from today' : ''; } }, function () { sp.textContent = 'OFFLINE'; }); return; }
-      if (/^[A-HJ-NP-Z2-9]{3}$/.test(v)) { sp.textContent = '···';
+      if (/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(v)) { sp.textContent = '···';
         var p = NG && NG.useCode ? NG.useCode(v) : (function () { try { localStorage.setItem('da.who', JSON.stringify(v)); localStorage.setItem('da.who.at', JSON.stringify(Date.now())); } catch (e) { /* this visit */ } return Promise.resolve(true); })();
         p.then(done, function () { sp.textContent = '×'; }); return; }
       sp.textContent = '×'; sp.title = 'Three from a print, or six from a pass'; };

@@ -131,7 +131,7 @@
   function tipBlock(g, x, y, w, k, draw) { var tp = tipOf(); if (!tp) return 0; g.font = '600 ' + 23 * k + 'px Poppins, sans-serif'; var L = wrap(g, tp, w), h = (40 + L.length * 31 + 6) * k; if (!draw) return h;
     g.textBaseline = 'alphabetic'; g.font = "600 " + 17 * k + "px 'IBM Plex Mono', monospace"; g.fillText((tipOwn() ? (CFG.tips.title || '') : String(CFG.name || '')).toUpperCase().split('').join(' '), x, y + 26 * k);
     g.font = '600 ' + 23 * k + 'px Poppins, sans-serif'; L.forEach(function (l, i) { g.fillText(l, x, y + (64 + i * 31) * k); }); return h; }
-  function whoNow() { var c = store.get('da.who', ''), at = +store.get('da.who.at', 0) || 0; if (/^[A-HJ-NP-Z2-9]{3}$/.test(c) && at && Date.now() - at < 29.53 * 864e5) return c;
+  function whoNow() { var c = store.get('da.who', ''), at = +store.get('da.who.at', 0) || 0; if (/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(c) && at && Date.now() - at < 29.53 * 864e5) return c;
     var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = new Uint8Array(3); crypto.getRandomValues(r); c = ''; for (var i = 0; i < 3; i++) c += A[r[i] % A.length]; store.set('da.who', c); store.set('da.who.at', Date.now()); return c; }
   function paper(who) { var W = AW, pad = 26, out = D.createElement('canvas'), m = out.getContext('2d'), i, v; out.width = W; out.height = 10;
     var th = tipBlock(m, pad, 0, W - pad * 2, 1, false), FH = 104 + th; out.height = AH + FH; m = out.getContext('2d');

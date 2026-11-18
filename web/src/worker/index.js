@@ -26,7 +26,7 @@ const CODE = /^DA-[0-9A-HJKMNP-TV-Z]{4}$/;
 /* a maker's own three characters (no I, O, 0 or 1), printed on what they make: with it they find and take down their own things */
 /* a maker's code; 888 is the master's, the main board's, reserved on every island: it opens the showcase on a phone and is never
    anyone's (no phone makes it, since every code mixes letters and numbers, and none may talk, post or claim with it) */
-const SHOWCASE = '888', WHO0 = /^[A-HJ-NP-Z2-9]{3}$/, WHO = { test: s => WHO0.test(s) && s !== SHOWCASE };
+const SHOWCASE = '888', WHO0 = /^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/, WHO = { test: s => WHO0.test(s) && s !== SHOWCASE };
 
 /* ───────── the database: made on first use, the same in a preview's database and the live one ───────── */
 const SCHEMA = [
@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 12;
+const SCHEMA_V = 13;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -150,6 +150,9 @@ async function upgrade(db) {
       for (const [id, n] of [[to, 2], [dead && dead.id, 3]]) { if (!id || !(await db.prepare('SELECT 1 FROM printers WHERE id = ? AND token IS NOT NULL').bind(id).first().catch(() => null))) continue;
         const top = (await db.prepare('SELECT max(number) AS n FROM printers').first()).n || 3;
         await run('UPDATE printers SET number = ? WHERE number = ? AND id != ?', Math.max(top, 3) + 1, n, id); await run('UPDATE printers SET number = ? WHERE id = ?', n, id); } }
+    /* version 13. keep: until when a maker's code is kept. New, two weeks; each thing made or saved, a month from then. Codes already
+       here are given a month from this upgrade, so none is lost the day it lands */
+    try { await db.prepare('ALTER TABLE makers ADD COLUMN keep INTEGER').run(); await db.prepare('UPDATE makers SET keep = ? WHERE keep IS NULL').bind(now() + KEEP.made).run(); } catch (e) { /* already there */ }
     await db.prepare("INSERT INTO settings (k, v) VALUES ('~schema', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(SCHEMA_V)).run();
 }
 /* each printer's island number, given the first time it is paired, in that order: novel.global's own is 1, the islands 2 and up. It stays
@@ -225,7 +228,7 @@ async function tooMany(db, env, req, kind, max, windowMs) {
 }
 /* the housekeeping, now and then: what has waited too long goes, and what was printed keeps only its status */
 async function tidy(db, env) {
-  const t = now(); await tapesGo(db, env);
+  const t = now(); await tapesGo(db, env); await codesGo(db, t);
   await db.batch([
     db.prepare('DELETE FROM hits WHERE t < ?').bind(t - H),
     db.prepare("UPDATE jobs SET status = 'expired', escpos = NULL, mesh = NULL, done = ? WHERE status IN ('held', 'queued') AND created < ?").bind(t, t - DAY),
@@ -238,6 +241,11 @@ async function tidy(db, env) {
   ]);
 }
 
+async function codesGo(db, t) {
+  const { results } = await db.prepare('SELECT who FROM makers WHERE COALESCE(keep, first + ?) < ? LIMIT 200').bind(KEEP.fresh, t).all(); if (!results.length) return 0;
+  const ops = []; for (const { who } of results) { ops.push(db.prepare('UPDATE stories SET who = NULL WHERE who = ?').bind(who), db.prepare('UPDATE tapes SET who = NULL WHERE who = ?').bind(who), db.prepare('DELETE FROM makers WHERE who = ?').bind(who)); }
+  await db.batch(ops); try { await linkTable(db); await db.batch(results.map(({ who }) => db.prepare('DELETE FROM links WHERE who = ?').bind(who))); } catch (e) { /* no links */ }
+  return results.length; }
 /* ───────── what the public sees ───────── */
 const storyOut = r => ({ id: r.id, code: r.code, kind: r.kind, body: r.body, photo: !!r.has_photo, dest: r.dest || '', at: r.decided || r.created, star: !!r.star, printed: r.printed || 0 });
 const PUBLIC_COLS = "id, code, kind, body, dest, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo, star, (SELECT count(*) FROM jobs j WHERE j.story = stories.id AND j.status = 'printed') AS printed";
@@ -287,6 +295,9 @@ async function secOf(db, s, who) {
 }
 const TALK_K = ['swap', 'share', 'spot'];
 /* a code a printer has given: the talk is read and written only with one */
+/* a code unused is let go: two weeks from when it was given, unless something is made or saved with it (each one keeps it a month from then) */
+const KEEP = { fresh: 14 * DAY, made: 30 * DAY };
+const keepMade = (db, who) => db.prepare('UPDATE makers SET keep = max(COALESCE(keep, 0), ?) WHERE who = ?').bind(now() + KEEP.made, who);
 async function coded(db, who) { return !!(await db.prepare('SELECT 1 AS k FROM makers WHERE who = ? AND printed IS NOT NULL').bind(who).first()); }
 async function talkList(db, env, req, url) {
   const s = url.searchParams.get('s'), who = url.searchParams.get('who') || ''; if (!WHO.test(who)) return fail(400, 'talk');
@@ -343,7 +354,7 @@ async function tapeUp(db, env, req, url) {
   const b = new Uint8Array(await req.arrayBuffer()); if (!b.length || b.length > TAPE.bytes) return fail(413, 'too big');
   if ((await r2Bytes(db)) + b.length >= CAP.r2 * 0.8) return fail(503, 'no room');
   const id = rid(12), t = now(); await env.MEDIA.put(tapeKey(id), b, { httpMetadata: { contentType: type } });
-  await db.prepare('INSERT INTO tapes (id, who, name, type, bytes, at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, who, name, type, b.length, t).run();
+  await db.batch([db.prepare('INSERT INTO tapes (id, who, name, type, bytes, at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, who, name, type, b.length, t), keepMade(db, who)]);
   return json({ id, url: `/api/tapes/${id}`, name, until: t + TAPE.keep }, 201);
 }
 async function tapeGet(db, env, id) {
@@ -376,8 +387,8 @@ async function mine(db, env, req, who, id) {
   await db.prepare('UPDATE makers SET last = ? WHERE who = ?').bind(now(), who).run();
   if (id) { const r = await db.prepare('UPDATE stories SET gone = ? WHERE id = ? AND who = ? AND gone IS NULL').bind(now(), id, who).run(); return r.meta && r.meta.changes ? json({ ok: true }) : fail(404, 'not found'); }
   const { results } = await db.prepare(`SELECT id, code, kind, status, body, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories WHERE who = ? AND gone IS NULL AND kind NOT IN ('example', 'play', 'message') ORDER BY created DESC LIMIT 100`).bind(who).all();
-  const mk = await kinOf(db, who);
-  return json({ lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
+  const mk = await kinOf(db, who), kp = await db.prepare('SELECT COALESCE(keep, first + ?) AS k FROM makers WHERE who = ?').bind(KEEP.fresh, who).first();
+  return json({ keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
 /* a story sent: it waits for approval. A job for the partner's printer waits with it, unless that printer prints without approval.
    dest 'mesh': no print, only its mesh line, to every paired printer whose radio is on (MESH), to go out over the local mesh */
@@ -421,7 +432,7 @@ async function send(db, env, req) {
   }
   /* FREE PRINTING (on to begin with): every print goes straight out. PRINT PASS (off to begin with): a printed pass is neither asked for nor used up */
   const SP = await settingsOf(db), free = !!SP.freePrint;
-  let passed = false; if (SP.passOn && P && (b.escpos || b.mesh) && typeof b.pass === 'string' && PASS.test(b.pass) && codeKey(env)) { const c = b.pass.replace('-', ''), day = melDay(); if (await passMac(env, P.id, day, c.slice(0, 3)) === c.slice(3)) passed = await passUse(db, c.slice(0, 3) + '-' + c.slice(3), day, P.id); }
+  let passed = false; if (SP.passOn && P && (b.escpos || b.mesh) && typeof b.pass === 'string' && codeKey(env)) { const f = await passFind(db, env, b.pass, P.id); if (f) passed = await passUse(db, f.code, f.day, P.id); }
   if (b.mesh != null && (typeof b.mesh !== 'string' || enc.encode(b.mesh).length > LIMIT.mesh)) return fail(400, 'mesh');
   const { n } = await db.prepare("SELECT count(*) AS n FROM stories WHERE status = 'waiting'").first(); if (n >= LIMIT.waiting) return refuse(503, 'too many stories waiting for approval');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
@@ -450,6 +461,7 @@ async function send(db, env, req) {
   const lv = Math.max(0, Math.min(4, Math.round(+b.lv || 0)));
   if (who) ops.push(db.prepare('INSERT INTO makers (who, first, last, posts, stage, lv, kin) VALUES (?, ?, ?, 1, ?, ?, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO UPDATE SET last = excluded.last, posts = posts + 1, stage = COALESCE(excluded.stage, stage), lv = max(COALESCE(lv, 0), excluded.lv)').bind(who, t, t, typeof b.stage === 'string' && b.stage ? b.stage.slice(0, 60) : null, lv));
   if (dest && !toMesh) ops.push(db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, dest));
+  if (who) ops.push(keepMade(db, who));
   await db.batch(ops);
   /* the full photograph, kept in R2 when it is bound; the print and the site never need it */
   const lowRes = (await settingsOf(db)).lowRes, full = env.MEDIA && b.full && !lowRes ? dataFile(b.full, LIMIT.full) : null, art = env.MEDIA && b.art ? dataURL(b.art, LIMIT.full) : null;
@@ -486,7 +498,9 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: false, freePrint: true, touchOn: false };
+const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false };
+/* choices, one of a few: how long a new code is (3 or 6), and what an island's touch screen does with passes (nothing, shows one, takes one typed) */
+const CHOICES = { codeLen: [3, 6], touchPass: ['', 'show', 'type'] };
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -517,7 +531,7 @@ async function posterArt(db, env, id, any) {
   const o = await env.MEDIA.get(`art/${id}`); if (!o) return fail(404, 'not found');
   return new Response(o.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': any ? 'no-store' : 'public, max-age=86400', 'x-content-type-options': 'nosniff' } });
 }
-async function settingsOf(db) { const { results } = await db.prepare('SELECT k, v FROM settings').all(); const out = { ...SETTINGS, ...Object.fromEntries(Object.keys(TEXTS).map(k => [k, ''])) }; for (const r of results) { if (r.k in SETTINGS) out[r.k] = r.v === '1'; else if (r.k in TEXTS) out[r.k] = r.v; } const had = new Set(results.map(r => r.k)); for (const k in BASE_TEXTS) if (!had.has(k)) out[k] = BASE_TEXTS[k]; if (!out.label) out.label = LABEL_TEXT; if (!out.notes) out.notes = NOTES_TEXT; return out; }
+async function settingsOf(db) { const { results } = await db.prepare('SELECT k, v FROM settings').all(); const out = { ...SETTINGS, ...Object.fromEntries(Object.keys(TEXTS).map(k => [k, ''])) }; for (const k in CHOICES) out[k] = CHOICES[k][0]; for (const r of results) { if (r.k in CHOICES) { const v = CHOICES[r.k].find(x => String(x) === r.v); if (v !== undefined) out[r.k] = v; } else if (r.k in SETTINGS) out[r.k] = r.v === '1'; else if (r.k in TEXTS) out[r.k] = r.v; } const had = new Set(results.map(r => r.k)); for (const k in BASE_TEXTS) if (!had.has(k)) out[k] = BASE_TEXTS[k]; if (!out.label) out.label = LABEL_TEXT; if (!out.notes) out.notes = NOTES_TEXT; return out; }
 const LABEL_TEXT = JSON.stringify(LABEL), NOTES_TEXT = JSON.stringify(NOTES);
 /* the partner places: whether a printer is there and listening, and how much it has printed */
 async function partners(db) {
@@ -576,9 +590,10 @@ async function printerAuth(db, req, id, can) {
   if (!p || !p.token || !tok || !(await same(await sha256(tok), p.token))) return null;
   if (!p.seen || now() - p.seen > 60e3 || (can !== undefined && can !== p.can)) await (can === undefined ? db.prepare('UPDATE printers SET seen = ? WHERE id = ?').bind(now(), id) : db.prepare('UPDATE printers SET seen = ?, can = ? WHERE id = ?').bind(now(), can, id)).run(); return p;
 }
-async function next(db, req, id) {
+async function next(db, env, req, id) {
   const can = (new URL(req.url).searchParams.get('can') || '').slice(0, 40);
   const p = await printerAuth(db, req, id, can); if (!p) return fail(401, 'token');
+  const pk = new URL(req.url).searchParams.get('pk') === '1' && codeKey(env) ? await isleKey(env, id) : '';
   const t = now();
   { const pn = netOf(new URL(req.url), req.cf); if (pn) { const o = JSON.parse(pn), was = (() => { try { return JSON.parse(p.net || 'null'); } catch (e) { return null; } })();
       /* moved: it asks from another town or network than before; kept on its line for a week */
@@ -597,13 +612,19 @@ async function next(db, req, id) {
      mesh alone waits until no print does, since the radio can take most of a minute to answer and a print should never wait on it */
   if (p.touch && (!(await settingsOf(db)).touchOn || !p.touch_seen || t - p.touch_seen > 150e3)) await db.prepare("UPDATE jobs SET status = 'queued' WHERE printer = ? AND status = 'held' AND created < ?").bind(id, t - 20e3).run();
   const j = await db.prepare("SELECT * FROM jobs WHERE printer = ? AND (status = 'queued' OR (status = 'printing' AND lease < ?)) ORDER BY (escpos IS NULL), created LIMIT 1").bind(id, t).first();
-  const hint = { 'x-wait': String(waitOf(p, !!j)), 'x-island': String(p.number || '') };
+  const hint = { 'x-wait': String(waitOf(p, !!j)), 'x-island': String(p.number || ''), ...(pk ? { 'x-pk': pk } : {}) };
   if (!j) return new Response(null, { status: 204, headers: { ...TEXT_H, ...hint } });
   if (j.tries >= 5) { await db.prepare("UPDATE jobs SET status = 'failed', error = 'tried five times', escpos = NULL, done = ? WHERE id = ?").bind(t, j.id).run(); return new Response(null, { status: 204, headers: TEXT_H }); }
   /* a slip with both paper and a mesh line: the line goes on as a job of its own, taken next, so a print that fails never keeps it off the mesh */
   if (j.escpos && j.mesh) { await db.batch([db.prepare("INSERT INTO jobs (id, printer, story, code, mesh, status, created) VALUES (?, ?, ?, ?, ?, 'queued', ?)").bind(rid(), id, j.story, j.code, j.mesh, j.created), db.prepare('UPDATE jobs SET mesh = NULL WHERE id = ?').bind(j.id)]); j.mesh = null; }
   await db.prepare("UPDATE jobs SET status = 'printing', lease = ?, tries = tries + 1 WHERE id = ?").bind(t + 60e3, j.id).run();
   const r = json({ job: j.id, code: j.code, escpos: j.escpos || null, mesh: j.mesh || null }); for (const k in hint) r.headers.set(k, hint[k]); return r;
+}
+async function usedOff(db, env, req, id) {
+  if (!(await printerAuth(db, req, id))) return fail(401, 'token'); const b = await body(req, 8192), day = String(b.day || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Array.isArray(b.codes)) return fail(400, 'used');
+  let n = 0; for (const c of b.codes.slice(0, 60)) { const k = passNorm(c); if (PASS.test(k)) { await passUse(db, k.length === 6 ? k.slice(0, 3) + '-' + k.slice(3) : k, day, id); n++; } }
+  return json({ ok: true, n });
 }
 /* ───────── a printer's touch screen: the slips held for it, each shown with the jellyfish; one press prints it, a long press squashes it ───────── */
 async function touchAuth(db, req, id) {
@@ -617,14 +638,20 @@ async function touchList(db, req, id, env) {
   { const tn = netOf(new URL(req.url)); if (tn) { const o = JSON.parse(tn), was = (() => { try { return JSON.parse(p0.touch_net || 'null'); } catch (e) { return null; } })(); if (!was || was.n !== o.n || Math.abs((was.rssi || 0) - (o.rssi || 0)) > 6 || o.at - was.at > 60e3) await db.prepare('UPDATE printers SET touch_net = ? WHERE id = ?').bind(tn, id).run(); } }
   const { results } = await db.prepare(`SELECT j.id, j.code, j.created, j.escpos IS NOT NULL AS paper, j.thumb, s.body FROM jobs j LEFT JOIN stories s ON s.id = j.story WHERE j.printer = ? AND j.status = 'held' ORDER BY j.created LIMIT 5`).bind(id).all();
   const c = await db.prepare("SELECT sum(status = 'held') AS w, sum(status IN ('queued', 'printing')) AS q FROM jobs WHERE printer = ?").bind(id).first();
-  return json({ mark: codeKey(env) ? await markOf(env, id) : null, wait: waitOf(p0, !!(c && (c.w || c.q))), waiting: (c && c.w) || 0, printing: (c && c.q) || 0, held: results.map((r, i) => { let b = {}; try { b = JSON.parse(r.body || '{}'); } catch (e) { /* none */ }
+  const tp = (await settingsOf(db)).touchPass; let pass = null;
+  if (tp === 'show' && codeKey(env)) { const day = melDay(), key = await isleKey(env, id); await passTable(db);
+    for (let n = PASS_SLOTS.screen[0]; n < PASS_SLOTS.screen[1] && !pass; n++) { const c = await pass3(key, day, n); if (!(await db.prepare('SELECT 1 FROM passes WHERE code = ? AND day = ?').bind(id + ':' + c, day).first())) pass = c; } }
+  return json({ ...(tp ? { pass: tp === 'show' ? pass : 'type' } : {}), mark: codeKey(env) ? await markOf(env, id) : null, wait: waitOf(p0, !!(c && (c.w || c.q))), waiting: (c && c.w) || 0, printing: (c && c.q) || 0, held: results.map((r, i) => { let b = {}; try { b = JSON.parse(r.body || '{}'); } catch (e) { /* none */ }
     return { job: r.id, code: r.code || '', at: r.created, say: String(b.text || '').slice(0, 140), wish: (Array.isArray(b.wish) ? b.wish : []).map(w => String(w).slice(0, 90)).slice(0, 4), life: b.tx && b.tx.cn ? String(b.tx.cn).slice(0, 40) : '', paper: !!r.paper, ...(i === 0 && r.thumb ? { img: r.thumb } : {}) }; }) });
 }
-async function touchAct(db, req, id, job) {
+async function touchAct(db, env, req, id, job) {
   if (!(await touchAuth(db, req, id))) return fail(401, 'token');
   const b = await body(req);
   /* the screen's hidden menu: the printer's Pi asked to turn off, as TURN OFF on the approval page does */
   if (job === 'off' && b.action === 'off') { await db.prepare('UPDATE printers SET off = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
+  /* a pass typed on the screen (when the approval page lets it): today's, from this island, once */
+  if (job === 'pass' && b.action === 'type') { if ((await settingsOf(db)).touchPass !== 'type') return fail(403, 'off'); const f = await passFind(db, env, String(b.code || ''), id); if (!f) return fail(404, 'not found');
+    return (await passUse(db, f.code, f.day, id)) ? json({ ok: true, code: f.code, mark: await markOf(env, id, f.day) }) : fail(409, 'used'); }
   if (b.action === 'print') { await db.batch([db.prepare("UPDATE jobs SET status = 'queued' WHERE id = ? AND printer = ? AND status = 'held'").bind(job, id), db.prepare("UPDATE stories SET status = 'shown', decided = ? WHERE id = (SELECT story FROM jobs WHERE id = ?) AND status = 'waiting'").bind(now(), job), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
   if (b.action === 'squash') { await db.batch([db.prepare("UPDATE stories SET status = 'refused', decided = ? WHERE id = (SELECT story FROM jobs WHERE id = ?) AND status = 'waiting'").bind(now(), job), db.prepare("DELETE FROM jobs WHERE id = ? AND printer = ? AND status = 'held'").bind(job, id)]); return json({ ok: true }); }
   return fail(400, 'action');
@@ -665,7 +692,7 @@ async function newPrinter(db, name, paper, self) {
   await db.prepare('INSERT INTO printers (id, name, paper, created, self, links, two) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, String(name || id).slice(0, 40), paper || '80', now(), self ? 1 : 0, self ? '' : '*', self ? 0 : 1).run();
   return id;
 }
-async function pairPoll(db, req) {
+async function pairPoll(db, env, req) {
   await pairs(db); const b = await body(req, 2048); if (typeof b.device !== 'string' || b.device.length > 64) return fail(400, 'device');
   const r = await db.prepare('SELECT * FROM pairs WHERE device = ? AND created > ?').bind(await sha256(b.device), now() - PAIR_FOR).first();
   if (!r) return fail(404, 'gone');
@@ -677,7 +704,7 @@ async function pairPoll(db, req) {
   const tok = rid(32), key = rid(32);
   await db.batch([db.prepare('UPDATE printers SET token = ?, owner = ?, seen = NULL, can = NULL, off = NULL, paper = COALESCE(?, paper) WHERE id = ?').bind(await sha256(tok), await sha256(key), r.paper || null, r.printer), db.prepare('DELETE FROM pairs WHERE code = ?').bind(r.code)]);
   await numberPrinters(db); const p = await db.prepare('SELECT number FROM printers WHERE id = ?').bind(r.printer).first();
-  return json({ printer: r.printer, token: tok, key, number: (p && p.number) || null });
+  return json({ printer: r.printer, token: tok, key, number: (p && p.number) || null, ...(codeKey(env) ? { pass: await isleKey(env, r.printer) } : {}) });
 }
 /* ───────── a card's own pictures: the approval page sets novel.global's cards; an island keeper sets their own island's card (its printer's id) ───────── */
 const CARD_ID = /^[a-z0-9-]{1,24}$/, PICS = 10, PIC_MAX = 1.6e6;
@@ -736,7 +763,7 @@ async function passDo(db, env, p, b) {
   if (b.action === 'passes') { const n = Math.max(1, Math.min(10, Math.round(+b.n || 1)));
     let head = null; if (b.escpos != null) { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'head'); const h = [...atob(b.escpos)].map(c => c.charCodeAt(0)); if (h[0] !== 0x1B || h[1] !== 0x40) return fail(400, 'head'); head = h.slice(-7).join() === '27,100,4,29,86,66,0' ? h.slice(0, -7) : h; }
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(p.id).first(); if (q + n > LIMIT.perPrinter) return fail(503, 'its queue is full');
-    const m = await passMake(env, p.id, n), t = now();
+    const m = await passMake(db, env, p.id, n), t = now();
     await db.batch([...m.passes.map((c, i) => db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), p.id, passSlip(p.name || p.id, m.mark, c, head), t + i)), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, p.id)]);
     return json({ ok: true, n, island: p.id, name: p.name || p.id, mark: m.mark }); }
   return fail(400, 'action');
@@ -838,6 +865,7 @@ async function admin(db, env, req, parts) {
   if (what === 'posts' && id && req.method === 'POST') { const b = await body(req); if (b.action !== 'delete') return fail(400, 'action'); await db.prepare("UPDATE posts SET status = 'deleted', updated = ? WHERE id = ?").bind(now(), id).run(); return json({ ok: true }); }
   if (what === 'settings' && req.method === 'POST') { const b = await body(req); const put = (k, v) => db.prepare('INSERT INTO settings (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v').bind(k, v).run();
     for (const k of Object.keys(SETTINGS)) if (typeof b[k] === 'boolean') await put(k, b[k] ? '1' : '0');
+    for (const k in CHOICES) if (b[k] !== undefined && CHOICES[k].some(x => String(x) === String(b[k]))) await put(k, String(b[k]));
     for (const [k, max] of Object.entries(TEXTS)) if (typeof b[k] === 'string') await put(k, b[k].replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').slice(0, max));
     return json(await settingsOf(db)); }
   if (what === 'settings' && req.method === 'GET') return json(await settingsOf(db));
@@ -1247,6 +1275,7 @@ async function playSend(db, env, req) {
   const { w } = await db.prepare("SELECT count(*) AS w FROM stories WHERE kind = 'play' AND status = 'waiting'").first(); if (!up && w >= 200) return fail(503, 'full');
   const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
   const t = now();
+  await keepMade(db, who).run();
   await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src, ...(playArt(b.art) ? { art: playArt(b.art) } : {}), ...(b.sz === 'big' ? { big: 'ask' } : {}) }), t, up ? t : null, who).run();
   return json({ code, shown: up }, 201);
 }
@@ -1364,15 +1393,32 @@ const codeKey = env => env.PASS_KEY || env.ADMIN_KEY || '';
 async function mac(key, s) { const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(s))); }
 const letters = (b, n) => [...b.slice(0, n)].map(x => ABC[x % 22]).join('');
 const cartCode = async (env, id, q = quarterOf()) => letters(await mac(codeKey(env), `cart:${q}:${id}`), 3);
-async function markOf(env, island, day = melDay()) { const m = MARKS[(await mac(codeKey(env), `mark:${island}:${day}`))[0] % MARKS.length]; return { e: m[0], w: m[1] }; }
-const passMac = async (env, island, day, n) => letters(await mac(codeKey(env), `pass:${island}:${day}:${n}`), 3);
-const PASS = /^[A-HJKMNP-TV-Z]{3}-?[A-HJKMNP-TV-Z]{3}$/;
+/* each island its own key, worked out from the site's (never kept anywhere), handed to the island when it pairs or asks: the island and the
+   site then make and check the same passes and the same mark of the day, the island with no internet */
+const isleKeys = new Map();
+async function isleKey(env, island) { const k = codeKey(env) + '|' + island; if (!isleKeys.has(k)) { if (isleKeys.size > 400) isleKeys.clear(); isleKeys.set(k, hex(await mac(codeKey(env), `island:${island}`))); } return isleKeys.get(k); }
+async function markOf(env, island, day = melDay()) { const m = MARKS[(await mac(await isleKey(env, island), `mark:${day}`))[0] % MARKS.length]; return { e: m[0], w: m[1] }; }
+const passMac = async (env, island, day, n) => letters(await mac(await isleKey(env, island), `pass:${day}:${n}`), 3);
+/* a short pass: 3 of PC, a letter and a number always (so never a cart's 3 letters or the keypad's 3 digits), one of PASS_N a day per island:
+   0 to 29 handed out here, 30 to 49 by the island itself with no internet, 50 to 59 shown on its touch screen */
+const PC = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', PASS_N = 60, PASS_SLOTS = { site: [0, 30], island: [30, 50], screen: [50, 60] };
+async function pass3(key, day, n) { const b = await mac(key, `p3:${day}:${n}`); const c = [PC[b[0] % 22], PC[22 + b[1] % 8], PC[b[2] % 30]]; if (b[3] & 1) [c[0], c[1]] = [c[1], c[0]]; return c.join(''); }
+const pass3s = new Map();
+async function pass3Day(env, island, day) { const k = island + ':' + day; if (!pass3s.has(k)) { if (pass3s.size > 400) pass3s.clear(); const key = await isleKey(env, island), m = new Map(); for (let n = 0; n < PASS_N; n++) { const c = await pass3(key, day, n); if (!m.has(c)) m.set(c, n); } pass3s.set(k, m); } return pass3s.get(k); }
+const PASS = /^(?:(?=[A-HJKMNP-TV-Z2-9]*[2-9])(?=[A-HJKMNP-TV-Z2-9]*[A-HJKMNP-TV-Z])[A-HJKMNP-TV-Z2-9]{3}|[A-HJKMNP-TV-Z]{3}-?[A-HJKMNP-TV-Z]{3})$/;
+const passNorm = c => String(c || '').toUpperCase().replace(/[\s-]+/g, '');
 const passesReady = new WeakMap();
 const passTable = db => { if (!passesReady.has(db)) passesReady.set(db, db.prepare('CREATE TABLE IF NOT EXISTS passes (code TEXT NOT NULL, day TEXT NOT NULL, island TEXT NOT NULL, used INTEGER NOT NULL, PRIMARY KEY (code, day))').run().catch(e => { passesReady.delete(db); throw e; })); return passesReady.get(db); };
 async function cartIds(env) { try { const r = await env.ASSETS.fetch(new Request('https://x/stacks/index.json')); if (!r.ok) return []; const j = await r.json(); return (Array.isArray(j) ? j : j.stacks || []).map(s => typeof s === 'string' ? s : s && s.id).filter(s => /^[a-z0-9-]{1,40}$/.test(String(s))); } catch (e) { return []; } }
 async function cartFor(env, url) { const id = url.searchParams.get('for') || ''; if (!/^[a-z0-9-]{1,40}$/.test(id) || !codeKey(env)) return fail(400, 'for'); return json({ code: await cartCode(env, id) }); }
-async function passMake(env, island, n) { const day = melDay(), out = [];
-  for (let i = 0; i < n; i++) { const a = crypto.getRandomValues(new Uint8Array(3)), nn = letters(a, 3); out.push(nn + '-' + await passMac(env, island, day, nn)); }
+/* passes made for an island: as long as the approval page says (3, or 6 as before), the short ones each from the day's next slot */
+const passNs = new WeakMap();
+const passNTable = db => { if (!passNs.has(db)) passNs.set(db, db.prepare('CREATE TABLE IF NOT EXISTS passn (island TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (island, day))').run().catch(e => { passNs.delete(db); throw e; })); return passNs.get(db); };
+async function passMake(db, env, island, n) { const day = melDay(), out = [], len = +(await settingsOf(db)).codeLen === 6 ? 6 : 3;
+  if (len === 3) { await passNTable(db); const [a0, a1] = PASS_SLOTS.site, key = await isleKey(env, island);
+    const r = await db.prepare('INSERT INTO passn (island, day, n) VALUES (?, ?, ?) ON CONFLICT(island, day) DO UPDATE SET n = n + ? RETURNING n').bind(island, day, n, n).first(), top = a0 + ((r && r.n) || n);
+    for (let s = top - n; s < top && s < a1; s++) out.push(await pass3(key, day, s)); }
+  while (out.length < n) { const a = crypto.getRandomValues(new Uint8Array(3)), nn = letters(a, 3); out.push(nn + '-' + await passMac(env, island, day, nn)); }
   return { day, mark: await markOf(env, island, day), passes: out }; }
 /* the pop-up (a card for one place and one weekend): open only by its private link on the poster there, or a pass that place's printer printed */
 /* every pop-up lives in the pops text: {pops:[{id, name, on, key, to, logos, donate, tips, animals}], tpl:[...]}; the first one, Milk Bar, may still be the old popOn/popKey pair */
@@ -1433,11 +1479,14 @@ async function popGet(db, env, req, url) { if (await tooMany(db, env, req, 'pop'
   const pub = {}; ['id', 'name', 'to', 'logos', 'donate', 'tips', 'animals', 'home', 'card', 'free', 'promo', 'pimg'].forEach(f => { if (p[f] !== undefined) pub[f] = p[f]; });
   pub.keep = p.private === false;
   const r = json({ ok: true, pop: pub }); if (typeof p.key === 'string' && /^[a-z0-9]{6,40}$/.test(p.key)) r.headers.append('set-cookie', 'pop=' + p.key + '; Path=/api; Max-Age=259200; HttpOnly; Secure; SameSite=Lax'); return r; }
-async function passFind(db, env, code) { const c = code.replace('-', ''), day = melDay(), n = c.slice(0, 3), m = c.slice(3);
-  const { results } = await db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'").all();
-  for (const p of results) if (await passMac(env, p.id, day, n) === m) return { p, day, code: n + '-' + m };
+/* a pass looked up: today's, at any island (or only the one named); its slot says where it was given out */
+async function passFind(db, env, code, only) { const c = passNorm(code), day = melDay(); if (!PASS.test(c)) return null;
+  const { results } = await (only ? db.prepare('SELECT id, name, number FROM printers WHERE id = ?').bind(only) : db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'")).all();
+  for (const p of results) {
+    if (c.length === 3) { const n = (await pass3Day(env, p.id, day)).get(c); if (n != null) return { p, day, code: c, slot: n }; }
+    else if (await passMac(env, p.id, day, c.slice(0, 3)) === c.slice(3)) return { p, day, code: c.slice(0, 3) + '-' + c.slice(3) }; }
   return null; }
-async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
+async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(island + ':' + code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
 /* a pass asked for from a phone: the printer's own text and QR, so the code is only ever on the paper; 5 to 10 minutes apart, 10 a day per island */
 const asksReady = new WeakMap();
 const askTable = db => { if (!asksReady.has(db)) asksReady.set(db, db.prepare('CREATE TABLE IF NOT EXISTS asks (island TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, next INTEGER NOT NULL, PRIMARY KEY (island, day))').run().catch(e => { asksReady.delete(db); throw e; })); return asksReady.get(db); };
@@ -1459,19 +1508,19 @@ async function passAsk(db, env, req) {
   if (a && t < a.next) return fail(429, 'just printed');
   if (await tooMany(db, env, req, 'passask', 4, 60 * 60e3)) return fail(429, 'too many');
   const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(id).first(); if (q >= LIMIT.perPrinter) return fail(503, 'its queue is full');
-  const m = await passMake(env, id, 1);
+  const m = await passMake(db, env, id, 1);
   await db.batch([db.prepare('INSERT INTO asks (island, day, n, next) VALUES (?, ?, 1, ?) ON CONFLICT(island, day) DO UPDATE SET n = n + 1, next = excluded.next').bind(id, day, t + Math.round((5 + Math.random() * 5) * 60e3)), db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-PASS', ?, 'queued', ?)").bind(rid(), id, passSlip(p.name || id, m.mark, m.passes[0]), t), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, id)]);
   return json({ ok: true, name: p.name || id, ready: !!p.seen && t - p.seen < 120e3 });
 }
 async function codeRead(db, env, req, raw) {
   if (await tooMany(db, env, req, 'code', 40, 10 * 60e3)) return fail(429, 'too many');
-  const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12);
+  const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12), at = /^[a-z0-9-]{1,40}$/.test(new URL(req.url).searchParams.get('at') || '') ? new URL(req.url).searchParams.get('at') : '';
   if (/^DA-?[0-9A-HJKMNP-TV-Z]{4}$/.test(c)) { const code = 'DA-' + c.replace(/^DA-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE code = ? AND status = 'shown' AND gone IS NULL").bind(code).first();
     return r ? json({ kind: 'wish', code, go: '/#n=' + code }) : fail(404, 'not found'); }
   if (/^PL-?[A-Z2-9]{4}$/.test(c)) { const code = 'PL-' + c.replace(/^PL-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(code).first();
     return r || code === FIRST_PLAY.code ? json({ kind: 'play', code, go: '/play.html?c=' + code }) : fail(404, 'not found'); }
-  if (PASS.test(c) && codeKey(env)) { const f = await passFind(db, env, c); if (!f) return fail(404, 'not found'); await passTable(db);
-    const u = await db.prepare('SELECT used FROM passes WHERE code = ? AND day = ?').bind(f.code, f.day).first();
+  if (PASS.test(passNorm(c)) && codeKey(env)) { const f = await passFind(db, env, c, at); if (!f) return fail(404, 'not found'); await passTable(db);
+    const u = await db.prepare('SELECT used FROM passes WHERE code = ? AND day = ?').bind(f.p.id + ':' + f.code, f.day).first();
     return json({ kind: 'pass', code: f.code, island: f.p.id, name: f.p.name || f.p.id, number: f.p.number || null, used: !!u, mark: await markOf(env, f.p.id, f.day) }); }
   if (/^[A-HJKMNP-TV-Z]{3}$/.test(c) && codeKey(env)) { const q = quarterOf();
     for (const id of await cartIds(env)) if (await cartCode(env, id, q) === c) return json({ kind: 'cart', code: c, id, go: '/x#' + id });
@@ -1545,16 +1594,17 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'film' && p[1] && !p[2] && m === 'GET') return filmPlay(db, env, req, p[1]);
   /* a receiver set up under an id its printer no longer goes by is known by its token */
   if ((p[0] === 'printers' || p[0] === 'touch') && p[1] && bearer(req) && !(await db.prepare('SELECT 1 FROM printers WHERE id = ?').bind(p[1]).first())) { const r = await db.prepare(`SELECT id FROM printers WHERE ${p[0] === 'touch' ? 'touch' : 'token'} = ?`).bind(await sha256(bearer(req))).first(); if (r) p[1] = r.id; }
-  if (p[0] === 'printers' && p[1] && p[2] === 'next' && m === 'GET') return next(db, req, p[1]);
+  if (p[0] === 'printers' && p[1] && p[2] === 'next' && m === 'GET') return next(db, env, req, p[1]);
+  if (p[0] === 'printers' && p[1] && p[2] === 'used' && !p[3] && m === 'POST') return usedOff(db, env, req, p[1]);
   if (p[0] === 'printers' && p[1] && p[2] === 'jobs' && p[3] && m === 'POST') return report(db, req, p[1], p[3]);
   if (p[0] === 'pair' && !p[1] && m === 'POST') return pairAsk(db, env, req);
-  if (p[0] === 'pair' && p[1] === 'poll' && !p[2] && m === 'POST') return pairPoll(db, req);
+  if (p[0] === 'pair' && p[1] === 'poll' && !p[2] && m === 'POST') return pairPoll(db, env, req);
   if (p[0] === 'island' && !p[1] && (m === 'GET' || m === 'POST')) return keeper(db, env, req);
   if (p[0] === 'island' && p[1] === 'pics' && p[2] && !p[3] && (m === 'PUT' || m === 'DELETE')) return keeperPic(db, env, req, p[2]);
   if (p[0] === 'cards' && !p[1] && m === 'GET') return cardList(db);
   if (p[0] === 'cards' && p[1] && p[2] && !p[3] && m === 'GET') return cardPic(db, env, p[1], p[2]);
   if (p[0] === 'touch' && p[1] && !p[2] && m === 'GET') return touchList(db, req, p[1], env);
-  if (p[0] === 'touch' && p[1] && p[2] && m === 'POST') return touchAct(db, req, p[1], p[2]);
+  if (p[0] === 'touch' && p[1] && p[2] && m === 'POST') return touchAct(db, env, req, p[1], p[2]);
   if (p[0] === 'admin') return admin(db, env, req, p.slice(1));
   return fail(404, 'not found');
 }

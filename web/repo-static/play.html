@@ -47,7 +47,7 @@
   var lk = document.getElementById('lk'), LK = 'da.liked'; var liked = function () { try { return (JSON.parse(localStorage.getItem(LK) || '[]') || []).indexOf(c) >= 0; } catch (e) { return false; } };
   var who = function () { try { return NG && NG.me ? NG.me() : JSON.parse(localStorage.getItem('da.who') || '""'); } catch (e) { return ''; } };
   lk.hidden = false; if (liked()) { lk.setAttribute('aria-pressed', 'true'); lk.textContent = 'LIKED'; }
-  lk.addEventListener('click', function () { if (liked()) return; var w = who(); if (!/^[A-HJ-NP-Z2-9]{3}$/.test(w || '')) { lk.textContent = 'CODE'; lk.title = 'A code from a print'; return; } lk.disabled = true;
+  lk.addEventListener('click', function () { if (liked()) return; var w = who(); if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(w || '')) { lk.textContent = 'CODE'; lk.title = 'A code from a print'; return; } lk.disabled = true;
     fetch('/api/plays/' + encodeURIComponent(c) + '/like', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w }) }).then(function (r) { lk.disabled = false; if (!r.ok) return;
       try { var l = JSON.parse(localStorage.getItem(LK) || '[]') || []; l.push(c); localStorage.setItem(LK, JSON.stringify(l.slice(-400))); } catch (e) { /* this visit */ } lk.setAttribute('aria-pressed', 'true'); lk.textContent = 'LIKED'; }, function () { lk.disabled = false; }); });
   document.getElementById('again').addEventListener('click', function () { pr.hidden = true; box.again(store); });

@@ -108,6 +108,10 @@ func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.render(w, view{Done: "ask"})
 	case r.URL.Path == "/print" && r.Method == "POST" && !p.setup:
 		p.printWish(w, r)
+	case r.URL.Path == "/pass" && r.Method == "GET" && !p.setup:
+		p.passCheck(w, r)
+	case r.URL.Path == "/pass" && r.Method == "POST" && !p.setup:
+		p.passPrint(w, r)
 	default:
 		http.NotFound(w, r)
 	}

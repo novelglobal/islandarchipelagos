@@ -816,12 +816,12 @@ const TALK = { s: 'notice' };
 const talkSection = () => IN_AURA ? `<section class="sec talk-sec" id="sec-talk">${labI('stories', 'Talk')}<div class="ts">${['notice', 'story', 'make', 'print'].map(k => `<button type="button" data-tks="${k}" class="${k === TALK.s ? 'on' : ''}">${k.toUpperCase()}</button>`).join('')}</div><ol></ol><form><input maxlength="280" autocomplete="off" aria-label="Say something" placeholder="…"><button type="submit" class="pill sq" aria-label="Send">↑</button></form></section>` : '';
 async function talkFill() {
   const sec = $('#sec-talk'); if (!sec) return; const NGp = (() => { try { return window.parent.NG; } catch (e) { return null; } })(); const kinN = k => (NGp && NGp.kin && NGp.kin(k) ? NGp.kin(k).n : '');
-  let l = []; const who0 = store.get('da.who', ''); if (!/^[A-HJ-NP-Z2-9]{3}$/.test(who0)) { sec.querySelector('ol').innerHTML = '<li><span>🗝</span></li>'; return; } try { l = ((await apiJSON('/talk?s=' + TALK.s + '&who=' + who0)) || {}).talk || []; } catch (e) { l = []; }
+  let l = []; const who0 = store.get('da.who', ''); if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who0)) { sec.querySelector('ol').innerHTML = '<li><span>🗝</span></li>'; return; } try { l = ((await apiJSON('/talk?s=' + TALK.s + '&who=' + who0)) || {}).talk || []; } catch (e) { l = []; }
   const top = l.filter(t => !t.re), kids = id => l.filter(t => t.re === id).reverse(), li = (t, sub) => `<li class="${sub ? 'sub' : ''}"><b>${esc(kinN(t.kin))}</b><small>${NGp && NGp.moonTag ? NGp.moonTag(t.at, S.scan.lat) : ''}</small><span>${esc(t.text)}</span></li>`;
   sec.querySelector('ol').innerHTML = top.length ? top.map(t => li(t) + kids(t.id).map(c => li(c, 1)).join('')).join('') : '<li><span>·</span></li>';
   sec.querySelectorAll('[data-tks]').forEach(b => { b.onclick = () => { TALK.s = b.dataset.tks; sec.querySelectorAll('[data-tks]').forEach(q => q.classList.toggle('on', q === b)); talkFill(); }; });
   sec.querySelector('form').onsubmit = async e => { e.preventDefault(); const i = sec.querySelector('input'), t = i.value.trim(), who = store.get('da.who', ''); if (!t) return;
-    if (!/^[A-HJ-NP-Z2-9]{3}$/.test(who)) { toast('🗝'); return; }
+    if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who)) { toast('🗝'); return; }
     let cf = ''; try { const ng = window.parent !== window && window.parent.NG; if (ng && ng.human) cf = await ng.human(); } catch (e) { cf = ''; }
     try { await apiJSON('/talk', { method: 'POST', body: JSON.stringify({ s: TALK.s, who, text: t, cf }) }); i.value = ''; talkFill(); } catch (er) { toast(er && er.status === 403 ? '🗝' : '·'); } };
 }

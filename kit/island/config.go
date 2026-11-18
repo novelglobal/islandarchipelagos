@@ -11,17 +11,22 @@ import (
 )
 
 type Config struct {
-	Name       string `json:"name"`
-	Mode       string `json:"mode"`
-	Server     string `json:"server"`
-	Printer    string `json:"printer,omitempty"`
-	Token      string `json:"token,omitempty"`
-	SetupPass  string `json:"setup_pass"`
-	IslandPass string `json:"island_pass,omitempty"`
-	Printed    int    `json:"printed"`
-	Paper      string `json:"paper,omitempty"`
-	Own        Link   `json:"own,omitempty"`
-	Key        string `json:"key,omitempty"`
+	Name       string   `json:"name"`
+	Mode       string   `json:"mode"`
+	Server     string   `json:"server"`
+	Printer    string   `json:"printer,omitempty"`
+	Token      string   `json:"token,omitempty"`
+	SetupPass  string   `json:"setup_pass"`
+	IslandPass string   `json:"island_pass,omitempty"`
+	Printed    int      `json:"printed"`
+	Paper      string   `json:"paper,omitempty"`
+	Own        Link     `json:"own,omitempty"`
+	Key        string   `json:"key,omitempty"`
+	PassKey    string   `json:"pass_key,omitempty"`
+	Used       []string `json:"used,omitempty"`
+	Unsent     []string `json:"unsent,omitempty"`
+	IssueDay   string   `json:"issue_day,omitempty"`
+	IssueN     int      `json:"issue_n,omitempty"`
 }
 
 type Link struct {
