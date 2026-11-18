@@ -83,7 +83,7 @@ window.DA_TRAITS = {
   groups: { Human: [3, 2], Mammalia: [2, 2], Aves: [2, 2], Amphibia: [3, 3], Reptilia: [1, 1], Actinopterygii: [2, 3], Insecta: [2, 1], Arachnida: [1, 1], Mollusca: [2, 2], Plantae: [1, 2], Fungi: [1, 3], Animalia: [1, 1], Chromista: [1, 2], Protozoa: [1, 2], Unknown: [1, 1] },
   special: [
     ['Pteropus', 4, 2, 'above ~42°C'], ['Pseudocheirus', 3, 2, 'long heatwaves'],
-    ['Litoria', 3, 3, 'standing water'], ['Crinia', 3, 3, 'standing water'], ['Limnodynastes', 3, 3, 'standing water'],
+    ['Litoria', 3, 3, 'standing water'], ['Ranoidea', 3, 3, 'standing water'], ['Rawlinsonia', 3, 3, 'standing water'], ['Crinia', 3, 3, 'standing water'], ['Limnodynastes', 3, 3, 'standing water'],
     ['Hydromys', 2, 3, 'creek-bound'], ['Apis', 2, 2, 'carries water'], ['Eucalyptus', 2, 1, 'sheds limbs'],
   ],
 };

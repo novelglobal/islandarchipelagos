@@ -96,7 +96,7 @@ const TAXA = [
   [302, 'Lampropholis guichenoti', 'Garden Skink', 'Reptilia', 3, {}],
   [303, 'Crinia signifera', 'Common Eastern Froglet', 'Amphibia', 4, { creek: MERRI, sound: true }],
   [304, 'Limnodynastes dumerilii', 'Eastern Banjo Frog', 'Amphibia', 2, { creek: MOONEE }],
-  [305, 'Litoria raniformis', 'Growling Grass Frog', 'Amphibia', 1, { ob: true, th: true }],
+  [305, 'Ranoidea raniformis', 'Growling Grass Frog', 'Amphibia', 1, { ob: true, th: true }],
   [401, 'Hortophora transversa', 'Common Garden Orb-weaver', 'Arachnida', 4, {}],
   [402, 'Badumna insignis', 'Black House Spider', 'Arachnida', 3, {}],
   [403, 'Apis mellifera', 'Western Honey Bee', 'Insecta', 6, { intro: true }],

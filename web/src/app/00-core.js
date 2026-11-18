@@ -131,9 +131,10 @@ if (IN_AURA) { document.documentElement.classList.add('in-aura'); const nq = new
 /* a picture made here handed to the aura, which puts it on the poster in hand; crisp keeps it line work on the receipt (a code, a score) */
 /* iNaturalist through novel.global (stage 4), with a way round: iNaturalist limits the shared addresses Cloudflare asks from, so when
    novel.global is turned away, or slow, the browser asks iNaturalist itself, as it did before. Every call to CONFIG.INAT_API goes this way */
-{ const fetch0 = window.fetch.bind(window), DIRECT = 'https://api.inaturalist.org/v1/';
+{ const fetch0 = window.fetch.bind(window), DIRECT = 'https://api.inaturalist.org/v1/'; let away = 0;   // once turned away, straight round for ten minutes
   window.fetch = (u, o) => { const s = typeof u === 'string' ? u : ''; if (!s.startsWith('/api/inat/')) return fetch0(u, o); const direct = () => fetch0(DIRECT + s.slice(10), o);
-    return fetch0(s, { ...(o || {}), ...(AbortSignal.timeout ? { signal: AbortSignal.timeout(8000) } : {}) }).then(r => (r.ok ? r : direct())).catch(direct); }; }
+    if (Date.now() < away) return direct();
+    return fetch0(s, { ...(o || {}), ...(AbortSignal.timeout ? { signal: AbortSignal.timeout(8000) } : {}) }).then(r => { if (r.ok) return r; if (r.status === 429) away = Date.now() + 600e3; return direct(); }).catch(direct); }; }
 /* made: kept in one's own list (shared with the aura, newest first), and said to the aura so its light follows it home */
 const made = (kind, label, lat, lng) => { try { if (IN_AURA) window.parent.postMessage({ ng: 'made', kind, label: String(label || '').slice(0, 48) }, location.origin); } catch (e) { /* alone */ } };
 const toAura = (url, crisp) => { try { window.parent.postMessage({ ng: 'piece', url, crisp: !!crisp }, location.origin); return true; } catch (e) { return false; } };
