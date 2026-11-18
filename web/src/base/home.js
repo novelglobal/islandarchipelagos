@@ -712,7 +712,7 @@
     var mo = null; if (ps.length > show) { mo = D.createElement('button'); mo.type = 'button'; mo.className = 'nt-mo'; mo.textContent = 'More'; mo.setAttribute('aria-expanded', 'false'); n.appendChild(mo); }
     n.title = mo ? 'Tap to read more; tap the card behind to close' : 'Tap the card behind to close';
     n.addEventListener('click', function (e) { e.stopPropagation(); if (e.target.closest && e.target.closest('.lb-v')) return; if (!mo) return; var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); });
-    root.appendChild(n); NT.el = n; }
+    root.appendChild(n); NT.el = n; NT.id = CUR; }
   /* a film from the films bucket in its own few keys: asked for when play is first pressed, counted, played here only. k: whose film, '' the label's */
   function filmEl(F, k, fit) { var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (to) to.appendChild(e); return e; };
       var v = mk('div', 'lb-v'), pl = mk('button', 'lb-vp', null, v), bar = mk('div', 'lb-vb', null, v), tr = mk('i', '', null, bar), fl = mk('u', '', null, tr), mu = mk('button', 'lb-vm', null, bar), asked = 0;
@@ -1041,7 +1041,8 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
-    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); }
+    if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || nr.bottom < vh * 0.4 || nr.top > vh * 0.6) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
