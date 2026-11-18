@@ -1520,6 +1520,38 @@ if (run('guide')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section guide: ${e.message.split('\n')[0]}`); }
 
+// ───────── the made cards: SPECIES LIST as a paper to tap, and a mixtape whose every sound leads back to where it was heard (ONLY=cards) ─────────
+if (run('cards')) try {
+  const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'cards');
+  await page.goto('https://oan.test/cart.html?c=species'); await sleep(1600);
+  const names = () => page.evaluate(() => [...document.querySelectorAll('#spov .sp-o')].map(b => b.getAttribute('aria-label')));
+  const n0 = await names();
+  check('the species paper is the list: a box, a name and × on each row, no second list above it', n0.length >= 5 && !(await page.$('#spf')) && await page.evaluate(() => document.querySelectorAll('#spov .sp-k').length === document.querySelectorAll('#spov .sp-x').length), JSON.stringify(n0));
+  await page.click('#spov .sp-k'); await sleep(300);
+  check('a box on the paper ticks it as spotted', await page.evaluate(() => document.querySelector('#spov .sp-k').classList.contains('on') && Object.keys(window.SPOT.all()).length === 1));
+  await page.click('#spov .sp-x >> nth=1'); await sleep(300); const n1 = await names();
+  check('× takes a species off this list, and it stays off', n1.length === n0.length - 1 && !n1.includes(n0[1]) && /"drop":\[/.test(await page.evaluate(() => localStorage.getItem('da.species.edit.v1') || '')), JSON.stringify(n1));
+  const add = await page.evaluate(async had => { const F = (await (await fetch('base-db.json')).json()).field; const f = F.find(x => !had.includes(x.cn) && /^[A-Za-z ]+$/.test(x.cn)); const q = document.querySelector('#spq'); q.value = f.cn.slice(0, 7); q.dispatchEvent(new Event('input')); await new Promise(r => setTimeout(r, 400)); const b = [...document.querySelectorAll('#spov .sp-a')].find(x => x.getAttribute('aria-label') === 'Add ' + f.cn); if (b) b.click(); await new Promise(r => setTimeout(r, 300)); return { cn: f.cn, found: !!b }; }, n0);
+  const n2 = await names();
+  check('a search on the paper adds a species to the list on show', add.found && n2.includes(add.cn) && n2.length === n1.length + 1, JSON.stringify({ add, n2 }));
+  const ln = await page.evaluate(async () => { const F = (await (await fetch('base-db.json')).json()).field; return window.SPOT.link(window.SPOT.list(document.querySelector('#opts [aria-pressed="true"]').dataset.a, F)); });
+  await page.evaluate(() => { localStorage.removeItem('da.species.edit.v1'); }); await page.goto(ln.replace(/^https?:\/\/[^/]+/, 'https://oan.test')); await sleep(1600);
+  check('its link opens the same list as SHARED', JSON.stringify(await names()) === JSON.stringify(n2) && await page.evaluate(() => document.querySelector('#opts [data-a="shared"]').getAttribute('aria-pressed') === 'true'), ln);
+  /* the sounds stand in as a second of quiet, so the player has something real to play */
+  const wav = (() => { const n = 8000, b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24); b.writeUInt32LE(8000, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; })();
+  await ctx.route(u => u.host === 'static.inaturalist.org' && u.pathname.startsWith('/sounds'), r => r.fulfill({ status: 200, body: wav, headers: { 'content-type': 'audio/wav' } }));
+  await page.goto('https://oan.test/cart.html?c=tape'); await sleep(1600);
+  const tp = await page.evaluate(() => ({ rows: document.querySelectorAll('#tpov button[data-i]').length, obs: [...document.querySelectorAll('#tpov a')].filter(a => /^https:\/\/www\.inaturalist\.org\/observations\/\d+$/.test(a.href)).length, h: document.querySelector('#paper canvas').height }));
+  check('the mixtape shows ten tracks, each leading to the observation its sound came from', tp.rows === 10 && tp.obs === 10 && tp.h > 1200, JSON.stringify(tp));
+  await page.click('#opts [data-a="play"]'); await sleep(500);
+  check('PLAY plays it from the first track', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'true' && !!document.querySelector('#tpov button.on[data-i="0"]')));
+  await page.click('#opts [data-a="play"]'); await sleep(200);
+  check('and stops', await page.evaluate(() => document.querySelector('#opts [data-a="play"]').getAttribute('aria-pressed') === 'false'));
+  await page.setViewportSize({ width: 375, height: 812 }); await sleep(400);
+  check('both papers fit a phone', await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0);
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section cards: ${e.message.split('\n')[0]}`); }
+
 // ───────── no names, no traces, nothing invented left over ─────────
 if (run('static')) try {
   /* the words to keep out: general ones here, private ones (names, tools) one per line in test/.private-words, which never leaves this machine */
@@ -1536,6 +1568,9 @@ if (run('static')) try {
   for (const f of repo) { const p = path.join(ROOT, f); if (!f || f === 'test/run.mjs' || /\.(png|woff2)$/.test(f) || !fs.existsSync(p)) continue; const m = unLabel(fs.readFileSync(p, 'utf8')).match(bad); if (m) hits.push(`${f}: ${m[0]}`); }
   check('no names or authorship traces in the site or the repository', !hits.length, hits.join(' · '));
   check('no demo data, sign-up, votes or specimens left in the repository', !old.length, old.join(' · '));
+  /* the example mixtape: ten real recordings, each tuned its own way, each with its recordist, licence and observation */
+  const tape = JSON.parse(fs.readFileSync(path.join(DIST, 'tapes/night-field.json'), 'utf8')), T = tape.tracks || [];
+  check('the example mixtape: ten sounds from iNaturalist, each with who, licence, place and its own tuning', T.length === 10 && T.every(t => /^https:\/\/static\.inaturalist\.org\/sounds\/\d+\.(m4a|mp3|wav)/.test(t.src) && t.obs > 0 && t.by && /^CC/.test(t.lic) && t.where && t.st < 0) && new Set(T.map(t => t.st)).size === 10, JSON.stringify(T.map(t => [t.n, t.st, t.lic])));
   const readme = fs.readFileSync(path.join(DIST, 'README.md'), 'utf8');
   check('the README is short', readme.split('\n').length <= 40, `${readme.split('\n').length} lines`);
 } catch (e) { results.push(`FAIL  section static: ${e.message.split('\n')[0]}`); }

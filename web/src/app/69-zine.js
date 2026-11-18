@@ -712,8 +712,9 @@ function zPhotoIn(url, lock) { const im = new Image(); im.onload = async () => {
     const c = await showZine(true); const src = t.toDataURL('image/jpeg', 0.85); const F = FORMATS[PRESS.fmt]; const w = c.getWidth() * (LG ? 1 : 0.8); const at = viewSpot();
     window.fabric.Image.fromURL(await inkPhoto(src, w * (F.dots || F.w * 2) / F.w), img => { img.set({ left: LG ? 0 : 10, top: LG ? 0 : Math.max(20, at.y - 60), angle: LG ? 0 : rnd(-3, 3), daKind: 'image', daSrc: src }); if (lock) img.set({ selectable: false, evented: false, hasControls: false }); img.scaleToWidth(w); if (LG && img.getScaledHeight() > c.getHeight()) c.setHeight(Math.min(capH(), Math.ceil(img.getScaledHeight()))); c.add(img); if (!lock) c.setActiveObject(img); c.renderAll(); saveZine(); }); }; im.src = url; }
 let ZR = '';
-if (ZREMIX) addEventListener('message', async e => { const d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'remix' || typeof d.img !== 'string' || !/^\/[^/]/.test(d.img) || d.img === ZR) return; ZR = d.img;
-  PRESS.fmt = 'long'; const c = await showZine(true); if (!c) { ZR = ''; return; } c.getObjects().filter(o => !ZFIXED.includes(o.daKind)).forEach(o => c.remove(o)); ZHIST.length = 0; c.discardActiveObject();
+if (ZREMIX) addEventListener('message', async e => { const d = e.data; if (e.origin !== location.origin || !d || d.ng !== 'remix' || typeof d.img !== 'string' || !(/^\/[^/]/.test(d.img) || (d.keep && /^data:image\/(png|jpeg);base64,/.test(d.img))) || d.img === ZR) return; ZR = d.img;
+  if (!d.keep) PRESS.fmt = 'long'; const c = await showZine(true); if (!c) { ZR = ''; return; } if (!d.keep) { c.getObjects().filter(o => !ZFIXED.includes(o.daKind)).forEach(o => c.remove(o)); ZHIST.length = 0; } c.discardActiveObject();
+  if (d.keep && d.img.startsWith('data:')) { zPhotoIn(d.img, false); return; }
   try { const b = await (await fetch(d.img)).blob(); const u = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); zPhotoIn(u, true); } catch (er) { ZR = ''; } });
 /* each reading's small strip, drawn from the story itself */
 const THUMBS = new Map();

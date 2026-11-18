@@ -1,0 +1,26 @@
+{
+  "v": 1,
+  "id": "tape",
+  "name": "MIXTAPE",
+  "island": "novelglobal",
+  "page": "cart.html",
+  "kind": "tape",
+  "where": [
+    -37.8136,
+    144.9631
+  ],
+  "printer": {
+    "profile": "tm-t88v",
+    "dots": 512,
+    "dpi": 180
+  },
+  "blocks": [
+    {
+      "k": "print",
+      "to": [
+        "island",
+        "novelglobal"
+      ]
+    }
+  ]
+}

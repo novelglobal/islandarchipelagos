@@ -3531,3 +3531,13 @@ html.only-radio .band.dev.radio.mod .b-emerg .cd.stp{font-size:20px!important;li
 #gd-ov .gd-mo i.a1{background:rgba(31,42,32,.35)}
 #gd-ov .gd-mo i.a2{background:#1F2A20;color:#CBD4C3}
 #gd-ov .gd-mo i.y{box-shadow:inset 0 -3px 0 #E8913A}
+/* the small radio: its keys (GUIDE, the jellyfish) on a strip of their own under the knobs, never on them; the play key a fifth smaller */
+.simple-r .dev.radio:not(.mod){padding-bottom:46px}
+.simple-r .dev.radio.upg:not(.mod){padding-bottom:48px}
+.simple-r .dev.radio:not(.mod) .flip-b{bottom:10px!important}
+.simple-r .dev.radio:not(.mod) .gd-k{bottom:17px}
+.simple-r .rd-play{width:56px;height:56px}
+.simple-r .rd-play .i{width:19px;height:19px}
+.simple-r .rd-led{top:8px}
+/* on a desk the guide's lists all show, two lines if need be: no sideways scroll a mouse cannot do */
+@media (hover:hover) and (pointer:fine){#gd-ov .gd-t{flex-wrap:wrap;overflow:visible}}

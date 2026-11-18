@@ -490,65 +490,182 @@
   function fieldDb() { if (!SPF) SPF = Promise.all([fetch('base-db.json').then(function (r) { return r.json(); }), fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })])
     .then(function (r) { var cur = String(r[1].species || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); try { if (cur.length) localStorage.setItem('da.species.cur', JSON.stringify(cur)); else localStorage.removeItem('da.species.cur'); } catch (e) { /* none */ } return { F: (r[0] && r[0].field) || [], cur: cur }; });
     return SPF; }
-  var SPK = { local: 'LOCAL 10', season: 'SEASON', birds: 'BIRDS', curated: 'CURATED', added: 'ADDED', mine: 'SPOTTED', all: 'GUIDE' };
+  var SPK = { local: 'LOCAL 10', season: 'SEASON', birds: 'BIRDS', curated: 'CURATED', added: 'ADDED', mine: 'SPOTTED', all: 'GUIDE', shared: 'SHARED' };
   function spList(d, o) { var SP = window.SPOT, F = d.F || []; if (!SP) return [];
-    if (o.k === 'local') { if (!o.ids) { var h = SP.hunt(); o.ids = h && h.k === 'local' && h.ids ? h.ids : SP.list('local', F).map(function (f) { return f.id; }); } var by = {}; F.forEach(function (f) { by[f.id] = f; }); return o.ids.map(function (id) { return by[id]; }).filter(Boolean); }
+    if (o.k === 'local') { if (!o.ids) { var h = SP.hunt(); o.ids = h && h.k === 'local' && h.ids ? h.ids : SP.list('local', F).map(function (f) { return f.id; }); } var by = {}; SP.pool(F).forEach(function (f) { by[f.id] = f; }); return SP.apply('local', o.ids.map(function (id) { return by[id]; }).filter(Boolean), F); }
     return SP.list(o.k, F, d.cur); }
+  /* the paper is the list: each row's box ticks it, its name opens its entry, × takes it off; a search shows what can go on it */
+  var SPQ = { q: '', found: [], fq: '', t: 0, open: '' }, SPH = [];
+  var spCap = function (t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); };
+  function spCands() { var SP = window.SPOT, d = (S && S.data) || {}, q = SPQ.q.trim().toLowerCase(); if (!SP || !S || !S.o || q.length < 2) return null;
+    var P = SP.pool(d.F || []), on = {}, have = {}; spList(d, S.o).forEach(function (f) { on[f.id] = 1; }); P.forEach(function (x) { have[String(x.n || '').toLowerCase()] = 1; have[String(x.cn || '').toLowerCase()] = 1; });
+    return { l: P.filter(function (x) { return [x.cn, x.n, x.g, x.where].join(' ').toLowerCase().indexOf(q) >= 0; }).slice(0, 12).map(function (f) { return { f: f, on: !!on[f.id] }; }),
+      web: q.length > 2 && SPQ.fq === SPQ.q.trim() ? SPQ.found.filter(function (t) { return !have[String(t.n).toLowerCase()]; }).slice(0, 6) : null, own: q.length > 2 && !have[q] ? SPQ.q.trim().slice(0, 60) : '' }; }
+  /* an entry opened on the paper: the months it is about (filled) or sometimes (dotted), young (underlined), then what is known */
+  function spEntry(k, f, y, all) { var g = k.g, x0 = M + 48, y0 = y;
+    if (f.n && all) { k.fit(String(f.n), x0, y + 4, 'italic 400', 18, W - x0 - M, SANS); y += 24; }
+    if (f.act) { var MO = 'JFMAMJJASOND'; for (var i = 0; i < 12; i++) { var bx = x0 + i * 36, a = f.act[i];
+        if (a === 'A') k.box(bx, y - 4, 32, 26); else if (a === 'a') k.dots(bx, y - 4, 32, 26); else { g.lineWidth = 1; g.strokeStyle = '#000'; g.strokeRect(bx + 0.5, y - 3.5, 31, 25); }
+        if (a === 'A') { g.fillStyle = '#fff'; g.font = '600 16px ' + MONO; g.textAlign = 'center'; g.fillText(MO[i], bx + 16, y + 15); g.textAlign = 'left'; } else if (a !== 'a') k.txt(MO[i], bx + 16, y + 15, '600 16px ' + MONO, 'center');
+        if (f.brd && f.brd[i] === 'B') k.box(bx, y + 25, 32, 4); }
+      y += 42; }
+    [['WHERE', f.where], ['WATCH', f.event], ['AWARE', f.aware], ['HARM', f.harm], ['HELP', f.help], ['NOTE', f.note], ['CALL', f.call]].forEach(function (r) { if (!r[1]) return;
+      k.txt(r[0], x0, y + 14, '600 13px ' + MONO); y += k.wrap(spCap(r[1]), x0 + 66, y + 15, '400 18px ' + SANS, W - x0 - 66 - M, 23) + 8; });
+    return y - y0 + 6; }
   var species = {
-    opts: [['local', 'LOCAL'], ['season', 'SEASON'], ['birds', 'BIRDS'], ['curated', 'CURATED'], ['added', 'ADDED'], ['mine', 'SPOTTED'], ['all', 'GUIDE'], ['share', 'SHARE']],
-    init: function (o) { var h = window.SPOT && SPOT.hunt(); o.k = h && SPK[h.k] ? h.k : 'birds'; },
-    local: function () { return fieldDb(); },
-    act: function (a, s, o) { if (a === 'share') { spShare(); return false; } if (!SPK[a]) return false; if (a === 'local' && o.k === 'local') o.ids = null; o.k = a; return true; },
+    opts: [['local', 'LOCAL'], ['season', 'SEASON'], ['birds', 'BIRDS'], ['curated', 'CURATED'], ['added', 'ADDED'], ['mine', 'SPOTTED'], ['all', 'GUIDE'], ['shared', 'SHARED'], ['share', 'SHARE'], ['save', 'SAVE'], ['board', 'BOARD'], ['design', 'DESIGN']],
+    init: function (o) { var h = window.SPOT && SPOT.hunt(); o.k = h && SPK[h.k] ? h.k : 'birds'; if (SPL) o.k = 'shared'; },
+    local: function () { return fieldDb().then(function (d) { if (SPL && window.SPOT) { SPOT.take(SPL, d.F); SPL = ''; try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]l=[^&]*/, '').replace(/^&/, '?') + location.hash); } catch (e) { /* stays */ } } return d; }); },
+    act: function (a, s, o) { if (a === 'share') { spShare(); return false; } if (a === 'save') { spSave(); return false; } if (a === 'board' || a === 'design') { spPlace(a); return false; }
+      if (!SPK[a]) return false; if (a === 'local' && o.k === 'local') { o.ids = null; if (window.SPOT) SPOT.reset('local'); } o.k = a; SPQ.open = ''; return true; },
     draw: function (k, d, s, o) {
-      var SP = window.SPOT, l = spList(d, o), g = k.g, all = o.k === 'all', rh = all ? 46 : 66;
-      var y = k.head('SPECIES', o.k === 'birds' && SP ? 'BIRDS · ' + SP.mon() : SPK[o.k], phase(age(today()))) + 30;
-      if (!l.length) { k.txt(o.k === 'mine' ? 'NOTHING SPOTTED YET' : o.k === 'added' ? 'ADD ONE IN THE GUIDE' : '—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
-      l.forEach(function (f) {
+      var SP = window.SPOT, g = k.g, c = spCands(), all = o.k === 'all', rh = all ? 46 : 66, nw = W - 2 * M - 96; SPH = [];
+      var y = k.head('SPECIES', c ? '+ ' + SPK[o.k] : o.k === 'birds' && SP ? 'BIRDS · ' + SP.mon() : SPK[o.k], phase(age(today()))) + 30;
+      if (c) {
+        var row = function (cn, sub, kind, ref, on) { var y0 = y - 16; g.lineWidth = 3; g.strokeStyle = '#000';
+          if (on) k.box(M + 6, y - 2, 28, 28); else { g.setLineDash([6, 4]); g.strokeRect(M + 6, y - 2, 28, 28); g.setLineDash([]); k.txt('+', M + 20, y + 21, '600 26px ' + MONO, 'center'); }
+          k.fit(String(cn), M + 48, y + 22, '700', 27, nw + 44, SANS); if (sub) k.fit(String(sub).toUpperCase(), M + 48, y + 46, '500', 15, nw + 44, MONO);
+          y += 66; k.box(M + 48, y - 10, W - 2 * M - 48, 1); SPH.push({ kind: kind, ref: ref, y: y0, h: y - 10 - y0 }); };
+        c.l.forEach(function (x) { row(x.f.cn, [x.f.n, x.f.event].filter(Boolean).join(' · '), 'pick', x.f.id, x.on); });
+        if (c.web) c.web.forEach(function (t, i) { row(t.cn, t.n, 'web', i); }); else if (c.own) { k.txt('· · ·', M + 48, y + 18, '600 22px ' + MONO); y += 40; }
+        if (c.own) row(c.own, '', 'own', 0);
+        if (!SPH.length) { k.txt('—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
+        return k.foot(y + 36, 'https://novel.global/x#species', '', 'FIELD GUIDE · NOVEL.GLOBAL');
+      }
+      var l = spList(d, o);
+      if (!l.length) { k.txt(o.k === 'mine' ? 'NOTHING SPOTTED YET' : '—', M + 4, y + 10, '600 20px ' + MONO); y += 30; }
+      l.forEach(function (f) { var y0 = y - (all ? 12 : 16), w;
         g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeRect(M + 6, y - 2, all ? 22 : 28, all ? 22 : 28);
-        k.fit(String(f.cn), M + 48, y + (all ? 18 : 22), '700', all ? 22 : 27, W - 2 * M - 52, SANS);
-        if (!all) k.fit([f.n, f.event].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
-        y += rh; k.box(M + 48, y - 10, W - 2 * M - 48, 1); });
+        w = k.fit(String(f.cn), M + 48, y + (all ? 18 : 22), '700', all ? 22 : 27, nw, SANS);
+        if (!all) k.fit([f.n, f.event].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, nw, MONO);
+        y += rh; var op = SPQ.open === f.id; if (op) y += spEntry(k, f, y - (all ? 12 : 8), all);
+        k.box(M + 48, y - 10, W - 2 * M - 48, 1); SPH.push({ kind: 'row', ref: f.id, y: y0, h: y - 10 - y0, w: w, cn: f.cn, tid: op && f.tid, top: rh }); });
       y += 10;
       return k.foot(y + 26, 'https://novel.global/x#species', '', 'FIELD GUIDE · NOVEL.GLOBAL');
     }
   };
-  /* what is spotted on this list, said in the card's own talk (its SHOW room), where the sightings are counted */
-  function spShare() { var SP = window.SPOT; if (!SP || window.parent === window) return; var got = SP.all(), l = spList(S.data || {}, S.o).filter(function (f) { return got[f.id]; }), names = (l.length ? l : Object.keys(got).map(function (id) { return got[id]; })).map(function (f) { return f.cn; });
-    if (!names.length) { var st = $('#st'); if (st) st.textContent = 'TICK ONE'; return; }
-    try { window.parent.postMessage({ ng: 'talk', sec: 'c.species.show', k: 'spot', say: ('SPOTTED · ' + names.slice(0, 6).join(', ') + (names.length > 6 ? ' +' + (names.length - 6) : '')).slice(0, 280) }, location.origin); } catch (e) { /* alone */ } }
-  /* the list as boxes to tick, above the paper */
-  var SPQ = { q: '', found: [], fq: '', t: 0, open: '' };
-  var spEsc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  var spCap = function (t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); };
-  function spEntry(x) { return '<div class="spd">' + (x.n ? '<i>' + spEsc(x.n) + '</i>' : '') + [['WHERE', x.where], ['WATCH', x.event], ['AWARE', x.aware], ['HARM', x.harm], ['HELP', x.help], ['NOTE', x.note], ['CALL', x.call]].filter(function (r) { return r[1]; }).map(function (r) { return '<p><b>' + r[0] + '</b> ' + spEsc(spCap(r[1])) + '</p>'; }).join('') +
-    (x.tid ? '<p><a href="https://www.inaturalist.org/taxa/' + (+x.tid) + '" target="_blank" rel="noopener">iNaturalist ↗</a></p>' : '') + (x.mine ? '<button type="button" class="sprm" data-drop="' + spEsc(x.id) + '">REMOVE</button>' : '') + '</div>'; }
-  function spRows() { var SP = window.SPOT, f = $('#spf'); if (!f || !SP) return; var got = SP.all(), q = SPQ.q.trim().toLowerCase(), l = q.length > 1 ? SP.list('all', (S.data || {}).F || []) : spList(S.data || {}, S.o);
-    if (q.length > 1) l = l.filter(function (x) { return [x.cn, x.n, x.g, x.where].join(' ').toLowerCase().indexOf(q) >= 0; });
-    var h = l.map(function (x) { return '<li' + (SPQ.open === x.id ? ' class="op"' : '') + '><input type="checkbox" data-id="' + spEsc(x.id) + '" data-n="' + spEsc(x.cn) + '" aria-label="Spotted: ' + spEsc(x.cn) + '"' + (got[x.id] ? ' checked' : '') + '><button type="button" class="spn" data-o="' + spEsc(x.id) + '" aria-expanded="' + (SPQ.open === x.id) + '">' + spEsc(x.cn) + '</button>' + (SPQ.open === x.id ? spEntry(x) : '') + '</li>'; }).join('');
-    if (q.length > 2) { var have = {}; SP.list('all', (S.data || {}).F || []).forEach(function (x) { have[String(x.n).toLowerCase()] = 1; });
-      h += '<li class="sps">ADD</li>' + (SPQ.fq === SPQ.q.trim() ? SPQ.found.filter(function (t) { return !have[String(t.n).toLowerCase()]; }).map(function (t) { return '<li class="spa"><button type="button" data-add="' + SPQ.found.indexOf(t) + '">+ ' + spEsc(t.cn) + ' <small>' + spEsc(t.n) + '</small></button></li>'; }).join('') : '<li class="spa"><small>· · ·</small></li>') +
-        '<li class="spa"><button type="button" data-own>+ ' + spEsc(SPQ.q.trim().slice(0, 60)) + ' <small>your own</small></button></li>'; }
-    f.innerHTML = h || '<li class="sps">—</li>'; }
-  function spKeys() { if (S.stack.kind !== 'species') return; var SP = window.SPOT;
-    [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { if (SPK[b.dataset.a]) b.setAttribute('aria-pressed', String(b.dataset.a === S.o.k)); if (b.dataset.a === 'share') b.hidden = window.parent === window; });
-    var pk = $('#pick'), f = $('#spf'); if (!pk || !SP) return;
-    if (!f) { var qi = document.createElement('input'); qi.id = 'spq'; qi.type = 'search'; qi.autocomplete = 'off'; qi.placeholder = 'search or add'; qi.setAttribute('aria-label', 'Search the guide, or add a species'); pk.appendChild(qi);
-      f = document.createElement('ol'); f.id = 'spf'; pk.appendChild(f);
-      qi.addEventListener('input', function () { SPQ.q = qi.value; spRows(); clearTimeout(SPQ.t); var q = SPQ.q.trim(); if (q.length > 2) SPQ.t = setTimeout(function () { SP.search(q).then(function (r) { SPQ.found = r; SPQ.fq = q; if (SPQ.q.trim() === q) spRows(); }); }, 450); });
-      f.addEventListener('change', function (e) { var c = e.target.closest('input'); if (!c) return; SP.set(c.dataset.id, c.dataset.n, c.checked); paint(); });
-      f.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return;
-        if (b.dataset.o) { SPQ.open = SPQ.open === b.dataset.o ? '' : b.dataset.o; spRows(); return; }
-        var added = b.hasAttribute('data-own') ? SP.addMine({ cn: SPQ.q }) : b.dataset.add != null ? SP.addMine(SPQ.found[+b.dataset.add] || {}) : null;
-        if (added) { SPQ.q = ''; qi.value = ''; SPQ.open = added.id; S.o.k = 'added'; paint(); return; }
-        if (b.dataset.drop) { SP.dropMine(b.dataset.drop); SPQ.open = ''; paint(); } }); }
-    spRows();
-    if (SPK[S.o.k] && S.o.k !== 'mine' && S.o.k !== 'added' && S.o.k !== 'all') SP.hunt({ k: S.o.k, ids: spList(S.data || {}, S.o).map(function (x) { return x.id; }), at: Date.now() }); }
-  addEventListener('da-spot', function () { if (S.stack && S.stack.kind === 'species' && S.ready) paint(); });
+  var SPL = (location.search.match(/[?&]l=([^&#]*)/) || [])[1] || '';
+  var spBy = function (id) { var d = (S && S.data) || {}; return window.SPOT ? SPOT.pool(d.F || []).filter(function (f) { return f.id === id; })[0] : null; };
+  /* the paper clean of a search, as a picture */
+  function spClean() { if (SPQ.q) { SPQ.q = ''; var qi = $('#spq'); if (qi) qi.value = ''; paint(); } }
+  function spBlob(cb) { spClean(); if (cv.toBlob) cv.toBlob(cb, 'image/png'); else cb(null); }
+  function paperSave(name) { var st = $('#st'); if (!cv.toBlob) return; cv.toBlob(function (b) { if (!b) return; var u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); if (st) st.textContent = 'SAVED'; }, 'image/png'); }
+  function spSave() { spClean(); paperSave('species-' + S.o.k); }
+  /* SHARE: the picture and its link where the phone can send them; else what is spotted, or the list, said in the card's talk; else the link copied */
+  function spShare() { var SP = window.SPOT, st = $('#st'); if (!SP) return; var l = spList(S.data || {}, S.o), url = SP.link(l), got = SP.all(), sp = l.filter(function (f) { return got[f.id]; });
+    spBlob(function (b) { var fl = null; try { fl = b && new File([b], 'species-' + S.o.k + '.png', { type: 'image/png' }); } catch (e) { fl = null; }
+      if (fl && navigator.canShare && navigator.canShare({ files: [fl] })) { navigator.share({ files: [fl], title: 'SPECIES · ' + SPK[S.o.k], text: url }).catch(function () {}); return; }
+      if (window.parent !== window) { var names = (sp.length ? sp : l).map(function (f) { return f.cn; }), head = (sp.length ? 'SPOTTED · ' : 'SPECIES · ' + SPK[S.o.k] + ' · ') + names.slice(0, 6).join(', ') + (names.length > 6 ? ' +' + (names.length - 6) : ''), say = url.length < 160 ? head.slice(0, 279 - url.length) + ' ' + url : head.slice(0, 280);
+        if (!names.length) { if (st) st.textContent = 'TICK ONE'; return; }
+        try { window.parent.postMessage({ ng: 'talk', sec: 'c.species.show', k: sp.length ? 'spot' : 'share', say: say }, location.origin); } catch (e) { /* alone */ } return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { if (st) st.textContent = 'COPIED'; }, function () { prompt('', url); }); else prompt('', url); }); }
+  /* BOARD pins the paper on the research board; DESIGN lays it on the design print's page, kept with what is there */
+  function paperPlace(a, tag) { var st = $('#st'), u = cv.toDataURL('image/png');
+    if (a === 'design') { try { window.parent.postMessage({ hm: 'remix', img: u, keep: 1 }, location.origin); } catch (e) { /* alone */ } return; }
+    var q = []; try { q = JSON.parse(localStorage.getItem('da.rb.in') || '[]'); } catch (e) { q = []; } if (!Array.isArray(q)) q = [];
+    q.push({ id: tag + ':' + Date.now().toString(36), img: u, tall: 1 }); try { localStorage.setItem('da.rb.in', JSON.stringify(q.slice(-12))); } catch (e) { if (st) st.textContent = 'FULL'; return; }
+    if (window.parent !== window) { try { window.parent.postMessage({ hm: 'go', id: 'research' }, location.origin); } catch (e) { /* alone */ } } else location.href = 'research#b'; }
+  function spPlace(a) { spClean(); paperPlace(a, 'sl:' + S.o.k); }
+  /* the taps on the paper, laid over it where each row was drawn */
+  function spMarks() { var pp = $('#paper'), ov = $('#spov'), SP = window.SPOT; if (!pp) return; var on = S.stack.kind === 'species' && SP;
+    if (!ov) { if (!on) return; ov = document.createElement('div'); ov.id = 'spov'; pp.appendChild(ov); ov.addEventListener('click', spTap); }
+    ov.hidden = !on; if (!on) return; var sx = cv.offsetWidth / cv.width, sy = cv.offsetHeight / cv.height, got = SP.all(), px = function (v, s) { return (v * s).toFixed(1) + 'px'; };
+    ov.style.cssText = 'left:' + cv.offsetLeft + 'px;top:' + cv.offsetTop + 'px;width:' + cv.offsetWidth + 'px;height:' + cv.offsetHeight + 'px';
+    ov.innerHTML = SPH.map(function (h, i) { var pos = 'top:' + px(h.y, sy) + ';height:' + px(h.h, sy);
+      if (h.kind !== 'row') { var f = h.kind === 'pick' ? spBy(h.ref) : null, nm = f ? f.cn : h.kind === 'web' ? (SPQ.found[h.ref] || {}).cn : SPQ.q.trim(); return '<button type="button" class="sp-a" data-i="' + i + '" style="left:0;width:100%;' + pos + '" aria-label="Add ' + esc(nm) + '" title="Add"></button>'; }
+      var has = !!got[h.ref], tall = px(Math.min(h.h, h.top), sy);
+      return '<button type="button" class="sp-k' + (has ? ' on' : '') + '" data-i="' + i + '" style="left:0;width:' + px(M + 44, sx) + ';top:' + px(h.y, sy) + ';height:' + tall + '" aria-pressed="' + has + '" aria-label="Spotted: ' + esc(h.cn) + '"></button>' +
+        '<button type="button" class="sp-o' + (has ? ' on' : '') + '" data-i="' + i + '" style="left:' + px(M + 44, sx) + ';width:' + px(W - 2 * M - 92, sx) + ';top:' + px(h.y, sy) + ';height:' + tall + ';--w:' + px(h.w || 0, sx) + '" aria-expanded="' + (SPQ.open === h.ref) + '" aria-label="' + esc(h.cn) + '"></button>' +
+        '<button type="button" class="sp-x" data-i="' + i + '" style="right:0;width:' + px(48 + M, sx) + ';top:' + px(h.y, sy) + ';height:' + tall + '" aria-label="Take ' + esc(h.cn) + ' off" title="Take off">×</button>' +
+        (h.tid ? '<a class="sp-l" href="https://www.inaturalist.org/taxa/' + (+h.tid) + '" target="_blank" rel="noopener" style="right:' + px(M, sx) + ';top:' + px(h.y + h.h - 34, sy) + '">iNaturalist ↗</a>' : ''); }).join(''); }
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  function spTap(e) { var b = e.target.closest('button[data-i]'), SP = window.SPOT; if (!b || !SP) return; var h = SPH[+b.dataset.i]; if (!h) return; var k = S.o.k, qi = $('#spq');
+    if (h.kind === 'row') { var f = spBy(h.ref) || { id: h.ref, cn: h.cn };
+      if (b.classList.contains('sp-k')) { SP.set(f.id, f.cn); if (navigator.vibrate) navigator.vibrate(8); return; }
+      if (b.classList.contains('sp-o')) { SPQ.open = SPQ.open === f.id ? '' : f.id; paint(); return; }
+      if (b.classList.contains('sp-x')) { if (SPQ.open === f.id) SPQ.open = ''; if (k === 'local' && S.o.ids) S.o.ids = S.o.ids.filter(function (x) { return x !== f.id; }); SP.keep(k, f, false); return; } return; }
+    var n = h.kind === 'pick' ? spBy(h.ref) : h.kind === 'web' ? SP.addMine(SPQ.found[h.ref] || {}) : SP.addMine({ cn: SPQ.q }); if (!n) return;
+    SPQ.q = ''; if (qi) qi.value = ''; SPQ.open = n.id; if (k === 'local' && S.o.ids && S.o.ids.indexOf(n.id) < 0) S.o.ids = S.o.ids.concat(n.id); SP.keep(k, n, true); paint(); }
+  function spKeys() { if (S.stack.kind !== 'species') return; var SP = window.SPOT, IN0 = window.parent !== window;
+    [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { var a = b.dataset.a; if (SPK[a]) b.setAttribute('aria-pressed', String(a === S.o.k)); if (a === 'design') b.hidden = !IN0; if (a === 'shared') b.hidden = S.o.k !== 'shared' && !(SP && SP.edits('shared').add.length); });
+    var pk = $('#pick'); if (!pk || !SP) return;
+    if (!$('#spq')) { var qi = document.createElement('input'); qi.id = 'spq'; qi.type = 'search'; qi.autocomplete = 'off'; qi.placeholder = 'search or add'; qi.setAttribute('aria-label', 'Search the guide, or add a species to this list'); pk.appendChild(qi);
+      qi.addEventListener('input', function () { SPQ.q = qi.value; clearTimeout(qi._p); qi._p = setTimeout(paint, 120); clearTimeout(SPQ.t); var q = SPQ.q.trim(); if (q.length > 2) SPQ.t = setTimeout(function () { SP.search(q).then(function (r) { SPQ.found = r; SPQ.fq = q; if (SPQ.q.trim() === q) paint(); }); }, 450); });
+      qi.addEventListener('keydown', function (e) { if (e.key === 'Escape' && qi.value) { qi.value = ''; SPQ.q = ''; paint(); } }); }
+    if (SPK[S.o.k] && !/^(mine|added|all|shared)$/.test(S.o.k)) { var ids = spList(S.data || {}, S.o).map(function (x) { return x.id; }), h0 = SP.hunt(); if (!h0 || h0.k !== S.o.k || String(h0.ids) !== String(ids)) SP.hunt({ k: S.o.k, ids: ids, at: Date.now() }); } }
+  addEventListener('da-spot', function () { if (S && S.stack && S.stack.kind === 'species' && S.ready) { clearTimeout(spKeys._t); spKeys._t = setTimeout(paint, 16); } });
+  addEventListener('resize', function () { if (S && S.stack && S.ready) { if (S.stack.kind === 'species') spMarks(); if (S.stack.kind === 'tape') tpKeys(); } });
 
   /* the paper as long as the list it carries */
-  Object.defineProperty(species, 'tall', { get: function () { var n = S.data ? spList(S.data, S.o).length : 10; return 700 + n * (S.o.k === 'all' ? 46 : 66); } });
+  Object.defineProperty(species, 'tall', { get: function () { var c = S && S.stack ? spCands() : null, n = c ? c.l.length + (c.web ? c.web.length : 1) + 1 : S && S.data ? spList(S.data, S.o).length : 10; return 700 + n * (!c && S && S.o.k === 'all' ? 46 : 66) + (SPQ.open && !c ? 640 : 0); } });
 
-  var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass, species: species };
+  /* ───────── MIXTAPE: its tracks, each one's sound traced to where it was heard and who heard it; played here, tuned down,
+     a sound's own echo where it has one, nothing under them. Its cover is the lines from the city out to each place ───────── */
+  var TQ = (location.search.match(/[?&]t=([\w-]{1,40})/) || [])[1] || '', TPH = [], TP = { a: null, e: null, i: -1, f: 0, u: '', t: 0 };
+  /* a tape kept on this phone: its tracks are the radio's loops recorded here, each with its place and the lives in it */
+  function tapeOwn(id) { var ts = [], ls = []; try { ts = JSON.parse(localStorage.getItem('da.tapes.v1') || '[]') || []; ls = JSON.parse(localStorage.getItem('da.loops.v1') || '[]') || []; } catch (e) { return null; }
+    var t = ts.filter(function (x) { return x && x.id === id; })[0]; if (!t) return null; var n = 0;
+    return { id: t.id, name: t.name || 'MIXTAPE', own: 1, from: [-37.8136, 144.9631], tracks: (t.ids || []).map(function (lid) { var l = ls.filter(function (q) { return q && q.id === lid; })[0]; if (!l || !l.rec) return null; var w = l.where || {}, lv = [];
+      [l].concat(l.parts || []).forEach(function (p) { ((((p || {}).layers || {}).life || {}).cells || []).forEach(function (c) { if (c && c.n && lv.indexOf(c.n) < 0) lv.push(c.n); }); });
+      return { n: ++n, cn: String(w.place || 'RADIO').toUpperCase(), sci: lv.slice(0, 4).join(' · '), where: '', at: l.at ? new Date(l.at).toISOString().slice(0, 10) : '', lat: w.lat, lng: w.lng, st: 0, echo: 0, rec: lid, s: l.rec.s }; }).filter(Boolean) }; }
+  /* the cover: rings ten kilometres apart, a line to each place a sound was heard, its number there */
+  function tapeCover(k, d, y, h) { var g = k.g, L = d.tracks || [], c = d.from || [-37.8136, 144.9631], kx = Math.cos(c[0] * Math.PI / 180), x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+    var P = L.map(function (t) { var dx = ((+t.lng || c[1]) - c[1]) * kx, dy = c[0] - (+t.lat || c[0]); x0 = Math.min(x0, dx); x1 = Math.max(x1, dx); y0 = Math.min(y0, dy); y1 = Math.max(y1, dy); return [dx, dy, t]; });
+    var bw = W - 2 * M - 80, bh = h - 80, sc = Math.min(bw / Math.max(0.01, x1 - x0), bh / Math.max(0.01, y1 - y0)), ox = W / 2 - (x0 + x1) / 2 * sc, oy = y + h / 2 - (y0 + y1) / 2 * sc;
+    k.box(M, y, W - 2 * M, h); g.save(); g.beginPath(); g.rect(M, y, W - 2 * M, h); g.clip(); g.strokeStyle = '#fff'; g.fillStyle = '#fff'; g.lineWidth = 2;
+    g.setLineDash([2, 6]); for (var r = 10; r < 400; r += 10) { var rr = r / 111.32 * sc; if (rr > 2 * W) break; g.beginPath(); g.arc(ox, oy, rr, 0, 7); g.stroke(); } g.setLineDash([]); g.lineWidth = 3;
+    P.forEach(function (p) { g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox + p[0] * sc, oy + p[1] * sc); g.stroke(); });
+    P.forEach(function (p) { var x = ox + p[0] * sc, yy = oy + p[1] * sc; g.fillStyle = '#fff'; g.beginPath(); g.arc(x, yy, 15, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = '600 16px ' + MONO; g.textAlign = 'center'; g.fillText(String(p[2].n), x, yy + 6); });
+    g.fillStyle = '#fff'; g.fillRect(ox - 6, oy - 6, 12, 12); g.textAlign = 'left'; g.restore(); }
+  var tape = {
+    opts: [['play', 'PLAY'], ['share', 'SHARE'], ['save', 'SAVE'], ['board', 'BOARD'], ['design', 'DESIGN']],
+    local: function () { if (TQ) { var t = tapeOwn(TQ); return t ? Promise.resolve(t) : Promise.reject(new Error('gone')); } return fetch('tapes/night-field.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); },
+    act: function (a) { if (a === 'play') { if (TP.on) tpStop(); else tpPlay(Math.max(0, TP.i)); } else if (a === 'share') tpShare(); else if (a === 'save') paperSave('mixtape-' + String((S.data || {}).name || 'tape').toLowerCase().replace(/[^a-z0-9]+/g, '-')); else if (a === 'board' || a === 'design') paperPlace(a, 'tp'); return false; },
+    draw: function (k, d) { var L = d.tracks || []; TPH = [];
+      var y = k.head('MIXTAPE', d.name || '', phase(age(today()))) + 16;
+      tapeCover(k, d, y, 420); y += 420 + 40;
+      if (!L.length) { k.txt('—', M + 4, y, '600 20px ' + MONO); y += 30; }
+      L.forEach(function (t) { var y0 = y - 30, w0 = W - 2 * M - 92;
+        k.txt(('0' + t.n).slice(-2), M, y, '600 22px ' + MONO); k.fit(String(t.cn), M + 48, y, '700', 27, w0, SANS);
+        k.fit([t.sci, t.where, t.at].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 24, '500', 15, W - 2 * M - 52, MONO);
+        var tune = t.st ? (t.st > 0 ? '+' : '−') + Math.abs(t.st) + ' ST' : '', len = t.s ? Math.floor(t.s / 60) + ':' + ('0' + Math.round(t.s % 60)).slice(-2) : '';
+        k.fit([t.by, t.lic, tune, t.echo ? 'ECHO' : '', len, t.rec && t.lat ? (+t.lat).toFixed(3) + ', ' + (+t.lng).toFixed(3) : ''].filter(Boolean).join(' · ').toUpperCase(), M + 48, y + 46, '500', 15, W - 2 * M - 52, MONO);
+        var hh = 58; if (t.obs) { k.fit('inaturalist.org/observations/' + (+t.obs), M + 48, y + 68, '600', 15, W - 2 * M - 52, MONO); hh = 80; }
+        y += hh + 14; k.box(M + 48, y - 14, W - 2 * M - 48, 1); TPH.push({ i: t.n - 1, y: y0, h: y - 14 - y0, obs: t.obs, cn: t.cn }); });
+      return k.foot(y + 14, TQ ? '' : 'https://novel.global/x#tape', '', 'MIXTAPE · NOVEL.GLOBAL'); }
+  };
+  Object.defineProperty(tape, 'tall', { get: function () { var n = S && S.data && S.data.tracks ? S.data.tracks.length : 10; return 760 + 420 + n * 96; } });
+  /* playing: one track after the other, tuned, faded in; a sound's own echo comes in after it, quieter */
+  function tpBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
+    q.onsuccess = function () { try { var r = q.result.transaction('kv').objectStore('kv').get('rec:' + id); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  function tpAudio(u, rate) { var a = new Audio(); a.preload = 'auto'; a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false; a.src = u; a.defaultPlaybackRate = rate; a.playbackRate = rate; a.volume = 0; return a; }
+  function tpFade(a, to, ms, done) { var v0 = a.volume, t0 = Date.now(); clearInterval(a._f); a._f = setInterval(function () { var p = Math.min(1, (Date.now() - t0) / ms); try { a.volume = Math.max(0, Math.min(1, v0 + (to - v0) * p)); } catch (e) { /* fixed volume */ } if (p >= 1) { clearInterval(a._f); if (done) done(); } }, 60); }
+  function tpHush() { [TP.a, TP.e].forEach(function (a) { if (!a) return; clearInterval(a._f); try { a.pause(); a.removeAttribute('src'); a.load(); } catch (e) { /* gone */ } }); clearTimeout(TP.t); if (TP.u && /^blob:/.test(TP.u)) URL.revokeObjectURL(TP.u); TP.a = TP.e = null; TP.u = ''; }
+  function tpStop() { TP.f++; TP.on = false; tpHush(); tpKeys(); }
+  function tpPlay(i) { var L = (S.data && S.data.tracks) || [], t = L[i]; TP.f++; tpHush(); if (!t) { TP.i = -1; TP.on = false; tpKeys(); return; } TP.i = i; TP.on = true; var my = TP.f, rate = Math.pow(2, (+t.st || 0) / 12);
+    (t.rec ? tpBlob(t.rec).then(function (b) { return b ? URL.createObjectURL(b) : ''; }) : Promise.resolve(t.src || '')).then(function (u) { if (my !== TP.f) { if (/^blob:/.test(u)) URL.revokeObjectURL(u); return; } if (!u) { tpPlay(i + 1); return; }
+      var a = tpAudio(u, rate); TP.a = a; TP.u = u; var next = function () { if (my !== TP.f) return; var e = TP.e; if (e) tpFade(e, 0, 1200); setTimeout(function () { if (my === TP.f) tpPlay(i + 1); }, e ? 1200 : 300); };
+      a.onended = next; a.onerror = next; a.play().then(function () { tpFade(a, 0.9, 1800); }, function (er) { if (my === TP.f && er && er.name === 'NotAllowedError') tpStop(); });
+      if (t.echo) { var e = tpAudio(u, rate); TP.e = e; a.addEventListener('playing', function () { clearTimeout(TP.t); if (my === TP.f && e.paused) TP.t = setTimeout(function () { if (my === TP.f) e.play().then(function () { tpFade(e, 0.3, 2400); }, function () {}); }, t.echo); }, { once: true }); }
+      tpKeys(); }); tpKeys(); }
+  function tpKeys() { if (!S.stack || S.stack.kind !== 'tape') return; var IN0 = window.parent !== window;
+    [].forEach.call(document.querySelectorAll('#opts [data-a]'), function (b) { var a = b.dataset.a; if (a === 'play') b.setAttribute('aria-pressed', String(!!TP.on)); if (a === 'design') b.hidden = !IN0; });
+    var pp = $('#paper'), ov = $('#tpov'); if (!pp) return; if (!ov) { ov = document.createElement('div'); ov.id = 'tpov'; pp.appendChild(ov);
+      ov.addEventListener('click', function (e) { var b = e.target.closest('button[data-i]'); if (!b) return; var i = +b.dataset.i; if (TP.on && TP.i === i) tpStop(); else tpPlay(i); }); }
+    var sx = cv.offsetWidth / cv.width, sy = cv.offsetHeight / cv.height, px = function (v, k) { return (v * k).toFixed(1) + 'px'; };
+    ov.style.cssText = 'left:' + cv.offsetLeft + 'px;top:' + cv.offsetTop + 'px;width:' + cv.offsetWidth + 'px;height:' + cv.offsetHeight + 'px';
+    ov.innerHTML = TPH.map(function (h) { var on = !!TP.on && TP.i === h.i;
+      return '<button type="button" data-i="' + h.i + '"' + (on ? ' class="on"' : '') + ' style="left:0;width:' + px(W - (h.obs ? 56 : 0), sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-pressed="' + on + '" aria-label="Play ' + esc(h.cn) + '"></button>' +
+        (h.obs ? '<a href="https://www.inaturalist.org/observations/' + (+h.obs) + '" target="_blank" rel="noopener" style="right:0;width:' + px(56, sx) + ';top:' + px(h.y, sy) + ';height:' + px(h.h, sy) + '" aria-label="Where ' + esc(h.cn) + ' was heard" title="Where it was heard">↗</a>' : ''); }).join(''); }
+  /* SHARE: the paper and its link where the phone can send them, else the link copied; a tape of this phone's own goes as its picture */
+  function tpShare() { var st = $('#st'), url = location.origin + '/cart.html?c=tape', nm = String((S.data || {}).name || 'MIXTAPE');
+    cv.toBlob(function (b) { var fl = null; try { fl = b && new File([b], 'mixtape.png', { type: 'image/png' }); } catch (e) { fl = null; }
+      if (fl && navigator.canShare && navigator.canShare({ files: [fl] })) { navigator.share(TQ ? { files: [fl], title: nm } : { files: [fl], title: nm, text: url }).catch(function () {}); return; }
+      if (TQ) { paperSave('mixtape'); return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { if (st) st.textContent = 'COPIED'; }, function () { prompt('', url); }); else prompt('', url); }, 'image/png'); }
+  addEventListener('pagehide', function () { tpStop(); });
+
+  var KINDS = { week: week, news: news, events: events, book: book, tarot: tarot, cards: cards, pass: pass, species: species, tape: tape };
   /* the prints with no art of their own take one at their head */
   ['week', 'news', 'events', 'book'].forEach(function (n) { var K = KINDS[n]; K.opts = (K.opts || []).concat([['art', 'ART', false]]); K.head = true; });
   function draw(cv, kind, data, stack, o) {
@@ -575,7 +692,7 @@
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
   function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { var pg = s.dataset.a === 'go', L = pg ? d.plist : d.all, v = String((pg ? d.p : d.b) || 1); if (!L || !L.length) return;
     var sig = L.length + '|' + L[0] + '|' + L[L.length - 1]; if (s._sig !== sig) { s.innerHTML = L.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s._sig = sig; } s.value = v; }); }
-  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); bizKeys(); spKeys(); }
+  function paint() { picks(); draw(cv, S.stack.kind, S.data, S.stack, Object.assign({}, S.o, { code: S.code })); $('#paper').classList.add('has'); S.ready = true; var st = $('#st'); st.textContent = S.after || (S.o.art ? 'TAP' : ''); st.title = S.o.art ? 'Tap a card to give it your art' : ''; S.after = ''; cv.style.cursor = S.o.art ? 'copy' : ''; keys(); artMarks(); bizKeys(); spKeys(); spMarks(); tpKeys(); }
   function bizKeys() { if (S.stack.kind !== 'cards') return; [].forEach.call(document.querySelectorAll('#opts [data-a="deck"], #opts [data-a="biz"]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.a === 'biz' ? !!S.o.biz : !!S.o.deck)); });
     var f = $('#bizf'), pk = $('#pick'); if (!f && pk) { var v = bizText(); f = document.createElement('div'); f.id = 'bizf';
       f.innerHTML = ['name', 'what you do', 'where to find you'].map(function (p, i) { return '<input data-b="' + i + '" maxlength="40" autocomplete="off" placeholder="' + p + '" aria-label="' + p + '" value="' + String(v[i] || '').replace(/["<&]/g, '') + '">'; }).join('');

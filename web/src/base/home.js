@@ -988,7 +988,10 @@
       /* a play novel.global made big stands with the big cards, before the nine */
       if (p.big) { o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); } else add.push(o); });
     var spc = { id: 'species', g: 'dev', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', skin: 'play', art: 'slot', pal: 6, motion: 'shadow', where: [-37.77, 144.96] };
-    if (!byId('species')) { var bz = -1; add.forEach(function (o, i) { if (bz < 0 && /BUSINESS|CARD/.test(o.title)) bz = i; }); add.splice(bz < 0 ? add.length : bz + 1, 0, spc); if (add.length > 9) add.length = 9; }
+    /* beside it the mixtapes: the example, its ten sounds traced to where they were heard, then those kept on this phone, each its own card with its cover */
+    var tps = [{ id: 'tape', g: 'dev', size: 'small', title: 'NIGHT FIELD', opens: 'stack:tape', skin: 'play', art: 'slot', pal: 6, pic: 'tapes/night-field.svg', motion: 'shadow', where: [-37.8136, 144.9631] }];
+    (store.get('da.tapes.v1', []) || []).slice(0, 3).forEach(function (t) { if (!t || !/^[\w-]{1,40}$/.test(t.id || '')) return; var ph = String((t.sp || {}).ph || ''); tps.push({ id: 'tp-' + t.id.toLowerCase().replace(/[^a-z0-9-]/g, ''), g: 'dev', size: 'small', title: String(t.name || 'MIXTAPE').toUpperCase().slice(0, 24), opens: 'stack:tape', tp: t.id, skin: 'play', art: 'slot', pal: 6, pic: /^(https:\/\/|\/[^/])/.test(ph) ? ph : '', motion: 'shadow', where: [-37.8136, 144.9631] }); });
+    if (!byId('species')) { var bz = -1; add.forEach(function (o, i) { if (bz < 0 && /BUSINESS|CARD/.test(o.title)) bz = i; }); add.splice.apply(add, [bz < 0 ? add.length : bz + 1, 0, spc].concat(tps.filter(function (o) { return !byId(o.id); }))); if (add.length > 9) add.length = 9; }
     for (var k = 0; add.length < 9; k++) add.push({ id: 'dev-mk-' + (k ? k : 'a'), g: 'dev', size: 'small', title: 'MAKE', skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] });
     CARDS.splice.apply(CARDS, [at, 0].concat(add)); if (bigs.length) { var s0 = -1; CARDS.forEach(function (c, i) { if (s0 < 0 && c.g === 'soon') s0 = i; }); CARDS.splice.apply(CARDS, [s0 < 0 ? at : s0, 0].concat(bigs)); } applyCards(''); }
   function devLoad() { fetch('/api/plays?o=' + DEV.o + '&pg=' + DEV.pg).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(playCards).catch(function () { /* none yet */ }); }
@@ -1113,7 +1116,7 @@
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
-    if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt); });
+    if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt, c); });
     if (c.opens === 'pop') return sheet(c.title, inFrame('popup?in=1#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
@@ -1127,11 +1130,11 @@
   var WARM = [];
   function warmDrop() { if (!WARM) return; WARM.forEach(function (f) { f.remove(); }); WARM = []; }
   function warmable(f) { return !!(f && f.dataset.src && f.dataset.ld && !/only=radio|wish=1|remix=1/.test(f.dataset.src)); }
-  function remixIn(img) { var c = byId('zine'); if (!c || !/^\/[^/]/.test(img)) return; careEarn('zine'); beep(660, 0.06); intro(false); IN.id = null; TKH.card = 'zine'; tkCount();
-    sheet(c.title, inFrame('studio?from=aura&only=print&fmt=long&remix=1#print')); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); if (!fr) return;
-    var tell = function () { try { fr.contentWindow.postMessage({ ng: 'remix', img: img }, location.origin); } catch (e) { /* gone */ } };
+  function remixIn(img, keep) { var c = byId('zine'); if (!c || !(/^\/[^/]/.test(img) || /^data:image\/(png|jpeg);base64,/.test(img))) return; careEarn('zine'); beep(660, 0.06); intro(false); IN.id = null; TKH.card = 'zine'; tkCount();
+    sheet(c.title, inFrame('studio?from=aura&only=print' + (keep ? '' : '&fmt=long') + '&remix=1#print')); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); if (!fr) return;
+    var tell = function () { try { fr.contentWindow.postMessage({ ng: 'remix', img: img, keep: !!keep }, location.origin); } catch (e) { /* gone */ } };
     fr.addEventListener('load', function () { [600, 1800, 3600].forEach(function (t) { setTimeout(tell, t); }); }); }
-  addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'remix' && typeof e.data.img === 'string') { SH.swap = true; remixIn(e.data.img); } });
+  addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'remix' && typeof e.data.img === 'string') { SH.swap = true; remixIn(e.data.img, e.data.keep); } });
   function inFrame(src) { return function (b) { b.hidden = true; var url = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'), w = WARM.filter(function (f) { return f.dataset.src === url && f.isConnected; })[0];
     if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label');
       if (/^archipelagos/.test(src)) { try { var cw = w.contentWindow; if (/\/archipelagos$/.test(cw.location.pathname)) cw.location.hash = 'a'; else w.src = url; } catch (e) { w.src = url; } } return; }
@@ -1315,8 +1318,8 @@
     ['mousedown', 'touchstart', 'click'].forEach(function (k) { w.addEventListener(k, function (e) { if (Date.now() - IN.eat < 650) stop(e); }, { capture: true, passive: false }); });
   }
   /* an island's experience (a stack) played in the sheet; wired to W.I.S.H., it starts from W.I.S.H.'s photograph and intention */
-  function stackIn(body, id, opt) {
-    body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.src = 'x.html?in=1#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
+  function stackIn(body, id, opt, c) {
+    body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.src = 'x.html?in=1' + (c && c.tp ? '&t=' + encodeURIComponent(c.tp) : '') + '#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
     if (opt && opt.fill || (wired('wish', 'zine') && carry('wish', 'zine').length)) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; if (p && (p.photo || p.say)) fr.contentWindow.postMessage({ hm: 'fill', img: p.photo || '', words: (p.say || '').toUpperCase().slice(0, 22) }, location.origin); });
   }
   /* the island kit: the checklist, kept with the aura's, and printed as a slip */

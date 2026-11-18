@@ -7,7 +7,7 @@ const SP = window.SPOT || null;
 const GD = { k: 'birds', q: '', open: null, ids: null, found: [], fq: '', t: 0 };
 const GD_TABS = ['local', 'season', 'birds', 'curated', 'added', 'mine', 'all'];
 /* the guide's species and those added on this phone, together */
-const gdAll = () => (SP ? SP.list('all', FIELD) : FIELD);
+const gdAll = () => (SP ? SP.pool(FIELD) : FIELD);
 const gdBy = id => gdAll().find(f => f.id === id);
 const gdCur = () => { try { return JSON.parse(localStorage.getItem('da.species.cur') || 'null'); } catch (e) { return null; } };
 const huntLeft = () => { const h = SP && SP.hunt(), got = SP ? SP.all() : {}; return h && Array.isArray(h.ids) ? h.ids.filter(id => !got[id]).length : 0; };
@@ -16,9 +16,9 @@ const KIND_W = { bird: 'bird', parrot: 'parrot', waterbird: 'waterbird', owl: 'o
 /* the list on show: a watch kept keeps its own names, so a random ten stays the same ten until asked for again */
 function gdList() {
   if (!SP) return [];
-  if (GD.k === 'all' || GD.k === 'added') { const q = GD.q.trim().toLowerCase(); const l = GD.k === 'all' ? gdAll() : SP.list('added', FIELD); return q.length > 1 ? l.filter(f => [f.cn, f.n, f.g, f.where].join(' ').toLowerCase().includes(q)) : l; }
-  const h = SP.hunt(); if (h && h.k === GD.k && Array.isArray(h.ids) && GD.k !== 'mine') { const by = new Map(gdAll().map(f => [f.id, f])); const l = h.ids.map(id => by.get(id)).filter(Boolean); if (l.length) return l; }
-  if (GD.k === 'local' && GD.ids) { const by = new Map(gdAll().map(f => [f.id, f])); return GD.ids.map(id => by.get(id)).filter(Boolean); }
+  if (GD.k === 'all' || GD.k === 'added') { const q = GD.q.trim().toLowerCase(); const l = SP.list(GD.k, FIELD); return q.length > 1 ? l.filter(f => [f.cn, f.n, f.g, f.where].join(' ').toLowerCase().includes(q)) : l; }
+  const h = SP.hunt(); if (h && h.k === GD.k && Array.isArray(h.ids) && GD.k !== 'mine') { const by = new Map(gdAll().map(f => [f.id, f])); const l = h.ids.map(id => by.get(id)).filter(Boolean); if (l.length) return SP.apply(GD.k, l, FIELD); }
+  if (GD.k === 'local' && GD.ids) { const by = new Map(gdAll().map(f => [f.id, f])); return SP.apply('local', GD.ids.map(id => by.get(id)).filter(Boolean), FIELD); }
   const l = SP.list(GD.k, FIELD, gdCur()); if (GD.k === 'local') GD.ids = l.map(f => f.id); return l;
 }
 function gdHTML() {
@@ -84,7 +84,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('gd-q')) { GD.q = e.target.value; gdPaint(); gdFind(); } });
 /* added: it stands in ADDED, ready to tick */
-function gdAdded(f) { if (!f) return; GD.k = 'added'; GD.q = ''; GD.open = f.id; try { snd.tick(1700); } catch (e) { /* quiet */ } gdPaint(); }
+function gdAdded(f) { if (!f) return; if (GD.k !== 'all') SP.keep(GD.k, f, true); GD.q = ''; GD.open = f.id; try { snd.tick(1700); } catch (e) { /* quiet */ } gdPaint(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#gd-ov.on')) { e.stopPropagation(); guideShut(); } }, true);
 addEventListener('da-spot', () => { paintGuideKeys(); if ($('#gd-ov.on')) gdPaint(true); });
 /* the radio's screen, on its turn: one name still to find from the hunt (or the month's birds), SPOT · NAME; a touch opens the guide */
