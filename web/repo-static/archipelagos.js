@@ -34,12 +34,17 @@
     s.push(['M6 ' + (Y + r + dd - 3) + ' l-4 -3 M6 ' + (Y + r + dd) + ' l-5 0 M6 ' + (Y + r + dd + 3) + ' l-4 3'], ['M194 ' + (Y + r + dd - 3) + ' l4 -3 M194 ' + (Y + r + dd) + ' l5 0 M194 ' + (Y + r + dd + 3) + ' l4 3']);
     return s; }
 
-  /* a spider web, and caught in it the Irukandji (the one drawing of it, as it is) */
-  function web() { var cx = 84, cy = 70, sp = [], s = [], n = 9;
-    for (var i = 0; i < n; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / n + Math.sin(i * 7.3) * .12, R = 66 + Math.sin(i * 3.1) * 8; sp.push([a, R]); s.push(['M' + cx + ' ' + cy + ' L' + (cx + Math.cos(a) * R).toFixed(1) + ' ' + (cy + Math.sin(a) * R).toFixed(1)]); }
-    [9, 18, 28, 39, 51, 62].forEach(function (rr) { var p = sp.map(function (q) { var r2 = Math.min(rr, q[1]); return [cx + Math.cos(q[0]) * r2, cy + Math.sin(q[0]) * r2]; }), d = 'M' + p[0][0].toFixed(1) + ' ' + p[0][1].toFixed(1);
-      for (var k = 1; k <= n; k++) { var b = p[k % n], a2 = p[k - 1], mx = (a2[0] + b[0]) / 2, my = (a2[1] + b[1]) / 2; d += ' Q' + lerp(cx, mx, .9).toFixed(1) + ' ' + lerp(cy, my, .9).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); } s.push([d]); });
-    s.push(['M' + cx + ' ' + (cy - 70) + ' L' + cx + ' 0'], ['M' + (cx + 60) + ' ' + (cy - 30) + ' L196 10']);
+  /* a web half made, and the Irukandji spinning it (the one drawing of it, as it is): every spoke, the inner turns round, the outer
+     turns only part way, the last thread running from its tentacle */
+  var SPIN = [55, -2, 2.7], TIP = [17.8, 55.4];
+  function web() { var cx = 44, cy = 60, sp = [], s = [], n = 9;
+    for (var i = 0; i < n; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / n + Math.sin(i * 7.3) * .12, R = 40 + Math.sin(i * 3.1) * 5; sp.push([a, R]); s.push(['M' + cx + ' ' + cy + ' L' + (cx + Math.cos(a) * R).toFixed(1) + ' ' + (cy + Math.sin(a) * R).toFixed(1)]); }
+    var end = null;
+    [[6, 1], [12, 1], [18, 1], [25, .7], [33, .45]].forEach(function (ring) { var rr = ring[0], m = Math.round(n * ring[1]), p = sp.map(function (q) { var r2 = Math.min(rr, q[1]); return [cx + Math.cos(q[0]) * r2, cy + Math.sin(q[0]) * r2]; }), d = 'M' + p[0][0].toFixed(1) + ' ' + p[0][1].toFixed(1);
+      for (var k = 1; k <= m; k++) { var b = p[k % n], a2 = p[k - 1], mx = (a2[0] + b[0]) / 2, my = (a2[1] + b[1]) / 2; d += ' Q' + lerp(cx, mx, .9).toFixed(1) + ' ' + lerp(cy, my, .9).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); end = b; } s.push([d]); });
+    var tx = SPIN[0] + TIP[0] * SPIN[2], ty = SPIN[1] + TIP[1] * SPIN[2];
+    s.push(['M' + end[0].toFixed(1) + ' ' + end[1].toFixed(1) + ' Q' + ((end[0] + tx) / 2).toFixed(1) + ' ' + (Math.max(end[1], ty) + 6).toFixed(1) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1), 1]);
+    s.push(['M' + cx + ' ' + (cy - 42) + ' L' + cx + ' 0'], ['M' + (cx - 36) + ' ' + (cy + 20) + ' L2 146']);
     return s; }
   var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8'];
   var IRUK_T = ['M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
@@ -69,8 +74,8 @@
     if (extra) extra(svg, all);
     all.forEach(function (p) { var ps = p[0].tagName === 'path' ? [p[0]] : $$('path', p[0]); ps.forEach(function (el) { if (el.getAttribute('stroke-dasharray')) { el.style.opacity = 0; el.style.transition = 'opacity .8s ease ' + (.6 + p[1]).toFixed(2) + 's'; requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.opacity = 1; }); }); return; }
       var l = 0; try { l = el.getTotalLength(); } catch (e) { /* not drawn */ } if (!l) return; el.style.setProperty('--l', Math.ceil(l + 2)); el.style.setProperty('--d', (p[1] * 1.1).toFixed(2) + 's'); el.classList.add('draw'); }); }); }
-  function irukIn(svg, all) { var g = D.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(104 66) scale(1.02)'); g.setAttribute('class', 'ac');
-    IRUK.concat(IRUK_T).forEach(function (d, i) { var p = D.createElementNS(NS, 'path'); p.setAttribute('d', d); p.style.strokeWidth = '2.6'; if (i >= IRUK.length) p.setAttribute('stroke-dasharray', '.2 3.6'); g.appendChild(p); all.push([p, .55 + i * .03]); }); svg.appendChild(g); }
+  function irukIn(svg, all) { var g = D.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + SPIN[0] + ' ' + SPIN[1] + ') scale(' + SPIN[2] + ')'); g.setAttribute('class', 'ac');
+    IRUK.concat(IRUK_T).forEach(function (d, i) { var p = D.createElementNS(NS, 'path'); p.setAttribute('d', d); p.style.strokeWidth = '1.05'; if (i >= IRUK.length) p.setAttribute('stroke-dasharray', '.1 1.7'); g.appendChild(p); all.push([p, .55 + i * .03]); }); svg.appendChild(g); }
   function sketch(host) { var k = host.dataset.sk, s = SKETCH[k]; if (!s) return; paint(host, s[0](), s[1], k === 'web' ? irukIn : null); }
 
   /* ───────── the plates ───────── */
