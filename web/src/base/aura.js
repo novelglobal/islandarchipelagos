@@ -2784,6 +2784,7 @@
     if (!awakeFor()) api.sleep(); });
   var MIX_IN = /^#mix=/i.test(location.hash) ? location.hash.slice(5) : '';
   var SONG_IN = /^#song=/i.test(location.hash) ? decodeURIComponent(location.hash.slice(6)) : '', SONGS_IN = /^#songs=/i.test(location.hash) ? decodeURIComponent(location.hash.slice(7)).split('~').filter(songOf).slice(0, 24) : [];
+  api.linked = !!(SONG_IN || SONGS_IN.length || MIX_IN);
   if (SONG_IN || SONGS_IN.length || MIX_IN) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ } }
   layout(); setMode('seed'); paint();
   /* the piece one was making comes back with one */

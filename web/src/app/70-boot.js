@@ -11,7 +11,7 @@ async function handleHash() {
   const v = viewOfHash(h); if (v >= 0) { const part = h.toLowerCase(); setView(v, false, PARTS[part][1] ? part : null); return; }
   if (/^x=/.test(h)) { await receive('#' + h); linkArm(); return; }
   /* the radio tuned where the link was made, its layers as they were: a touch on play and it sounds */
-  if (/^mix=/i.test(h)) { const m = mixOfCode(h.slice(4)); if (m) { tuneMix(m, false); const b = $('#view .hero-play'); if (b) b.classList.add('cue'); linkArm(); } else tick(600); return; }
+  if (/^mix=/i.test(h)) { const m = mixOfCode(h.slice(4)); if (m) { tuneMix(m, false); if (!LOOPS.some(l => mixCode(l) === mixCode(m))) { keepLoop(m); toast('✓ KEPT'); } const b = $('#view .hero-play'); if (b) b.classList.add('cue'); linkArm(); } else tick(600); return; }
   if (/^DA-[0-9A-Z]{4}$/i.test(h)) { const s = S.signals.find(x => x.code === h.toUpperCase()); if (s) openSignal(s.key); else receiveCode(h.toUpperCase()); linkArm(); return; }
   if (/^P-[a-z0-9-]+$/i.test(h)) { selectPartner(h.slice(2).toLowerCase()); return; }
   if (/^T\d{2}$/i.test(h)) { const id = 'tribe:' + h.toUpperCase(); if (S.byId.has(id)) selectTribe(id); return; }

@@ -205,7 +205,7 @@ $('#view').addEventListener('click', e => {
   if (e.target.closest('[data-t4all]')) { playFour(); return; }
   const fk = e.target.closest('[data-t4k]'); if (fk) { toggleTrack(fk.dataset.t4k); return; }
   if (e.target.closest('[data-t4save]')) { saveFour(); return; }
-  const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const j = LOOPS.findIndex(l => l.id === id); if (j >= 0) LOOPS.splice(j, 1); store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
+  const fx = e.target.closest('[data-t4x]'); if (fx) { const id = fx.dataset.t4x; LOOP.ms = LOOP.ms.filter(t => t.of !== id); const l = LOOPS.find(x => x.id === id); if (l) l.off4 = true; store.set('da.loops.v1', LOOPS); loopSync(false); refreshFour(); return; }
   const r = e.target.closest('[data-radio]'); if (r) { r.classList.add('press'); setTimeout(() => r.classList.remove('press'), 160); snd.tick(S.radio ? 900 : 2200); buzz(12); if (!S.radio && !S.started && !prefs.placed && EXK) { playExample(); return; } setRadio(!S.radio); return; }
   /* a layer's volume: quiet, half, full, round again */
   const vb = e.target.closest('[data-vol]'); if (vb) { const k = vb.dataset.vol; const n = (volStep(k) + 1) % VOLS.length; prefs.lvl = { ...(prefs.lvl || {}), [k]: VOLS[n] }; savePrefs(); vb.dataset.v = String(n); snd.tick(1200 + n * 300); return; }
@@ -309,7 +309,7 @@ async function bakeOf(m, key) {
     .then(buf => buf, () => false).then(buf => { if (buf === null) return; BAKED.set(m, { key, buf: buf || null }); BAKE_KEEP.splice(0, BAKE_KEEP.length, ...BAKE_KEEP.filter(x => x !== m), m); while (BAKE_KEEP.length > 6) BAKED.delete(BAKE_KEEP.shift()); });
 }
 function bakedSync(hold, now, share) {
-  const kept = LOOP.ms.filter(t => !t.live), on = !hold && kept.length > 1;
+  const kept = LOOP.ms.filter(t => !t.live), on = !hold && kept.length > 0;
   for (const tr of LOOP.ms) {
     const got = BAKED.get(tr.m), key = on && !tr.live ? bakeKey(tr.m) : null, fit = key && got && got.key === key;
     if (tr.bk && (!fit || tr.bk.c !== snd.ac || tr.bk.buf !== got.buf)) { tr.bk.stop(); tr.bk = null; }
@@ -339,9 +339,12 @@ function loopStep(tr, notes, turn, share, B, at = null, quiet = false) {
 }
 /* where the radar is: placed where the map is looking, if it has not been yet (the radio opened in the aura's window) */
 const here = () => { if (!placed()) startRadio(false); return placed() && !!S.scan && Number.isFinite(+S.scan.lat); };
+function loopTrim() { const held = new Set(); try { (store.get('da.tapes.v1', []) || []).forEach(t => (t.ids || []).forEach(id => held.add(id))); } catch (e) { /* none */ }
+  for (let i = LOOPS.length - 1; LOOPS.length > 8 && i > 0; i--) if (!held.has(LOOPS[i].id) && !LOOPS[i].rec) LOOPS.splice(i, 1);
+  LOOPS.splice(16); }
 /* a song kept: newest first, eight at most, smaller and smaller until this phone has room for it */
 function keepLoop(m) {
-  LOOPS.unshift(m); LOOPS.splice(8); setTimeout(soundSync, 0);
+  LOOPS.unshift(m); loopTrim(); setTimeout(soundSync, 0);
   const thin = L => { if ((L.cells || []).length > 24) L.cells = L.cells.filter((c, i) => i % 2 === 0); };
   if (!store.set('da.loops.v1', LOOPS)) for (const l of LOOPS) for (const p of [l, ...(l.parts || [])]) Object.values(p.layers || {}).forEach(thin);
   while (!store.set('da.loops.v1', LOOPS) && LOOPS.length > 1) LOOPS.pop();
@@ -352,7 +355,7 @@ const trackOf = (m, t0) => ({ m, t0: t0 != null ? t0 : performance.now() - ((lif
 const tracksOf = (m, t0) => { const ps = m.parts && m.parts.length ? m.parts : [m]; const a = trackOf(ps[0], t0); return ps.map((p, i) => ({ ...(i ? trackOf(p, a.t0) : a), of: m.id })); };
 const going = id => LOOP.ms.some(t => t.of === id);
 /* the four-track: the four songs kept last (a mix kept together sits with the songs, not here) */
-const FOUR = () => LOOPS.filter(l => !l.parts).slice(0, 4);
+const FOUR = () => LOOPS.filter(l => !l.parts && !l.off4).slice(0, 4);
 const inFour = () => LOOP.ms.length > 0 && LOOP.ms.every(t => !t.live && FOUR().some(l => l.id === t.of));
 /* what plays now, kept to come back to */
 const snapOf = () => ({ radio: S.radio, ms: LOOP.ms.map(t => ({ m: t.m, live: t.live, of: t.of })) });
@@ -634,7 +637,7 @@ function linkSong(on) {
 const linkArm = () => { LSONG.armed = true; linkSongKey(); };
 document.addEventListener('click', e => {
   if (e.target.closest('[data-lsong]')) { linkSong(!LSONG.on); return; }
-  if (e.target.closest('[data-lsong-keep]')) { const m = mixNow(); LOOPS.unshift(m); LOOPS.splice(8); while (!store.set('da.loops.v1', LOOPS) && LOOPS.length > 1) LOOPS.pop(); toast('KEPT · LOOPS'); snd.tick(1900); }
+  if (e.target.closest('[data-lsong-keep]')) { const m = mixNow(); LOOPS.unshift(m); loopTrim(); while (!store.set('da.loops.v1', LOOPS) && LOOPS.length > 1) LOOPS.pop(); toast('KEPT · LOOPS'); snd.tick(1900); }
 });
 /* the first touch on a page a link opened starts its song, unless that touch is on the song's own key */
 addEventListener('pointerup', e => { if (!LSONG.armed || LSONG.on || LSONG.started || (e.target.closest && e.target.closest('#song-k'))) return; LSONG.started = true; linkSong(true); }, true);

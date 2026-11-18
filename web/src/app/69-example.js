@@ -146,8 +146,9 @@ async function placeExampleZine() {
   if (!EXK) return; PRESS.fmt = 'r80'; PRESS.story = 'ex:' + EXK.code; const c = await showZine(true); if (!c) return;
   for (const o of c.getObjects().filter(o => o.daKind !== 'base')) c.remove(o);
   await setBase(true); const base = c.getObjects().find(o => o.daKind === 'base'); const y0 = base ? base.top + base.getScaledHeight() + 18 : 20;
-  const { out, y } = await exampleZinePieces(y0); for (const o of out) c.add(o);
-  if (c.getHeight() < y + 30) c.setHeight(y + 30); fitZ(); c.renderAll(); saveZine(); snd.printer(600); refreshPanel();
+  const { out, y } = await exampleZinePieces(y0); const cap = capH(), W = c.getWidth(), k = y + 30 > cap ? Math.max(0.3, (cap - 30 - y0) / Math.max(1, y - y0)) : 1;
+  for (const o of out) { if (k < 1) o.set({ left: W / 2 + (o.left - W / 2) * k, top: y0 + (o.top - y0) * k, scaleX: (o.scaleX || 1) * k, scaleY: (o.scaleY || 1) * k }); c.add(o); }
+  const need = Math.ceil(y0 + (y - y0) * k + 30); if (c.getHeight() < need) c.setHeight(need); fitZ(); c.renderAll(); saveZine(); snd.printer(600); refreshPanel();
 }
 /* the same zine as a picture, for the portfolio's hero: made once a visit, on paper, apart from the strip */
 async function exampleZineImage() {

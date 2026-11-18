@@ -646,7 +646,17 @@ function pressDone(s) {
   PRESS.story = null; jFresh = false; if (!zc) return; const F = FORMATS[PRESS.fmt];
   zc.clear(); zc.setBackgroundColor(PRESS.fmt === 'zine' ? '#F4F1EA' : '#FFFFFF', () => {}); zc.setHeight(F.h || 520); ZHIST.length = 0; saveZine(); fitZ(); zc.renderAll();
 }
+/* the wait between prints, shown as it runs down: a ring and the minutes and seconds left; a tap puts it away */
+function waitPop(ms) {
+  let el = $('#wait-pop'); if (!el) { el = document.createElement('div'); el.id = 'wait-pop'; el.setAttribute('role', 'status'); el.innerHTML = '<i class="wp-ring"></i><b class="mono"></b><small class="mono">PRINT</small>'; el.addEventListener('click', () => { el.hidden = true; }); document.body.appendChild(el); }
+  const end = Date.now() + ms, all = Math.max(1, ms); el.hidden = false; clearInterval(el._t);
+  const draw = () => { const l = Math.max(0, end - Date.now()), s = Math.ceil(l / 1000); el.querySelector('b').textContent = l > 0 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'READY'; el.style.setProperty('--k', `${Math.round((1 - l / all) * 100)}%`); el.classList.toggle('ready', l <= 0);
+    if (l <= 0) { clearInterval(el._t); setTimeout(() => { el.hidden = true; }, 2400); } };
+  draw(); el._t = setInterval(draw, 1000);
+}
+const printLeft = () => Math.max(0, (+store.get('da.booth.next', 0) || 0) - Date.now());
 async function pressOut(k, given) {
+  if ((k === 'send' || k === 'print') && !given && printLeft() > 0) { waitPop(printLeft()); tick(600); return; }
   const s = given ? null : pressStory();
   /* nothing on the paper and no story at its head: nothing to print */
   if (k === 'send' && !given && !s && zc && !zc.getObjects().length) { tick(600); return; }
@@ -685,7 +695,7 @@ async function pressOut(k, given) {
     const btn = document.querySelector('#view .print-k'); if (btn) btn.classList.add('busy');
     const first = simple();
     try { const to = prnNow(); const v = await directAction(sg, to ? to.id : '', PRESS.fmt === 'zine' ? null : await bytesOf()); ptPrint(url, sg.code, v && v.status); await new Promise(r => setTimeout(r, Math.max(0, tearAt - performance.now()))); tie(2); store.set('da.printed.v1', Date.now()); snd.tear(); if (!first) toast(v.status === 'outbox' ? 'NO SIGNAL · SENDS WHEN THERE IS ONE' : 'SENT · WAITING FOR APPROVAL'); await kept; if (!given) pressDone(sg); refreshPanel(); }
-    catch (e) { toast(e.status === 429 ? (e.wait ? 'WAIT ' + e.wait + 's' : 'TOO MANY · TRY AGAIN SOON') : e.status === 503 ? 'THE QUEUE IS FULL' : /escpos|story/.test(e.message || '') ? 'TOO LONG TO SEND' : 'NOT SENT'); }
+    catch (e) { if (e.status === 429 && e.wait) waitPop(e.wait * 1000); toast(e.status === 429 ? (e.wait ? 'WAIT' : 'TOO MANY · TRY AGAIN SOON') : e.status === 503 ? 'THE QUEUE IS FULL' : /escpos|story/.test(e.message || '') ? 'TOO LONG TO SEND' : 'NOT SENT'); }
     finally { if (btn) btn.classList.remove('busy'); }
     /* a first visit: printed, or waiting to, it is the showcase's hero, and everything opens (43-journey.js) */
     if (first && !given) jPrinted(await kept);

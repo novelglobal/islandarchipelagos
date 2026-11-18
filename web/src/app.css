@@ -3468,3 +3468,10 @@ html.only-radio .band.dev.radio .lyrs > *{height:28px!important}
 
 /* DESIGN PRINT inside novel.global: the banner above carries the mark, so the studio's own lockup stays out from under the design tabs */
 html.only-print #ph .lockup{display:none}
+/* the wait between prints, counting down */
+#wait-pop { position: fixed; left: 50%; top: 50%; z-index: 9999; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 6px; padding: 22px 26px 18px; border-radius: 14px; background: rgba(12, 14, 14, .92); color: #F4F1E8; box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .6); cursor: pointer; }
+#wait-pop[hidden] { display: none; }
+#wait-pop .wp-ring { width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(#F4F1E8 var(--k, 0%), rgba(244, 241, 232, .16) 0); -webkit-mask: radial-gradient(circle, transparent 27px, #000 28px); mask: radial-gradient(circle, transparent 27px, #000 28px); transition: background .9s linear; }
+#wait-pop b { font-size: 22px; letter-spacing: .06em; }
+#wait-pop small { font-size: 10px; letter-spacing: .16em; opacity: .6; }
+#wait-pop.ready b { color: #9BE3A0; }

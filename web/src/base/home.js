@@ -702,7 +702,8 @@
   D.addEventListener('click', function (e) { if (!NT.el || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) return; e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
   function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
   function noteWait() { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(noteShow, 900); }
-  function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '', seen = store.get('da.notes.seen', []) || [];
+  var noApps = function (t) { return String(t).replace(/\bAPPS\b/g, 'CARDS').replace(/\bAPP\b/g, 'CARD').replace(/\bapps\b/g, 'cards').replace(/\bApps\b/g, 'Cards').replace(/\ban app\b/g, 'a card').replace(/\bAn app\b/g, 'A card').replace(/\bapp\b/g, 'card'); };
+  function noteShow() { var k = noteKey(CUR), t = k && NT.t && NT.t.on !== false ? noApps(String(NT.t[k] || '').trim()) : '', seen = store.get('da.notes.seen', []) || [];
     if (!t || seen.indexOf(k) >= 0 || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
     seen.push(k); store.set('da.notes.seen', seen);
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
@@ -729,7 +730,7 @@
       v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
       tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
-  function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
+  function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } if (L && Array.isArray(L.lines)) L.lines = L.lines.map(function (x) { return typeof x === 'string' ? noApps(x) : x; }); var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
     var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
@@ -816,7 +817,7 @@
         (c.g === 'read' ? '<div class="wx-bk" aria-hidden="true"><i></i><i></i><p><b class="wx-h"></b><span class="wx-s"></span></p></div>' :
           c.g === 'deck' ? '<div class="wx-pc" aria-hidden="true"><i></i><p><b class="wx-h"></b><i class="wx-ic"><svg viewBox="0 0 24 24"></svg></i><span class="wx-s"></span></p></div>' :
             '<p class="wx-v"><b class="wx-h"></b><span class="wx-l"></span></p><p class="wx-s"></p>') + '</div>'; }
-    else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make an app: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
+    else if (sk === 'slot' && c.opens === 'bench') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un sl-mk" title="Make a card: it stands here, in the library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>MAKE</b>';
     else if (sk === 'slot') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="hm-sp"></span><b class="sl-un"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0"/></svg>UNLOCK</b>';
     else if (sk === 'soon') inner = '<h2 class="hm-t vh">' + t + '</h2><div class="sn-f" data-p="' + (c.p || 1) + '"><b class="sn-k">' + (t.charAt(0) + t.slice(1).toLowerCase()).replace(/\bpo\b/i, 'PO') + '</b></div>';
     else if (sk === 'wish') inner = '<span class="hm-sp"></span><div class="st-name">' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><p class="st-alert st-sub">strategic storytelling</p></div><span class="hm-lamps"></span>';
@@ -1035,7 +1036,8 @@
   var DEPTH = { shadow: [0, 0.1, 0.18], speed: [0, 0.18, 0.32] }, WORDS = 0.035, tick = 0;
   function parallax() {
     tick = 0; var vh = innerHeight;
-    cards.forEach(function (el) { var r = el.getBoundingClientRect(); if (r.bottom < -40 || r.top > vh + 40) return;
+    /* while the radio plays under the cards, they move without their depth: the song keeps its time */
+    if (!(AIR && AIR.on)) cards.forEach(function (el) { var r = el.getBoundingClientRect(); if (r.bottom < -40 || r.top > vh + 40) return;
       var p = Math.max(-1.2, Math.min(1.2, (r.top + r.height / 2 - vh / 2) / vh)), d = DEPTH[el.classList.contains('speed') ? 'speed' : 'shadow'], ls = el.querySelectorAll('.hm-l');
       var still = !!el.querySelector('.hm-prn'), inn = el.querySelector('.hm-in');
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
@@ -1063,7 +1065,7 @@
     if (xv.classList.contains('on')) shut(true); if (IN.id === 'wish') { intro(false); IN.id = null; } if (!away) return; away = false; H.classList.remove('hm-away'); var a = AU(); if (a && a.sleep) a.sleep(); lamps(); parallax();
   }
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
-  setTimeout(function () { var a = AU(); if (location.hash && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
+  setTimeout(function () { var a = AU(); if ((location.hash || (a && a.linked)) && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
   /* a card still to be built: start one from it? yes opens the maker on its kind */
   function soonAsk(c) { var old = document.querySelector('.sn-ask'); if (old) old.remove();

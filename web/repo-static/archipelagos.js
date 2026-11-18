@@ -52,11 +52,11 @@
   var ALL = LOW.concat(TIPS, [LOW[0]]);
   function three() { var s = two();
     LOW.concat(TIPS).forEach(function (a) { s.push(['M' + HUB[0] + ' ' + HUB[1] + ' L' + a[0].toFixed(1) + ' ' + a[1].toFixed(1), 0, 'thin']); });
-    s.push([ring(ALL, 7), 0, 'thin'], [ring(ALL, 14), 0, 'thin'], [ring(LOW.concat([TIPS[0]]), 22), 0, 'thin'], [ring(LOW.slice(0, 3), 31), 0, 'thin']);
+    s.push([ring(ALL, 7), 0, 'thin'], [ring([TIPS[2], TIPS[3], LOW[0], LOW[1], LOW[2]], 14), 0, 'thin'], [ring([TIPS[3], LOW[0], LOW[1]], 22), 0, 'thin']);
     return s; }
   /* the thread it is spinning now: the outer turn, carried on from where it stopped */
   var GROW = (function () { var out = [], pts = LOW.slice(2); for (var k = 0; k < pts.length - 1; k++) { var a = polar(pts[k]), b = polar(pts[k + 1]); if (b[0] - a[0] < -Math.PI) b[0] += Math.PI * 2;
-    for (var j = 0; j <= 20; j++) { var t = j / 20, an = lerp(a[0], b[0], t), rr = 31 * (1 - .08 * Math.sin(t * Math.PI)); out.push([HUB[0] + Math.cos(an) * rr, HUB[1] + Math.sin(an) * rr]); } } return out; })();
+    for (var j = 0; j <= 20; j++) { var t = j / 20, an = lerp(a[0], b[0], t), rr = 14 * (1 - .08 * Math.sin(t * Math.PI)); out.push([HUB[0] + Math.cos(an) * rr, HUB[1] + Math.sin(an) * rr]); } } return out; })();
 
   /* ───────── the Irukandji, the main one, as it swims on the banner: the box bell in one line with its shadow line, the eye in
      dots, four dots where the tentacles leave, four fine tentacles beaded at the top. Here it floats above the web it is

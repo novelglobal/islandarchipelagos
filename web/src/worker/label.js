@@ -69,7 +69,7 @@ export const WELCOME = {
   "url": "https://novel.global",
   "lines": [
     "Offline and mesh-enabled web2print",
-    "publishing platform and app builder.",
+    "publishing platform and card builder.",
     "Like Canva, Instagram, Miro and",
     "Squarespace, on paper.",
     "",
@@ -98,5 +98,5 @@ export const NOTES = {
   "space": "",
   "utils": "UTILITIES\n\nSimple, slightly silly tools that add function to the direct action and climate adaptation theme. Every one was made with the Island Archipelagos builder card.",
   "soon": "POSSIBILITIES\n\nSo many uses are still waiting to be unlocked: fundraising, merchandise, in-store experiences, promotion. It all comes back to direct action and new media from a more physical, local internet.\n\nI'll spare you the manifesto. If you have an idea, you can make it.",
-  "dev": "YOUR APPS\n\nMake an app and it appears here, live: no accounts, no approvals. I can switch those on, but for now it's open, so break it and test it."
+  "dev": "YOUR CARDS\n\nMake a card and it appears here, live: no accounts, no approvals. I can switch those on, but for now it's open, so break it and test it."
 };

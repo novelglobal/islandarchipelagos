@@ -251,5 +251,6 @@
     var tx = r ? r.left + r.width / 2 : W / 2, ty = r ? r.top - 6 : Hh * 0.5, sx = Math.min(W - 40, Math.max(40, W * 0.5)), sy = Hh * 0.42;
     g.innerHTML = '<svg width="' + W + '" height="' + Hh + '">' + (r ? '<path d="M' + sx + ' ' + (sy + 34) + ' Q' + ((sx + tx) / 2 + 40) + ' ' + ((sy + ty) / 2) + ' ' + tx + ' ' + ty + '"/><path d="M' + (tx - 9) + ' ' + (ty - 14) + ' L' + tx + ' ' + ty + ' L' + (tx + 11) + ' ' + (ty - 12) + '"/>' : '<path d="M' + (W / 2 - 70) + ' ' + (sy + 70) + ' l40 -30 M' + (W / 2 + 70) + ' ' + (sy + 70) + ' l-40 -30"/><circle cx="' + (W / 2 - 74) + '" cy="' + (sy + 74) + '" r="12"/><circle cx="' + (W / 2 + 74) + '" cy="' + (sy + 74) + '" r="12"/>') + '</svg>' +
       '<p style="top:' + (sy - 30) + 'px">' + TIPS[i][1] + '</p><b>' + (i + 1) + ' / ' + TIPS.length + '</b>'; }
+  setTimeout(function () { if (window.swipeHint) window.swipeHint($('#tools'), 'research'); }, 1400);
   try { if (!/[?&]in=1/.test(location.search) && !localStorage.getItem('da.rb.guide')) setTimeout(function () { if (FRESH) GUIDE_AFTER = true; else guide(0); }, 500); } catch (e) { /* no storage */ }
 })();

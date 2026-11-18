@@ -139,6 +139,8 @@ fs.writeFileSync(path.join(out, 'aura.js'), min(read(path.join(src, 'base', 'aur
 fs.writeFileSync(path.join(out, 'home.css'), min(read(path.join(src, 'base', 'home.css')), 'css'));
 fs.writeFileSync(path.join(out, 'home.js'), min([path.join(src, 'base', 'slips-home.js'), path.join(src, 'base', 'home.js')].filter(p => fs.existsSync(p)).map(read).join('\n'), 'js'));
 fs.writeFileSync(path.join(out, 'index.html'), read(path.join(src, 'base', 'index.html')).replace('/*BASE*/', 'window.BASE = ' + JSON.stringify(BASE).replace(/</g, '\\u003c') + ';').replace('%BUILD%', sha + (preview ? ` ${branch}` : '')));
+/* every page asks before a link leaves novel.global (leave.js) */
+for (const f of fs.readdirSync(out).filter(f => f.endsWith('.html') && !/^(play-box|island|t|portfolio)\.html$/.test(f))) { const h = read(path.join(out, f)); if (!h.includes('leave.js') && /<\/head>/i.test(h)) fs.writeFileSync(path.join(out, f), h.replace(/<\/head>/i, '<script src="/leave.js" defer></script></head>')); }
 /* the security policy for every page (stage 4). Scripts only from novel.global, and the few small ones written into the pages, each
    allowed by its fingerprint (taken as a browser reads it, every line ending a plain newline); data from novel.global (which asks iNaturalist and OpenStreetMap for everyone, the browser going round to them only when it cannot) and the open
    sources still asked directly: the weather, the city's sensors and fountains, the map's imagery and height. Photographs and

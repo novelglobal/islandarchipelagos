@@ -26,6 +26,7 @@ function edgeFade(el) {
   el.addEventListener('scroll', f, { passive: true }); new ResizeObserver(f).observe(el); f();
 }
 function leanOnce(el, key) {
+  if (window.swipeHint) { window.swipeHint(el, key); return; }
   if (!el || !phone() || reduced()) return; const room = el.scrollWidth - el.clientWidth; if (room < 24) return;
   try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) { return; }
   setTimeout(() => { el.scrollTo({ left: Math.min(80, room), behavior: 'smooth' }); setTimeout(() => el.scrollTo({ left: 0, behavior: 'smooth' }), 700); }, 600);
