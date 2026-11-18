@@ -48,6 +48,8 @@ export const LABEL = {
   ],
   "never": "",
   "hold": "Hold, or double tap, when read.",
+  "fold": 3,
+  "cnt": "more",
   "at": "mid",
   "film": {
     "on": true,
@@ -58,4 +60,29 @@ export const LABEL = {
     "max": 300,
     "each": 6
   }
+};
+
+/* the slip a printer prints once it joins a Wi-Fi: its words and the link its code opens, until the approval page (PRINTERS) changes them */
+export const WELCOME = {
+  "on": true,
+  "head": "NOVEL.GLOBAL",
+  "url": "https://novel.global",
+  "lines": [
+    "Offline and mesh-enabled web2print",
+    "publishing platform and app builder.",
+    "Like Canva, Instagram, Miro and",
+    "Squarespace, on paper.",
+    "",
+    "Try web2print experiences and",
+    "create your own:",
+    "- DIRECT ACTION RADIO",
+    "- BLUEPAPER (I W.I.S.H.)",
+    "- RESEARCH BOARD",
+    "- DESIGN PRINT",
+    "- THERMAL ZINE MAKER",
+    "- WEATHER, NEWS, FICTION, TAROT",
+    "- ISLAND: BUILD YOUR OWN",
+    "",
+    "SCAN TO START"
+  ]
 };

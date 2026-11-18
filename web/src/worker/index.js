@@ -10,7 +10,7 @@
    job waits a day at most, and once printed only its status is kept, for a week. A preview build has its own database. */
 import { BUILD, PREVIEW, PARTNERS } from './stamp.js';
 import { FIRST_PLAY } from './first-play.js';
-import { LABEL } from './label.js';
+import { LABEL, WELCOME } from './label.js';
 
 const JSON_H = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 const TEXT_H = { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
@@ -500,7 +500,7 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, isles: 400000 };
+const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, isles: 400000 };
 /* texts the public settings never show: the pop-up's private link */
 const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
@@ -1461,6 +1461,10 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
   if (p[0] === 'partners' && m === 'GET') return partners(db);
   if (p[0] === 'isles' && m === 'GET') return isles(db);
+  /* the joined slip's words, for a printer that has just joined a Wi-Fi: plain lines a receipt can print */
+  if (p[0] === 'welcome' && m === 'GET') { let w = null; try { w = JSON.parse((await settingsOf(db)).welcome || 'null'); } catch (e) { w = null; } w = w && typeof w === 'object' ? w : WELCOME;
+    const a = s => String(s == null ? '' : s).normalize('NFKD').replace(/[^\x20-\x7e]/g, '').slice(0, 42);
+    return json({ on: w.on !== false, head: a(w.head || ''), url: /^https:\/\/[^\s]{1,200}$/.test(w.url || '') ? w.url : '', lines: (Array.isArray(w.lines) ? w.lines : []).slice(0, 40).map(a) }); }
   if (p[0] === 'osm' && !p[1] && m === 'GET') return osmThrough(db, env, req, url);
   if (p[0] === 'places' && !p[1] && m === 'GET') return listPlaces(db);
   if (p[0] === 'places' && !p[1] && m === 'POST') return suggestPlace(db, env, req);

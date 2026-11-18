@@ -9,8 +9,8 @@ minutes and the Wi-Fi it knows is looked for again, so a router that was slow to
 
 To move it to another Wi-Fi, three ways: CHANGE WI-FI on the approval page (the bridge leaves a note in /run/da-pull/wifi);
 plug it in and, within two minutes, unplug it and plug it in again (a start cut short is noticed at the next); or
-sudo python3 wifi.py --now. Its page marks a Wi-Fi too weak for the touch screen, and the slip saying it joined carries a
-code a phone's camera reads to join the same Wi-Fi (WIFI_SHARE=0 in /etc/wifi-setup.env leaves it off).
+sudo python3 wifi.py --now. Its page marks a Wi-Fi too weak for the touch screen. The slip saying it joined carries the words
+and link set on the approval page (PRINTERS, THE JOINED SLIP), asked for as it joins and kept for when they cannot be had.
 
 The Pi's green light says where it stands, with no screen: steady when all is well; slow blink with no Wi-Fi yet;
 quick blink while the setup Wi-Fi is open; a heartbeat when the printer is not answering (off, no paper, its cable out).
@@ -43,7 +43,8 @@ CON = 'wifi-setup'   # NetworkManager's name for the setup Wi-Fi
 MINE = 'setup: '     # and the start of the name of each Wi-Fi added from the page
 ADDR = '10.42.0.1'
 DEMO = '--demo' in sys.argv
-SHARE = os.environ.get('WIFI_SHARE', '1') == '1'                    # the joined Wi-Fi's code on its slip
+SERVER = os.environ.get('DA_SERVER', 'https://novel.global').rstrip('/')    # where the joined slip's words come from
+KEPT = os.environ.get('WIFI_WELCOME', '/var/lib/wifi-setup/welcome.json')   # the last words had, for when none can be
 WANT = os.environ.get('WIFI_WANT', '/run/da-pull/wifi')           # CHANGE WI-FI, from the approval page through the bridge
 QUICK = os.environ.get('WIFI_QUICK', '/var/lib/wifi-setup/quick')  # written at start, gone after two minutes up
 WEAK = 50   # NetworkManager's percent below which the touch screen, a smaller radio, may not reach it
@@ -231,6 +232,40 @@ def slip(head, lines, qr=None, at=0):
     return bytes(out + b'\x1bd\x04\x1dVB\x00')
 
 
+def welcome():
+    """the joined slip's words from the site: asked for a little while as the new Wi-Fi settles, else the last kept, else the link alone"""
+    for _ in range(8):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(SERVER + '/api/welcome', headers={'user-agent': 'wifi-setup/1'}), timeout=8) as r:
+                w = json.loads(r.read())
+            try:
+                os.makedirs(os.path.dirname(KEPT), exist_ok=True)
+                with open(KEPT, 'w') as f:
+                    json.dump(w, f)
+            except OSError:
+                pass
+            return w
+        except Exception as e:
+            log('the joined slip words are not there yet:', e); time.sleep(3)
+    try:
+        return json.load(open(KEPT))
+    except (OSError, ValueError):
+        return {'on': True, 'head': 'NOVEL.GLOBAL', 'url': 'https://novel.global', 'lines': ['SCAN TO START']}
+
+
+def joined_slip(name):
+    """ON WI-FI, then the words and the code set on the approval page"""
+    w = {} if DEMO else welcome()
+    lines = ['ON WI-FI', name, 'REMEMBERED', '', stamp()]
+    if w.get('on', True):
+        url = w.get('url') or ''
+        more = (['', '-' * COLS, ''] + ([str(w['head'])] if w.get('head') else []) + [str(x) for x in (w.get('lines') or [])][:40])
+        lines = lines[:3] + more + ['']
+        at = len(lines)   # the code, then its link written out, then the time
+        return slip(NAME, lines + ([url.replace('https://', '')] if url else []) + ['', stamp()], qr=url or None, at=at)
+    return slip(NAME, lines)
+
+
 def send_once(data):
     for url in PRINTD:
         try:
@@ -393,9 +428,7 @@ def setup_round():
         if join(name, pw, hidden):
             log('on', name)
             if SLIPS:
-                share = SHARE and pw
-                send(slip(NAME, ['ON WI-FI', name, 'REMEMBERED'] + (['', 'SCAN TO JOIN THE SAME WI-FI', '(FOR THE SCREEN, OR A PHONE)'] if share else []) + ['', stamp()],
-                          qr=wifi_qr(name, pw) if share else None, at=4))
+                send(joined_slip(name))
             return True
         if SLIPS:
             send(slip(NAME, ['COULD NOT JOIN', name, 'CHECK ITS PASSWORD, THEN JOIN', SSID, 'AGAIN', '', stamp()]))

@@ -235,7 +235,6 @@
   /* RESEARCH BOARD: three of novel.global's reference pictures pinned up */
   var REFAT = [[4, 2, 44, 635 / 521], [56, 8, 36, 700 / 501], [14, 61, 66, 429 / 1200]];
   var REFC = REFAT.map(function (p) { return [p[0] + p[2] / 2, p[1] + p[2] * p[3] / 2]; });
-  var THEMES = ['RANGIWAHIA', 'SYNERGY', 'PRAXIS', 'SPECULATIVE', 'FUTURES', 'KINSHIP', 'COMMONS'];
   /* each reference picture: a word on hover, and where a touch takes you; novel.global can rewrite these (PHOTOS: a name, a link, the word) */
   var PLINK0 = { cathaya: { u: 'https://www.erinforsyth.com', w: 'Erin Forsyth' }, moa: { w: 'reenactment' }, cells: { u: 'https://en.wikipedia.org/wiki/Cargo_cult', w: 'memory' } }, PLINK = PLINK0;
   function photoLinks(txt) { var o = {}; Object.keys(PLINK0).forEach(function (k) { o[k] = PLINK0[k]; });
@@ -244,10 +243,9 @@
     [[0, 1], [0, 2], [1, 2]].forEach(function (q, n) { var a = P[q[0]], b = P[q[1]], k = 1 + Math.floor(R() * 2);
       for (var j = 0; j < k; j++) { var bow = (R() - 0.5) * 26, mx = (a[0] + b[0]) / 2 + bow, my = (a[1] + b[1]) / 2 + bow * 0.6;
         path += '<path pathLength="1" class="' + (j ? 'ds' : n === 1 ? 'lm' : '') + '" style="--d:' + (n * 0.3 + j * 0.2).toFixed(2) + 's" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '"/>'; } });
-    var th = THEMES[Math.floor(R() * THEMES.length)];
     return '<div class="rb-refs"><svg viewBox="0 0 100 100" aria-hidden="true">' + path + '</svg>' + ['moa', 'cathaya', 'scan'].map(function (n, k) { var p = REFAT[k], L = PLINK[n] || {}, st = 'left:' + p[0] + '%;top:' + p[1] + 'cqw;width:' + p[2] + '%;--r:' + [-2.2, 1.6, -0.8][k] + 'deg', im = '<img alt="" decoding="async" loading="lazy" src="/cards/ref-' + n + '.jpg">';
       return L.u ? '<a class="rf" href="' + esc(L.u) + '" target="_blank" rel="noopener" title="' + esc(L.w || '') + '" aria-label="' + esc(L.w || L.u) + '" style="' + st + '">' + im + '</a>' : '<i class="rf" data-open="research" title="' + esc(L.w || '') + '" style="' + st + '">' + im + '</i>'; }).join('') +
-      '<b class="rb-word" style="right:' + (5 + R() * 8).toFixed(1) + '%;top:' + (-11 + R() * 3).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 9).toFixed(1) + 'deg">' + th + '</b></div>'; }
+      '<b class="rb-word" style="right:' + (4 + R() * 3).toFixed(1) + '%;top:' + (-11 + R() * 3).toFixed(1) + 'cqw;--r:' + ((R() - 0.5) * 6).toFixed(1) + 'deg">what have you noticed?</b></div>'; }
   /* ISLAND ARCHIPELAGOS: the coast from above in the sea's blue, its cells drifting, islands joined */
   var SEA = '<div class="sp-sea" aria-hidden="true"><img class="sp-coast" alt="" decoding="async" loading="lazy" src="/cards/ref-coast.jpg"><img class="sp-cells" alt="" decoding="async" loading="lazy" src="/cards/ref-cells.jpg">' +
     '<svg class="sp-isles" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><path d="M22 30L48 52L78 40M48 52L36 84L66 96L84 74M36 84L18 112L50 128"/>' +
@@ -660,7 +658,7 @@
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-front"><p class="in-hand" aria-hidden="true">what have you noticed?</p><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div>' + introFlip('Turn over') + '</div>' +
+      '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new local area network (LAN)\nfrom e-waste') + '</h2>' +
       '<p class="in-l">independent web2print publishing. Open source. What can you do with a thermal printer network?</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span></p></div>' +
@@ -691,8 +689,6 @@
   /* the link to the private page, where novel.global chose to show it: under the closing line, above the map */
   var ETH = { k: '' };
   function ethLink(k) { if (!/^[a-z0-9]{12,40}$/.test(k || '')) return; ETH.k = k; $$('.sk-intro .in-f', col).forEach(function (f) { var p = f.querySelector('.in-eth'), ft = f.querySelector('.in-ft'); if (!p) { p = D.createElement('p'); p.className = 'in-eth'; var a = D.createElement('a'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ethics and AI disclosure'; p.appendChild(a); f.insertBefore(p, ft); } p.querySelector('a').href = '/note#' + k; }); requestAnimationFrame(introFit); }
-  /* the handwritten line is written in once, five seconds after the page opens, and then stays */
-  setTimeout(function () { H.classList.add('hm-wrote'); }, 8200);
   /* THE LABEL: what a first visit meets, set like the label beside a work in a gallery, a film under it. Every word of it comes from the approval
      page (LABEL). It is a part of this page, never a new window, so nothing can block it. It goes when it has been read: a long press or a
      double tap on it. Shown once each visit until the visitor says never again */
@@ -706,14 +702,17 @@
         lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
-    var b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', '', t, b); });
+    var fold = Math.max(0, Math.round(+L.fold) || 0), np = 0, b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', fold && np++ >= fold ? 'lb-x' : '', t, b); });
+    /* the rest of the words, and the counts where they are set to wait there, open from one small key */
+    if (L.cnt === 'off') L.counts = []; var folded = !!b.querySelector('.lb-x') || (L.cnt === 'more' && Array.isArray(L.counts) && L.counts.length);
+    if (folded) { var mo = mk('button', 'lb-mo', L.more || 'More', c); mo.type = 'button'; mo.setAttribute('aria-expanded', 'false'); mo.addEventListener('click', function () { var o = c.classList.toggle('lb-open'); mo.textContent = o ? (L.less || 'Less') : (L.more || 'More'); mo.setAttribute('aria-expanded', String(o)); fit(); }); }
     /* the links: the back of the first card, the islands, the kit, the private page, or one of its own; plain links, so nothing blocks them */
     var go = { card: function () { shutLb(); col.scrollTo({ top: 0, behavior: 'smooth' }); var cd = col.querySelector('.sk-intro'); if (cd && !cd.classList.contains('flip')) { cd.classList.add('flip'); requestAnimationFrame(function () { introFit(); introArc(); }); } } };
     var href = function (k) { return k.to === 'islands' ? '/islands' : k.to === 'kit' ? '/kit' : k.to === 'note' ? (ETH.k ? '/note#' + ETH.k : '') : k.to === 'url' ? (/^https:\/\//.test(k.u || '') ? k.u : '') : ''; };
     if (Array.isArray(L.links) && L.links.length) { var ul = mk('ul', 'lb-l', null, c); L.links.forEach(function (k) { if (!k || !k.t) return; var li = mk('li', '', k.b ? k.b + ' ' : '', ul), a = mk('a', '', k.t, li), u = href(k);
         if (k.to === 'card' || (k.to === 'note' && !u)) { a.href = '#'; a.addEventListener('click', function (e) { e.preventDefault(); go.card(); }); } else if (u) { a.href = u; if (k.to === 'url' || k.to === 'note') { a.target = '_blank'; a.rel = 'noopener'; } } }); }
     /* the counts: a number of a number, a hair of colour for how far along; a live one is asked for, a typed one is as typed */
-    if (Array.isArray(L.counts) && L.counts.length) { var ol = mk('ul', 'lb-n', null, c), nf = function (v) { var n = +String(v).replace(/[^\d.]/g, ''); return isFinite(n) && String(v).trim() !== '' ? n : null; }, fm = function (n) { return n == null ? '' : n.toLocaleString('en-AU'); };
+    if (Array.isArray(L.counts) && L.counts.length) { var ol = mk('ul', 'lb-n' + (L.cnt === 'more' ? ' lb-x' : ''), null, c), nf = function (v) { var n = +String(v).replace(/[^\d.]/g, ''); return isFinite(n) && String(v).trim() !== '' ? n : null; }, fm = function (n) { return n == null ? '' : n.toLocaleString('en-AU'); };
       L.counts.forEach(function (k) { if (!k || !k.t) return; var li = mk('li', '', null, ol), row = k.u && /^https:\/\//.test(k.u) ? mk('a', '', null, li) : mk('span', '', null, li), num = mk('b', '', null, row), bar = mk('i', '', null, li), fill = mk('u', '', null, bar), goal = nf(k.goal);
         if (row.tagName === 'A') { row.href = k.u; row.target = '_blank'; row.rel = 'noopener'; } row.appendChild(D.createTextNode(' ' + k.t));
         var set = function (now) { num.textContent = (k.pre || '') + fm(now) + (goal != null ? '/' + (k.pre || '') + fm(goal) : ''); fill.style.width = goal ? Math.max(now ? 1.5 : 0, Math.min(100, now / goal * 100)) + '%' : '0'; };
@@ -839,7 +838,7 @@
     for (var i = 0; i < 7; i++) { var a = i / 7 * 6.28 + Math.random() * 0.5, r = 10 + Math.random() * 8, s = D.createElementNS(SVGNS, 'path'); s.setAttribute('class', 'rn-sp'); s.setAttribute('d', 'M0 -2.4V2.4M-2.4 0H2.4'); s.setAttribute('style', '--x:' + (Math.cos(a) * r).toFixed(1) + 'px;--y:' + (Math.sin(a) * r).toFixed(1) + 'px;animation-delay:' + (i * 0.04) + 's'); s.setAttribute('transform', 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')'); fx.appendChild(s); }
     g.classList.add('lit'); }
   function rnStart() { var el = col.querySelector('.sk-research'); if (!el) return; RN.n = 0; var w = el.querySelector('.rn-w'); if (w) w.innerHTML = '';
-    if ('IntersectionObserver' in window) { if (RN.io) RN.io.disconnect(); RN.io = new IntersectionObserver(function (es) { RN.seen = es[es.length - 1].isIntersecting; }, { threshold: 0.3 }); RN.io.observe(el); } else RN.seen = true; rnTick(); }
+    if ('IntersectionObserver' in window) { if (RN.io) RN.io.disconnect(); RN.io = new IntersectionObserver(function (es) { RN.seen = es[es.length - 1].isIntersecting; if (RN.seen) el.classList.add('rb-seen'); }, { threshold: 0.3 }); RN.io.observe(el); } else RN.seen = true; rnTick(); }
   /* receipt paper at the top and foot of the page: crumpled, torn, the mark set on the foot */
   /* hand-cut patterns, after a sheet of printed textures: maze lines, cracked mosaic, spots, wavy rules, worms, eyes. Drawn here, never loaded */
   function noise2(seed) { var r = rnd(seed), G = []; for (var i = 0; i < 64 * 64; i++) G.push(r());

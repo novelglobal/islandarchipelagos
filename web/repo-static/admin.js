@@ -610,7 +610,8 @@
     L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : [];
     const inp = (v, o) => { const e = el('input', o || {}); e.value = v == null ? '' : v; return e; }, ta = (v, rows) => { const e = el('textarea', { rows: String(rows || 3) }); e.value = v || ''; return e; };
     const on = el('input', { type: 'checkbox' }); on.checked = !!L.on;
-    const f = { top: inp(L.top), sub: inp(L.sub), title: inp(L.title), meta: inp(L.meta), credit: inp(L.credit), num: inp(L.num), body: ta(L.body, 14), never: inp(L.never), hold: inp(L.hold) };
+    const f = { top: inp(L.top), sub: inp(L.sub), title: inp(L.title), meta: inp(L.meta), credit: inp(L.credit), num: inp(L.num), body: ta(L.body, 14), never: inp(L.never), hold: inp(L.hold), more: inp(L.more), less: inp(L.less) };
+    const fold = inp(L.fold || 0, { type: 'number', min: '0', max: '20', step: '1' }), cnt = el('select', {}, ...[['open', 'SHOWN'], ['more', 'UNDER MORE'], ['off', 'HIDDEN']].map(([v, t]) => el('option', { value: v, text: t }))); cnt.value = L.cnt || 'open';
     const sel = (opts, v) => { const e = el('select', {}, ...opts.map(([x, t]) => el('option', { value: x, text: t }))); e.value = v; return e; }, num = (v, min, max) => inp(v, { type: 'number', min: String(min), max: String(max), step: '1' });
     const at = sel([['top', 'TOP'], ['mid', 'MIDDLE'], ['low', 'BOTTOM']], 'mid'), fo = el('input', { type: 'checkbox' }), fv = inp(80, { type: 'range', min: '0', max: '100', step: '1' }), fvn = el('span', { class: 'hint' });
     const ff = inp(''), fs = sel([['below', 'UNDER THE LABEL'], ['above', 'OVER THE LABEL']], 'below'), fw = num(100, 30, 100), fm = num('', 1, 1000000), fe = num('', 1, 500), fsay = el('small', { class: 'hint' });
@@ -629,9 +630,9 @@
         return el('div', { style: 'display:grid;grid-template-columns:60px 1fr 1fr 1.4fr 1.3fr 1.6fr 34px;gap:8px;align-items:end' }, el('label', {}, 'SIGN', pre), el('label', {}, 'NOW', now), el('label', {}, 'OF', goal), el('label', {}, 'WORDS', words), el('label', {}, 'COUNTED', src), el('label', {}, 'PROOF OR DETAIL (A LINK)', url), el('button', { type: 'button', text: '×', title: 'Remove', onclick: () => { L.counts.splice(i, 1); drawC(); } })); }),
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'ADD A COUNT', onclick: () => { L.counts.push({ pre: '', now: '', goal: '', t: '', live: '', u: '' }); drawC(); } })));
     drawL(); drawC();
-    const read = () => ({ on: on.checked, top: f.top.value.trim(), sub: f.sub.value.trim(), title: f.title.value.trim(), meta: f.meta.value.trim(), credit: f.credit.value.trim(), num: f.num.value.trim(), body: f.body.value.replace(/\r/g, '').trim(), never: f.never.value.trim(), hold: f.hold.value.trim(), at: at.value, film: { on: fo.checked, file: ff.value.trim(), side: fs.value, w: Math.max(30, Math.min(100, +fw.value || 100)), vol: +fv.value, max: Math.max(0, Math.round(+fm.value) || 0), each: Math.max(0, Math.round(+fe.value) || 0) },
+    const read = () => ({ on: on.checked, top: f.top.value.trim(), sub: f.sub.value.trim(), title: f.title.value.trim(), meta: f.meta.value.trim(), credit: f.credit.value.trim(), num: f.num.value.trim(), body: f.body.value.replace(/\r/g, '').trim(), never: f.never.value.trim(), hold: f.hold.value.trim(), more: f.more.value.trim(), less: f.less.value.trim(), fold: Math.max(0, Math.round(+fold.value) || 0), cnt: cnt.value, at: at.value, film: { on: fo.checked, file: ff.value.trim(), side: fs.value, w: Math.max(30, Math.min(100, +fw.value || 100)), vol: +fv.value, max: Math.max(0, Math.round(+fm.value) || 0), each: Math.max(0, Math.round(+fe.value) || 0) },
       links: L.links.filter(k => (k.t || '').trim()).map(k => ({ b: (k.b || '').trim(), t: k.t.trim(), to: k.to || 'url', u: /^https:\/\//.test(k.u || '') ? k.u : '' })), counts: L.counts.filter(k => (k.t || '').trim()).map(k => ({ pre: k.pre || '', now: k.now || '', goal: k.goal || '', t: k.t.trim(), live: k.live || '', u: /^https:\/\//.test(k.u || '') ? k.u : '' })) });
-    const fill = o => { L = o || {}; L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : []; on.checked = !!L.on; Object.keys(f).forEach(k => { f[k].value = L[k] || ''; }); film(L.film); drawL(); drawC(); };
+    const fill = o => { L = o || {}; L.links = Array.isArray(L.links) ? L.links : []; L.counts = Array.isArray(L.counts) ? L.counts : []; on.checked = !!L.on; Object.keys(f).forEach(k => { f[k].value = L[k] || ''; }); fold.value = L.fold || 0; cnt.value = L.cnt || 'open'; film(L.film); drawL(); drawC(); };
     const put = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('label'); };
     const lab = el('section', { class: 'ed' }, el('h3', { text: 'THE LABEL' }), el('small', { class: 'hint', text: 'Shown over the site on each first visit, until the visitor says never again. It is a part of the page, not a new window, so a browser that blocks pop-ups still shows it. Everything on it is written here.' }),
       el('label', { class: 'check' }, on, 'SHOWN'),
@@ -639,6 +640,8 @@
       el('div', { class: 'two' }, el('label', {}, 'TITLE', f.title), el('label', {}, 'UNDER THE TITLE (YEAR, WHAT IT IS MADE OF)', f.meta)),
       el('div', { class: 'two' }, el('label', {}, 'SMALL LINE (CREDIT)', f.credit), el('label', {}, 'NUMBER AT ITS RIGHT', f.num)),
       el('label', {}, 'WORDS (A BLANK LINE STARTS A NEW PARAGRAPH)', f.body),
+      el('div', { class: 'two' }, el('label', {}, 'PARAGRAPHS SHOWN BEFORE MORE (0 SHOWS THEM ALL)', fold), el('label', {}, 'COUNTS', cnt)),
+      el('div', { class: 'two' }, el('label', {}, 'THE KEY THAT OPENS THE REST', f.more), el('label', {}, 'THE KEY THAT CLOSES IT AGAIN', f.less)),
       el('label', {}, 'LINKS, ONE A LINE, UNDER THE WORDS', lbox), el('label', {}, 'COUNTS, AT THE FOOT', cbox),
       el('div', { class: 'two' }, el('label', {}, 'THE SWITCH (NEVER SHOW AGAIN)', f.never), el('label', {}, 'THE PROMPT (A LONG PRESS OR A DOUBLE TAP PUTS THE LABEL AWAY)', f.hold)),
       el('label', {}, 'WHERE IT SITS ON THE SCREEN', at),
@@ -730,7 +733,20 @@
     main.replaceChildren(...head('Home'), opener, bizEd, cardsEd, look, note);
   }
 
-  async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), ...list.map(printerCard)); }
+  async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), ...list.map(printerCard)); }
+  /* the slip every printer prints once it joins a Wi-Fi: its words, one line each, and the link its code opens. Each printer asks for them
+     as it joins, so a change here reaches every printer the next time one joins; with none to be had it prints the last it had */
+  async function welcomeCard() {
+    let w = {}; try { w = await (await fetch('/api/welcome', { cache: 'no-store' })).json(); } catch (e) { w = {}; }
+    const on = el('input', { type: 'checkbox' }); on.checked = w.on !== false;
+    const hd = el('input', { maxlength: '42' }); hd.value = w.head || ''; const url = el('input', { placeholder: 'https://' }); url.value = w.url || '';
+    const tx = el('textarea', { rows: '14', style: 'font-family:var(--mono);max-width:44ch' }); tx.value = (w.lines || []).join('\n');
+    const say = el('small', { class: 'hint' });
+    const save = async () => { const u = url.value.trim(); if (u && !/^https:\/\//.test(u)) { say.textContent = 'THE LINK STARTS WITH https://'; return; }
+      await api('settings', { method: 'POST', body: JSON.stringify({ welcome: JSON.stringify({ on: on.checked, head: hd.value.trim(), url: u, lines: tx.value.replace(/\r/g, '').split('\n').map(s => s.replace(/\s+$/, '')) }) }) }); say.textContent = 'SAVED'; };
+    return el('section', { class: 'ed' }, el('h3', { text: 'THE JOINED SLIP' }), el('small', { class: 'hint', text: 'Printed by a printer once it joins a Wi-Fi: these words, then a code that opens the link. Plain letters only, 42 to a line. Each printer asks for them as it joins.' }),
+      el('label', { class: 'check' }, on, 'PRINTED'), el('div', { class: 'two' }, el('label', {}, 'HEADING', hd), el('label', {}, 'LINK (A POP-UP OR ANY PAGE)', url)), el('label', {}, 'WORDS, ONE LINE EACH', tx),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: save }), say)); }
 
   /* ───────── the portfolio: posts written here, kept as drafts until published; a cover, a category, links ───────── */
   async function coverOf(id, img) { try { const r = await api(`posts/${id}/cover`); img.src = URL.createObjectURL(await r.blob()); } catch (e) { /* none */ } }

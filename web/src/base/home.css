@@ -731,12 +731,12 @@ html.hm-sheet:not(.hm-nosea) #hm-x .hm-back { top: calc(var(--hm-top) / -2 - 14p
 .hm-rune .rn-w > g { transition: opacity .35s, filter .35s; }
 .hm-rune .rn-w > g.gone { opacity: .07; filter: blur(.6px); }
 .hm-rune .rn-w > g.lit .rn-p { stroke: #8FA81C; animation: rn-lit 1.6s ease-out both; }
-@keyframes rn-lit { 0% { stroke-width: 3.2; } 100% { stroke-width: 1.5; } }
 .hm-rune .rn-er { fill: #F2EFE6; stroke: none; stroke-width: 0; opacity: 0; transform: translateX(0); }
 .hm-rune .rn-er.go { opacity: 1; transform: translateX(200px); transition: transform 2s cubic-bezier(.4, .1, .6, .9), opacity .2s; }
 .hm-rune .rn-sp { stroke: #D9F24A; stroke-width: 1.2; animation: rn-sp 1.1s ease-out both; }
-@keyframes rn-sp { 0% { translate: 0 0; opacity: 0; scale: .3; } 20% { opacity: 1; scale: 1.2; } 100% { translate: var(--x) var(--y); opacity: 0; scale: .6; } }
 @media (prefers-reduced-motion: reduce) { .hm-rune .rn-p { transition: none; } .hm-rune .rn-sp, .hm-rune .rn-er { display: none; } }
+@keyframes rn-lit { 0% { stroke-width: 3.2; } 100% { stroke-width: 1.5; } }
+@keyframes rn-sp { 0% { translate: 0 0; opacity: 0; scale: .3; } 20% { opacity: 1; scale: 1.2; } 100% { translate: var(--x) var(--y); opacity: 0; scale: .6; } }
 /* the ad's words kept white on every phone (an iPhone can recolour numbers it takes for a phone number) */
 .rc-tp .tp-tx, .rc-tp .tp-tx *, .rc-tp .tp-pr, .rc-tp .tp-pr * { -webkit-text-fill-color: currentColor; text-decoration: none; }
 .rc-tp .tp-tx a, .rc-tp .tp-pr a { color: inherit; }
@@ -1649,9 +1649,6 @@ html.hm-on.hm-nocab { --hm-sbh: 0px; }
 #hm .hm-art .hm-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; pointer-events: none; }
 
 /* the opener: one line by hand, in faded blue ink, an inch above the photograph */
-#hm .hm-card.sk-intro .in-hand { display: none; }
-#hm .hm-card.sk-intro:not(.small) .in-hand { display: block; position: absolute; left: 0; right: 0; z-index: 2; margin: 0; text-align: center; pointer-events: none; top: max(3cqh, calc(50cqh - min(70cqh, 84cqw * 4 / 3) / 2 - 1.1em - 26px)); font: 400 clamp(19px, 5.4cqw, 30px)/1.1 'Architects Daughter', 'Segoe Print', cursive; letter-spacing: .01em; color: #2C4A9E; opacity: .78; transform: rotate(-1.6deg); text-shadow: 0 0 .7px rgba(44, 74, 158, .55), .4px .3px 0 rgba(44, 74, 158, .18); -webkit-mask-image: linear-gradient(97deg, #000 0 38%, rgba(0, 0, 0, .72) 58%, #000 76%, rgba(0, 0, 0, .82) 100%); mask-image: linear-gradient(97deg, #000 0 38%, rgba(0, 0, 0, .72) 58%, #000 76%, rgba(0, 0, 0, .82) 100%); }
-#hm.night .hm-card.sk-intro:not(.small) .in-hand { color: #9FB4EC; opacity: .7; text-shadow: 0 0 .7px rgba(159, 180, 236, .5); }
 
 /* a phone that cannot hold sixty pictures a second: the frosted glass behind panels is left clear, the dearest thing a slow screen draws */
 html.ng-low #hm *, html.ng-low #hm *::before, html.ng-low #hm *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
@@ -1662,11 +1659,6 @@ html.ng-low #hm *, html.ng-low #hm *::before, html.ng-low #hm *::after { -webkit
 #hm .sk-intro .in-eth[hidden] { display: none; }
 #hm .sk-intro .in-eth a { color: inherit; text-decoration: underline; text-underline-offset: .22em; position: relative; z-index: 3; }
 /* the handwritten line writes itself in from the left five seconds after the page opens, then stays; not shown at night */
-@keyframes in-write { from { clip-path: inset(-30% 100% -30% 0); } to { clip-path: inset(-30% -4% -30% 0); } }
-#hm .hm-card.sk-intro:not(.small) .in-hand { animation: in-write 2.6s cubic-bezier(.45, .05, .35, 1) 5s both; }
-html.hm-wrote #hm .hm-card.sk-intro:not(.small) .in-hand { animation: none; }
-@media (prefers-reduced-motion: reduce) { #hm .hm-card.sk-intro:not(.small) .in-hand { animation: none; } }
-#hm.night .hm-card.sk-intro:not(.small) .in-hand { display: none; }
 
 /* THE LABEL: a first visit meets it. A card on the wall beside the work: small plain type, a title, a credit line with its number, the words, the links, the counts; a film under it */
 #lb { position: fixed; inset: 0; z-index: 2147483000; display: grid; justify-items: center; align-items: center; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: rgba(16, 16, 16, .62); animation: lb-in .35s ease both; transition: opacity .26s ease; }
@@ -1705,3 +1697,21 @@ html.hm-night #lb .lb-c { background: #3B3736; color: #F4F2EE; }
 #lb .lb-vm { width: 34px; height: 34px; display: grid; place-items: center; } #lb .lb-vm svg { width: 17px; height: 17px; fill: currentColor; } #lb .lb-vm svg .w, #lb .lb-vm svg .x { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
 #lb .lb-vm .x, #lb .lb-vm.off .w { display: none; } #lb .lb-vm.off .x { display: inline; }
 @media (prefers-reduced-motion: reduce) { #lb { animation: none; } #lb .lb-c.lb-held { transform: none; } }
+
+/* RESEARCH BOARD: what have you noticed?, in the board's own hand at its top, written in once the board is first seen, and then it stays */
+@keyframes in-write { from { clip-path: inset(-30% 100% -30% 0); } to { clip-path: inset(-30% -4% -30% 0); } }
+.sk-research .rb-word { font-size: 6cqw; animation: in-write 2.6s cubic-bezier(.45, .05, .35, 1) 1s both paused; }
+.sk-research.rb-seen .rb-word { animation-play-state: running; }
+@media (prefers-reduced-motion: reduce) { .sk-research .rb-word { animation: none; } }
+/* the first card's front: the mark and the name, one sentence, and the paper it is printed on at the foot */
+#hm .sk-intro .in-top { position: absolute; left: 7cqw; right: 7cqw; bottom: calc(50cqh + min(70cqh, 84cqw * 4 / 3) / 2 + 3.2cqh); z-index: 2; margin: 0; text-align: center; color: #6B6865; font: 400 clamp(11px, 3.4cqw, 14px)/1.45 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: .005em; pointer-events: none; }
+#hm .sk-intro .in-nm { display: inline-flex; align-items: center; gap: .5em; margin: 0 0 .65em; color: #3F3D3A; font: 400 1.22em/1 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .01em; }
+#hm .sk-intro .in-nm b { font-weight: 500; }
+#hm .sk-intro .in-nm .ng-mark { width: 1.9em; height: auto; color: #8E8B86; }
+#hm .sk-intro .in-ln { margin: 0; text-wrap: balance; }
+#hm .sk-intro .in-pp { position: absolute; left: 7cqw; right: 16cqw; bottom: 3.2cqh; z-index: 2; margin: 0; color: #8E8B86; font: 400 clamp(9.5px, 2.6cqw, 11.5px)/1.35 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; text-align: left; }
+#hm.night .sk-intro .in-top { color: #A8A5A0; } #hm.night .sk-intro .in-nm { color: #E4E1DB; } #hm.night .sk-intro .in-nm .ng-mark { color: #77746F; } #hm.night .sk-intro .in-pp { color: #77746F; }
+#hm .hm-card.small.sk-intro .in-top, #hm .hm-card.small.sk-intro .in-pp { display: none; }
+/* the label's More: a small key under the words */
+#lb .lb-c:not(.lb-open) .lb-x { display: none; }
+#lb .lb-mo { display: block; margin: .5em 0 0; padding: .35em 0; min-height: 32px; font: inherit; font-size: .9em; font-weight: 700; color: inherit; background: none; border: 0; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; cursor: pointer; }
