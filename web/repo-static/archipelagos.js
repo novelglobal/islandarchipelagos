@@ -42,16 +42,25 @@
     c = c.concat(tie(HB, Math.PI * .9)); c.push([HB[0] + 3, HB[1] + 6], [HB[0] + 10, HB[1] + 20]); return c; }
   function one() { return basket(); }
   function two() { return basket(BA).concat(basket(BB), ropeAlong(ropeLine(), 1.7, 5)); }
-  /* the web's frame: spokes from its hub out to the handles, the rope and the air above */
-  var HUB = [94, 42], ANCH = [[94, 3], [124, 6], [146, 22], [HB[0] - 2, HB[1] - 4], [126, 76], [94, 82], [62, 76], [HA[0] + 2, HA[1] - 4], [42, 22], [64, 6]];
-  function three() { var s = two(); ANCH.forEach(function (a) { s.push(['M' + HUB[0] + ' ' + HUB[1] + ' L' + a[0] + ' ' + a[1], 0, 'thin']); }); return s; }
-  /* the spiral it is spinning: from the hub out, spoke to spoke, a little wider each step */
-  var SPIRAL = (function () { var sp = ANCH.map(function (a) { return [Math.atan2(a[1] - HUB[1], a[0] - HUB[0]), Math.hypot(a[0] - HUB[0], a[1] - HUB[1])]; }).sort(function (a, b) { return a[0] - b[0]; }), n = sp.length, out = [];
-    for (var k = 0; k < n * 6; k++) { var q = sp[k % n], r = Math.min(4 + k * 0.62, q[1] * .9); out.push([HUB[0] + Math.cos(q[0]) * r, HUB[1] + Math.sin(q[0]) * r]); } return out; })();
+  /* the web, half made: held by the two handles and the rope below, never the sky. Its top is the Irukandji's four tentacles,
+     reaching down from the bell, which floats clear above it. The inner turns go round, the outer ones stop part way */
+  var HUB = [94, 58], LOW = [[147, 56.5], [130, 72], [94, 80], [58, 72], [41, 56.5]], TIPS = [-150, -110, -70, -30].map(function (d) { var a = d * Math.PI / 180; return [HUB[0] + Math.cos(a) * 22, HUB[1] + Math.sin(a) * 22]; });
+  var BELL = [94, 13];
+  function polar(a) { return [Math.atan2(a[1] - HUB[1], a[0] - HUB[0]), Math.hypot(a[0] - HUB[0], a[1] - HUB[1])]; }
+  function ring(pts, r) { var q = pts.map(function (a) { var o = polar(a), rr = Math.min(r, o[1]); return [HUB[0] + Math.cos(o[0]) * rr, HUB[1] + Math.sin(o[0]) * rr]; }), d = 'M' + q[0][0].toFixed(1) + ' ' + q[0][1].toFixed(1);
+    for (var k = 1; k < q.length; k++) { var a = q[k - 1], b = q[k]; d += ' Q' + lerp(HUB[0], (a[0] + b[0]) / 2, .92).toFixed(1) + ' ' + lerp(HUB[1], (a[1] + b[1]) / 2, .92).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); } return d; }
+  var ALL = LOW.concat(TIPS, [LOW[0]]);
+  function three() { var s = two();
+    LOW.concat(TIPS).forEach(function (a) { s.push(['M' + HUB[0] + ' ' + HUB[1] + ' L' + a[0].toFixed(1) + ' ' + a[1].toFixed(1), 0, 'thin']); });
+    s.push([ring(ALL, 7), 0, 'thin'], [ring(ALL, 14), 0, 'thin'], [ring(LOW.concat([TIPS[0]]), 22), 0, 'thin'], [ring(LOW.slice(0, 3), 31), 0, 'thin']);
+    return s; }
+  /* the thread it is spinning now: the outer turn, carried on from where it stopped */
+  var GROW = (function () { var out = [], pts = LOW.slice(2); for (var k = 0; k < pts.length - 1; k++) { var a = polar(pts[k]), b = polar(pts[k + 1]); if (b[0] - a[0] < -Math.PI) b[0] += Math.PI * 2;
+    for (var j = 0; j <= 20; j++) { var t = j / 20, an = lerp(a[0], b[0], t), rr = 31 * (1 - .08 * Math.sin(t * Math.PI)); out.push([HUB[0] + Math.cos(an) * rr, HUB[1] + Math.sin(an) * rr]); } } return out; })();
 
   /* ───────── the Irukandji, the main one, as it swims on the banner: the box bell in one line with its shadow line, the eye in
-     dots, four dots where the tentacles leave, four fine tentacles beaded at the top. Here it swims the spiral, crown first,
-     and the thread comes off it ───────── */
+     dots, four dots where the tentacles leave, four fine tentacles beaded at the top. Here it floats above the web it is
+     making, its tentacles the web's top threads ───────── */
   var NTJ = 40, NRJ = 40, RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var noise = function (a, b, c) { return Math.sin(a * 1.7 + b * 2.3 + c) * 0.5 + Math.sin(a * 0.9 - b * 1.3 + c * 1.9) * 0.3 + Math.sin(b * 3.1 + c * 0.7) * 0.2; };
   function trace(g, pts) { g.beginPath(); pts.forEach(function (p, i) { if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); }
@@ -65,13 +74,14 @@
     var ca = Math.cos(-(J.a + Math.PI / 2)), sa = Math.sin(-(J.a + Math.PI / 2)), lvx = J.vx * ca - J.vy * sa, lvy = J.vx * sa + J.vy * ca;
     var TL = bh * 2.5, ts = RM.matches ? 0 : t * 0.6, ph = J.ph * Math.PI * 2;
     for (var i = 0; i < 4; i++) {
-      var rx = (i - 1.5) / 1.5 * w * 0.82, pts = [];
-      for (var j = 0; j < NTJ; j++) { var s = j / (NTJ - 1), env = Math.min(1, j / 4);
-        var x = rx + (i - 1.5) * s * TL * 0.05 + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.65 + Math.sin(s * (6 + i) - ts * 2.6 + i * 1.7) * bh * 0.3 + Math.sin(ph - s * 4.5 + i) * bh * 0.16) * s * env - lvx * 0.5 * s * s * S;
-        var y = bot - 1 + s * TL * (1 - Math.min(0.25, Math.abs(lvy) * 0.01)) * (1 - 0.07 * p * (1 - s * 0.6)) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.22 * s;
+      var rx = (i - 1.5) / 1.5 * w * 0.82, pts = [], tip = J.tips ? [J.tips[i][0] - J.x, J.tips[i][1] - J.y] : null;
+      for (var j = 0; j < NTJ; j++) { var s = j / (NTJ - 1), env = Math.min(1, j / 4), x, y;
+        if (tip) { var sw = Math.sin(s * Math.PI); x = lerp(rx, tip[0], s) + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.22 + Math.sin(ph - s * 4.5 + i) * bh * 0.07) * sw; y = lerp(bot - 1, tip[1], s) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.08 * sw; pts.push([x, y]); continue; }
+        x = rx + (i - 1.5) * s * TL * 0.05 + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.65 + Math.sin(s * (6 + i) - ts * 2.6 + i * 1.7) * bh * 0.3 + Math.sin(ph - s * 4.5 + i) * bh * 0.16) * s * env - lvx * 0.5 * s * s * S;
+        y = bot - 1 + s * TL * (1 - Math.min(0.25, Math.abs(lvy) * 0.01)) * (1 - 0.07 * p * (1 - s * 0.6)) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.22 * s;
         pts.push([x, y]); }
       var far = i === 1 || i === 2;
-      line(pts, 0.8, far ? 0.4 : 0.55); line(pts.map(function (q) { return [q[0] + 1.3, q[1] - 0.8]; }).slice(0, NTJ - 6), 0.3, 0.16);
+      line(pts, 0.8, J.tips ? 0.75 : far ? 0.4 : 0.55); line(pts.map(function (q) { return [q[0] + 1.3, q[1] - 0.8]; }).slice(0, NTJ - 6), 0.3, 0.16);
       for (var b = 1; b < NTJ * 0.2; b++) dot(pts[b][0], pts[b][1], b % 3 === 0 ? 1.15 * Math.sqrt(S) : 0.75 * Math.sqrt(S), 0.32 + 0.22 * Math.sin(t * 1.4 - b * 0.5 + i));
     }
     var B = [];
@@ -84,10 +94,10 @@
     [-0.62, -0.22, 0.22, 0.62].forEach(function (f) { dot(f * w, bot - bh * 0.1, 0.9 * Math.sqrt(S), 0.8); });
     g.restore();
   }
-  /* one loop for every spinner on the page: the spiral grows behind it, holds, fades, and starts again */
-  var SPIN = [], LAST = 0, RUN = 18, HOLD = 3, FADE = 1.2;
+  /* one loop for every spinner on the page: the bell holds its place and breathes, the outer thread grows, holds, fades, again */
+  var SPIN = [], LAST = 0, RUN = 7, HOLD = 2.5, FADE = 1.2;
   function spinner(host) { var cv = D.createElement('canvas'); cv.className = 'spin'; cv.setAttribute('aria-hidden', 'true'); host.appendChild(cv);
-    SPIN.push({ cv: cv, t0: performance.now() / 1000, J: { x: HUB[0], y: HUB[1], a: -Math.PI / 2, ph: Math.random(), p: 0, vx: 0, vy: 0, s: 1 } }); if (SPIN.length === 1) requestAnimationFrame(frame); }
+    SPIN.push({ cv: cv, t0: performance.now() / 1000, J: { x: BELL[0], y: BELL[1], a: -Math.PI / 2, ph: Math.random(), p: 0, vx: 0, vy: 0, s: 1.1, tips: TIPS } }); if (SPIN.length === 1) requestAnimationFrame(frame); }
   function frame(ms) { var now = ms / 1000, dt = Math.min(0.05, LAST ? now - LAST : 0.016); LAST = now;
     SPIN = SPIN.filter(function (o) { return o.cv.isConnected; }); if (!SPIN.length) { LAST = 0; return; }
     var cs = getComputedStyle(H), inkC = rgb(cs.getPropertyValue('--ink')), acc = cs.getPropertyValue('--acc').trim() || '#E07A57', paper = cs.getPropertyValue('--card').trim() || '#FBFAF7';
@@ -95,14 +105,9 @@
       if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(Hh * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(Hh * dpr); }
       var k = Math.min(W / 200, Hh / 150), ox = (W - 200 * k) / 2, oy = (Hh - 150 * k) / 2, g = cv.getContext('2d');
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, Hh); g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
-      var age = RM.matches ? RUN : (now - o.t0) % (RUN + HOLD + FADE), f = Math.min(1, age / RUN), alpha = age > RUN + HOLD ? 1 - (age - RUN - HOLD) / FADE : 1;
-      var n = Math.max(2, Math.floor(f * (SPIRAL.length - 1))), part = f * (SPIRAL.length - 1) - n, a = SPIRAL[n], b = SPIRAL[Math.min(SPIRAL.length - 1, n + 1)], head = [lerp(a[0], b[0], part), lerp(a[1], b[1], part)];
-      g.globalAlpha = Math.max(0, alpha); g.strokeStyle = 'rgba(' + inkC + ',.8)'; g.lineWidth = .9 / Math.max(.6, k) + .35; g.lineJoin = 'round'; trace(g, SPIRAL.slice(0, n + 1).concat([head])); g.stroke();
-      /* it swims just ahead of the thread, crown first, and the thread runs from under its bell */
-      var J = o.J, ang = Math.atan2(b[1] - a[1], b[0] - a[0]), d = Math.atan2(Math.sin(ang - J.a), Math.cos(ang - J.a));
-      J.a += d * Math.min(1, dt * 3); J.ph += dt / 2.4; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
-      var tx = head[0] + Math.cos(J.a) * 12, ty = head[1] + Math.sin(J.a) * 12; J.vx = (tx - J.x) / Math.max(dt, .016) * .2; J.vy = (ty - J.y) / Math.max(dt, .016) * .2; J.x += (tx - J.x) * Math.min(1, dt * 6); J.y += (ty - J.y) * Math.min(1, dt * 6); J.s = 1.6;
-      g.globalAlpha = 1; g.strokeStyle = acc; g.lineWidth = .7; g.beginPath(); g.moveTo(head[0], head[1]); g.lineTo(J.x - Math.cos(J.a) * 3, J.y - Math.sin(J.a) * 8); g.stroke();
+      var age = RM.matches ? RUN : (now - o.t0) % (RUN + HOLD + FADE), f = Math.min(1, age / RUN), al = age > RUN + HOLD ? 1 - (age - RUN - HOLD) / FADE : 1, n = Math.max(1, Math.round(f * (GROW.length - 1)));
+      g.globalAlpha = Math.max(0, al); g.strokeStyle = acc; g.lineWidth = .8; g.lineCap = 'round'; g.lineJoin = 'round'; trace(g, GROW.slice(0, n + 1)); g.stroke(); g.globalAlpha = 1;
+      var J = o.J; J.ph += dt / 3.2; var c = J.ph % 1; J.p = c < 0.28 ? Math.sin(c / 0.28 * Math.PI / 2) : Math.cos((c - 0.28) / 0.72 * Math.PI / 2);
       drawJelly(g, J, now, inkC, paper); });
     requestAnimationFrame(frame); }
 
