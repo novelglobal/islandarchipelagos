@@ -114,9 +114,14 @@
         var rows = [], m = 0; ch.forEach(function (r, j) { if (!j || r[3] || m === 3) { rows.push(r[2]); m = 0; } m++; });
         var bands = P === 9 ? ' hm-bands" style="' + rows.slice(0, 3).map(function (g, j) { return '--r' + (j + 1) + ':var(--th-' + g + ')'; }).join(';') : '';
         out += '<section class="hm-trio p' + P + ' n' + Math.min(3, ch.length) + bands + '">' + ch.map(function (r) { return r[0]; }).join('') + '</section>'; } run = []; };
-    var was = null, wasT = null, wasG = null; view().forEach(function (x) { var c = x[0], i = x[1], tr = tierOf(c), th = !!c.g, g1 = false; if (was !== null && tr !== was) flush(); was = tr; P = tr === 'nine' ? P9 : mainPer();
+    var was = null, wasT = null, wasG = null, V = view(); V.forEach(function (x) { var c = x[0], i = x[1], tr = tierOf(c), th = !!c.g, g1 = false; if (was !== null && tr !== was) flush(); was = tr; P = tr === 'nine' ? P9 : mainPer();
       if (tr === 'full') { flush(); wasT = wasG = null; out += cardHTML(c, i); return; }
-      if (tr === 'nine' && !free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush(); g1 = true; } } wasT = th; wasG = c.g || null;
+      if (tr === 'nine' && !free) { if (wasT !== null && th !== wasT) flush(); if (th && c.g !== wasG) { if (P === 3) flush();
+          /* each theme starts a row of its own: a row left part-full keeps its gaps, so a card more pushes the rest down a row, onto a new nine when the page is full */
+          else { while (run.length % 3) run.push(['<i class="hm-gap" aria-hidden="true"></i>', true, wasG || 'app', false]);
+            /* a theme that fits on one nine but not on what is left of this one starts a nine of its own */
+            var gn = 0; for (var q = V.indexOf(x); q < V.length && V[q][0].g === c.g && tierOf(V[q][0]) === 'nine'; q++) gn++; if (run.length % P && gn <= P && run.length % P + gn > P) flush(); }
+          g1 = true; } } wasT = th; wasG = c.g || null;
       run.push([cardHTML(c, i, g1), !!c.ph, c.g || (c.ph ? 'slot' : 'app'), g1]); }); flush(); return out + FOOT + wallHTML(); }
   /* the page's foot: a torn length of crumpled receipt paper, the mark on it */
   var FOOT_T = [['maze', '#0B0B0B', '#F1EEE6'], ['crack', '#8A6A4A', '#F1EEE6'], ['eyes', '#0B0B0B', '#F1EEE6'], ['spots', '#2350B8', '#F1EEE6'], ['lines', '#1F6B4F', '#0B0B0B'], ['crack', '#FF6B3D', '#F1EEE6'], ['maze', '#F2B6B0', '#0B0B0B'], ['worms', '#F1EEE6', '#0B0B0B']];
@@ -719,7 +724,10 @@
     n.addEventListener('click', function (e) { e.stopPropagation(); if (e.target.closest && e.target.closest('.lb-v')) return; if (!mo) return; var o = n.classList.toggle('nt-open'); mo.textContent = o ? 'Less' : 'More'; mo.setAttribute('aria-expanded', String(o)); });
     root.appendChild(n); NT.el = n; NT.id = id; notePlace(); }
   /* a note stands on its own card, at its foot and inside its edges, whatever the card's size or place */
-  function notePlace() { var n = NT.el, c = n && NT.id && col.querySelector('.hm-card[data-id="' + NT.id + '"]'); if (!c) return; var r = c.getBoundingClientRect(), pad = r.width < 220 ? 6 : 10, w = Math.max(150, Math.min(r.width - 2 * pad, n.classList.contains('nt-f') ? 300 : 260));
+  function noteBox(c) { var sec = c.closest('.hm-trio.p9'), k = noteKey(c.dataset.id); if (!sec || !k) return c.getBoundingClientRect(); var b = null;
+    $$('.hm-card[data-id]', sec).forEach(function (e) { if (noteKey(e.dataset.id) !== k) return; var q = e.getBoundingClientRect(); b = b ? { left: Math.min(b.left, q.left), top: Math.min(b.top, q.top), right: Math.max(b.right, q.right), bottom: Math.max(b.bottom, q.bottom) } : { left: q.left, top: q.top, right: q.right, bottom: q.bottom }; });
+    b.width = b.right - b.left; b.height = b.bottom - b.top; return b; }
+  function notePlace() { var n = NT.el, c = n && NT.id && col.querySelector('.hm-card[data-id="' + NT.id + '"]'); if (!c) return; var r = noteBox(c), pad = r.width < 220 ? 6 : 10, w = Math.max(150, Math.min(r.width - 2 * pad, n.classList.contains('nt-f') ? 300 : r.width > 400 ? 300 : 260));
     n.style.left = Math.round(Math.max(8, Math.min(r.left + r.width - pad - w, innerWidth - w - 8))) + 'px'; n.style.right = 'auto'; n.style.width = w + 'px';
     n.style.bottom = Math.round(Math.max(8, innerHeight - r.bottom + pad)) + 'px'; n.style.maxHeight = Math.round(Math.max(120, Math.min(r.height - 2 * pad, innerHeight - 16))) + 'px'; }
   addEventListener('resize', function () { if (NT.el) notePlace(); });
@@ -1059,7 +1067,8 @@
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   if (matchMedia('(hover: hover)').matches) col.addEventListener('pointerover', function (e) { var c = e.target.closest && e.target.closest('.hm-card[data-id]'); if (!c || !c.closest('.hm-trio') || c.dataset.id === NT.hov) return;
-    NT.hov = c.dataset.id; if (NT.el && NT.id === NT.hov) return; if (noteKey(NT.hov) && (!NT.el || noteKey(NT.id) !== noteKey(NT.hov))) noteWait(true); });
+    NT.hov = c.dataset.id; var hk = noteKey(NT.hov), nine = !!c.closest('.hm-trio.p9'), sk = nine ? hk + '|' + [].indexOf.call(col.querySelectorAll('.hm-trio'), c.closest('.hm-trio')) : NT.hov; if (sk === NT.hk) return; NT.hk = sk;
+    if (NT.el && NT.id === NT.hov) return; if (hk && (!NT.el || noteKey(NT.id) !== hk || !nine)) noteWait(true); });
   addEventListener('resize', function () { if (!tick) tick = requestAnimationFrame(parallax); });
   /* a key turns the page, as a swipe does */
   addEventListener('keydown', function (e) { if (H.classList.contains('hm-away') || xv.classList.contains('on') || /INPUT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
