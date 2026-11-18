@@ -31,7 +31,7 @@
 #define NG_PRINTER "printer id"
 #define NG_TOKEN   "touch token"
 #define NG_BUZZ    -1   // a small vibration motor on a free pin (43 or 44) for a felt tap; -1 for none
-#define NG_VERSION "1 Nov 15"   // shown on the setup and joining screens, to know which sketch is on the board
+#define NG_VERSION "1 Nov 19"   // shown on the setup and joining screens, to know which sketch is on the board
 #define NG_AUTOPRINT 30  // seconds a slip waits before it prints by itself; 0: never, every slip waits for a press (the screen as the approval)
 #define NG_CODE    "888" // the three numbers for the hidden menu (hold, hold again, then these)
 #define NG_TURN    1    // which way up: 1, or 3 to turn the picture round (the USB socket on the other side)
@@ -86,7 +86,7 @@ void buzz(int ms) { if (NG_BUZZ < 0) return; digitalWrite(NG_BUZZ, HIGH); delay(
 
 /* ───────── the server, on its own core so the creature never stutters: what is held; print or squash one ───────── */
 struct Slip { String job, code, say, life, wish[4], img; int n = 0; bool paper = true; };   // paper false: a line for the radios alone, nothing printed
-struct Seen { Slip first; int waiting = 0, printing = 0; unsigned ver = 0; } seen, net;   // net: written by the server task; seen: the loop's copy
+struct Seen { Slip first; int waiting = 0, printing = 0; unsigned ver = 0; String pass; } seen, net;   // net: written by the server task; seen: the loop's copy
 SemaphoreHandle_t lock;
 String askJob, askWhat; volatile bool setupOn = false; volatile int netErr = 1;   // 0 fine, 1 no Wi-Fi, 2 no answer, 3 token refused
 /* one secure connection to the site, kept open between asks (the handshake is the slow part, and the part that failed as -1) */
@@ -103,7 +103,7 @@ void poll() {
   if (code != 200) { h.end(); netErr = code == 401 ? 3 : 2; return; }
   String got = h.getString(); h.end(); JsonDocument d; if (deserializeJson(d, got)) { netErr = 2; return; }
   { int w = d["wait"] | 0; if (w >= 1 && w <= 300) pollMs = (unsigned long)w * 1000UL; }
-  Seen s; JsonArray held = d["held"].as<JsonArray>(); s.waiting = d["waiting"] | (int)held.size(); s.printing = d["printing"] | 0;
+  Seen s; JsonArray held = d["held"].as<JsonArray>(); s.waiting = d["waiting"] | (int)held.size(); s.printing = d["printing"] | 0; s.pass = d["pass"] | "";   // a pass to use once today, when the island shows one here
   if (held.size()) { JsonObject f = held[0]; s.first.job = f["job"].as<String>(); s.first.code = f["code"].as<String>(); s.first.say = f["say"].as<String>(); s.first.life = f["life"].as<String>(); s.first.paper = f["paper"] | true;
     s.first.img = f["img"] | "";
     for (JsonVariant v : f["wish"].as<JsonArray>()) if (s.first.n < 4) s.first.wish[s.first.n++] = v.as<String>(); }
@@ -883,6 +883,7 @@ void loop() {
   if (mode == HELD && actCode && actCode != 200) {   // the site did not take it: it is tried again by itself
     String r = String("trying again (") + actCode + ")"; text(MONO, r.c_str(), W - 10 - textW(MONO, r.c_str(), 0), H - 6, INK, actCode == 200 ? 0.45f : 0.85f, 0);
   }
+  if (seen.pass.length() == 3 && (mode == ASLEEP || mode == AWAKE || mode == QUIET)) { String p = String("PASS ") + seen.pass; text(MONO, p.c_str(), 10, H - 8, INK, 0.7f, 1); }
   if (mode != SETUP && mode != ASLEEP) counts();
   if (mode != SETUP && netErr) { ring(W - 12, H - 12, 3.5f, 1, INK, 0.55f); if (netErr == 3) text(MONO, "?", W - 28, H - 8, INK, 0.7f, 0); }
   g->flush();
