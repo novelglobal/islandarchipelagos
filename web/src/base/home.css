@@ -1705,12 +1705,12 @@ html.hm-night #lb .lb-c { background: #3B3736; color: #F4F2EE; }
 .sk-research.rb-seen .rb-word { animation-play-state: running; }
 @media (prefers-reduced-motion: reduce) { .sk-research .rb-word { animation: none; } }
 /* the first card's front: the mark and the name, one sentence, and the paper it is printed on at the foot */
-#hm .sk-intro .in-top { position: absolute; left: 7cqw; right: 7cqw; bottom: calc(100cqh - var(--in-c) + var(--in-h) / 2 + 14px); z-index: 2; margin: 0; text-align: center; color: #6B6865; font: 400 clamp(11px, 3.4cqw, 14px)/1.45 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: .005em; pointer-events: none; }
-#hm .sk-intro .in-nm { display: inline-flex; align-items: center; gap: .5em; margin: 0 0 .65em; color: #3F3D3A; font: 400 1.22em/1 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .01em; }
+#hm .sk-intro .in-top { position: absolute; left: 8cqw; right: 8cqw; bottom: calc(100cqh - var(--in-c) + var(--in-h) / 2 + 14px); z-index: 2; margin: 0; text-align: center; color: #5F5C58; font: 400 clamp(12px, 3.45cqw, 15px)/1.42 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; pointer-events: none; }
+#hm .sk-intro .in-nm { display: inline-flex; align-items: center; gap: .55em; margin: 0 0 .6em; color: #3A3835; font: 400 1.38em/1 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: -.005em; }
 #hm .sk-intro .in-nm b { font-weight: 500; }
-#hm .sk-intro .in-nm .ng-mark { width: 1.9em; height: auto; color: #8E8B86; }
-#hm .sk-intro .in-ln { margin: 0; text-wrap: balance; }
-#hm .sk-intro .in-pp { position: absolute; left: 6cqw; right: 6cqw; top: calc(var(--in-c) + var(--in-h) / 2 + 12px); z-index: 2; margin: 0; color: #8E8B86; font: 400 clamp(8px, 2.4cqw, 11px)/1.4 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; text-align: center; }
+#hm .sk-intro .in-nm .ng-mark { width: 1.7em; height: auto; color: #8E8B86; }
+#hm .sk-intro .in-ln { max-width: 31em; margin: 0 auto; text-wrap: balance; }
+#hm .sk-intro .in-pp { position: absolute; left: 6cqw; right: 6cqw; top: calc(var(--in-c) + var(--in-h) / 2 + 12px); z-index: 2; margin: 0; color: #9A968F; font: 400 clamp(8px, 2.4cqw, 11px)/1.45 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: .01em; text-align: center; text-wrap: balance; }
 #hm.night .sk-intro .in-top { color: #A8A5A0; } #hm.night .sk-intro .in-nm { color: #E4E1DB; } #hm.night .sk-intro .in-nm .ng-mark { color: #77746F; } #hm.night .sk-intro .in-pp { color: #77746F; }
 #hm .hm-card.small.sk-intro .in-top, #hm .hm-card.small.sk-intro .in-pp { display: none; }
 /* the label's More: a small key under the words */
