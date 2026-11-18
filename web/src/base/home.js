@@ -57,7 +57,6 @@
     { id: 'nonfiction', size: 'small', title: 'NON-FICTION', opens: 'stack:nonfiction', cart: 'read', shelf: 'non', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'survival', size: 'small', title: 'SURVIVAL', opens: 'stack:survival', cart: 'read', shelf: 'how', g: 'read', tag: 'READ', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'cards', size: 'small', title: 'PLAYING', opens: 'stack:cards', cart: 'cards', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
-    { id: 'species', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', cart: 'species', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'tarot', size: 'small', title: 'TAROT', opens: 'stack:tarot', cart: 'tarot', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'pl-pl-2uqn', size: 'small', title: 'SESAME', opens: 'play', play: 'PL-2UQN', cart: 'recipes', g: 'deck', tag: 'CARDS', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
     { id: 'portfolio', off: true, size: 'small', title: 'PORTFOLIO', opens: 'portfolio', island: 'novelglobal', art: 'receipt', motion: 'shadow', where: [-37.8136, 144.9631] },
@@ -980,6 +979,8 @@
       var o = { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', motion: 'shadow', where: [-37.8136, 144.9631] };
       /* a play novel.global made big stands with the big cards, before the nine */
       if (p.big) { o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); } else add.push(o); });
+    var spc = { id: 'species', g: 'dev', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', skin: 'play', art: 'slot', pal: 6, motion: 'shadow', where: [-37.77, 144.96] };
+    if (!byId('species')) { var bz = -1; add.forEach(function (o, i) { if (bz < 0 && /BUSINESS|CARD/.test(o.title)) bz = i; }); add.splice(bz < 0 ? add.length : bz + 1, 0, spc); if (add.length > 9) add.length = 9; }
     for (var k = 0; add.length < 9; k++) add.push({ id: 'dev-mk-' + (k ? k : 'a'), g: 'dev', size: 'small', title: 'MAKE', skin: 'slot', opens: 'bench', mode: 'live', island: '', art: 'slot', motion: 'shadow', where: [-37.8136, 144.9631] });
     CARDS.splice.apply(CARDS, [at, 0].concat(add)); if (bigs.length) { var s0 = -1; CARDS.forEach(function (c, i) { if (s0 < 0 && c.g === 'soon') s0 = i; }); CARDS.splice.apply(CARDS, [s0 < 0 ? at : s0, 0].concat(bigs)); } applyCards(''); }
   function devLoad() { fetch('/api/plays?o=' + DEV.o + '&pg=' + DEV.pg).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(playCards).catch(function () { /* none yet */ }); }
