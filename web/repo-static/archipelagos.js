@@ -45,7 +45,7 @@
   /* the web, half made: held by the two handles and the rope below, never the sky. Its top is the Irukandji's four tentacles,
      reaching down from the bell, which floats clear above it. The inner turns go round, the outer ones stop part way */
   var HUB = [94, 58], LOW = [[147, 56.5], [130, 72], [94, 80], [58, 72], [41, 56.5]], TIPS = [-150, -110, -70, -30].map(function (d) { var a = d * Math.PI / 180; return [HUB[0] + Math.cos(a) * 22, HUB[1] + Math.sin(a) * 22]; });
-  var BELL = [94, 13];
+  var BELL = [94, 15];
   function polar(a) { return [Math.atan2(a[1] - HUB[1], a[0] - HUB[0]), Math.hypot(a[0] - HUB[0], a[1] - HUB[1])]; }
   function ring(pts, r) { var q = pts.map(function (a) { var o = polar(a), rr = Math.min(r, o[1]); return [HUB[0] + Math.cos(o[0]) * rr, HUB[1] + Math.sin(o[0]) * rr]; }), d = 'M' + q[0][0].toFixed(1) + ' ' + q[0][1].toFixed(1);
     for (var k = 1; k < q.length; k++) { var a = q[k - 1], b = q[k]; d += ' Q' + lerp(HUB[0], (a[0] + b[0]) / 2, .92).toFixed(1) + ' ' + lerp(HUB[1], (a[1] + b[1]) / 2, .92).toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1); } return d; }
@@ -65,33 +65,42 @@
   var noise = function (a, b, c) { return Math.sin(a * 1.7 + b * 2.3 + c) * 0.5 + Math.sin(a * 0.9 - b * 1.3 + c * 1.9) * 0.3 + Math.sin(b * 3.1 + c * 0.7) * 0.2; };
   function trace(g, pts) { g.beginPath(); pts.forEach(function (p, i) { if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); }
   function rgb(v) { v = String(v).trim(); var m = /^#([0-9a-f]{6})$/i.exec(v); if (!m) return '43,42,40'; var n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(','); }
+  /* the Irukandji as it is: a box bell, a little taller than wide, flat-topped with round shoulders and near-straight sides; warts
+     of stinging cells over it, thickest along the top; faint pleats down it; two eyes low on the sides, a ring with a bright dot;
+     four tentacles from the corners, thick where they leave, banded with stinging cells all the way down */
+  var WART = (function () { var o = [], r = 48271; var nx = function () { r = (r * 16807) % 2147483647; return r / 2147483647; }; for (var k = 0; k < 34; k++) o.push([nx() * 2 - 1, nx()]); return o; })();
   function drawJelly(g, J, t, inkRGB, paper) {
     var S = J.s, ink = function (a) { return 'rgba(' + inkRGB + ',' + a.toFixed(3) + ')'; };
     var line = function (pts, w, a) { g.strokeStyle = ink(a); g.lineWidth = w; trace(g, pts); g.stroke(); };
     var dot = function (x, y, r, a) { g.fillStyle = ink(a); g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
-    var bw = 15 * S, bh = 12.5 * S, p = RM.matches ? 0 : J.p, w = bw * (1 - 0.07 * p) / 2, h = bh * (1 + 0.045 * p), topY = -h * 0.55 + (bh - h) * 0.3, bot = topY + h;
-    g.save(); g.translate(J.x, J.y); g.rotate(J.a + Math.PI / 2); g.lineCap = 'round'; g.lineJoin = 'round';
-    var ca = Math.cos(-(J.a + Math.PI / 2)), sa = Math.sin(-(J.a + Math.PI / 2)), lvx = J.vx * ca - J.vy * sa, lvy = J.vx * sa + J.vy * ca;
-    var TL = bh * 2.5, ts = RM.matches ? 0 : t * 0.6, ph = J.ph * Math.PI * 2;
+    var p = RM.matches ? 0 : J.p, w = 7.5 * S * (1 - 0.06 * p), h = 15 * S * (1 + 0.04 * p), top = -h * 0.55, bot = top + h, ts = RM.matches ? 0 : t * 0.6, ph = J.ph * Math.PI * 2;
+    g.save(); g.translate(J.x, J.y); g.lineCap = 'round'; g.lineJoin = 'round';
+    /* the outline: from the lower left corner up, over the flat top, and down; the lip a shallow wave */
+    var half = function (u) { var y = bot - u * h, sh = Math.max(0, (u - 0.7) / 0.3), x = w * (1 - 0.07 * u) * (1 - 0.42 * (1 - Math.sqrt(Math.max(0, 1 - sh * sh)))); return [x, y]; }, B = [];
+    for (var k = 0; k <= 24; k++) { var q = half(k / 24); B.push([-q[0], q[1]]); }
+    for (var k2 = 24; k2 >= 0; k2--) { var q2 = half(k2 / 24); B.push([q2[0], q2[1]]); }
+    for (var m = 1; m < 12; m++) { var xm = w - 2 * w * m / 12; B.push([xm, bot + Math.sin(m * Math.PI / 2) * 0.35 * S]); } B.push(B[0]);
+    /* the four tentacles, from the corners: the two at the sides, the two behind showing nearer the middle */
+    var CX = [-0.95, -0.3, 0.3, 0.95];
     for (var i = 0; i < 4; i++) {
-      var rx = (i - 1.5) / 1.5 * w * 0.82, pts = [], tip = J.tips ? [J.tips[i][0] - J.x, J.tips[i][1] - J.y] : null;
-      for (var j = 0; j < NTJ; j++) { var s = j / (NTJ - 1), env = Math.min(1, j / 4), x, y;
-        if (tip) { var sw = Math.sin(s * Math.PI); x = lerp(rx, tip[0], s) + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.22 + Math.sin(ph - s * 4.5 + i) * bh * 0.07) * sw; y = lerp(bot - 1, tip[1], s) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.08 * sw; pts.push([x, y]); continue; }
-        x = rx + (i - 1.5) * s * TL * 0.05 + (noise(i * 3.3, s * 2.2, ts * 0.8) * bh * 0.65 + Math.sin(s * (6 + i) - ts * 2.6 + i * 1.7) * bh * 0.3 + Math.sin(ph - s * 4.5 + i) * bh * 0.16) * s * env - lvx * 0.5 * s * s * S;
-        y = bot - 1 + s * TL * (1 - Math.min(0.25, Math.abs(lvy) * 0.01)) * (1 - 0.07 * p * (1 - s * 0.6)) + noise(i * 7.1, s * 3, ts * 0.6) * bh * 0.22 * s;
-        pts.push([x, y]); }
-      var far = i === 1 || i === 2;
-      line(pts, 0.8, J.tips ? 0.75 : far ? 0.4 : 0.55); line(pts.map(function (q) { return [q[0] + 1.3, q[1] - 0.8]; }).slice(0, NTJ - 6), 0.3, 0.16);
-      for (var b = 1; b < NTJ * 0.2; b++) dot(pts[b][0], pts[b][1], b % 3 === 0 ? 1.15 * Math.sqrt(S) : 0.75 * Math.sqrt(S), 0.32 + 0.22 * Math.sin(t * 1.4 - b * 0.5 + i));
+      var rx = CX[i] * w, pts = [], tip = J.tips ? [J.tips[i][0] - J.x, J.tips[i][1] - J.y] : [rx * 1.4, bot + h * 2.2];
+      for (var jj = 0; jj < NTJ; jj++) { var s = jj / (NTJ - 1), sw = Math.sin(s * Math.PI);
+        pts.push([lerp(rx, tip[0], s) + (noise(i * 3.3, s * 2.2, ts * 0.8) * h * 0.12 + Math.sin(ph - s * 4.5 + i) * h * 0.04) * sw, lerp(bot - 0.5, tip[1], s) + noise(i * 7.1, s * 3, ts * 0.6) * h * 0.04 * sw]); }
+      var back = i === 1 || i === 2;
+      line(pts.slice(0, 7), 1.5 * S, back ? 0.45 : 0.7); line(pts, 0.75, back ? 0.5 : 0.75);
+      for (var b = 6; b < NTJ - 1; b += 2) dot(pts[b][0], pts[b][1], (b % 4 === 0 ? 0.62 : 0.42) * Math.sqrt(S), back ? 0.4 : 0.6);
     }
-    var B = [];
-    for (var k = 0; k < NRJ; k++) { var u = k / NRJ, X, Y; if (u < 0.8) { var an = Math.PI * (1 - u / 0.8), cu = Math.cos(an), su = Math.sin(an); X = Math.pow(Math.abs(cu), 0.55) * (cu < 0 ? -1 : 1) * w; Y = bot - Math.pow(su, 0.42) * h * (0.94 + 0.06 * su); } else { var q2 = (u - 0.8) / 0.2; X = w - 2 * w * q2; Y = bot - Math.sin(q2 * Math.PI) * h * 0.09; } B.push([X, Y]); }
-    B.push(B[0]); g.fillStyle = paper; trace(g, B); g.fill(); g.fillStyle = ink(0.06); g.fill();
-    line(B, 1.1 * Math.sqrt(S), 0.92); line(B.map(function (q) { return [q[0] + 1, q[1] + 0.7]; }), 0.35, 0.22);
-    var bk = Math.min(1, Math.abs(((t + 2.2) % 8.3) - 0.14) / 0.14), eh = h * 0.27 * Math.max(0.08, bk), ew = w * 0.74, ey = topY + h * 0.52;
-    for (var e = 0; e < 26; e++) { var ue = e / 26 * Math.PI * 2, ce = Math.cos(ue), se = Math.sin(ue); dot(ce * ew, ey + se * eh * (0.35 + 0.65 * Math.abs(se)), 0.6 * Math.sqrt(S), 0.34); }
-    var pr = h * 0.25 * Math.max(0.08, bk); g.strokeStyle = ink(0.3); g.lineWidth = 0.5; g.beginPath(); g.arc(0, ey, pr, 0, 7); g.stroke(); dot(0, ey, pr * 0.42, 0.38);
-    [-0.62, -0.22, 0.22, 0.62].forEach(function (f) { dot(f * w, bot - bh * 0.1, 0.9 * Math.sqrt(S), 0.8); });
+    /* the bell over them: paper behind it so the web shows through only as a ghost, then its line and its shadow line */
+    g.fillStyle = paper; trace(g, B); g.fill(); g.fillStyle = ink(0.05); g.fill();
+    line(B, 1.05 * Math.sqrt(S), 0.92); line(B.map(function (q) { return [q[0] + 0.8, q[1] + 0.6]; }), 0.35, 0.2);
+    /* faint pleats */
+    [-0.42, -0.08, 0.26].forEach(function (f, n) { line([[f * w, top + h * 0.16], [f * w + 0.4 * S, top + h * 0.55], [f * w - 0.2 * S, bot - h * 0.1]], 0.4, 0.22); });
+    /* the warts: a crowd along the top edge, a scatter below */
+    for (var e = 0; e <= 16; e++) { var xe = -w * 0.92 + 2 * w * 0.92 * e / 16, ye = top + h * 0.075 + Math.pow(Math.abs(xe) / w, 4) * h * 0.2; dot(xe, ye, 0.42 * Math.sqrt(S), 0.55); }
+    WART.forEach(function (o) { var y = top + h * (0.12 + o[1] * 0.78), x = o[0] * w * 0.84 * (1 - 0.05 * (bot - y) / h); dot(x, y, 0.32 * Math.sqrt(S), 0.42); });
+    /* the two eyes, low on the sides, each a ring with a bright dot in it */
+    var blink = Math.min(1, Math.abs(((t + 2.2) % 8.3) - 0.14) / 0.14);
+    [-0.5, 0.5].forEach(function (f) { var ex = f * w, ey = bot - h * 0.2, er = w * 0.15; g.strokeStyle = ink(0.6); g.lineWidth = 0.5; g.beginPath(); g.ellipse(ex, ey, er, er * (0.3 + 0.7 * blink), 0, 0, 7); g.stroke(); dot(ex, ey, er * 0.42 * Math.max(0.3, blink), 0.85); });
     g.restore();
   }
   /* one loop for every spinner on the page: the bell holds its place and breathes, the outer thread grows, holds, fades, again */
