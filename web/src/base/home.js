@@ -1198,26 +1198,39 @@
   /* SOUNDS: one small key in the banner, on every card. What sounds now (the radio on air, El Niño on the buoy), every loop recorded on
      the radio, every mixtape and every song, each going round as one file through the page's player (away.js), so it keeps playing with
      the screen locked; MIX picks loops and keeps them as a mixtape, the same list the radio keeps. Small grey tiles in a pixel face */
-  var SND = { el: null, rows: [], i: -1, wait: 0, mix: false, pick: {} }, AW = window.NGAWAY;
+  var SND = { el: null, rows: [], i: -1, wait: 0, mix: false, pick: {}, alb: String(store.get('da.snd.alb', '') || ''), ad: false, cur: '', curN: '' }, AW = window.NGAWAY;
   var sndOn = function () { return !!AW && AW.id().indexOf('snd:') === 0; };
   var sndLoops = function () { return (store.get('da.loops.v1', []) || []).filter(function (l) { return l && l.id && l.rec; }); };
   var sndTapes = function () { return store.get('da.tapes.v1', []) || []; };
   var sndLen = function (s2) { s2 = Math.round(s2 || 0); return Math.floor(s2 / 60) + ':' + ('0' + s2 % 60).slice(-2); };
-  function sndList() { var ls = sndLoops(), rows = [];
+  function sndAll() { var ls = sndLoops(), rows = [];
     sndTapes().forEach(function (t) { var ids = (t.ids || []).filter(function (id) { return ls.some(function (l) { return l.id === id; }); }); if (ids.length) rows.push({ k: 'tape', id: t.id, ids: ids, n: t.name || 'MIXTAPE', s: ids.reduce(function (n, id) { var l = ls.filter(function (q) { return q.id === id; })[0]; return n + ((l && l.rec.s) || 0); }, 0) }); });
     ls.forEach(function (l) { rows.push({ k: 'rec', id: l.id, ids: [l.id], n: String((l.where && l.where.place) || 'RADIO').toUpperCase(), s: l.rec.s }); });
     var A = window.AURA; if (A && A.play) (store.get('da.aura.songs', []) || []).forEach(function (q) { if (!q || !q.code || (q.rec && ls.some(function (l) { return l.id === q.rec; }))) return;
       rows.push({ k: 'song', id: 'sg-' + q.code, code: q.code, n: String(q.name || (A.songName ? A.songName(q.code) : 'SONG')).toUpperCase(), s: 0 }); });
     return rows; }
+  /* the albums to pick from, the same on every card: ALL, each mixtape, the W.I.S.H. songs, the radio's loops */
+  function sndAlbums() { var all = sndAll(), out = [{ v: '', n: 'ALL', c: all.length }], ct = function (k) { return all.filter(function (r) { return r.k === k; }).length; };
+    all.forEach(function (r) { if (r.k === 'tape') out.push({ v: 't:' + r.id, n: r.n, c: r.ids.length }); });
+    if (ct('song')) out.push({ v: 'wish', n: 'W.I.S.H.', c: ct('song') }); if (ct('rec')) out.push({ v: 'radio', n: 'RADIO', c: ct('rec') });
+    return out; }
+  /* the list in play: the album picked, its whole first (ALL) and then its tracks one by one */
+  function sndList() { var all = sndAll(), a = SND.alb, pick = function (k) { return all.filter(function (r) { return r.k === k; }); };
+    if (a === 'radio') return pick('rec');
+    if (a === 'wish') { var sg = pick('song'); return sg.length > 1 ? [{ k: 'songs', id: 'wish-all', codes: sg.map(function (r) { return r.code; }), n: 'ALL', s: 0, alb: 'W.I.S.H.' }].concat(sg) : sg; }
+    var tp = a ? all.filter(function (r) { return r.k === 'tape' && 't:' + r.id === a; })[0] : null;
+    if (!tp) { if (a) { SND.alb = ''; store.set('da.snd.alb', ''); } return all; }
+    return [{ k: 'tape', id: tp.id, ids: tp.ids, n: 'ALL', s: tp.s, alb: tp.n }].concat(tp.ids.map(function (id) { return all.filter(function (r) { return r.k === 'rec' && r.id === id; })[0]; }).filter(Boolean).map(function (r) { return { k: 'rec', id: r.id, ids: r.ids, n: r.n, s: r.s, alb: tp.n }; })); }
   function sndBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };
     q.onsuccess = function () { try { var g = q.result.transaction('kv').objectStore('kv').get('rec:' + id); g.onsuccess = function () { res(g.result || null); }; g.onerror = function () { res(null); }; } catch (e) { res(null); } }; q.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   /* a row as one file: a recording as it was made, a mixtape's recordings end to end, a song made ahead */
-  function sndFile(r) { if (r.k === 'song') return window.AURA && AURA.songFile ? AURA.songFile(r.code) : Promise.resolve(null); return Promise.all(r.ids.map(sndBlob)).then(function (bs) { return AW.join(bs); }); }
+  function sndFile(r) { if (r.k === 'songs') return window.AURA && AURA.songFile ? Promise.all(r.codes.map(function (c) { return AURA.songFile(c); })).then(function (bs) { return AW.join(bs); }) : Promise.resolve(null);
+    if (r.k === 'song') return window.AURA && AURA.songFile ? AURA.songFile(r.code) : Promise.resolve(null); return Promise.all(r.ids.map(sndBlob)).then(function (bs) { return AW.join(bs); }); }
   function sndStop() { SND.wait = 0; if (sndOn()) AW.stop(); airSound(false, 'snd'); sndDraw(); }
   function sndStep(d) { SND.rows = sndList(); var n = SND.rows.length; if (n) sndPlay(((SND.i < 0 ? 0 : SND.i) + d + n) % n); }
-  function sndPlay(i) { var r = SND.rows[i]; if (!r || !AW) return; SND.i = i; var t = SND.wait = Date.now(); AW.unlock(); sndDraw();
+  function sndPlay(i) { var r = SND.rows[i]; if (!r || !AW) return; SND.i = i; SND.cur = r.id; SND.curN = r.n === 'ALL' && r.alb ? r.alb : r.n; var t = SND.wait = Date.now(); AW.unlock(); sndDraw();
     sndFile(r).then(function (b) { if (SND.wait !== t) return; SND.wait = 0; if (!b) { sndDraw(); return; }
-      AW.play(b, { id: 'snd:' + r.id, title: r.n, album: r.k === 'tape' ? 'MIXTAPE' : r.k === 'song' ? 'W.I.S.H.' : 'RADIO', next: function () { sndStep(1); }, prev: function () { sndStep(-1); }, stop: function () { airSound(false, 'snd'); sndDraw(); } });
+      AW.play(b, { id: 'snd:' + r.id, title: SND.curN, album: r.alb || (r.k === 'tape' ? r.n : r.k === 'song' || r.k === 'songs' ? 'W.I.S.H.' : 'RADIO'), next: function () { sndStep(1); }, prev: function () { sndStep(-1); }, stop: function () { airSound(false, 'snd'); sndDraw(); } });
       airSound(true, 'snd'); sndDraw(); }); }
   function sndKeep() { var ids = SND.rows.filter(function (r) { return r.k === 'rec' && SND.pick[r.id]; }).map(function (r) { return r.id; }); if (!ids.length) return;
     var inp = SND.el.querySelector('.sn-nm'), ts = sndTapes(), first = SND.rows.filter(function (r) { return r.id === ids[0]; })[0];
@@ -1231,17 +1244,22 @@
     el.querySelector('.sn-air').classList.toggle('on', AIR.on); el.querySelector('.sn-air small').textContent = AIR.on ? 'ON AIR' : 'TUNE IN';
     el.querySelector('.sn-sea').classList.toggle('on', !!RS.nino); el.querySelector('.sn-sea').hidden = !nino || away; el.querySelector('.sn-sea small').textContent = RS.nino ? 'ON' : 'OFF';
     el.querySelector('.sn-mx').classList.toggle('on', SND.mix); el.querySelector('.sn-mx small').textContent = SND.mix ? Object.keys(SND.pick).filter(function (k) { return SND.pick[k]; }).length + ' IN' : 'TAPE';
-    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = on && r0 ? r0.n : SND.rows.length ? 'LISTEN' : 'EMPTY';
+    var pid = sndOn() ? AW.id().slice(4) : SND.wait ? SND.cur : ''; SND.i = Math.max(-1, SND.rows.map(function (r) { return r.id; }).indexOf(pid || SND.cur));
+    el.classList.toggle('playing', on); el.querySelector('.sn-ttl').textContent = on && SND.curN ? SND.curN : SND.rows.length ? 'LISTEN' : 'EMPTY';
+    var al = sndAlbums(), ac = al.filter(function (a) { return a.v === SND.alb; })[0] || al[0], ab = el.querySelector('[data-sn="alb"]'), ad = el.querySelector('.sn-ad');
+    ab.innerHTML = '<small>ALBUM</small><span>' + esc(ac.n) + '</span><i>' + ac.c + '</i><b aria-hidden="true">' + (SND.ad ? '▴' : '▾') + '</b>'; ab.setAttribute('aria-expanded', String(SND.ad));
+    ad.hidden = !SND.ad; ad.innerHTML = al.map(function (a) { return '<li class="' + (a.v === SND.alb ? 'on' : '') + '"><button data-sna="' + esc(a.v) + '"><span>' + esc(a.n) + '</span><i>' + a.c + '</i></button></li>'; }).join('');
     el.querySelector('[data-sn="go"]').textContent = on ? '■' : '▶';
     var ol = el.querySelector('.sn-pl'), rows = SND.mix ? SND.rows.filter(function (r) { return r.k === 'rec'; }) : SND.rows;
     ol.innerHTML = rows.length ? rows.map(function (r) { var i = SND.rows.indexOf(r), pk = !!SND.pick[r.id];
-      return '<li class="' + (on && i === SND.i ? 'on' : '') + (r.k === 'tape' ? ' tp' : '') + '"><button data-snp="' + i + '"' + (SND.mix ? ' aria-pressed="' + pk + '"' : '') + '><b>' + (SND.mix ? (pk ? '■' : '□') : ('0' + (i + 1)).slice(-2)) + '</b><span>' + esc(r.n) + '</span><i>' + (r.k === 'song' ? '♪' : (r.k === 'tape' ? r.ids.length + '× ' : '') + sndLen(r.s)) + '</i></button>' +
+      return '<li class="' + (on && r.id === pid ? 'on' : '') + (r.k === 'tape' ? ' tp' : '') + '"><button data-snp="' + i + '"' + (SND.mix ? ' aria-pressed="' + pk + '"' : '') + '><b>' + (SND.mix ? (pk ? '■' : '□') : ('0' + (i + 1)).slice(-2)) + '</b><span>' + esc(r.n) + '</span><i>' + (r.k === 'song' ? '♪' : r.k === 'songs' ? r.codes.length + '× ♪' : (r.k === 'tape' ? r.ids.length + '× ' : '') + sndLen(r.s)) + '</i></button>' +
         (r.k === 'tape' && !SND.mix ? '<button class="x" data-snx="' + esc(r.id) + '" aria-label="Let this mixtape go">×</button>' : '') + '</li>'; }).join('')
       : '<li class="none"><button data-sn="rec"><b>●</b><span>RECORD A LOOP ON THE RADIO</span><i>→</i></button></li>';
     var kp = el.querySelector('.sn-keep'); kp.hidden = !SND.mix; kp.querySelector('button').disabled = !Object.keys(SND.pick).some(function (k) { return SND.pick[k]; }); }
   function sndOpen(on) { if (on && !SND.el) { var el = D.createElement('section'); el.id = 'hm-sounds'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Sounds'); el.hidden = true;
       el.innerHTML = '<div class="sn-row"><b class="sn-t sn-id">SND<br>-01</b><button class="sn-t sn-air">' + sndIc.radio + '<span>RADIO</span><small></small></button><button class="sn-t sn-sea">' + sndIc.sea + '<span>EL NIÑO</span><small></small></button><button class="sn-t sn-mx">' + sndIc.mix + '<span>MIX</span><small></small></button></div>' +
         '<div class="sn-tp"><i class="sn-vu" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></i><b class="sn-ttl"></b><button data-sn="prev" aria-label="Before">⏮</button><button data-sn="go" aria-label="Play or stop">▶</button><button data-sn="next" aria-label="Next">⏭</button></div>' +
+        '<div class="sn-al"><button data-sn="alb" aria-label="Pick an album" aria-expanded="false"></button><ol class="sn-ad" aria-label="Albums" hidden></ol></div>' +
         '<ol class="sn-pl" aria-label="Loops and mixtapes"></ol><div class="sn-keep" hidden><input class="sn-nm" maxlength="32" autocomplete="off" placeholder="NAME" aria-label="Its name"><button>KEEP TAPE</button></div>';
       root.appendChild(el); SND.el = el;
       el.addEventListener('click', function (e) { e.stopPropagation(); var b = e.target.closest('button'); if (!b) return; var n = SND.rows.length;
@@ -1249,6 +1267,8 @@
         if (b.classList.contains('sn-sea')) { var nb = col.querySelector('.rd-nino'); if (nb) nb.click(); sndDraw(); return; }
         if (b.classList.contains('sn-mx')) { SND.mix = !SND.mix; SND.pick = {}; beep(SND.mix ? 740 : 520, 0.04); sndDraw(); return; }
         if (b.parentNode.classList.contains('sn-keep')) { sndKeep(); return; }
+        if (b.dataset.sn === 'alb') { SND.ad = !SND.ad; beep(SND.ad ? 880 : 620, 0.03); sndDraw(); return; }
+        if (b.dataset.sna != null) { SND.alb = b.dataset.sna; SND.ad = false; store.set('da.snd.alb', SND.alb); beep(990, 0.04); sndDraw(); return; }
         if (b.dataset.snx) { var ts = sndTapes().filter(function (t) { return t.id !== b.dataset.snx; }); store.set('da.tapes.v1', ts); if (sndOn() && SND.rows[SND.i] && SND.rows[SND.i].id === b.dataset.snx) sndStop(); sndDraw(); return; }
         if (b.dataset.snp != null) { var i = +b.dataset.snp, r = SND.rows[i]; if (SND.mix) { SND.pick[r.id] = !SND.pick[r.id]; beep(SND.pick[r.id] ? 990 : 660, 0.03); sndDraw(); return; } if ((sndOn() || SND.wait) && i === SND.i) sndStop(); else sndPlay(i); return; }
         var q = b.dataset.sn; if (q === 'rec') { b.closest('.none') && (sndOpen(false), xv.classList.contains('on') ? (shut(false), setTimeout(function () { open('radio'); }, 480)) : open('radio')); return; }
