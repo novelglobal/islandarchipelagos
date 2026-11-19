@@ -684,7 +684,7 @@ async function walkJourney(page, tag, phoneSize) {
   await press('#view [data-pout="send"]');
   await page.waitForFunction(() => window.__da.prefs.journey === 4 && window.__da.S.view === 3 && !!document.querySelector('#gallery .gl-vfd b'), null, { timeout: 20000 }); await sleep(1800);
   out.s4 = await page.evaluate(() => { const da = window.__da; return { rewards: window.__rw, card: (c => (c ? { name: c.name, intel: da.cardIntel(c) } : null))(da.deck().find(x => x.kind === 'poster')), gc: (document.querySelector('#gallery .gc-b b') || {}).textContent || '', simple: da.simple(), cls: document.body.classList.contains('simple'), waiting: document.querySelector('#gallery').classList.contains('waiting'), led: !!document.querySelector('#gallery .gl-st:not(.done)'), vfd: document.querySelector('#gallery .gl-vfd').textContent, hero: (() => { const tr = document.querySelector('#gallery .gl-track'); const i = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth)); const im = document.querySelector(`#gallery .gl-slide[data-i="${i}"] img`); return !!im && im.src === (da.POSTERS2[0] || {}).img; })(), tabs: [...document.querySelectorAll('#rail .tab')].filter(t => getComputedStyle(t).visibility !== 'hidden').length, phonePane: document.body.classList.contains('pane-main'), strip: da.zineObjects().length, pstory: da.PRESS.story,
-    board: (() => { try { const k = JSON.parse(localStorage.getItem('da.board.' + da.boardId())); return ((k && k.json && k.json.objects) || []).filter(o => o.daKind === 'receipt').length; } catch (e) { return -1; } })() }; });
+    board: (() => { try { return ((da.boardJSON() || {}).objects || []).filter(o => o.daKind === 'receipt').length; } catch (e) { return -1; } })() }; });
   await shot(page, `${tag}5-showcase.png`);
   out.still = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const d0 = document.querySelector('#gallery .gl-deck'); const tr = document.querySelector('#gallery .gl-track'); const v0 = document.querySelector('#gallery .gl-vfd').textContent; tr.scrollTo({ left: 0 }); await wait(1600); return { same: d0 === document.querySelector('#gallery .gl-deck') && d0.isConnected, moved: document.querySelector('#gallery .gl-vfd').textContent !== v0 }; });
   out.flip = await page.evaluate(async () => { const da = window.__da; const wait = ms => new Promise(r => setTimeout(r, ms)); da.setView(0); await wait(600); const f0 = document.querySelectorAll('#view [data-flip]').length; da.setView(2); await wait(800); return [f0, document.querySelectorAll('#view [data-flip]').length, !!document.querySelector('#view .simple-p .jp-sel') && !!document.querySelector('#view .simple-p .up-lora') && !!document.querySelector('#view .simple-p .up-plate')]; });
@@ -1184,6 +1184,33 @@ if (run('board')) try {
   check('the example prints with the life as the heading and the code among the details', exp.head === 'SUMATRAN ORANGUTAN' && exp.code === 'DA-0RNG', JSON.stringify(exp));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section board: ${e.message.split('\n')[0]}`); }
+
+// ───────── one board: the W.I.S.H. board in BLUEPAPER and the RESEARCH BOARD keep the same boards; the W.I.S.H. device on both (ONLY=oneboard) ─────────
+if (run('oneboard')) try {
+  const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'oneboard');
+  await page.goto('https://oan.test/studio'); await ready(page); await settle(page);
+  const put = await page.evaluate(async () => { const da = window.__da; const c = document.createElement('canvas'); c.width = 40; c.height = 30; c.getContext('2d').fillRect(0, 0, 40, 30);
+    const id = await da.addToBoard(c.toDataURL('image/png'), 'art', 120); await new Promise(r => setTimeout(r, 600)); return { id, board: da.boardId() }; });
+  const rb = await ctx.newPage(); watch(rb, 'oneboard-rb'); await rb.goto('https://oan.test/research.html?in=1'); await rb.waitForFunction(() => window.__rb && window.__rb.cv); await sleep(1500);
+  const seen = await rb.evaluate(id => ({ at: window.__rb.at(), has: window.__rb.cv.getObjects().some(o => o.daId === id && o.daKind === 'art') }), put.id);
+  check('art put on the board in BLUEPAPER is on the RESEARCH BOARD, the same board open on both', seen.has && seen.at === put.board, JSON.stringify({ put, seen }));
+  await rb.click('[data-t="wish"]'); await sleep(200); await rb.fill('#wsh [name="for"]', 'Shade for the street'); await rb.fill('#wsh [name="w"]', 'The footpath is hot by noon'); await rb.fill('#wsh [name="i"]', 'A tree at every corner');
+  await rb.click('[data-t="wish"]'); await sleep(200); await rb.click('[data-t="wish"]'); await sleep(200);
+  const kept = await rb.evaluate(() => ({ w: document.querySelector('#wsh [name="w"]').value, shared: JSON.parse(localStorage.getItem('da.wish.v1') || '{}').i }));
+  await rb.fill('#wsh [name="s"]', 'A planting day'); await rb.fill('#wsh [name="h"]', 'Bring a spade at nine'); await rb.click('#wsh .go'); await sleep(700);
+  const poem = await rb.evaluate(() => { const os = window.__rb.cv.getObjects(); const ns = os.filter(o => o.daKind === 'note' && /hot by noon|tree at every|planting day|spade at nine/.test(o.text)); const ids = new Set(ns.map(o => o.daId));
+    return { notes: ns.length, links: os.filter(o => o.daKind === 'link' && ids.has(o.daFrom) && ids.has(o.daTo)).length, head: os.some(o => o.daKind === 'sect' && o.text === 'SHADE FOR THE STREET'), shut: document.querySelector('#wsh').hidden, cleared: !JSON.parse(localStorage.getItem('da.wish.v1') || '{}').w }; });
+  check('the W.I.S.H. device on the RESEARCH BOARD keeps its words when shut, the same words as BLUEPAPER\'s; MAKE lays the poem, its lines joined in order', kept.w === 'The footpath is hot by noon' && kept.shared === 'A tree at every corner' && poem.notes === 4 && poem.links === 3 && poem.head && poem.shut && poem.cleared, JSON.stringify({ kept, poem }));
+  await sleep(800); await page.reload(); await ready(page); await sleep(800);
+  const back = await page.evaluate(() => { const os = (window.__da.boardJSON() || {}).objects || []; return { notes: os.filter(o => o.type === 'note').length, tpl: os.some(o => o.daTpl) }; });
+  check('and the poem is on the board in BLUEPAPER, which keeps its W.I.S.H. squares as its own ground, never in the board', back.notes >= 5 && !back.tpl, JSON.stringify(back));
+  await rb.click('[data-t="blue"]'); await rb.reload(); await rb.waitForFunction(() => window.__rb && window.__rb.cv); await sleep(400);
+  const blue = await rb.evaluate(() => ({ on: document.documentElement.classList.contains('blue'), key: document.querySelector('[data-t="blue"]').getAttribute('aria-pressed'), hero: getComputedStyle(document.querySelector('[data-t="wish"]')).backgroundColor }));
+  await rb.screenshot({ path: path.join(SHOTS, 'oneboard-blue.png') });
+  await rb.setViewportSize({ width: 390, height: 780 }); await rb.click('[data-t="wish"]'); await sleep(300); await rb.screenshot({ path: path.join(SHOTS, 'oneboard-phone-wish.png') }); await rb.click('[data-t="wish"]');
+  check('BLUE puts the RESEARCH BOARD on blueprint, kept for next time; W.I.S.H. is the hero key', blue.on && blue.key === 'true' && blue.hero === 'rgb(217, 242, 74)', JSON.stringify(blue));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section oneboard: ${e.message.split('\n')[0]}`); }
 
 // ───────── sharing: NOTICED, RESPONSE with nothing written, DIRECT ACTION to a partner; approval; the board; RECEIVE by code ─────────
 if (run('share')) try {

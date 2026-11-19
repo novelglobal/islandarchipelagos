@@ -9,27 +9,72 @@ const BOARD_V = 2;
 let fabLoad = null, cv = null;
 function loadFabric() {
   if (window.fabric) return Promise.resolve(window.fabric);
-  if (!fabLoad) fabLoad = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'vendor/fabric.min.js'; s.onload = () => res(window.fabric); s.onerror = () => { fabLoad = null; rej(new Error('fabric')); }; document.head.appendChild(s); });
+  if (!fabLoad) fabLoad = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'vendor/fabric.min.js'; s.onload = () => { fabNote(window.fabric); res(window.fabric); }; s.onerror = () => { fabLoad = null; rej(new Error('fabric')); }; document.head.appendChild(s); });
   return fabLoad;
 }
-const BOARD_PROPS = ['daId', 'daFrom', 'daTo', 'daKind', 'daMix', 'daTpl', 'daPick'];
+/* the RESEARCH BOARD's note: words on a plate with room round them; known here so its boards open here the same */
+function fabNote(F) {
+  if (!F || F.Note) return;
+  F.Note = F.util.createClass(F.Textbox, { type: 'note',
+    _renderBackground(ctx) { if (!this.backgroundColor) return; const p = this.pad || 0, d = this._getNonTransformedDimensions(); ctx.fillStyle = this.backgroundColor; ctx.fillRect(-d.x / 2 - p, -d.y / 2 - p, d.x + p * 2, d.y + p * 2); this._removeShadow(ctx); } });
+  F.Note.fromObject = (o, cb) => F.Object._fromObject('Note', o, cb, 'text');
+}
+if (window.fabric) fabNote(window.fabric);
+const BOARD_PROPS = ['daId', 'daFrom', 'daTo', 'daKind', 'daMix', 'daTpl', 'daPick', 'daC', 'pad'];
 const uid = p => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-/* the boards: the first carries over a board kept before there were several */
-const BOARDS = (() => { const b = store.get('da.boards.v1', null); if (Array.isArray(b) && b.length) return b; const old = store.get('da.board.v1', null); if (old && old.json) store.set('da.board.b1', old); const first = [{ id: 'b1', n: 'BOARD 01', at: Date.now() }]; store.set('da.boards.v1', first); return first; })();
-if (window.DA_EXAMPLE_KIT && !BOARDS.some(b => b.id === 'b00')) { BOARDS.unshift({ id: 'b00', n: 'BOARD 00', at: 0, ex: true }); store.set('da.boards.v1', BOARDS); }
-let boardId = BOARDS.some(b => b.id === prefs.board && (!b.ex || exShown())) ? prefs.board : (BOARDS.find(b => !b.ex) || BOARDS[0]).id;
-const boardOf = id => store.get('da.board.' + id, null);
+/* ONE STORE. Every board is the RESEARCH BOARD's: kept in IndexedDB (novelglobal-research, store b, { id, objects, v }) and listed in
+   da.rb.list ({ id, n, t }). This board and the RESEARCH BOARD page open the same boards, each in its own look; what is put on one is
+   on the other. The W.I.S.H. squares are this board's ground, drawn here and never kept. BOARD 00, the example, stays apart */
+const RBX = { db: null, mem: new Map(), ch: (() => { try { return new BroadcastChannel('da-boards'); } catch (e) { return null; } })() };
+const rbDb = () => RBX.db || (RBX.db = new Promise((ok, no) => { const r = indexedDB.open('novelglobal-research', 1); r.onupgradeneeded = () => r.result.createObjectStore('b', { keyPath: 'id' }); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }));
+const rbTx = (mode, fn) => rbDb().then(d => new Promise((ok, no) => { const t = d.transaction('b', mode), s = t.objectStore('b'), out = fn(s); t.oncomplete = () => ok(out && out.result); t.onerror = () => no(t.error); }));
+const rbList = () => { const l = store.get('da.rb.list', []); return Array.isArray(l) ? l.filter(b => b && b.id) : []; };
+const BOARDS = (() => { const l = rbList().map(b => ({ id: b.id, n: b.n || 'BOARD', at: b.t || 0 })); if (l.length) return l; const first = [{ id: uid('b'), n: 'BOARD 01', at: Date.now() }]; store.set('da.rb.list', first.map(b => ({ id: b.id, n: b.n, t: b.at }))); return first; })();
+if (window.DA_EXAMPLE_KIT && !BOARDS.some(b => b.id === 'b00')) BOARDS.unshift({ id: 'b00', n: 'BOARD 00', at: 0, ex: true });
+/* the list kept for both: one's own boards, never the example */
+function boardsKeep() { const was = new Map(rbList().map(b => [b.id, b])); store.set('da.rb.list', BOARDS.filter(b => !b.ex).map(b => ({ ...(was.get(b.id) || {}), id: b.id, n: b.n, t: b.at || Date.now() }))); if (RBX.ch) RBX.ch.postMessage({ list: 1 }); }
+/* the board open is the same one on both: the RESEARCH BOARD's own, as it last had it */
+const rbAt = () => { try { const a = localStorage.getItem('da.rb.at') || ''; return BOARDS.some(b => b.id === a && !b.ex) ? a : ''; } catch (e) { return ''; } };
+let boardId = rbAt() || (BOARDS.some(b => b.id === prefs.board && (!b.ex || exShown())) ? prefs.board : (BOARDS.find(b => !b.ex) || BOARDS[0]).id);
+const boardOf = id => { if (id === 'b00') return store.get('da.board.b00', null); const r = RBX.mem.get(id); return r ? { v: BOARD_V, json: { version: '5.3.0', objects: r.objects || [] } } : null; };
+/* a board written: kept in memory at once, in IndexedDB a moment later, and the RESEARCH BOARD told */
+function boardPut(id, json, extra) {
+  if (id === 'b00') return store.set('da.board.b00', { v: BOARD_V, json, ...(extra || {}) });
+  const objects = ((json && json.objects) || []).filter(o => !o.daTpl), was = RBX.mem.get(id) || {}, rec = { id, objects, ...(was.v ? { v: was.v } : {}) };
+  RBX.mem.set(id, rec); const b = BOARDS.find(x => x.id === id); if (b) { b.at = Date.now(); boardsKeep(); }
+  rbTx('readwrite', s => s.put(rec)).then(() => { if (RBX.ch) RBX.ch.postMessage({ id, from: 'studio' }); }, () => saveFull()); return true;
+}
+/* every board read into memory as the page opens; what the studio kept before there was one store joins it, once: a board of the same
+   name gets the pieces beside its own, any other comes over as it was (the old copies are left where they were) */
+RBX.ready = rbTx('readonly', s => s.getAll()).then(rs => { for (const r of rs || []) RBX.mem.set(r.id, r); }).catch(() => { /* this visit only */ }).then(boardsJoin);
+function boardsJoin() {
+  if (store.get('da.rb.joined', 0)) return; const old = store.get('da.boards.v1', null); store.set('da.rb.joined', 1); if (!Array.isArray(old)) return;
+  const words = new Set(Object.values(tplWords()).flatMap(([t, d]) => [t, d, d ? `${t}\n${d}` : t]).filter(Boolean));
+  const tplLike = o => o.daTpl || (o.daKind === 'section' && o.stroke === '#8FA9C4') || (o.fill === '#8FA9C4' && o.type === 'textbox') || (o.type === 'textbox' && words.has(o.text));
+  for (const ob of old.filter(b => b && !b.ex && b.id !== 'b00')) {
+    const k = store.get('da.board.' + ob.id, null), objs = ((k && k.json && k.json.objects) || []).filter(o => !tplLike(o)); if (!objs.length) continue;
+    const same = BOARDS.find(b => !b.ex && String(b.n).toUpperCase() === String(ob.n).toUpperCase());
+    if (same && same.id !== ob.id) { const mine = (RBX.mem.get(same.id) || {}).objects || []; const R = mine.reduce((m, o) => Math.max(m, (o.left || 0) + (o.width || 0) * (o.scaleX || 1)), -Infinity), L = objs.reduce((m, o) => Math.min(m, o.left || 0), Infinity);
+      const dx = Number.isFinite(R) ? R + 200 - L : 0; boardPut(same.id, { objects: mine.concat(objs.map(o => (o.type === 'line' ? { ...o, x1: (o.x1 || 0) + dx, x2: (o.x2 || 0) + dx, left: (o.left || 0) + dx } : { ...o, left: (o.left || 0) + dx }))) }); }
+    else { if (!BOARDS.some(b => b.id === ob.id)) BOARDS.push({ id: ob.id, n: ob.n || 'BOARD', at: ob.at || Date.now() }); boardPut(ob.id, { objects: objs }); }
+  }
+  boardsKeep(); if (typeof refreshPanel === 'function') try { refreshPanel(); } catch (e) { /* drawn later */ }
+}
+/* the RESEARCH BOARD changed a board that is open here: shown again, unless a piece is being written */
+if (RBX.ch) RBX.ch.onmessage = e => { const d = e.data || {}; if (d.from === 'studio') return;
+  if (d.list) { const l = rbList(); for (const b of l) { const x = BOARDS.find(y => y.id === b.id); if (x) x.n = b.n; else BOARDS.push({ id: b.id, n: b.n, at: b.t }); } return; }
+  if (!d.id) return; rbTx('readonly', s => s.get(d.id)).then(r => { if (!r) return; RBX.mem.set(r.id, r); const a = cv && cv.getActiveObject(); if (cv && d.id === boardId && !(a && a.isEditing)) loadBoard(); }).catch(() => { /* as it was */ }); };
 const boardJSON = () => { const k = boardOf(boardId); return (k && k.json) || { objects: [] }; };
 const HIST = []; let histLast = '', fullAt = 0;
 /* the browser's storage full: said, at most every few seconds, instead of SAVED when nothing was */
 const saveFull = () => { if (Date.now() - fullAt > 8000) { fullAt = Date.now(); toast('FULL · NOT SAVED'); } };
 function saveBoard(say) {
-  if (!cv || exLocked()) return; const json = cv.toJSON(BOARD_PROPS); const str = JSON.stringify(json);
+  if (!cv || exLocked()) return; const json = cv.toJSON(BOARD_PROPS); json.objects = json.objects.filter(o => !o.daTpl); const str = JSON.stringify(json);
   if (histLast && str !== histLast) { HIST.push(histLast); if (HIST.length > 12) HIST.shift(); } histLast = str;
-  if (!store.set('da.board.' + boardId, { v: BOARD_V, json, ...(boardId === 'b00' ? { ex: 'edit', at: Date.now() } : {}) })) saveFull(); else if (say) toast('SAVED');
+  if (!boardPut(boardId, json, boardId === 'b00' ? { ex: 'edit', at: Date.now() } : null)) saveFull(); else if (say) toast('SAVED');
 }
 /* one step back: the board as it was before the last change */
-async function undoBoard() { if (!cv || !HIST.length || exLocked()) { tick(600); return; } const prev = HIST.pop(); histLast = prev; await new Promise(r => cv.loadFromJSON(JSON.parse(prev), r)); for (const l of cv.getObjects('line')) l.set({ selectable: false, evented: true, hoverCursor: 'pointer' }); tplFix(); cv.renderAll(); store.set('da.board.' + boardId, { v: BOARD_V, json: JSON.parse(prev) }); snd.tick(1100); }
+async function undoBoard() { if (!cv || !HIST.length || exLocked()) { tick(600); return; } const prev = HIST.pop(); histLast = prev; await new Promise(r => cv.loadFromJSON(JSON.parse(prev), r)); for (const l of cv.getObjects('line')) l.set({ selectable: false, evented: true, hoverCursor: 'pointer' }); tplLay(); cv.renderAll(); boardPut(boardId, JSON.parse(prev)); snd.tick(1100); }
 const saveSoon = debounce(() => saveBoard(false), 400);
 /* the board's keys, as on a piece of hardware: an icon, and its short word printed under it */
 const TOOLS = [['add', 'plus', 'ADD'], ['tpl', 'hide', 'W.I.S.H.'], ['zoom', 'search', 'ZOOM'], ['lock', 'anchor', 'LOCK'], ['note', 'note', 'NOTE'], ['section', 'base', 'SECT'], ['link', 'string', 'LINK'], ['pencil', 'pencil', 'PENCIL'], ['image', 'camera', 'IMG'], ['paste', 'receive', 'PASTE'], ['poster', 'receipt', 'TO POSTER'], ['undo', 'undo', 'UNDO'], ['delete', 'close', 'DEL'], ['out', 'download', 'OUT'], ['save', 'check', 'SAVE'], ['exsend', 'share', 'SEND THE EXAMPLE FOR APPROVAL']];
@@ -39,7 +84,7 @@ function boardTools() {
   const KEEP = new Set(['add', 'tpl', 'note', 'link', 'image', 'paste', 'poster', 'exsend']);
   t.innerHTML = TOOLS.map(([k, ic, w]) => `<button type="button" class="bt${KEEP.has(k) ? '' : ' fold'}" data-bt="${k}" aria-label="${w}" data-tip="${w}">${icon(ic)}</button>`).join('')
     + '<button type="button" class="bt bt-dots" data-bt="dots" aria-label="More" aria-expanded="false"><i></i><i></i><i></i></button><input type="file" id="board-file" accept="image/*" hidden>';
-  $('#board-label').textContent = 'WISH MAKER · MODEL DA-03 · IN: SIGNALS, CELLS, CONSTELLATIONS · OUT: STORIES TO PRINT · LINK JOINS, A CLICK ON A STRING LETS IT GO · CONTAINS LIVE DATA';
+  $('#board-label').textContent = 'RESEARCH BOARD · MODEL DA-03 · IN: SIGNALS, CELLS, CONSTELLATIONS · OUT: STORIES TO PRINT · LINK JOINS, A CLICK ON A STRING LETS IT GO · CONTAINS LIVE DATA';
   edgeFade(t);
 }
 /* the board shows over the ground while SIGNALS is open */
@@ -61,10 +106,13 @@ async function showBoard(on) {
   cv.renderAll(); return cv;
 }
 async function loadBoard() {
-  if (boardId === 'b00') await ensureExample(); else if (tplDue(boardId)) await ensureTemplate(boardId);
+  await RBX.ready; if (boardId === 'b00') await ensureExample();
   cv.clear(); HIST.length = 0; const k = boardOf(boardId); histLast = k && k.json ? JSON.stringify(k.json) : ''; if (k && k.json) await new Promise(r => cv.loadFromJSON(k.json, r)); for (const l of cv.getObjects('line')) l.set({ selectable: false, evented: true, hoverCursor: 'pointer' });
-  tplFix(); exFrame(); cv.renderAll();
+  if (boardId !== 'b00') { tplFix(); for (const o of cv.getObjects().filter(o => o.daTpl)) cv.remove(o); tplLay(); } else tplFix(); exFrame(); cv.renderAll();
 }
+/* the W.I.S.H. squares: the ground of one's first board here, drawn each time it opens and never kept (the RESEARCH BOARD has its own) */
+const tplOn = id => id !== 'b00' && id === (BOARDS.find(b => !b.ex) || {}).id;
+function tplLay() { if (!cv || !window.fabric) return; if (tplOn(boardId) && !cv.getObjects().some(o => o.daTpl)) for (const o of tplObjects(window.fabric).reverse()) { cv.add(o); cv.sendToBack(o); } tplFix(); }
 /* BOARD 00 is looked at, not moved, unless the approval page has it open to editing; and it is framed whole in the view */
 /* the board's view: three sizes (the key, or the wheel between them); its bare ground dragged moves it about, the page never
    lost; LOCK holds everything on it still, so any drag moves the view */
@@ -96,14 +144,14 @@ function exFrame(keepView) {
   if (!Number.isFinite(x0)) return; const W = cv.getWidth(), H = cv.getHeight(), pad = 18; if (W < 120 || H < 120) { requestAnimationFrame(exFrame); return; } const z = Math.min(own ? 0.7 : 1.2, (W - pad * 2) / (x1 - x0), (H - pad * 2) / (y1 - y0));
   bBase = z; cv.setViewportTransform([z, 0, 0, z, pad - x0 * z + (W - pad * 2 - (x1 - x0) * z) / 2, pad - y0 * z]);
 }
-async function switchBoard(id) { if (!BOARDS.some(b => b.id === id)) return; saveBoard(false); boardId = id; prefs.board = id; savePrefs(); if (cv) await loadBoard(); refreshPanel(); snd.tick(1500); }
+async function switchBoard(id) { if (!BOARDS.some(b => b.id === id)) return; saveBoard(false); boardId = id; prefs.board = id; if (!BOARDS.find(b => b.id === id).ex) try { localStorage.setItem('da.rb.at', id); } catch (e) { /* this visit */ } savePrefs(); if (cv) await loadBoard(); refreshPanel(); snd.tick(1500); }
 /* the board open, taken away, once asked: its pieces with it; the next of one's own opens, or a new empty one */
 function delBoard() {
   const b = BOARDS.find(x => x.id === boardId); if (!b || b.ex) return;
-  BOARDS.splice(BOARDS.indexOf(b), 1); try { localStorage.removeItem('da.board.' + b.id); } catch (e) { /* gone anyway */ } store.set('da.boards.v1', BOARDS);
+  BOARDS.splice(BOARDS.indexOf(b), 1); RBX.mem.delete(b.id); rbTx('readwrite', s => s.delete(b.id)).catch(() => { /* gone from the list anyway */ }); boardsKeep();
   const next = BOARDS.find(x => !x.ex); if (next) switchBoard(next.id); else newBoard(); snd.snap(0); buzz([10, 30, 10]);
 }
-function newBoard() { const id = uid('b'); BOARDS.push({ id, n: `BOARD ${pad2(BOARDS.filter(b => !b.ex).length + 1)}`, at: Date.now() }); store.set('da.boards.v1', BOARDS); switchBoard(id); }
+function newBoard() { const id = uid('b'); BOARDS.push({ id, n: `BOARD ${pad2(BOARDS.filter(b => !b.ex).length + 1)}`, at: Date.now() }); boardsKeep(); switchBoard(id); }
 const byId = id => cv.getObjects().find(o => o.daId === id);
 /* strings follow the cards they join */
 function follow() {
@@ -156,7 +204,7 @@ function tplObjects(f) {
 }
 /* laid if it should be; true when it was. The board as kept is read after the wait for Fabric, and written in the same breath,
    so a piece placed meanwhile is never lost */
-const tplDue = id => id === (BOARDS.find(b => !b.ex) || {}).id && !TPLD.has(id);
+const tplDue = () => false;   // the squares are drawn, never kept: see tplLay
 async function ensureTemplate(id) {
   if (!tplDue(id)) return false; const f = await loadFabric().catch(() => null); if (!f || !tplDue(id)) return false;
   const k = boardOf(id) || {}; const objs = ((k.json || {}).objects || []).slice(); const done = () => { TPLD.add(id); store.set('da.tpl.v1', [...TPLD]); };
@@ -220,14 +268,14 @@ function boardUnpick(key) {
   for (const o of os) { cv.remove(o); for (const l of cv.getObjects('line')) if (l.daFrom === o.daId || l.daTo === o.daId) cv.remove(l); } cv.discardActiveObject(); cv.renderAll(); saveBoard(false); return true;
 }
 async function addToBoard(url, kind = 'receipt', w = 220, pick = '') {
-  await workBoard(); if (await ensureTemplate(boardId) && cv) await loadBoard(); const id = uid('a'); const im = await loadImage(url, false); const k = w / im.width;
+  await workBoard(); await RBX.ready; { const a = rbAt(); if (a && a !== boardId) await switchBoard(a); } const id = uid('a'); const im = await loadImage(url, false); const k = w / im.width;
   if (cv) { await new Promise(res => window.fabric.Image.fromURL(url, img => { const p = free(); img.set({ left: p.x, top: p.y, daId: id, daKind: kind, ...(pick ? { daPick: pick } : {}) }); img.scaleToWidth(w); cv.add(img); cv.renderAll(); saveBoard(false); res(); })); return id; }
   const kept = boardOf(boardId) || {}; const json = kept.json || { version: '5.3.0', objects: [] }; json.objects = json.objects || [];
   const n = json.objects.filter(o => o.daKind && o.daKind !== 'link').length;
   /* on the first board, laid with its template, what arrives before it is opened goes into W, what we know, in a row */
-  const inW = TPLD.has(boardId); const m = json.objects.filter(o => o.daKind && !['link', 'section', 'note', 'fig', 'codec'].includes(o.daKind)).length; const k2 = inW ? 96 / im.width : k;
+  const inW = tplOn(boardId) && !TPLHIDE.has(boardId); const m = json.objects.filter(o => o.daKind && !['link', 'section', 'note', 'fig', 'codec'].includes(o.daKind)).length; const k2 = inW ? 96 / im.width : k;
   json.objects.push({ type: 'image', version: '5.3.0', originX: 'left', originY: 'top', left: inW ? 22 + (m % 3) * 104 : 40 + (n % 4) * 270, top: inW ? 150 + Math.floor(m / 3) * 260 : 40 + Math.floor(n / 4) * 230, width: im.width, height: im.height, scaleX: k2, scaleY: k2, src: url, crossOrigin: null, daId: id, daKind: kind, ...(pick ? { daPick: pick } : {}) });
-  store.set('da.board.' + boardId, { v: BOARD_V, json }); return id;
+  boardPut(boardId, json); return id;
 }
 /* any board as a picture, drawn apart from the page, on white: for the press */
 async function boardImage(id) {
@@ -490,7 +538,7 @@ function wordsIn(d) {
 function takeDone() {
   const d = store.get('da.done.v1', null); if (!d || !d.code) return; store.set('da.done.v1', null);
   Object.assign(WDRAFT, { for: '', w: '', i: '', s: '', h: '', auto: {}, photo: '' }); store.set('da.wish.v1', WDRAFT); JR.want = ''; saveJR(); wordsIn({ say: '', lines: ['', '', '', ''] });
-  const b = BOARDS.find(x => x.id === boardId), k = boardOf(boardId); if (b && !b.ex && k && ((k.json || {}).objects || []).length) { b.n = String(d.code).slice(0, 24); store.set('da.boards.v1', BOARDS); newBoard(); }
+  const b = BOARDS.find(x => x.id === boardId), k = boardOf(boardId); if (b && !b.ex && k && ((k.json || {}).objects || []).length) { b.n = String(d.code).slice(0, 24); boardsKeep(); newBoard(); }
 }
 window.addEventListener('message', e => { if (e.origin !== location.origin || !e.data) return; if (e.data.ng === 'words') wordsIn(e.data); else if (e.data.ng === 'done') takeDone(); });
 setTimeout(() => { takeDone(); wordsOut(true); }, 1200);
@@ -553,7 +601,7 @@ $('#view').addEventListener('click', e => {
   const as = e.target.closest('[data-asset]'); if (as) placeAsset(as.dataset.asset, as.dataset.aid);
 });
 /* a board's name, rewritten where it stands */
-$('#view').addEventListener('input', debounce(e => { const n = e.target.closest('[data-board-name]'); if (!n) return; const b = BOARDS.find(x => x.id === n.dataset.boardName); if (b) { b.n = n.value.trim().slice(0, 32) || b.n; store.set('da.boards.v1', BOARDS); } }, 300));
+$('#view').addEventListener('input', debounce(e => { const n = e.target.closest('[data-board-name]'); if (!n) return; const b = BOARDS.find(x => x.id === n.dataset.boardName); if (b) { b.n = n.value.trim().slice(0, 32) || b.n; boardsKeep(); } }, 300));
 $('#view').addEventListener('change', async e => {
   if (e.target.id !== 'md-in') return; const fl = e.target.files && e.target.files[0]; if (!fl) return;
   const n = await notesIn(await fl.text()); toast(`${n} NOTES IN`); e.target.value = '';

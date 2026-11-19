@@ -1348,7 +1348,7 @@
   var DEV_AT = [1, 0, 2, 3];
   /* what a word in a poster's talk can be for, each a mark: a swap or sharing */
   var TALK_K = [['swap', '⇄', 'A swap'], ['share', '↗', 'To share']], TKM = { swap: '⇄', share: '↗' };
-  var DEVS = [['radio', 'RADIO', 'radio', 'dradio'], ['board', 'W.I.S.H.', 'wish', 'dboard'], ['shop', 'DESIGN', 'print', 'dshop'], ['folio', 'PORTFOLIO', 'portfolio', 'dfolio']];
+  var DEVS = [['radio', 'DIRECT ACTION RADIO', 'radio', 'dradio'], ['board', 'RESEARCH BOARD', 'wish', 'dboard'], ['shop', 'DESIGN PRINT', 'print', 'dshop'], ['folio', 'PORTFOLIO', 'portfolio', 'dfolio']];
   var STEPS = [['notice', 'hboard'], ['story', 'hradio'], ['make', 'hshop'], ['print', 'poster']];
   var ICON = {
     /* the irukandji's eye with its four tears: noticing, on the globe and on its tab; it blinks, its pupil breathes */
