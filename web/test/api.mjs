@@ -454,6 +454,12 @@ try {
       && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
       JSON.stringify({ us0: us0.json.use, us1: us1.json.use, ust, roll: usR.json.roll, usM: usM.json.stamps, usS: usS.json.use, r2: !!usR2.json.roll }));
     await call('/api/island', { method: 'POST', token: K, body: { use: null } });
+    /* v0.7 D: a post from a code stamped at an island that day is marked HERE, a person who was there; never which island */
+    const ms0 = (await call('/api/admin/settings', { key: KEY })).json.madeShow; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true } });
+    const hr1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR1A', { who: 'QZ7' }) }), hr2 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR2A', { who: 'QW3' }) });
+    for (const r of [hr1, hr2]) await call(`/api/admin/stories/${r.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
+    const hs1 = (await call('/api/stories/DA-HR1A')).json.story, hs2 = (await call('/api/stories/DA-HR2A')).json.story; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: !!ms0 } });
+    check('a post from a code stamped at an island today is marked here, and shows nothing of where; one from a code with no stamp today is not', hs1 && hs1.here === true && !JSON.stringify(hs1).includes(id) && hs2 && !hs2.here, JSON.stringify({ hs1, hs2 }));
     await call('/api/island', { method: 'POST', token: K, body: { ways: null, mods: [] } });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });

@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 15;
+const SCHEMA_V = 16;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -158,6 +158,8 @@ async function upgrade(db) {
     for (const q of ['ALTER TABLE printers ADD COLUMN gap INTEGER', 'ALTER TABLE printers ADD COLUMN pack TEXT', 'ALTER TABLE printers ADD COLUMN ways TEXT', 'ALTER TABLE printers ADD COLUMN mods TEXT', 'ALTER TABLE makers ADD COLUMN animal INTEGER', 'ALTER TABLE makers ADD COLUMN claimed INTEGER']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 15. An island's use for its stamps (v0.7 D): a class roll or a shop's card, and how many stamps make one */
     try { await db.prepare('ALTER TABLE printers ADD COLUMN use TEXT').run(); } catch (e) { /* already there */ }
+    /* version 16. here: a story sent by a code stamped at an island that day, a person who was there (never which island) */
+    try { await db.prepare('ALTER TABLE stories ADD COLUMN here INTEGER').run(); } catch (e) { /* already there */ }
     await db.prepare("INSERT INTO settings (k, v) VALUES ('~schema', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(SCHEMA_V)).run();
 }
 /* each printer's island number, given the first time it is paired, in that order: novel.global's own is 1, the islands 2 and up. It stays
@@ -254,8 +256,8 @@ async function codesGo(db, t) {
   await stampTable(db); await db.batch(results.map(({ who }) => db.prepare('DELETE FROM stamps WHERE who = ?').bind(who)));
   return results.length; }
 /* ───────── what the public sees ───────── */
-const storyOut = r => ({ id: r.id, code: r.code, kind: r.kind, body: r.body, photo: !!r.has_photo, dest: r.dest || '', at: r.decided || r.created, star: !!r.star, printed: r.printed || 0 });
-const PUBLIC_COLS = "id, code, kind, body, dest, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo, star, (SELECT count(*) FROM jobs j WHERE j.story = stories.id AND j.status = 'printed') AS printed";
+const storyOut = r => ({ id: r.id, code: r.code, kind: r.kind, body: r.body, photo: !!r.has_photo, dest: r.dest || '', at: r.decided || r.created, star: !!r.star, printed: r.printed || 0, ...(r.here ? { here: true } : {}) });
+const PUBLIC_COLS = "id, code, kind, body, dest, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo, star, here, (SELECT count(*) FROM jobs j WHERE j.story = stories.id AND j.status = 'printed') AS printed";
 
 async function listStories(db, url) {
   if (!(await madeOn(db))) return json({ stories: [], at: now() });
@@ -447,11 +449,12 @@ async function send(db, env, req) {
   const { n } = await db.prepare("SELECT count(*) AS n FROM stories WHERE status = 'waiting'").first(); if (n >= LIMIT.waiting) return refuse(503, 'too many stories waiting for approval');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
   if (pf && who) await stampPut(db, env, who, pf);
+  let here = null; if (who) { await stampTable(db); here = (await db.prepare('SELECT 1 AS y FROM stamps WHERE who = ? AND day = ? LIMIT 1').bind(who, melDay()).first()) ? 1 : null; }
   const cf = req.cf || {}, ua = req.headers.get('user-agent') || '', str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
   const origin = JSON.stringify({ ...(popP && b.from === 'pop' ? { pop: String(popP.id).slice(0, 24) } : {}), from: str(b.from, 24), stage: str(b.stage, 60), city: str(cf.city, 40), region: str(cf.region, 40), country: str(cf.country, 4), dev: /Mobi|Android|iPhone|iPad/i.test(ua) ? 'phone' : 'computer', mesh: str(b.mesh, 240) });
   const id = rid(); const t = now(); const inR2 = pic ? await toR2(db, env, photoKey(id), pic) : false;
   const live = !dest && kind === 'record' && !!(await settingsOf(db)).sendLive, st0 = live ? 'shown' : 'waiting';
-  const ops = [db.prepare('INSERT INTO stories (id, code, kind, status, body, photo, pic, lat, lng, dest, created, decided, who, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, b.code, kind, st0, b.body, inR2 ? null : pic, inR2 ? pic.length : null, lat, lng, dest || null, t, live ? t : null, who, origin)];
+  const ops = [db.prepare('INSERT INTO stories (id, code, kind, status, body, photo, pic, lat, lng, dest, created, decided, who, origin, here) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, b.code, kind, st0, b.body, inR2 ? null : pic, inR2 ? pic.length : null, lat, lng, dest || null, t, live ? t : null, who, origin, here)];
   let job = null;
   if (P && (b.escpos || b.mesh)) {
     const { q } = await db.prepare("SELECT count(*) AS q FROM jobs WHERE printer = ? AND status IN ('held', 'queued', 'printing')").bind(dest).first(); if (q >= LIMIT.perPrinter) return refuse(503, 'its queue is full');
