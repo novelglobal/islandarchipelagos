@@ -43,6 +43,9 @@ func TestPassOnceOffline(t *testing.T) {
 	if len(a.conf().Unsent) != 1 {
 		t.Fatal("not kept to tell the site")
 	}
+	if !a.stampHere("qx9", code, now) || a.stampHere("bad!", code, now) || len(a.conf().Stamps) != 1 || a.conf().Stamps[0] != "2026-11-19 "+code+" QX9" {
+		t.Fatalf("stamp not kept: %v", a.conf().Stamps)
+	}
 	for i := 0; i < 25; i++ {
 		a.nextPass(now)
 	}

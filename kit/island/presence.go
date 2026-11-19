@@ -149,33 +149,81 @@ func (a *App) nextPass(now time.Time) (string, string) {
 	return pass3(c.PassKey, day, n), markOf(c.PassKey, day)
 }
 
-// sendUsed tells the site which passes were used here with no internet, so none is good twice
+// whoOK: a person's code, three or six of the pass letters and numbers
+func whoOK(w string) bool {
+	if len(w) != 3 && len(w) != 6 {
+		return false
+	}
+	for i := 0; i < len(w); i++ {
+		if strings.IndexByte(passPC, w[i]) < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// stampHere keeps a pass used here on a person's code, with no internet; the site stamps the code when told
+func (a *App) stampHere(who, pass string, now time.Time) bool {
+	w := strings.ToUpper(strings.TrimSpace(who))
+	if !whoOK(w) || pass == "" {
+		return false
+	}
+	day := passDay(now)
+	a.update(func(c *Config) {
+		keep := c.Stamps[:0]
+		for _, s := range c.Stamps {
+			if s >= passDay(now.AddDate(0, 0, -keepDays)) {
+				keep = append(keep, s)
+			}
+		}
+		c.Stamps = append(keep, day+" "+pass+" "+w)
+	})
+	return true
+}
+
+// sendUsed tells the site which passes were used here with no internet, so none is good twice, and the codes they were kept on
 func (a *App) sendUsed(l Link) {
 	c := a.conf()
-	if len(c.Unsent) == 0 || l.Token == "" {
+	if (len(c.Unsent) == 0 && len(c.Stamps) == 0) || l.Token == "" {
 		return
 	}
-	byDay := map[string][]string{}
+	byDay, stamps := map[string][]string{}, map[string][]map[string]string{}
 	for _, u := range c.Unsent {
 		if p := strings.SplitN(u, " ", 2); len(p) == 2 {
 			byDay[p[0]] = append(byDay[p[0]], p[1])
 		}
 	}
+	for _, s := range c.Stamps {
+		if p := strings.SplitN(s, " ", 3); len(p) == 3 {
+			stamps[p[0]] = append(stamps[p[0]], map[string]string{"code": p[1], "who": p[2]})
+			if _, ok := byDay[p[0]]; !ok {
+				byDay[p[0]] = []string{}
+			}
+		}
+	}
 	for day, codes := range byDay {
-		r, err := call("POST", l.Server+"/api/printers/"+l.Printer+"/used", l.Token, map[string]any{"day": day, "codes": codes})
+		body := map[string]any{"day": day, "codes": codes}
+		if len(stamps[day]) > 0 {
+			body["stamps"] = stamps[day]
+		}
+		r, err := call("POST", l.Server+"/api/printers/"+l.Printer+"/used", l.Token, body)
 		if err != nil || r.Status != 200 {
 			return
 		}
 	}
-	a.update(func(c *Config) { c.Unsent = nil })
+	a.update(func(c *Config) { c.Unsent, c.Stamps = nil, nil })
 }
 
 // the island's page: a pass typed and checked here, once
 func (p *portal) passCheck(w http.ResponseWriter, r *http.Request) {
-	code, mark, ok := p.a.usePass(r.URL.Query().Get("c"), time.Now())
+	now := time.Now()
+	code, mark, ok := p.a.usePass(r.URL.Query().Get("c"), now)
 	note := "PASS · NO"
 	if ok {
 		note = "PASS · " + code + " · " + mark
+		if p.a.stampHere(r.URL.Query().Get("w"), code, now) {
+			note += " · STAMPED"
+		}
 	}
 	p.passSay(w, r, note)
 }

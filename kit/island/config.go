@@ -25,6 +25,7 @@ type Config struct {
 	PassKey    string   `json:"pass_key,omitempty"`
 	Used       []string `json:"used,omitempty"`
 	Unsent     []string `json:"unsent,omitempty"`
+	Stamps     []string `json:"stamps,omitempty"` // "day pass code", kept with no internet, told to the site when it is back
 	IssueDay   string   `json:"issue_day,omitempty"`
 	IssueN     int      `json:"issue_n,omitempty"`
 }

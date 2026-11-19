@@ -664,7 +664,13 @@ async function usedOff(db, env, req, id) {
   if (!(await printerAuth(db, req, id))) return fail(401, 'token'); const b = await body(req, 8192), day = String(b.day || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Array.isArray(b.codes)) return fail(400, 'used');
   let n = 0; for (const c of b.codes.slice(0, 60)) { const k = passNorm(c); if (PASS.test(k)) { await passUse(db, k.length === 6 ? k.slice(0, 3) + '-' + k.slice(3) : k, day, id); n++; } }
-  return json({ ok: true, n });
+  /* v0.7 E: passes kept on codes at the island with no internet, stamped here once it is back: only a pass of this island's for that day,
+     within the last two days, and each pass on one code only */
+  let s = 0; if (Array.isArray(b.stamps) && codeKey(env) && now() - Date.parse(day + 'T00:00:00+10:00') < 3 * DAY) for (const x of b.stamps.slice(0, 60)) {
+    const k = passNorm(x && x.code), who = String((x && x.who) || '').toUpperCase(); if (!PASS.test(k) || !WHO.test(who)) continue;
+    const ok = k.length === 3 ? (await pass3Day(env, id, day)).has(k) : await passMac(env, id, day, k.slice(0, 3)) === k.slice(3); if (!ok) continue;
+    if (await stampPut(db, env, who, { p: { id }, code: k.length === 6 ? k.slice(0, 3) + '-' + k.slice(3) : k, day })) s++; }
+  return json({ ok: true, n, s });
 }
 /* ───────── a printer's touch screen: the slips held for it, each shown with the jellyfish; one press prints it, a long press squashes it ───────── */
 async function touchAuth(db, req, id) {

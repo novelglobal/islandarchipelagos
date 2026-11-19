@@ -460,6 +460,12 @@ try {
     for (const r of [hr1, hr2]) await call(`/api/admin/stories/${r.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
     const hs1 = (await call('/api/stories/DA-HR1A')).json.story, hs2 = (await call('/api/stories/DA-HR2A')).json.story; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: !!ms0 } });
     check('a post from a code stamped at an island today is marked here, and shows nothing of where; one from a code with no stamp today is not', hs1 && hs1.here === true && !JSON.stringify(hs1).includes(id) && hs2 && !hs2.here, JSON.stringify({ hs1, hs2 }));
+    /* v0.7 E: passes kept on codes at the island with no internet, told to the site when it is back: stamped once, only a real pass of that island and day */
+    const dayM = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
+    const off = await call(`/api/printers/${id}/used`, { method: 'POST', token: PT, body: { day: dayM, codes: [p3(40)], stamps: [{ code: p3(40), who: 'qv4' }, { code: 'ZZ2', who: 'QV4' }, { code: p3(41), who: 'b!' }, { code: p3(40), who: 'QV5' }] } });
+    const offO = await call(`/api/printers/${id}/used`, { method: 'POST', token: PT, body: { day: '2026-01-01', codes: [], stamps: [{ code: p3(42), who: 'QV4' }] } }), offM = await call('/api/mine/QV4?k=' + HK('QV4'));
+    check('stamps kept at the island with no internet are stamped once it is back: a real pass of that day, on one code only; an old day is not',
+      off.status === 200 && off.json.s === 1 && offO.json.s === 0 && offM.json.stamps.length === 1 && offM.json.stamps[0].id === id, JSON.stringify({ off: off.json, offO: offO.json, offM: offM.json.stamps }));
     await call('/api/island', { method: 'POST', token: K, body: { ways: null, mods: [] } });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
