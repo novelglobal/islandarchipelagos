@@ -89,7 +89,8 @@
   /* a cartridge: a small card, three to a screen. With EVERY CARD on, the big ones stand that way too */
   var MINE = store.get('da.hm.mine', null);
   /* a place's own novel.global (a pop-up's, from its link): its order, sizes and its card. A person's own choices sit over it */
-  var PLACE = store.get('da.pop.home', null); if (PLACE && !(PLACE.at && Date.now() - PLACE.at < 30 * 864e5)) PLACE = null;
+  /* or the island someone made their home on the islands page (pick): that one stays until they change it */
+  var PLACE = store.get('da.pop.home', null); if (PLACE && !PLACE.pick && !(PLACE.at && Date.now() - PLACE.at < 30 * 864e5)) PLACE = null;
   var PH = (PLACE && PLACE.home) || {};
   if (PLACE && PLACE.card) (function () { var at = CARDS.findIndex(function (c) { return c.id === 'portfolio'; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: 'pop-' + PLACE.id, pop: PLACE.id, size: 'small', title: String(PLACE.name || PLACE.id).toUpperCase().slice(0, 24), opens: 'pop', skin: 'play', art: 'slot', pal: 5, motion: 'shadow', where: [-37.8136, 144.9631] }); })();
   function lay(k) { var m = MINE && MINE[k]; return m != null && !(Array.isArray(m) && !m.length && k === 'order') ? m : PH[k]; }
@@ -672,7 +673,7 @@
       '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new local area network (LAN)\nfrom e-waste') + '</h2>' +
       '<p class="in-l">independent web2print publishing. Open source. What can you do with a thermal printer network?</p>' +
-      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><span>Island Archipelagos</span></p></div>' +
+      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><a class="in-go" href="/islands" title="Find a printer"><span>Island Archipelagos</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></a></p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
       (ETH && ETH.k ? '<p class="in-eth"><a target="_blank" rel="noopener" href="/note#' + esc(ETH.k) + '">Ethics and AI disclosure</a></p>' : '') +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
@@ -756,11 +757,28 @@
   function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
+    if (L.as === 'card') return labelMini(L, mem);
+    labelBuild(L, mem, null); }
+  /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
+     A tap opens the whole label over the full screen, its film playing; closed, the small card comes back. × puts it away for the visit */
+  function labelMini(L, mem) { if (D.getElementById('lbm') || D.getElementById('lb')) return;
     var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
-    var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid'); lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
-    var fit = function () { var px = 13.5; c.style.fontSize = px + 'px'; while (px > 8 && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
+    var body = String(L.body || '').trim(), one = String(L.line || '').trim() || ((/^[\s\S]*?[.!?](?=\s|$)/.exec(body) || [body])[0] || L.title || L.top || '').trim().slice(0, 220);
+    var film = !!(L.film && L.film.on && L.film.file), m = mk('div'), op = mk('button', 'lbm-o', null, m), x = mk('button', 'lbm-x', null, m); m.id = 'lbm'; m.setAttribute('role', 'region'); m.setAttribute('aria-label', L.title || L.top || 'novel.global');
+    op.type = x.type = 'button'; op.title = film ? 'Open, with the film' : 'Open'; x.setAttribute('aria-label', 'Put away'); x.title = 'Put away';
+    mk('b', 'lbm-k', String(L.top || 'novel.global').toUpperCase().slice(0, 40), op); mk('span', 'lbm-s', one, op);
+    var go = mk('span', 'lbm-g', null, op); go.innerHTML = film ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5M10 5h9v9"/></svg>'; go.appendChild(D.createTextNode(film ? 'PLAY' : 'OPEN'));
+    x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    op.addEventListener('click', function () { var r = m.getBoundingClientRect(); m.remove(); labelBuild(L, mem, r); });
+    x.addEventListener('click', function () { mem(sessionStorage, 'da.label.seen', '1'); m.classList.add('lbm-out'); setTimeout(function () { m.remove(); }, 260); });
+    D.body.appendChild(m); }
+  function labelBuild(L, mem, from) { var full = !!from;
+    var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
+    var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null, fv = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid') + (full ? ' lb-full' : '');
+    if (full) { lb.style.setProperty('--ox', Math.round(from.left + from.width / 2) + 'px'); lb.style.setProperty('--oy', Math.round(from.top + from.height / 2) + 'px'); var cx = mk('button', 'lb-x', null, lb); cx.type = 'button'; cx.setAttribute('aria-label', 'Close'); cx.title = 'Close'; cx.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; cx.addEventListener('click', function () { shutLb(); }); } lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
+    var fit = function () { var px = full ? 15 : 13.5; c.style.fontSize = px + 'px'; while (px > (full ? 11.5 : 8) && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
     var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen', '1'); if (nv.checked) mem(localStorage, 'da.label.never', '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
-        lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
+        lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (full && !nv.checked) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
     var fold = Math.max(0, Math.round(+L.fold) || 0), np = 0, b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', fold && np++ >= fold ? 'lb-x' : '', t, b); });
@@ -789,13 +807,15 @@
     c.addEventListener('pointercancel', drop); c.addEventListener('pointerleave', drop); c.addEventListener('contextmenu', function (e) { if (!own(e)) e.preventDefault(); });
     c.tabIndex = 0; c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === c) shutLb(); });
     /* the film: asked for when play is first pressed, then played here by its own few keys. No more of it today, or none there: no player */
-    var F = L.film; if (F && F.on && F.file) { var fv = filmEl(F, '', fit); vid = fv.vid; if (F.side === 'above') w.insertBefore(fv, c); else w.appendChild(fv); }
+    var F = L.film; if (F && F.on && F.file) { fv = filmEl(F, '', fit); vid = fv.vid; if (F.side === 'above' || full) w.insertBefore(fv, c); else w.appendChild(fv); }
     D.addEventListener('keydown', esc2); D.body.appendChild(lb);
+    /* opened from the small card: the film starts as it opens */
+    if (full && fv) { var pb = fv.querySelector('.lb-vp'); if (pb) pb.click(); } if (full) setTimeout(function () { try { (fv ? fv.querySelector('.lb-vp') : c).focus({ preventScroll: true }); } catch (e) { /* no focus */ } }, 60);
     /* all of it on one screen: the type steps down until nothing is cut off */
     fit(); addEventListener('resize', fit); if (D.fonts && D.fonts.ready) D.fonts.ready.then(fit); }
   function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
     $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
-      (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia > span', o.sign); put('.in-s strong', o.bar);
+      (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia span', o.sign); put('.in-s strong', o.bar);
       if (typeof o.body === 'string' && o.body.trim()) { var b = cd.querySelector('.in-b'), ia = b && b.querySelector('.in-ia'); if (b) { $$('p:not(.in-ia)', b).forEach(function (p) { p.remove(); });
         o.body.trim().split(/\n\s*\n/).forEach(function (t) { var p = D.createElement('p'); p.textContent = t.trim(); b.insertBefore(p, ia); }); } } });
     INTRO_TXT = txt; requestAnimationFrame(introFit); }
@@ -1156,7 +1176,7 @@
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
       if (w) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; fr.contentWindow.postMessage({ hm: 'form', img: (p && p.photo) || '', words: ((p && p.say) || '').slice(0, 140) }, location.origin); }); });
     if (/^stack:/.test(c.opens)) return sheet(c.title, function (b) { stackIn(b, c.opens.slice(6), opt, c); });
-    if (c.opens === 'pop') return sheet(c.title, inFrame('popup?in=1#p'));
+    if (c.opens === 'pop') return sheet(c.title, inFrame('popup?in=1' + (c.pop ? '&p=' + encodeURIComponent(c.pop) : '') + '#p'));
     if (c.opens === 'kit') return sheet(c.title, kitIn);
     if (c.opens === 'panel') return sheet(c.title, panelIn);
     /* the builder card opens on its three ways in (hardware, software, stories); a mode asked for goes straight to the bench */

@@ -613,13 +613,18 @@ async function filmPlay(db, env, req, tok) {
     'cache-control': 'private, no-store', 'content-disposition': 'inline', 'x-content-type-options': 'nosniff', 'cross-origin-resource-policy': 'same-origin', 'x-robots-tag': 'noindex, noarchive' } });
 }
 /* the islands, for someone looking for one: each printer that is paired, whether it is on, whether a pop-up is open on it, and, while it is
-   open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture) */
+   open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture). At a glance as well: its
+   paper, its Wi-Fi in bars, a radio, how many prints wait; and, while open, its pop-up (its card, its own home) to print at it or make it home.
+   Never a key: a pop-up still asks its code */
 async function isles(db) {
   const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
   const pops = (await popsOf(db)).filter(p => p && p.on);
-  const { results } = await db.prepare('SELECT id, name, number, seen, net FROM printers WHERE token IS NOT NULL ORDER BY number, created').all();
-  const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, open = pops.some(q => q.to === p.id || q.id === p.id || (!q.to && p.id === 'novelglobal')) || d.open === true, o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3 && !/"p":0\b/.test(p.net || ''), open };
-    if (open) { ['addr', 'words', 'pic'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } }
+  const { results } = await db.prepare(`SELECT id, name, number, seen, net, mesh, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN ('queued', 'printing')) AS queued FROM printers WHERE token IS NOT NULL ORDER BY number, created`).all();
+  const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, pop = pops.find(q => q.to === p.id || q.id === p.id || (!q.to && p.id === 'novelglobal')), open = !!pop || d.open === true, o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3 && !/"p":0\b/.test(p.net || ''), open };
+    let n = null; try { n = p.net ? JSON.parse(p.net) : null; } catch (e) { n = null; }
+    o.paper = n && (n.p === 0 || n.p === 1) ? n.p : null; o.sig = n && Number.isFinite(n.rssi) ? (n.rssi >= -55 ? 3 : n.rssi >= -67 ? 2 : n.rssi >= -78 ? 1 : 0) : null; o.mesh = !!p.mesh; o.queue = p.queued || 0;
+    if (open) { ['addr', 'words', 'pic'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; }
+      if (pop && /^[a-z0-9-]{1,40}$/.test(pop.id || '')) { o.pop = pop.id; o.card = !!pop.card; if (pop.home && typeof pop.home === 'object') o.home = pop.home; } }
     return o; });
   return json({ isles: out, paired: results.length });
 }

@@ -1264,6 +1264,48 @@ if (run('sweep')) try {
   if (small.length) results.push('NOTE  keys under 20 px on a phone: ' + small.join(' | '));
 } catch (e) { results.push(`FAIL  section sweep: ${e.message.split('\n')[0]}`); }
 
+// ───────── access: the label as a small card that opens full screen (the label as it was kept); the opener's key to the islands; the islands as a live list (ONLY=access) ─────────
+if (run('access')) try {
+  const L0 = (await admin('settings')).label || '';
+  await admin('settings', { label: JSON.stringify({ on: true, as: 'card', top: 'novel.global', line: 'Each printer is an island.', title: 'T', body: 'First words. More words.' }) });
+  const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx); const page = await ctx.newPage(); watch(page, 'access');
+  await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lbm', { timeout: 15000 }); await sleep(1200);
+  const mini = await page.evaluate(() => { const m = document.getElementById('lbm'); m.getAnimations().forEach(a => a.finish()); const r = m.getBoundingClientRect(); return { lb: !!document.getElementById('lb'), t: m.querySelector('.lbm-s').textContent, w: r.width, l: r.left, r: r.right, b: r.bottom, H: innerHeight, W: innerWidth }; });
+  await shot(page, 'access-card.png');
+  await page.click('#lbm .lbm-o'); await sleep(700);
+  const full = await page.evaluate(() => { const l = document.getElementById('lb'), r = l && l.getBoundingClientRect(); return l ? { full: l.classList.contains('lb-full'), x: !!l.querySelector('.lb-x'), w: r.width, W: innerWidth, h: r.height, H: innerHeight, mini: !!document.getElementById('lbm') } : null; });
+  await shot(page, 'access-full.png');
+  await page.click('#lb .lb-x'); await sleep(900);
+  const back = await page.evaluate(() => ({ lb: !!document.getElementById('lb'), mini: !!document.getElementById('lbm') }));
+  await page.click('#lbm .lbm-x'); await sleep(500); const away = await page.evaluate(() => !document.getElementById('lbm'));
+  check('the label as a card: one sentence on a small card inside the screen; a tap opens it over the full screen; closed, the card is back; × puts it away',
+    mini && !mini.lb && mini.t === 'Each printer is an island.' && mini.w <= 300 && mini.l >= 15 && mini.r <= mini.W - 15 && mini.b <= mini.H - 15 && full && full.full && full.x && !full.mini && Math.abs(full.w - full.W) < 2 && Math.abs(full.h - full.H) < 2 && !back.lb && back.mini && away, JSON.stringify({ mini, full, back, away }));
+  await admin('settings', { label: JSON.stringify({ on: true, title: 'T', body: 'First words.' }) });
+  await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb', { timeout: 15000 }); await sleep(500);
+  const old = await page.evaluate(() => ({ full: document.getElementById('lb').classList.contains('lb-full'), mini: !!document.getElementById('lbm') }));
+  check('the label as it was stays the way it comes: over the site, no small card', !old.full && !old.mini, JSON.stringify(old));
+  await page.evaluate(() => { const l = document.getElementById('lb'); if (l) l.remove(); });
+  const go = await page.evaluate(() => { const a = document.querySelector('.sk-intro .in-ia a.in-go'); return a ? { href: a.getAttribute('href'), t: a.textContent.trim(), tt: a.title } : null; });
+  check('the opener\'s Island Archipelagos is a key to the islands', go && go.href === '/islands' && /island archipelagos/i.test(go.t) && /printer/i.test(go.tt), JSON.stringify(go));
+  /* the islands: three, one open with its pop-up, one asleep, one out of paper */
+  const ISLES = { isles: [{ id: 'milkbar', name: 'Milk Bar', number: 2, on: true, open: true, paper: 1, sig: 3, mesh: true, queue: 2, addr: '1 Test St, Brunswick VIC 3056', lat: -37.77, lng: 144.96, words: 'Mornings', pop: 'milkbar', card: true, home: { order: ['radio'] } },
+    { id: 'deadtree', name: 'Dead Tree', number: 3, on: false, open: false, paper: null, sig: null, mesh: false, queue: 0 }, { id: 'novelglobal', name: 'novel.global', number: 1, on: true, open: false, paper: 0, sig: 1, mesh: false, queue: 0 }], paired: 3 };
+  await page.route('**/api/isles', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ISLES) }));
+  await page.goto('https://oan.test/islands'); await page.waitForSelector('#list li .row'); await sleep(400);
+  const ls = await page.evaluate(() => ({ n: [...document.querySelectorAll('#list .row .n')].map(e => e.textContent), cells: [...document.querySelectorAll('#list .row')].map(r => r.querySelector('.in').children.length), sub: [...document.querySelectorAll('#list .row .nm span')].map(e => e.textContent).join('|'), tally: document.getElementById('tally').textContent, sx: document.documentElement.scrollWidth - innerWidth }));
+  await page.click('#list li:has-text("Milk Bar") .row'); await sleep(300); await shot(page, 'islands-open.png');
+  const det = await page.evaluate(() => { const m = [...document.querySelectorAll('#list li')].find(l => /Milk Bar/.test(l.textContent)).querySelector('.more'); return { shown: !m.hidden, print: m.querySelector('.acts a.go').getAttribute('href'), chips: m.querySelector('.chips').textContent }; });
+  await page.click('#list li:has-text("Milk Bar") .acts button'); await sleep(300);
+  const pick = await page.evaluate(() => JSON.parse(localStorage.getItem('da.pop.home') || 'null'));
+  await page.goto('https://oan.test/'); await sleep(2500);
+  const homeCard = await page.evaluate(() => !!document.querySelector('.hm-card[data-id="pop-milkbar"]'));
+  check('the islands, a live list: by number, each with its five glances, the place from its address; opened, PRINT goes to its pop-up; HOME makes novel.global open with its card',
+    ls.n.join() === '01,02,03' && ls.cells.every(c => c === 5) && /OPEN · BRUNSWICK/i.test(ls.sub) && /2 ON · 1 OPEN · 3/.test(ls.tally) && ls.sx <= 1 && det.shown && det.print === '/popup?p=milkbar' && /RADIO/.test(det.chips) && /QUEUE 2/.test(det.chips)
+    && pick && pick.pick === true && pick.id === 'milkbar' && pick.isle === 'milkbar' && homeCard, JSON.stringify({ ls, det, pick, homeCard }));
+  await admin('settings', { label: L0 });
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section access: ${e.message.split('\n')[0]}`); }
+
 // ───────── sharing: NOTICED, RESPONSE with nothing written, DIRECT ACTION to a partner; approval; the board; RECEIVE by code ─────────
 if (run('share')) try {
   /* what people make is shown to visitors once the approval page switches it on */
@@ -2084,7 +2126,7 @@ for (const HD of [false, true]) if (run('home')) try {
   const h0 = await page.evaluate(() => { const sb = document.querySelector('#hm-sb'); return { low: sb.classList.contains('low'), jacks: [...sb.querySelectorAll('.sl')].map(s => s.dataset.s), dark: sb.querySelectorAll('.sl.lk').length, wires: HOME.wires(), oc: sb.querySelector('.oc').textContent, wired: [...document.querySelectorAll('.hm-card.wired')].map(c => c.dataset.id).sort(), gets: document.querySelector('[data-id="wish"] .hm-lamps').textContent, sbH: sb.getBoundingClientRect().height, peek: innerHeight - sb.getBoundingClientRect().top, fit: [HOME.fits('zine', 'kit'), HOME.fits('wish', 'space'), HOME.fits('radio', 'wish')], mix: [HOME.mix('#FF5436', '#FFB000', 0), HOME.mix('#FF5436', '#FFB000', 1), HOME.mix('#FF5436', '#FFB000') === HOME.mix('#FFB000', '#FF5436')] }; });
   check(`home (${tag}): idle the board sits low; only found jacks show, none dark; RADIO and W.I.S.H. start wired, both cards wear it, no read-out of the wiring anywhere`, h0.low && h0.peek < 40 && !h0.dark && h0.jacks.slice(0, 9).join() === 'portfolio,wish,radio,zine,research,kit,space,reef,eye' && h0.jacks.length <= 10 && JSON.stringify(h0.wires) === '[["radio","wish"]]' && !h0.oc && h0.wired.join() === 'radio,wish' && !h0.gets, JSON.stringify(h0));
   check(`home (${tag}): ports decide every cable; colours mix in OKLab, each end its own`, h0.fit.join() === 'false,false,true' && h0.mix[0] === '#FF5436' && h0.mix[1] === '#FFB000' && h0.mix[2], JSON.stringify(h0));
-  const hc = await page.evaluate(() => { const cs = [...document.querySelectorAll('#hm-col .hm-card')], r = cs[0].getBoundingClientRect(); return { ids: cs.slice(0, 6).map(c => c.dataset.id).join(), zine: cs.find(c => c.dataset.id === 'zine').getAttribute('aria-label'), strip: !!document.querySelector('[data-strip]'), w: r.width, h: r.height, small: cs.slice(0, 6).every(c => c.classList.contains('small')) && !!cs[0].closest('.hm-trio'), big: cs.slice(0, 6).some(c => c.classList.contains('small') || c.closest('.hm-trio')), qr: !document.querySelector('#hm-col [data-id="portfolio"]') && !document.querySelector('#hm-col [data-id="slot-2"]') && !document.querySelector('.sk-intro .in-f a, .sk-intro .in-f button:not(.in-flip)'), grey: [...document.querySelectorAll('.hm-pics img, .hm-bgimg, .hm-prn .ph')].filter(e => !e.closest('.sm-prn, .sp-prn')).some(e => /grayscale/.test(getComputedStyle(e).filter)) }; });
+  const hc = await page.evaluate(() => { const cs = [...document.querySelectorAll('#hm-col .hm-card')], r = cs[0].getBoundingClientRect(); return { ids: cs.slice(0, 6).map(c => c.dataset.id).join(), zine: cs.find(c => c.dataset.id === 'zine').getAttribute('aria-label'), strip: !!document.querySelector('[data-strip]'), w: r.width, h: r.height, small: cs.slice(0, 6).every(c => c.classList.contains('small')) && !!cs[0].closest('.hm-trio'), big: cs.slice(0, 6).some(c => c.classList.contains('small') || c.closest('.hm-trio')), qr: !document.querySelector('#hm-col [data-id="portfolio"]') && !document.querySelector('#hm-col [data-id="slot-2"]') && !document.querySelector('.sk-intro .in-f a:not(.in-go), .sk-intro .in-f button:not(.in-flip)'), grey: [...document.querySelectorAll('.hm-pics img, .hm-bgimg, .hm-prn .ph')].filter(e => !e.closest('.sm-prn, .sp-prn')).some(e => /grayscale/.test(getComputedStyle(e).filter)) }; });
   check(`home (${tag}): the opener leads, then RADIO; portfolio and the unlock put away; the photos in colour, design print named in full; the main cards big on a phone, small three to a row on a desk, by default`, hc.ids === 'intro,radio,wish,research,zine,space' && hc.zine === 'DESIGN PRINT' && !hc.strip && hc.qr && !hc.grey && (HD ? hc.w <= 461 && hc.small : !hc.big), JSON.stringify(hc));
   /* a cable from ZINE: KIT goes dull and takes nothing; ENGINE takes it */
   const h1 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), sb = document.querySelector('#hm-sb');

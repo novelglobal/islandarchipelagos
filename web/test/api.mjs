@@ -568,7 +568,9 @@ try {
   /* the label a first visit meets, and the islands to be found: both as the approval page set them, a closed island's place kept back */
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T' }), isles: JSON.stringify({ novelglobal: { addr: '1 Test St', lat: -37.8, lng: 144.9 } }) } });
     const ps = await call('/api/settings'), is = await call('/api/isles');
-    check('the label is public, the islands list says who is on and open, and where only while open', /"title":"T"/.test(ps.json.label || '') && ps.json.isles === undefined && Array.isArray(is.json.isles) && is.json.isles.every(i => i.open || i.addr === undefined), JSON.stringify([ps.json.label, is.json])); }
+    check('the label is public, the islands list says who is on and open, and where only while open', /"title":"T"/.test(ps.json.label || '') && ps.json.isles === undefined && Array.isArray(is.json.isles) && is.json.isles.every(i => i.open || i.addr === undefined), JSON.stringify([ps.json.label, is.json]));
+    const raw = JSON.stringify(is.json);
+    check('each island carries its glances (paper, Wi-Fi, radio, queue) and, open, its pop-up; never a key or a desk link', is.json.isles.length && is.json.isles.every(i => typeof i.queue === 'number' && 'paper' in i && 'sig' in i && typeof i.mesh === 'boolean' && (i.open || i.pop === undefined)) && !/"(key|desk|token|allow)"/.test(raw), raw.slice(0, 600)); }
   /* a tape: kept on novel.global to be saved from any phone, under its one name, and refused without a code or a proper name */
   { const up = (q, t = 'audio/wav') => server.fetch(new URL('/api/tapes?' + q, O), { method: 'POST', headers: { origin: O, 'content-type': t }, body: Buffer.alloc(2048, 7) });
     const a = await up('who=K7Q&name=novel-global-tape-carlton-ab12.wav'), aj = a.status === 201 ? await a.json() : {}, g = aj.url ? await server.fetch(new URL(aj.url, O)) : null;
