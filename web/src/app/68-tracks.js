@@ -347,7 +347,7 @@ function awaySync(hold, now, share) {
     for (let c = 0; c < 2; c++) { const d = p.buf.getChannelData(Math.min(c, p.buf.numberOfChannels - 1)), w = out[c]; for (let i = 0, k = o; i < L; i++, k = k + 1 === n ? 0 : k + 1) w[i] += d[k] * share; } }
   const id = 'deck:' + T.toFixed(0), place = [...new Set(ms.map(t => (t.m.where || {}).place).filter(Boolean))].slice(0, 3).join(' + ') || 'RADIO';
   const f = AWAY.wavOf({ numberOfChannels: 2, length: L, sampleRate: sr, getChannelData: c => out[c] }), me = LOOP.away = { sig, id, ready: false };
-  AWAY.play(f, { id, title: String(place).toUpperCase(), album: 'RADIO', at: (performance.now() - T) / 1000,
+  AWAY.play(f, { id, title: String(place).toUpperCase(), album: 'DIRECT ACTION RADIO', at: (performance.now() - T) / 1000,
     stop: why => { if (LOOP.away === me) LOOP.away = null; if (why === 'stop') setRadio(false); } })
     .then(ok => { if (LOOP.away !== me) return; if (ok) me.ready = true; else { me.failed = true; AWAY.stop('deck'); LOOP.away = me; } });
 }
@@ -501,7 +501,7 @@ function overGo(p) { const L = LIBR(); if (!p || !FILING) return; const y = L &&
   h.s.onended = () => { if (!OVER || OVER.h !== h || !FILING) return; setTimeout(() => overPrep().then(q => { if (q && FILING && OVER && OVER.h === h) overGo(q); }), 500); }; }
 function overEnd() { const L = LIBR(); if (OVER) { OVER.h.stop(); OVER = null; } if (L && L.quiet) L.quiet(false); }
 async function loopFile(l, four) {
-  if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop(); dsStop(); awayEnd();
+  if (filing) return; filing = true; if (!prefs.sound) { prefs.sound = true; savePrefs(); } snd.wake(); recStop(); awayEnd();
   const under = albLive() ? await overPrep() : null;
   const ms = tracksOf(l), dur = Math.max(...ms.map(t => loopDur(t.m))), t0 = performance.now() + 150; for (const t of ms) { t.t0 = t0; t.step = null; }
   startPlay(ms); $$('[data-t4save], [data-song-file]').forEach(b => b.classList.add('going')); /* whole turns, to at least 24 seconds: a tape to keep, not a blip */
@@ -549,7 +549,7 @@ function deskOf(l) {
 /* every loop recorded goes into the SOUND playlist by itself, with its recording (rec), to be heard there again as it was */
 function toSound(l, rec, quiet) {
   const { code, lab } = deskOf(l); if (!/\d/.test(code.slice(4))) { if (!rec && !quiet) toast('NOTHING IN IT TO PLAY'); return; }
-  const kept = store.get('da.aura.songs', []) || [], had = kept.find(q => q.code === code); if (had && rec) { had.rec = rec; store.set('da.aura.songs', kept); } if (!had) { kept.unshift({ code, at: Date.now(), lab, name: (l.where || {}).place || 'RADIO', ...(rec ? { rec } : {}) }); kept.splice(24); store.set('da.aura.songs', kept); }
+  const kept = store.get('da.aura.songs', []) || [], had = kept.find(q => q.code === code); if (had && (rec || had.from !== 'radio')) { if (rec) had.rec = rec; had.from = 'radio'; store.set('da.aura.songs', kept); } if (!had) { kept.unshift({ code, at: Date.now(), lab, from: 'radio', name: (l.where || {}).place || 'RADIO', ...(rec ? { rec } : {}) }); kept.splice(24); store.set('da.aura.songs', kept); }
   try { if (IN_AURA && !(quiet && had)) parent.postMessage({ ng: 'sound', code }, location.origin); } catch (e) { /* alone */ }
   if (!rec && !quiet) { toast(IN_AURA ? '✓ IN SOUND' : '✓ IN SOUND ON NOVEL.GLOBAL'); snd.tick(1900); }
 }
@@ -575,7 +575,7 @@ function fourHTML() {
 }
 const pAura = () => { try { return parent.AURA || null; } catch (e) { return null; } };
 /* ALBUMS, under the deck: the site's one library (away.js), the same albums as the small player on every card and the sound desk:
-   NIGHT FIELD, each mixtape, the W.I.S.H. songs, the radio's loops. One key drops them down; an album tapped opens its tracks under it:
+   NIGHT FIELD, each mixtape, BLUEPAPER, DIRECT ACTION RADIO. One key drops them down; an album tapped opens its tracks under it:
    ALL plays it from the top, a track plays from there, on through the album. + makes an album of the tracks playing on the deck
    (every track kept, when none plays) */
 let ALB = '', ALBX = false, ALBN = -1;   // ALB: the album open; ALBX: the drop-down open; ALBN: how many were drawn
@@ -615,18 +615,10 @@ function albMake() {
 /* an album played: the radio and anything else here hushed first, so one sound plays at a time; the same again stops it */
 function albPlay(v, i) { const L = LIBR(); if (!L) return; const nw = albNow();
   if (nw.live && nw.v === v && (i == null || nw.i === i)) return;
-  dsStop(); recStop(); try { const A = pAura(); if (A && A.stop) A.stop(); } catch (e) { /* none */ } 
+  recStop(); try { const A = pAura(); if (A && A.stop) A.stop(); } catch (e) { /* none */ } 
   L.play(v, i || 0); albSync(); }
 /* an album come in (NIGHT FIELD fetched, a tape kept on another card): drawn again; else only what plays is lit */
 addEventListener('ng-away', () => { const L = LIBR(); if (L && ALBN >= 0 && L.albums().length !== ALBN && $('#view .four')) refreshFour(); else albSync(); });
-let DS = null;   // the W.I.S.H. song going round: { code, radio }
-const dsSync = () => { $$('[data-dsong]').forEach(q => q.classList.toggle('on', !!DS && DS.code === q.dataset.dsong)); albSync(); };
-function dsStop() { if (!DS) return; const d = DS; DS = null; if (AWAY && AWAY.id() === 'ds:' + d.code) AWAY.stop('ds'); if (d.radio && !S.radio) setRadio(true); dsSync(); }
-document.addEventListener('click', e => { const b = e.target.closest('[data-dsong]'); if (!b) return; const code = b.dataset.dsong; let A = null; try { A = parent.AURA; } catch (er) { /* alone */ }
-  if (AWAY && A && A.songFile) { const was = DS && DS.code; dsStop(); if (was === code) return; recStop(); try { if (A.stop) A.stop(); } catch (er) { /* none */ }
-    const me = DS = { code, radio: S.radio }; dsSync(); A.songFile(code).then(f => { if (DS !== me) return; if (!f) { DS = null; dsSync(); toast('♪'); return; } if (S.radio) setRadio(false);
-      AWAY.play(f, { id: 'ds:' + code, title: A.songName ? A.songName(code) : 'W.I.S.H.', album: 'W.I.S.H.', stop: () => { if (DS === me) dsStop(); } }); }); return; }
-  try { const r = A && A.play ? A.play([code]) : false; $$('[data-dsong]').forEach(q => q.classList.toggle('on', q === b && r === 'play')); } catch (er) { /* alone */ } });
 function refreshFour() { const f = $('#view .four'); if (f) { $$('#view .f4d').forEach(d => d.remove()); f.outerHTML = fourHTML(); } $$('[data-loop-next]').forEach(b => { b.disabled = !LOOPS.length; }); }
 /* the loops kept, in the portfolio: each its picture, its place and its day; pressed, it plays again */
 const LART = new Map();

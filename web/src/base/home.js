@@ -1209,7 +1209,7 @@
   addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'panel' && xv.classList.contains('on')) { shut(true); setTimeout(function () { sheet('ISLAND ARCHIPELAGOS', panelIn); }, 480); } });
   /* an experience asking to go to another card (the radio's species card sent to the research board): the sheet turns to it */
   /* SOUNDS: one small key in the banner, on every card. What sounds now (the radio on air, El Niño on the buoy) and the site's albums
-     (away.js's library: NIGHT FIELD, each mixtape, the W.I.S.H. songs, the radio's loops), the same albums the radio and the sound desk
+     (away.js's library: NIGHT FIELD, each mixtape, BLUEPAPER, DIRECT ACTION RADIO), the same albums the radio and the sound desk
      play, each track through the page's one player so it keeps playing with the screen locked. MIX picks loops and keeps them as a
      mixtape, one more album everywhere. Small grey tiles in a pixel face */
   var SND = { el: null, mix: false, pick: {}, ad: false, rows: [] }, AW = window.NGAWAY, LB = AW && AW.lib;

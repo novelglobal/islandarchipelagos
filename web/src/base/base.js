@@ -1543,6 +1543,14 @@ var tied = function (song) { (song.tracks || []).forEach(function (tr) { tr.step
 var SONG = tied(store.get('da.base.song', null) || newSong());
 var SONGS = store.get('da.base.songs', []).map(function (s) { s.song = tied(s.song); return s; });
 var saveSong = function () { store.set('da.base.song', SONG); remember(); };
+/* the deck's songs in the one library: the SOUND desk's four tracks of 32 steps (da.aura.songs), every step here every other step there */
+function toLib(sg, at) { if (!sg || !sg.tracks) return; var rows = [0, 1, 2, 3].map(function (i) { var r = [], tr = sg.tracks[i] || { steps: [] }; for (var k = 0; k < 32; k++) r.push('.');
+    (tr.steps || []).forEach(function (x, st) { if (x && st < 16) r[st * 2] = String(Math.abs(Math.round(+x.d || 0)) % (i === 3 ? 5 : 10)); }); return r.join(''); });
+  var code = 'v1' + (sg.scale === 'slendro' ? 1 : 0) + '1' + rows.join('-'); if (!/\d/.test(rows.join(''))) return;
+  var kept = store.get('da.aura.songs', []) || []; if (kept.some(function (q) { return q.code === code; })) return;
+  var nm = ''; sg.tracks.some(function (tr) { return (tr.steps || []).some(function (x) { return x && x.t ? (nm = x.t) : false; }); });
+  kept.unshift({ code: code, at: at || Date.now(), name: nm || 'SONG' }); kept.splice(24); store.set('da.aura.songs', kept); }
+if (SONGS.length && !store.get('da.base.joined', false)) { SONGS.slice().reverse().forEach(function (s) { toLib(s.song, s.at); }); store.set('da.base.joined', true); }
 /* undo: the deck and the sets as they were before each change, the last fifty kept; ↶ steps back one */
 var UNDO = [], lastState = null;
 var stateNow = function () { return JSON.stringify({ song: SONG, sets: WEB.sets, path: pathOn() }); };
@@ -1649,7 +1657,7 @@ function paintDeck() {
   q('#d-undo').addEventListener('click', undo);
   q('#d-cp').addEventListener('click', function () { if (songEmpty()) return; compAdd({ k: 'song', song: JSON.parse(JSON.stringify(SONG)) }); location.hash = 'print'; });
   q('#d-drone').addEventListener('click', function () { DRONE.on = !DRONE.on; store.set('da.base.drone', DRONE.on); ac(); droneSync(); paintDeck(); });
-  q('#d-wav').addEventListener('click', function () { if (!songEmpty()) { SONGS.unshift({ at: Date.now(), song: JSON.parse(JSON.stringify(SONG)) }); if (SONGS.length > 12) SONGS.pop(); store.set('da.base.songs', SONGS); } wavOf(SONG); paintDeck(); });
+  q('#d-wav').addEventListener('click', function () { if (!songEmpty()) { SONGS.unshift({ at: Date.now(), song: JSON.parse(JSON.stringify(SONG)) }); if (SONGS.length > 12) SONGS.pop(); store.set('da.base.songs', SONGS); toLib(SONG); } wavOf(SONG); paintDeck(); });
   q('#d-slow').addEventListener('click', function () { SONG.bpm = Math.max(60, SONG.bpm - 8); saveSong(); paintDeck(); });
   q('#d-fast').addEventListener('click', function () { SONG.bpm = Math.min(180, SONG.bpm + 8); saveSong(); paintDeck(); });
   q('#d-scale').addEventListener('click', function () { SONG.scale = SONG.scale === 'pelog' ? 'slendro' : 'pelog'; saveSong(); paintDeck(); });

@@ -3567,7 +3567,7 @@ html.gd-open,html.gd-open body{overflow:hidden!important;overscroll-behavior:non
 @keyframes f4fill{to{transform:scaleX(1)}}
 @keyframes f4blink{50%{opacity:.15}}
 @media (prefers-reduced-motion:reduce){.band.dev.radio .four .f4dot{animation:none}}
-/* the tapes and the W.I.S.H. songs under the deck: one row each, sliding sideways when they are many */
+/* the tapes and BLUEPAPER's songs under the deck: one row each, sliding sideways when they are many */
 .band.dev.radio .f4d{overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;max-width:100%}
 .band.dev.radio .f4d::-webkit-scrollbar{display:none}
 .band.dev.radio .f4d li{flex:none}
@@ -3597,7 +3597,7 @@ html #sec-heat.band.dev.radio.mod .lyrs .lyr-k{height:22px!important}
 html #sec-heat.band.dev.radio.mod .lyrs .lyr-m{width:22px!important;height:22px!important}
 html #sec-heat.band.dev.radio.mod .lyrs .lyr-v{height:20px!important}
 }
-/* the W.I.S.H. songs and the tapes share one row under the deck */
+/* BLUEPAPER's songs and the tapes share one row under the deck */
 .band.dev.radio .f4w{display:flex;align-items:center;gap:12px;margin:6px 0 0;padding:0;overflow-x:auto;scrollbar-width:none}
 .band.dev.radio .f4w::-webkit-scrollbar{display:none}
 .band.dev.radio .f4w>.f4d{flex:none;margin:0;overflow:visible}

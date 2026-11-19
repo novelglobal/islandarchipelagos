@@ -18,7 +18,7 @@
     var a = make(); if (cur || !a.paused) return; try { a.loop = false; a.src = silence(); var p = a.play(); if (p && p.catch) p.catch(function () {}); } catch (e) { /* later */ } }
   function act(k, fn) { try { navigator.mediaSession.setActionHandler(k, fn || null); } catch (e) { /* not on this phone */ } }
   function meta() { var ms = navigator.mediaSession; if (!ms || !cur || !window.MediaMetadata) return;
-    try { ms.metadata = new MediaMetadata({ title: cur.title, artist: 'novel.global', album: cur.album || 'RADIO', artwork: (cur.art ? [{ src: cur.art, sizes: '512x512', type: 'image/svg+xml' }] : []).concat([{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/icon-192.png', sizes: '192x192', type: 'image/png' }]) }); } catch (e) { /* none */ }
+    try { ms.metadata = new MediaMetadata({ title: cur.title, artist: 'novel.global', album: cur.album || 'DIRECT ACTION RADIO', artwork: (cur.art ? [{ src: cur.art, sizes: '512x512', type: 'image/svg+xml' }] : []).concat([{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/icon-192.png', sizes: '192x192', type: 'image/png' }]) }); } catch (e) { /* none */ }
     act('play', function () { if (el) el.play().catch(function () {}); }); act('pause', function () { if (el) el.pause(); }); act('stop', function () { stop(); });
     act('nexttrack', cur.next ? function () { if (cur && cur.next) cur.next(); } : null); act('previoustrack', cur.prev ? function () { if (cur && cur.prev) cur.prev(); } : null); }
   function let_go(why) { var c = cur; cur = null; if (url) { var u = url; url = ''; setTimeout(function () { URL.revokeObjectURL(u); }, 1500); } if (c && c.stop) { try { c.stop(why); } catch (e) { /* gone */ } } }
@@ -49,7 +49,7 @@
     for (i = 0, o = 44; i < N; i++) for (c = 0; c < ch; c++, o += 2) { var x = Math.max(-1, Math.min(1, cs[c][i] * g)); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); }
     return new Blob([b], { type: 'audio/wav' }); }
   /* ───────── the library: one set of albums for every player on the site (the small one on every card, the radio, the sound desk).
-     NIGHT FIELD, each mixtape, the W.I.S.H. songs, the radio's loops. An album plays track after track through the one player, the next
+     NIGHT FIELD, each mixtape, BLUEPAPER (the SOUND desk's songs), DIRECT ACTION RADIO (the radio's loops). Each song in one album only. An album plays track after track through the one player, the next
      made ready while this one plays, so it goes on with the screen locked; the lock screen's keys move inside the album ───────── */
   var NF = null, NFW = null, LIB = { v: '', i: -1, g: 0, pre: null, list: [] };
   var get = function (k, d) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } };
@@ -72,9 +72,12 @@
     if (NF) out.push({ v: 'nf', n: up(NF.name || 'NIGHT FIELD'), art: '/tapes/night-field.svg', tracks: NF.tracks.map(function (t) { return { k: 'url', id: 'nf' + t.n, n: up(t.cn), src: t.src, st: +t.st || 0, sci: t.sci, by: t.by, lic: t.lic, s: 0 }; }) });
     (get('da.tapes.v1', []) || []).forEach(function (t) { if (!t || !t.id) return; var tr = (t.ids || []).map(function (id) { var l = ls.filter(function (q) { return q.id === id; })[0]; return l ? recRow(l) : null; }).filter(Boolean);
       if (tr.length) out.push({ v: 't:' + t.id, n: up(t.name || 'MIXTAPE'), tape: t.id, art: cover(tr), tracks: tr }); });
-    if (A && A.songFile) { var sg = (get('da.aura.songs', []) || []).filter(function (q) { return q && q.code; }).map(function (q) { return { k: 'song', id: 'sg-' + q.code, code: q.code, rec: q.rec || '', n: up(q.name || (A.songName ? A.songName(q.code) : 'SONG')), s: 0 }; });
-      if (sg.length) out.push({ v: 'wish', n: 'W.I.S.H.', tracks: sg }); }
-    if (ls.length) { var rr = ls.map(recRow); out.push({ v: 'radio', n: 'RADIO', art: cover(rr), tracks: rr }); }
+    /* the desk's songs: those made on BLUEPAPER in its album; those the radio sent (lab, or from) with the radio's, unless recorded there already */
+    var rr = ls.map(recRow), had = {}, bp = [], rs = []; ls.forEach(function (l) { had[l.id] = 1; });
+    if (A && A.songFile) (get('da.aura.songs', []) || []).forEach(function (q) { if (!q || !q.code) return; var radio = !!(q.lab || q.from === 'radio');
+      if (radio && q.rec && had[q.rec]) return; (radio ? rs : bp).push({ k: 'song', id: 'sg-' + q.code, code: q.code, rec: q.rec || '', n: up(q.name || (A.songName ? A.songName(q.code) : 'SONG')), s: 0 }); });
+    if (bp.length) out.push({ v: 'wish', n: 'BLUEPAPER', tracks: bp });
+    if (rr.length || rs.length) out.push({ v: 'radio', n: 'DIRECT ACTION RADIO', art: rr.length ? cover(rr) : '', tracks: rr.concat(rs) });
     return out; }
   function album(v) { return albums().filter(function (a) { return a.v === v; })[0] || null; }
   function recBlob(id) { return new Promise(function (res) { try { var q = indexedDB.open('novelglobal-kept', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); };

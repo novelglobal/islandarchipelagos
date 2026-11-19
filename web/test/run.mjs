@@ -1212,6 +1212,27 @@ if (run('oneboard')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section oneboard: ${e.message.split('\n')[0]}`); }
 
+// ───────── one library of songs: the radio's, BLUEPAPER's SOUND desk and the old deck under the home page, each song in one album (ONLY=onesound) ─────────
+if (run('onesound')) try {
+  const tracks = fs.readFileSync(path.join(ROOT, 'src/app/68-tracks.js'), 'utf8');
+  check('no player is left for buttons nothing draws (data-dsong)', !/data-dsong/.test(tracks));
+  const ctx = await newCtx(); await wire(ctx); const row = (a, b) => (a + '.'.repeat(32)).slice(0, 32) + (b ? '' : '');
+  const radioRec = 'v101' + [row('3...'), row('.'), row('.'), row('.')].join('-'), radioOnly = 'v101' + [row('..5.'), row('.'), row('.'), row('.')].join('-'), desk = 'v120' + [row('1.2.'), row('.'), row('7'), row('.')].join('-');
+  await ctx.addInitScript(([a, b, c]) => { if (localStorage.getItem('da.snd.seeded')) return; localStorage.setItem('da.snd.seeded', '1');
+    localStorage.setItem('da.loops.v1', JSON.stringify([{ id: 'L1', at: Date.now(), rec: { s: 3, type: 'audio/webm' }, where: { place: 'Creek', lat: -37.8, lng: 144.9, r: 300 }, layers: {} }]));
+    localStorage.setItem('da.aura.songs', JSON.stringify([{ code: a, at: 3, lab: [{}, {}, {}, {}], from: 'radio', rec: 'L1', name: 'Creek' }, { code: b, at: 2, lab: [{}, {}, {}, {}], name: 'Lane' }, { code: c, at: 1, name: 'Desk' }]));
+    const st = []; for (let i = 0; i < 16; i++) st.push(i === 2 ? { d: 4, id: 'n1', t: 'Wattle' } : null);
+    localStorage.setItem('da.base.songs', JSON.stringify([{ at: 5, song: { bpm: 80, scale: 'pelog', tracks: [{ steps: st }, { steps: [] }, { steps: [] }, { steps: [] }] } }])); }, [radioRec, radioOnly, desk]);
+  const page = await ctx.newPage(); watch(page, 'onesound');
+  await page.goto('https://oan.test/?base'); await page.waitForSelector('#o-radio'); await sleep(400);
+  await page.goto('https://oan.test/'); await page.waitForFunction(() => window.AURA && window.NGAWAY && window.NGAWAY.lib); await sleep(800);
+  const lib = await page.evaluate(() => window.NGAWAY.lib.albums().filter(a => a.v !== 'nf').map(a => ({ n: a.n, t: a.tracks.map(t => t.n) })));
+  const all = lib.flatMap(a => a.t), radio = lib.find(a => a.n === 'DIRECT ACTION RADIO') || { t: [] }, blue = lib.find(a => a.n === 'BLUEPAPER') || { t: [] };
+  check('the albums carry the card names: DIRECT ACTION RADIO has the radio\'s songs, its recording once; BLUEPAPER has the desk\'s and the old deck\'s; no song twice',
+    radio.t.join() === 'CREEK,LANE' && blue.t.includes('DESK') && blue.t.includes('WATTLE') && all.length === new Set(all).size && !lib.some(a => /^(RADIO|W\.I\.S\.H\.)$/.test(a.n)), JSON.stringify(lib));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section onesound: ${e.message.split('\n')[0]}`); }
+
 // ───────── sharing: NOTICED, RESPONSE with nothing written, DIRECT ACTION to a partner; approval; the board; RECEIVE by code ─────────
 if (run('share')) try {
   /* what people make is shown to visitors once the approval page switches it on */
@@ -2266,7 +2287,7 @@ for (const AD of (process.env.AURA_DESK ? [true] : [false, true])) if (run('aura
   const wp = await page.evaluate(() => { const c = document.querySelector('.au-eslide.now canvas'), d = c.getContext('2d').getImageData(c.width - 4, 4, 1, 1).data; return { paper: window.AURA.state().piece.paper, px: [...d].slice(0, 3) }; }); await shot(page, `${P}12b-white.png`);
   check(`aura (${tag}): the poster prints on blue or on white, its words and marks turned to stay seen`, blue === 'blue' && wp.paper === 'white' && wp.px.every(v => v > 200), JSON.stringify({ blue, ...wp }));
   await tap(page, '#au-paper'); await sleep(400);
-  check(`aura (${tag}): print is this one piece and one press, first, then its STYLE, where it goes (its only words) and save; making the style one's own, signal, paper, day or night and delete folded behind the dots; the thing held is put down`, pv.hero && pv.keys.join() === 'au-print,au-style,au-mode,au-save,au-more,au-sted,au-sigk,au-paper,au-pnight,au-reset' && !pv.photo && /^(80 mm|80 mm \+ mesh|wall only)···$/.test(pv.words) && pv.catchShown === 'none' && !pv.strip, JSON.stringify(pv));
+  check(`aura (${tag}): print is this one piece and one press, first, then its STYLE, where it goes (its only words) and save; making the style one's own, signal, paper, day or night and delete folded behind the dots; the thing held is put down`, pv.hero && pv.keys.filter(k => k && k !== 'au-to').join() === 'au-print,au-style,au-mode,au-save,au-more,au-sted,au-sigk,au-paper,au-pnight,au-reset' && !pv.photo && /^(80 mm|80 mm \+ mesh|wall only)···$/.test(pv.words) && pv.catchShown === 'none' && !pv.strip, JSON.stringify(pv));
   /* 1.0 C: one touch on STYLE sets the whole receipt in the next style, still all solid ink; four touches more come back to the house */
   const pxOf = async u => page.evaluate(async u2 => { const im = new Image(); im.src = u2; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data; let grey = 0, black = 0, top = 0; for (let i = 0; i < d.length; i += 4) { if (d[i] !== 0 && d[i] !== 255) grey++; else if (!d[i]) { black++; if (i < c.width * 4 * 30) top++; } } return { w: c.width, h: c.height, grey, black, top }; }, u);
   const rHouse = await page.evaluate(() => window.AURA.receipt(512)); await tap(page, '#au-style'); await sleep(900);
