@@ -445,6 +445,15 @@ try {
       su0.json.pack === 'full' && su0.json.ways === null && su1.json.pack === 'utilities' && su1.json.ways.join() === 'print,intro,random' && su1.json.gap === 30 && su1.json.mods.join() === 'QX9' && suP.pack === 'utilities' && suP.cards.includes('weather') && suM.json.mods.length === 1 && suM.json.mods[0].id === id
       && md.status === 200 && md.json.mod === true && !md.json.mods && mdX.status === 401 && mdS.json.pack === 'builder' && gf1.status === 201 && /^[A-Z2-9]{3}$/.test(gf1.json.code) && gf2.status === 409 && gfN.status === 403 && ask0.status === 403,
       JSON.stringify({ su0: [su0.json.pack, su0.json.ways], su1: su1.json && [su1.json.pack, su1.json.ways, su1.json.gap, su1.json.mods], suP, suM: suM.json.mods, md: md.status, mdX: mdX.status, mdS: mdS.json && mdS.json.pack, gf: [gf1.status, gf1.json, gf2.status, gfN.status], ask0: ask0.status }));
+    /* v0.7 D: what an island's stamps are for: a class roll (codes and counts this moon) or a shop card, every few stamps one full */
+    const us0 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'loud' } } }), us1 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'class', every: 3 } } });
+    const ust = []; for (const n of [6, 7, 8]) ust.push((await call('/api/stamp', { method: 'POST', ip: '10.0.0.89', body: { who: 'QZ7', pass: p3(n) } })).json);
+    const usR = await call('/api/island', { token: K }), usM = await call('/api/mine/QZ7?k=' + HK('QZ7')), usS = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'shop', every: 5 } } }), usR2 = await call('/api/island', { token: K });
+    check('an island chooses a use for its stamps: a class sees its roll (codes and counts, no days); a shop keeps a card; the holder sees the count on their own code, and a full card when it comes',
+      us0.json.use === null && us1.json.use.kind === 'class' && us1.json.use.every === 3 && ust.map(x => x.n).join() === '1,2,3' && !ust[0].full && ust[2].full === true
+      && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
+      JSON.stringify({ us0: us0.json.use, us1: us1.json.use, ust, roll: usR.json.roll, usM: usM.json.stamps, usS: usS.json.use, r2: !!usR2.json.roll }));
+    await call('/api/island', { method: 'POST', token: K, body: { use: null } });
     await call('/api/island', { method: 'POST', token: K, body: { ways: null, mods: [] } });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });

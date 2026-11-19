@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 14;
+const SCHEMA_V = 15;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -156,6 +156,8 @@ async function upgrade(db) {
     /* version 14. Each island's own: gap (seconds between one person's prints; empty, the site's), pack (which cards), ways (how its passes
        are given), mods (codes that help run it). Each maker's animal (their second key, never shown) and when their home key was first given */
     for (const q of ['ALTER TABLE printers ADD COLUMN gap INTEGER', 'ALTER TABLE printers ADD COLUMN pack TEXT', 'ALTER TABLE printers ADD COLUMN ways TEXT', 'ALTER TABLE printers ADD COLUMN mods TEXT', 'ALTER TABLE makers ADD COLUMN animal INTEGER', 'ALTER TABLE makers ADD COLUMN claimed INTEGER']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
+    /* version 15. An island's use for its stamps (v0.7 D): a class roll or a shop's card, and how many stamps make one */
+    try { await db.prepare('ALTER TABLE printers ADD COLUMN use TEXT').run(); } catch (e) { /* already there */ }
     await db.prepare("INSERT INTO settings (k, v) VALUES ('~schema', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(SCHEMA_V)).run();
 }
 /* each printer's island number, given the first time it is paired, in that order: novel.global's own is 1, the islands 2 and up. It stays
@@ -515,6 +517,10 @@ const CHOICES = { codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0
 /* what an island may set for itself: its cards (a pack), how its passes are given, the gap between one person's prints, and who helps run it */
 const PACKS = { full: null, builder: ['intro', 'wish', 'research', 'zine', 'kit', 'space', 'slot-3'], utilities: ['intro', 'weather', 'news', 'events', 'fiction', 'nonfiction', 'survival', 'cards', 'tarot'] };
 const WAYS = ['touch', 'print', 'intro', 'random'];
+/* v0.7 D: what an island's stamps are for. class: a roll the keeper sees (codes and their counts this moon); shop: a card, every few stamps
+   one full. Either way the holder keeps the record on their own code */
+const USES = ['class', 'shop'], EVERY = [3, 5, 10], MOON = Math.round(29.53 * DAY);
+const useOf = p => { const u = jsonOf(p && p.use); return u && USES.includes(u.kind) ? { kind: u.kind, every: EVERY.includes(+u.every) ? +u.every : 5 } : null; };
 const jsonOf = v => { try { return JSON.parse(v || 'null'); } catch (e) { return null; } };
 const waysOf = p => { const w = jsonOf(p && p.ways); return Array.isArray(w) ? w.filter(x => WAYS.includes(x)) : null; };
 const modsOf = p => { const m = jsonOf(p && p.mods); return Array.isArray(m) ? m.filter(x => WHO.test(String(x))) : []; };
@@ -523,10 +529,15 @@ function isleSetup(b, withMods) { const o = {};
   if (b.gap === null || b.gap === '') o.gap = null; else if (b.gap !== undefined && CHOICES.printGap.includes(+b.gap)) o.gap = +b.gap;
   if (typeof b.pack === 'string' && b.pack in PACKS) o.pack = b.pack === 'full' ? null : b.pack;
   if (b.ways === null) o.ways = null; else if (Array.isArray(b.ways)) o.ways = JSON.stringify([...new Set(b.ways.map(String).filter(x => WAYS.includes(x)))]);
+  if (b.use === null || b.use === '') o.use = null; else if (b.use && USES.includes(b.use.kind)) o.use = JSON.stringify({ kind: b.use.kind, every: EVERY.includes(+b.use.every) ? +b.use.every : 5 });
   if (withMods && Array.isArray(b.mods)) o.mods = JSON.stringify([...new Set(b.mods.map(x => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '')).filter(x => WHO.test(x)))].slice(0, 8));
   return o; }
 async function isleSet(db, id, o) { const ks = Object.keys(o); if (!ks.length) return; await db.prepare(`UPDATE printers SET ${ks.map(k => k + ' = ?').join(', ')} WHERE id = ?`).bind(...ks.map(k => o[k]), id).run(); }
-const isleOut = p => ({ gap: p.gap == null ? null : p.gap, pack: p.pack || 'full', ways: waysOf(p), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap });
+const isleOut = p => ({ gap: p.gap == null ? null : p.gap, pack: p.pack || 'full', ways: waysOf(p), use: useOf(p), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap, uses: USES, everys: EVERY });
+/* a class's roll: the codes stamped here this moon and how often; no days, no places */
+async function rollOf(db, id) { await stampTable(db);
+  const { results } = await db.prepare('SELECT who, count(*) AS n FROM stamps WHERE island = ? AND at > ? GROUP BY who ORDER BY n DESC, who LIMIT 400').bind(id, now() - MOON).all();
+  return results.map(x => ({ who: x.who, n: x.n })); }
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
@@ -773,7 +784,7 @@ async function keeperPic(db, env, req, slot) {
 /* the island keeper's own door: their key opens their one printer's row, never novel.global's, another island's, or any story */
 async function keeper(db, env, req) {
   if (await tooMany(db, env, req, 'keeper', 60, 10 * 60e3)) return fail(429, 'too many');
-  const k = bearer(req), cols = 'id, name, paper, number, two, links, seen, gap, pack, ways, mods, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN (\'queued\', \'held\')) AS queued, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = \'printed\') AS printed FROM printers';
+  const k = bearer(req), cols = 'id, name, paper, number, two, links, seen, gap, pack, ways, mods, use, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN (\'queued\', \'held\')) AS queued, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = \'printed\') AS printed FROM printers';
   let p = null, mod = null;
   if (/^[A-HJ-NP-Z2-9]{3,6}\.[0-9a-f]{16}$/.test(k)) { const [w, hk] = k.split('.'); if (!codeKey(env) || hk !== await homeKey(env, w)) return fail(401, 'key'); mod = w;
     const want = new URL(req.url).searchParams.get('id') || ''; p = (await db.prepare(`SELECT ${cols} WHERE mods LIKE ? ORDER BY number`).bind('%"' + w + '"%').all()).results.find(x => !want || x.id === want) || null;
@@ -784,7 +795,8 @@ async function keeper(db, env, req) {
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); }
     const su = isleSetup(b, !mod); await isleSet(db, p.id, su); Object.assign(p, su); }
   const cps = (await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, cst = (await db.prepare('SELECT speed FROM cardset WHERE card = ?').bind(p.id).first()) || {};
-  return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
+  const u = useOf(p), roll = u && u.kind === 'class' ? await rollOf(db, p.id) : null;
+  return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
 }
 /* passes made for one island, and its own slips sent straight to it */
 async function passDo(db, env, p, b) {
@@ -911,14 +923,14 @@ async function admin(db, env, req, parts) {
   if (what === 'pair' && id && (req.method === 'GET' || req.method === 'POST')) return adminPair(db, req, id);
   if (what === 'film' && !id && req.method === 'GET') { const f = await filmOf(db); return json({ today: await filmToday(db), bucket: !!env.FILMS, found: !!(f && env.FILMS && await env.FILMS.head(f.file)) }); }
   if (what === 'printers' && !id) {
-    const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.rst, p.net, p.touch_net, p.wifi, p.upd, p.gap, p.pack, p.ways, p.mods,
+    const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.rst, p.net, p.touch_net, p.wifi, p.upd, p.gap, p.pack, p.ways, p.mods, p.use,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed' AND j.done > (strftime('%s', 'now') - 86400) * 1000) AS day,
         (SELECT json_object('code', j.code, 'status', j.status, 'at', j.created, 'error', j.error, 'mesh', j.mesh IS NOT NULL, 'paper', j.escpos IS NOT NULL) FROM jobs j WHERE j.printer = p.id ORDER BY j.created DESC LIMIT 1) AS last,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'held') AS held,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('queued', 'printing')) AS queued,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed') AS printed,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'failed') AS failed FROM printers p ORDER BY p.created`).all();
-    return json({ printers: results.map(p => ({ ...p, pack: p.pack || 'full', ways: waysOf(p), mods: modsOf(p) })), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap });
+    return json({ printers: results.map(p => ({ ...p, pack: p.pack || 'full', ways: waysOf(p), mods: modsOf(p), use: useOf(p) })), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap });
   }
   if (what === 'printers' && id && req.method === 'POST') {
     const b = await body(req); const p = await db.prepare('SELECT id FROM printers WHERE id = ?').bind(id).first(); if (!p) return fail(404, 'not found');
@@ -929,7 +941,7 @@ async function admin(db, env, req, parts) {
       await db.prepare('UPDATE printers SET number = ? WHERE id = ?').bind(n, id).run(); return json({ ok: true, number: n }); }
     /* the touch screen's own token, shown once; a printer with one holds every slip for its screen */
     if (b.action === 'touch') { if (!b.on) { await db.prepare('UPDATE printers SET touch = NULL WHERE id = ?').bind(id).run(); return json({ ok: true }); } const tok = rid(24); await db.prepare('UPDATE printers SET touch = ?, auto = 0 WHERE id = ?').bind(await sha256(tok), id).run(); return json({ token: tok }); }
-    if (b.action === 'setup') { await isleSet(db, id, isleSetup(b, true)); const q = await db.prepare('SELECT gap, pack, ways, mods FROM printers WHERE id = ?').bind(id).first(); return q ? json({ ...isleOut(q), mods: modsOf(q) }) : fail(404, 'not found'); }
+    if (b.action === 'setup') { await isleSet(db, id, isleSetup(b, true)); const q = await db.prepare('SELECT gap, pack, ways, mods, use FROM printers WHERE id = ?').bind(id).first(); return q ? json({ ...isleOut(q), mods: modsOf(q) }) : fail(404, 'not found'); }
     if (b.action === 'unpair') { await db.prepare('UPDATE printers SET token = NULL, seen = NULL, can = NULL, off = NULL WHERE id = ?').bind(id).run(); return json({ ok: true }); }
     /* TURN OFF: the receiver is handed it the next time it asks, if that is within two minutes */
     if (b.action === 'wifi') { await db.prepare('UPDATE printers SET wifi = ? WHERE id = ? AND token IS NOT NULL').bind(now(), id).run(); return json({ ok: true }); }
@@ -1365,10 +1377,11 @@ async function stampPost(db, env, req) {
   if (!who || typeof b.pass !== 'string' || !codeKey(env)) return fail(400, 'pass');
   const f = await passFind(db, env, b.pass); if (!f) return fail(404, 'not found');
   if (!(await stampPut(db, env, who, f))) return fail(409, 'taken');
-  const home = await homeGive(db, env, req, who, b); return json({ ok: true, island: f.p.id, name: f.p.name || f.p.id, ...(home ? { home } : {}) }, 201); }
+  const home = await homeGive(db, env, req, who, b), at = (await stampsOf(db, who)).find(x => x.id === f.p.id) || {};
+  return json({ ok: true, island: f.p.id, name: f.p.name || f.p.id, n: at.n || 1, ...(at.use ? { use: at.use, full: (at.n || 1) % at.use.every === 0 } : {}), ...(home ? { home } : {}) }, 201); }
 async function stampsOf(db, who) { await stampTable(db);
-  const { results } = await db.prepare('SELECT s.island AS id, p.name AS name, p.number AS number, count(*) AS n FROM stamps s LEFT JOIN printers p ON p.id = s.island WHERE s.who = ? GROUP BY s.island ORDER BY min(s.at)').bind(who).all();
-  return results.map(x => ({ id: x.id, name: x.name || x.id, number: x.number || null, n: x.n })); }
+  const { results } = await db.prepare('SELECT s.island AS id, p.name AS name, p.number AS number, p.use AS use, count(*) AS n FROM stamps s LEFT JOIN printers p ON p.id = s.island WHERE s.who = ? GROUP BY s.island ORDER BY min(s.at)').bind(who).all();
+  return results.map(x => { const u = useOf(x); return { id: x.id, name: x.name || x.id, number: x.number || null, n: x.n, ...(u ? { use: u } : {}) }; }); }
 async function makerPrinted(db, who) { const t = now();
   await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
   await db.prepare('UPDATE makers SET printed = COALESCE(printed, ?) WHERE who = ?').bind(t, who).run(); }
