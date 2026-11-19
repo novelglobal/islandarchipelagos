@@ -1122,6 +1122,9 @@
   }
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
   /* a printed receipt's code (#x=…): opened in DESIGN PRINT, the card that prints it */
+  /* /#home: the code's own home, opened */
+  var homeHash = function () { if (!/^#home$/i.test(location.hash)) return; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} setTimeout(function () { var b = $('#hm-mine'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); }, 0); };
+  homeHash(); window.addEventListener('hashchange', homeHash);
   if (/^#x=/i.test(location.hash)) { var XIN = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ } setTimeout(function () { var c = byId('zine'); if (!c) return; IN.id = 'zine'; sheet(c.title, inFrame('studio?from=aura&only=print' + XIN)); }, 0); }
   setTimeout(function () { var a = AU(); if ((location.hash || (a && a.linked)) && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
@@ -1739,12 +1742,13 @@
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
   /* your home: for anyone with a code (they have printed here). Kept on this phone only */
   function mineIn(body) { body.classList.add('mn');
-    var who = store.get('da.who', ''), ok = !!store.get('da.who.ok', 0), ps = store.get('da.pass', null), today = cartDay(); if (ps && (ps.day !== today || !ps.code)) ps = null;
+    var who = store.get('da.who', ''), ok = !!store.get('da.who.ok', 0), pl = store.get('da.who.places', null) || [], ps = store.get('da.pass', null), today = cartDay(); if (ps && (ps.day !== today || !ps.code)) ps = null;
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
     var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
     var draw = function () { var l = rows(), P = perPage();
       body.innerHTML = '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
-        '<div title="' + (ps ? 'A print pass for today: your next print goes straight out' : 'A print pass comes from the printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
+        '<div title="' + (ps ? 'A print pass for today: your next print goes straight out' : 'A print pass comes from the printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div>' +
+        (who ? '<div title="' + (pl.length ? 'Islands where you kept a pass' : 'Keep a pass from a printer to mark the island here') + '"><dt>PLACES</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { return esc(String(p.name || p.id).toUpperCase()) + (p.n > 1 ? '<i>×' + (+p.n) + '</i>' : ''); }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
         (who ? '<p class="mn-per" role="group" aria-label="Main cards to a screen" title="Main cards to a screen"><span>MAIN</span>' + [2, 3].map(function (n) { return '<button type="button" data-main="' + n + '" aria-pressed="' + (mainPer() === n) + '">' + n + '</button>'; }).join('') + '</p>' +
         '<p class="mn-per" role="group" aria-label="Small cards to a screen" title="Small cards to a screen"><span>SCREEN</span>' + [3, 6, 9].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (P === n) + '">' + n + '</button>'; }).join('') + '</p>' +
         '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = c.id === 'intro' ? 'Opener' : SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
@@ -1760,7 +1764,7 @@
       else if (b.hasAttribute('data-sz')) { MINE.size = MINE.size || {}; var nz = ownSize(l[i]) === 'small' ? 'full' : 'small'; kin(l[i]).forEach(function (x) { MINE.size[x.id] = nz; }); return keep(null); }
       else if (b.hasAttribute('data-on')) { if (id === 'intro') return; MINE.hide = MINE.hide || []; var k = MINE.hide.indexOf(id); if (k >= 0) MINE.hide.splice(k, 1); else if (l.length - MINE.hide.length > 1) MINE.hide.push(id); return keep(null); }
       keep(l); };
-    draw(); }
+    draw(); if (who && window.NG && NG.proof) NG.proof().then(function () { var p2 = store.get('da.who.places', null) || []; if (JSON.stringify(p2) !== JSON.stringify(pl) && body.isConnected) { pl = p2; draw(); } }); }
   WIDE.addEventListener('change', function () { applyCards(null); });
   $('#hm-mine').addEventListener('click', function (e) { e.stopPropagation(); beep(520, 0.05); var up = xv.classList.contains('on');
     if (up && xv.getAttribute('aria-label') === 'HOME') { shut(); return; } if (up) { shut(true); SH.swap = true; setTimeout(function () { sheet('HOME', mineIn); }, 480); return; } sheet('HOME', mineIn); });

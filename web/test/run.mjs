@@ -2025,6 +2025,11 @@ for (const HD of [false, true]) if (run('home')) try {
       const f = document.querySelector('#hm-x iframe'), d = f && f.contentDocument, k = d && d.querySelector('.pk'); return { card: true, small: card.classList.contains('small'), title: card.textContent.trim(), inked: !!(k && k.classList.contains('inked')), h: k ? k.querySelector('canvas').height : 0 }; }, code);
     check(`home (${tag}): a play from LIVE needs a printed code; with one it goes up at once (sandbox) and stands as a small card that runs sealed and prints onto its paper`, bad === 400 && nocode === 401 && sent.status === 201 && before === 2 && after.length === 2 && after[0].first && after[1].n === 'TELEGRAM' && pl.card && pl.small && /TELEGRAM/.test(pl.title) && pl.inked && pl.h > 60, JSON.stringify({ bad, nocode, st: sent.status, before, after, pl }));
     await page.evaluate(() => history.back()); await sleep(800); }
+  /* v0.7 C: the code's home. /#home opens it; PLACES lists the islands where a pass was kept on the code, never when or how often by day */
+  if (!HD) { await page.evaluate(() => { localStorage.setItem('da.who', JSON.stringify('K7Q')); localStorage.setItem('da.who.places', JSON.stringify([{ id: 'milkbar', name: 'Milk Bar', n: 2 }, { id: 'novelglobal', name: 'novel.global', n: 1 }])); });
+    await page.goto('https://oan.test/#home'); await sleep(2500);
+    const hm = await page.evaluate(() => { const dl = document.querySelector('.mn-id'), row = dl && [...dl.querySelectorAll('div')].find(d => (d.querySelector('dt') || {}).textContent === 'PLACES'); return { open: !!document.querySelector('[aria-label="HOME"].on'), hash: location.hash, code: dl && dl.querySelector('dd').textContent, places: row && row.querySelector('dd').textContent }; });
+    check(`home (${tag}): /#home opens the code's own home; PLACES names each island a pass was kept at`, hm.open && hm.hash === '' && /K7Q/.test(hm.code || '') && hm.places === 'MILK BAR×2 · NOVEL.GLOBAL', JSON.stringify(hm)); }
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }

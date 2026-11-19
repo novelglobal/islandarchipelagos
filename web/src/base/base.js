@@ -1062,20 +1062,24 @@ siteOf().then(function (j) { if (j && (j.codeLen === 3 || j.codeLen === 6)) stor
 (function () { var old = store.get('da.me', ''); if (typeof old === 'string' && WHO_RE.test(old) && !store.get('da.who', '')) { store.set('da.who', old); store.set('da.who.at', +store.get('da.me.at', 0) || Date.now()); } })();
 function meUsed() { store.set('da.who.at', Date.now()); }
 function me() {
-  var c = store.get('da.who', ''), at = +store.get('da.who.at', 0) || 0; var kp = +store.get('da.who.keep', 0) || 0; if (WHO_RE.test(c) && (kp ? Date.now() > kp : at && Date.now() - at > LUNA)) { store.set('da.who.keep', 0); store.set('da.who', ''); store.set('da.who.pass', 0); c = ''; }
+  var c = store.get('da.who', ''), at = +store.get('da.who.at', 0) || 0; var kp = +store.get('da.who.keep', 0) || 0; if (WHO_RE.test(c) && (kp ? Date.now() > kp : at && Date.now() - at > LUNA)) { store.set('da.who.keep', 0); store.set('da.who', ''); store.set('da.who.pass', 0); homeGo(); c = ''; }
   if (WHO_RE.test(c)) { if (!at) meUsed(); return c; } var n = codeLen(), r = new Uint8Array(n); try { crypto.getRandomValues(r); } catch (e) { for (var i = 0; i < n; i++) r[i] = Math.random() * 256 | 0; }
   /* letters and numbers both, never all one kind */
   for (var tries = 0; tries < 50; tries++) { c = ''; for (var j = 0; j < n; j++) c += WHO_CH[r[j] % 30]; if (/[A-Z]/.test(c) && /[2-9]/.test(c)) break; try { crypto.getRandomValues(r); } catch (e) { for (var i2 = 0; i2 < n; i2++) r[i2] = Math.random() * 256 | 0; } }
   store.set('da.who', c); meUsed(); return c;
 }
-function setMe(c) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return false; store.set('da.who', c); store.set('da.who.pass', 1); meUsed(); return true; }
+/* the code's home key: handed to the phone that kept a pass on it; only with it does the site say where the code has been */
+function homeGo() { store.set('da.who.home', ''); store.set('da.who.places', null); }
+function homeQ() { var k = store.get('da.who.home', ''); return /^[0-9a-f]{16}$/.test(k) ? '?k=' + k : ''; }
+function homeKept(j) { if (j && Array.isArray(j.stamps)) store.set('da.who.places', j.stamps.slice(0, 40)); }
+function setMe(c) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return false; if (c !== store.get('da.who', '')) homeGo(); store.set('da.who', c); store.set('da.who.pass', 1); meUsed(); return true; }
 function mine() { meUsed(); return api('/mine/' + me()).then(function (j) { if (j && j.kin != null) store.set('da.kin', j.kin); return (j && j.mine) || []; }); }
 /* a code typed from a print: this phone carries on as it, as far as it had got (asked of the site; offline, from where it is) */
-function useCode(c) { if (!setMe(c)) return Promise.resolve(false); return api('/mine/' + me()).then(function (j) { var lv = Math.max(+store.get('da.lv', 0) || 0, (j && j.lv) || 0, 1); store.set('da.lv', lv); store.set('da.who.ok', j && j.printed ? 1 : 0); store.set('da.who.keep', (j && +j.keep) || 0); if (j && j.kin != null) store.set('da.kin', j.kin); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }).catch(function () { if ((+store.get('da.lv', 0) || 0) < 1) store.set('da.lv', 1); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }); }
+function useCode(c) { if (!setMe(c)) return Promise.resolve(false); return api('/mine/' + me() + homeQ()).then(function (j) { homeKept(j); var lv = Math.max(+store.get('da.lv', 0) || 0, (j && j.lv) || 0, 1); store.set('da.lv', lv); store.set('da.who.ok', j && j.printed ? 1 : 0); store.set('da.who.keep', (j && +j.keep) || 0); if (j && j.kin != null) store.set('da.kin', j.kin); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }).catch(function () { if ((+store.get('da.lv', 0) || 0) < 1) store.set('da.lv', 1); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }); }
 /* is this phone's code one that was printed? asked of the island now and again (never makes a code); kept as da.who.ok */
 var proofAt = 0;
 function proof() { var c = store.get('da.who', ''); if (!c || !WHO_RE.test(c) || Date.now() - proofAt < 60e3) return Promise.resolve(!!store.get('da.who.ok', 0)); proofAt = Date.now();
-  return api('/mine/' + c).then(function (j) { var ok = !!(j && j.printed); store.set('da.who.ok', ok ? 1 : 0); if (j && j.keep) store.set('da.who.keep', +j.keep);
+  return api('/mine/' + c + homeQ()).then(function (j) { homeKept(j); var ok = !!(j && j.printed); store.set('da.who.ok', ok ? 1 : 0); if (j && j.keep) store.set('da.who.keep', +j.keep);
     /* what of theirs is already on the site, from whatever phone or the approval page: never offered to the island again */
     var sh = ((j && j.mine) || []).filter(function (m) { return m.shown; }).map(function (m) { return m.code; }); if (sh.length) { var L0 = store.get('da.live', []) || []; store.set('da.live', sh.concat(L0.filter(function (q) { return sh.indexOf(q) < 0; })).slice(0, 60)); } return ok; }).catch(function () { return !!store.get('da.who.ok', 0); }); }
 function dropMine(id) { return api('/mine/' + me() + '/' + encodeURIComponent(id), { method: 'POST', body: '{}' }); }
@@ -2559,7 +2563,7 @@ var ORB = (function () {
 function route() {
   var h = decodeURIComponent(location.hash.slice(1));
   if (/^me=/i.test(h)) { history.replaceState(null, '', location.pathname + location.search); return; }   // an old pass link: dropped (a code is typed from a print, never taken from a link)
-  if (/^songs?=/i.test(h)) return;   // a song's link: the aura's own (aura.js)
+  if (/^songs?=/i.test(h) || /^home$/i.test(h)) return;   // a song's link: the aura's own (aura.js)
   if (/^mix=/i.test(h)) { if (!AURA_ON) location.replace('studio' + location.search + location.hash); return; }   // the radio's song: in the aura's radio window
   if (!/^(radio|wish|shop|print|showcase|pixel|search|guide|now|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) { if (/^x=/i.test(h)) { if (!AURA_ON) location.replace('/' + location.hash); return; } else history.replaceState(null, '', location.pathname + location.search); return; }
   if (/^booth/i.test(h)) { if (!BTH) boothOn(h.split('=')[1]); return; }

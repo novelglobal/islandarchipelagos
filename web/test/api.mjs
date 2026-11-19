@@ -407,9 +407,18 @@ try {
       (got.json.pass || '') === IK && nk.pk === IK && !nk0.pk && sp.status === 200 && /^[A-Z2-9]{3}$/.test(sc1) && [0, 1, 2, 3].map(p3).includes(sc1) && sr.json.kind === 'pass' && sr.json.island === id && sr2.json.kind === 'pass'
       && sMk.status === 201 && uo.status === 200 && uo.json.n === 1 && uoX.status === 401 && sOffR.json.kind === 'pass' && sOffR.json.used === true && cart3.status === 404,
       JSON.stringify({ gotPass: !!got.json.pass, nk: nk.pk === IK, nk0: nk0.pk, sp: sp.status, sc1, sr: sr.json, sr2: sr2.status, sMk: sMk.status, uo: uo.json, uoX: uoX.status, sOffR: sOffR.json, cart3: cart3.status }));
-    /* v0.7: a code is kept two weeks from when it was given; something made with it keeps it a month from then */
+    /* v0.7: a code unused goes after two weeks; a pass kept on it, or something made with it, keeps it a month from then */
     const kp0 = (await call('/api/mine/QX9')).json.keep, DY = 864e5; await call('/api/stories', { method: 'POST', ip: '10.0.0.83', body: story('DA-5KPA', { who: 'QX9' }) }); const kp1 = (await call('/api/mine/QX9')).json.keep;
-    check('a code is kept two weeks, and a month from when something is made with it', Math.abs(kp0 - Date.now() - 14 * DY) < DY && Math.abs(kp1 - Date.now() - 30 * DY) < DY, JSON.stringify([(kp0 - Date.now()) / DY, (kp1 - Date.now()) / DY]));
+    check('a code is kept a month from when a pass is kept on it, and again from when something is made with it', Math.abs(kp0 - Date.now() - 30 * DY) < DY && Math.abs(kp1 - Date.now() - 30 * DY) < DY, JSON.stringify([(kp0 - Date.now()) / DY, (kp1 - Date.now()) / DY]));
+    /* v0.7 C: a pass kept on a code is a stamp of the island; where a code has been is told only with its home key */
+    const HK = w => createHmac('sha256', KEY).update('home:' + w).digest('hex').slice(0, 16);
+    const hm0 = await call('/api/mine/QX9'), hm1 = await call('/api/mine/QX9?k=' + HK('QX9')), hmX = await call('/api/mine/QX9?k=0000000000000000');
+    const stT = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: sc1 } }), stN = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: p3(2) } }), stB = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: 'ZZ2' } });
+    const hm2 = await call('/api/mine/QY8?k=' + HK('QY8'));
+    check('a pass kept on a code stamps it with the island, once and for that code only; the stamps are told only with its home key, handed back when it is kept',
+      sMk.json.home === HK('QX9') && !hm0.json.stamps && !hmX.json.stamps && Array.isArray(hm1.json.stamps) && hm1.json.stamps.length === 1 && hm1.json.stamps[0].id === id && hm1.json.stamps[0].n === 1 && hm1.json.printed === true
+      && stT.status === 409 && stN.status === 201 && stN.json.home === HK('QY8') && stN.json.island === id && stB.status === 404 && hm2.json.printed === true && hm2.json.stamps.length === 1,
+      JSON.stringify({ home: sMk.json.home === HK('QX9'), hm0: !!hm0.json.stamps, hmX: !!hmX.json.stamps, hm1: hm1.json.stamps, stT: stT.status, stN: stN.json, stB: stB.status, hm2: hm2.json && [hm2.json.printed, hm2.json.stamps] }));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));

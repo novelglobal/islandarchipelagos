@@ -44,7 +44,13 @@
     out.innerHTML = '<div class="mk" aria-hidden="true">' + esc(j.mark.e) + '</div><p class="w">' + esc(j.mark.w) + '</p><p>' + esc(String(j.name).toUpperCase()) + (j.number ? ' · ' + esc(j.number) : '') + '</p>' +
       (j.used ? '<p class="say">USED</p>' : '<button id="keep" title="Your next print there today goes straight out">KEEP</button>');
     var k = $('#keep'); if (k) k.addEventListener('click', function () { try { localStorage.setItem('da.pass', JSON.stringify({ code: j.code, island: j.island, day: day() })); } catch (e) { /* none */ }
-      k.disabled = true; k.textContent = 'KEPT'; setTimeout(function () { location.href = '/'; }, 1400); });
+      k.disabled = true; k.textContent = 'KEPT';
+      /* kept on this phone's code too: a stamp of where it was. Only the first code to keep a pass gets its stamp */
+      var who = ''; try { who = JSON.parse(localStorage.getItem('da.who') || '""'); } catch (e) { who = ''; }
+      var go = function () { setTimeout(function () { location.href = '/'; }, 1400); };
+      if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who)) return go();
+      fetch('/api/stamp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, pass: j.code }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (s) {
+        if (s && s.home) try { localStorage.setItem('da.who.home', JSON.stringify(s.home)); localStorage.setItem('da.who.ok', '1'); k.textContent = 'STAMPED'; } catch (e) { /* none */ } go(); }, go); });
   }
   function open(c) {
     c = String(c || '').toUpperCase().replace(/[^A-Z0-9-]/g, ''); if (!c) return; inp.value = c; out.innerHTML = '<p class="say">· · ·</p>';

@@ -245,6 +245,7 @@ async function codesGo(db, t) {
   const { results } = await db.prepare('SELECT who FROM makers WHERE COALESCE(keep, first + ?) < ? LIMIT 200').bind(KEEP.fresh, t).all(); if (!results.length) return 0;
   const ops = []; for (const { who } of results) { ops.push(db.prepare('UPDATE stories SET who = NULL WHERE who = ?').bind(who), db.prepare('UPDATE tapes SET who = NULL WHERE who = ?').bind(who), db.prepare('DELETE FROM makers WHERE who = ?').bind(who)); }
   await db.batch(ops); try { await linkTable(db); await db.batch(results.map(({ who }) => db.prepare('DELETE FROM links WHERE who = ?').bind(who))); } catch (e) { /* no links */ }
+  await stampTable(db); await db.batch(results.map(({ who }) => db.prepare('DELETE FROM stamps WHERE who = ?').bind(who)));
   return results.length; }
 /* ───────── what the public sees ───────── */
 const storyOut = r => ({ id: r.id, code: r.code, kind: r.kind, body: r.body, photo: !!r.has_photo, dest: r.dest || '', at: r.decided || r.created, star: !!r.star, printed: r.printed || 0 });
@@ -388,7 +389,8 @@ async function mine(db, env, req, who, id) {
   if (id) { const r = await db.prepare('UPDATE stories SET gone = ? WHERE id = ? AND who = ? AND gone IS NULL').bind(now(), id, who).run(); return r.meta && r.meta.changes ? json({ ok: true }) : fail(404, 'not found'); }
   const { results } = await db.prepare(`SELECT id, code, kind, status, body, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories WHERE who = ? AND gone IS NULL AND kind NOT IN ('example', 'play', 'message') ORDER BY created DESC LIMIT 100`).bind(who).all();
   const mk = await kinOf(db, who), kp = await db.prepare('SELECT COALESCE(keep, first + ?) AS k FROM makers WHERE who = ?').bind(KEEP.fresh, who).first();
-  return json({ keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
+  const hk = new URL(req.url).searchParams.get('k'), st = hk && codeKey(env) && hk === await homeKey(env, who) ? await stampsOf(db, who) : null;
+  return json({ ...(st ? { stamps: st } : {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
 /* a story sent: it waits for approval. A job for the partner's printer waits with it, unless that printer prints without approval.
    dest 'mesh': no print, only its mesh line, to every paired printer whose radio is on (MESH), to go out over the local mesh */
@@ -432,10 +434,12 @@ async function send(db, env, req) {
   }
   /* FREE PRINTING (on to begin with): every print goes straight out. PRINT PASS (off to begin with): a printed pass is neither asked for nor used up */
   const SP = await settingsOf(db), free = !!SP.freePrint;
-  let passed = false; if (SP.passOn && P && (b.escpos || b.mesh) && typeof b.pass === 'string' && codeKey(env)) { const f = await passFind(db, env, b.pass, P.id); if (f) passed = await passUse(db, f.code, f.day, P.id); }
+  let passed = false, pf = null; if (P && typeof b.pass === 'string' && codeKey(env)) pf = await passFind(db, env, b.pass, P.id);
+  if (pf && SP.passOn && (b.escpos || b.mesh)) passed = await passUse(db, pf.code, pf.day, P.id);
   if (b.mesh != null && (typeof b.mesh !== 'string' || enc.encode(b.mesh).length > LIMIT.mesh)) return fail(400, 'mesh');
   const { n } = await db.prepare("SELECT count(*) AS n FROM stories WHERE status = 'waiting'").first(); if (n >= LIMIT.waiting) return refuse(503, 'too many stories waiting for approval');
   const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
+  if (pf && who) await stampPut(db, env, who, pf);
   const cf = req.cf || {}, ua = req.headers.get('user-agent') || '', str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
   const origin = JSON.stringify({ ...(popP && b.from === 'pop' ? { pop: String(popP.id).slice(0, 24) } : {}), from: str(b.from, 24), stage: str(b.stage, 60), city: str(cf.city, 40), region: str(cf.region, 40), country: str(cf.country, 4), dev: /Mobi|Android|iPhone|iPad/i.test(ua) ? 'phone' : 'computer', mesh: str(b.mesh, 240) });
   const id = rid(); const t = now(); const inR2 = pic ? await toR2(db, env, photoKey(id), pic) : false;
@@ -1286,8 +1290,27 @@ async function makerPass(db, env, req) {
   if (!who || !PASS.test(pass) || !codeKey(env)) return fail(400, 'pass');
   const f = await passFind(db, env, pass); if (!f) return fail(404, 'not found');
   if (!(await passUse(db, f.code, f.day, f.p.id))) return fail(409, 'used');
-  await makerPrinted(db, who); return json({ ok: true, island: f.p.id }, 201);
+  await makerPrinted(db, who); await stampPut(db, env, who, f); return json({ ok: true, island: f.p.id, home: await homeKey(env, who) }, 201);
 }
+/* v0.7 C. A stamp: a pass from a printer kept on a code, the proof its holder was there. A pass stamps one code only, the first to keep it.
+   What a code's stamps are is told only with its home key, handed to the phone that kept one: a short code alone never shows where its holder has been */
+const stampsReady = new WeakMap();
+const stampTable = db => { if (!stampsReady.has(db)) stampsReady.set(db, db.batch([db.prepare('CREATE TABLE IF NOT EXISTS stamps (pass TEXT PRIMARY KEY, who TEXT NOT NULL, island TEXT NOT NULL, day TEXT NOT NULL, at INTEGER NOT NULL)'), db.prepare('CREATE INDEX IF NOT EXISTS stamps_who ON stamps (who)')]).catch(e => { stampsReady.delete(db); throw e; })); return stampsReady.get(db); };
+async function homeKey(env, who) { return hex(await mac(codeKey(env), 'home:' + who)).slice(0, 16); }
+async function stampPut(db, env, who, f) { await stampTable(db);
+  await db.prepare('INSERT OR IGNORE INTO stamps (pass, who, island, day, at) VALUES (?, ?, ?, ?, ?)').bind(f.p.id + ':' + f.code + ':' + f.day, who, f.p.id, f.day, now()).run();
+  const r = await db.prepare('SELECT who FROM stamps WHERE pass = ?').bind(f.p.id + ':' + f.code + ':' + f.day).first(); if (!r || r.who !== who) return false;
+  await makerPrinted(db, who); await keepMade(db, who).run(); return true; }
+async function stampPost(db, env, req) {
+  if (await tooMany(db, env, req, 'stamp', 12, 10 * 60e3)) return fail(429, 'too many');
+  const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
+  if (!who || typeof b.pass !== 'string' || !codeKey(env)) return fail(400, 'pass');
+  const f = await passFind(db, env, b.pass); if (!f) return fail(404, 'not found');
+  if (!(await stampPut(db, env, who, f))) return fail(409, 'taken');
+  return json({ ok: true, island: f.p.id, name: f.p.name || f.p.id, home: await homeKey(env, who) }, 201); }
+async function stampsOf(db, who) { await stampTable(db);
+  const { results } = await db.prepare('SELECT s.island AS id, p.name AS name, p.number AS number, count(*) AS n FROM stamps s LEFT JOIN printers p ON p.id = s.island WHERE s.who = ? GROUP BY s.island ORDER BY min(s.at)').bind(who).all();
+  return results.map(x => ({ id: x.id, name: x.name || x.id, number: x.number || null, n: x.n })); }
 async function makerPrinted(db, who) { const t = now();
   await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
   await db.prepare('UPDATE makers SET printed = COALESCE(printed, ?) WHERE who = ?').bind(t, who).run(); }
@@ -1553,6 +1576,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'plays' && p[1] && p[2] === 'edit' && m === 'POST') return playEdit(db, env, req, p[1]);
   if (p[0] === 'plays' && !p[1] && m === 'POST') return playSend(db, env, req);
   if (p[0] === 'maker' && !p[1] && m === 'POST') return makerPass(db, env, req);
+  if (p[0] === 'stamp' && !p[1] && m === 'POST') return stampPost(db, env, req);
   if (p[0] === 'link' && !p[1] && m === 'POST') return linkSet(db, env, req);
   if (p[0] === 'plays' && p[1] && !p[2] && m === 'GET') return playOne(db, p[1]);
   if (p[0] === 'plays' && p[1] && p[2] === 'art' && m === 'GET') return playPic(db, p[1]);
