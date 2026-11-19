@@ -457,7 +457,7 @@ const sigRow = s => {
   const p = s.pin || {}; const st = sentWord(s); const tier = s.star ? 2 : printedOf(s) ? 1 : 0; const L = linesOf(s);
   const act = L[L.length - 1] || s.threat || p.cn || p.n || '';
   return `<li><button type="button" class="sig-row${s.ex ? ' ex' : ''}${s.shared ? ' sh' : ''}${tier ? ` t${tier}` : ''}" data-sig="${esc(s.key)}" data-tip="${esc([p.cn || p.n, s.threat].filter(Boolean).join(' · '))}"><b class="mono code">${esc(s.code)}</b>${sigArt(s)}`
-    + `<span class="cap"><strong class="act">${esc(act)}</strong><small class="tk-m mono">${[s.ex ? 'EXAMPLE' : s.shared ? '' : 'MINE', s.here ? 'HERE' : '', p.cn || p.n, p.place, s.at ? fmtStamp(s.at).split(' ')[0] : ''].filter(Boolean).map(esc).join(' · ')}</small></span>${st ? `<i class="st" aria-label="${esc(st)}"></i>` : ''}</button></li>`;
+    + `<span class="cap"><strong class="act">${esc(act)}</strong><small class="tk-m mono">${[s.ex ? 'EXAMPLE' : '', p.cn || p.n, p.place, s.at ? fmtStamp(s.at).split(' ')[0] : ''].filter(Boolean).map(esc).join(' · ')}</small></span>${st ? `<i class="st" aria-label="${esc(st)}"></i>` : ''}</button></li>`;
 };
 /* the board's order, behind the scenes: the four printed most, or held up on the approval page; then the newest */
 function boardOrder(sigs) {

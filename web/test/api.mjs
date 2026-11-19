@@ -448,10 +448,11 @@ try {
     /* v0.7 D: what an island's stamps are for: a class roll (codes and counts this moon) or a shop card, every few stamps one full */
     const us0 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'loud' } } }), us1 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'class', every: 3 } } });
     const ust = []; for (const n of [6, 7, 8]) ust.push((await call('/api/stamp', { method: 'POST', ip: '10.0.0.89', body: { who: 'QZ7', pass: p3(n) } })).json);
+    const usA = (await call('/api/admin/printers', { key: KEY })).json.printers.find(x => x.id === id), usMod = await call('/api/island', { method: 'POST', token: K, body: { mods: ['QX9'] } }).then(() => call('/api/island', { token: 'QX9.' + HK('QX9') }));
     const usR = await call('/api/island', { token: K }), usM = await call('/api/mine/QZ7?k=' + HK('QZ7')), usS = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'shop', every: 5 } } }), usR2 = await call('/api/island', { token: K });
     check('an island chooses a use for its stamps: a class sees its roll (codes and counts, no days); a shop keeps a card; the holder sees the count on their own code, and a full card when it comes',
       us0.json.use === null && us1.json.use.kind === 'class' && us1.json.use.every === 3 && ust.map(x => x.n).join() === '1,2,3' && !ust[0].full && ust[2].full === true
-      && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
+      && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && usA.roll.some(x => x.who === 'QZ7') && usMod.status === 200 && !usMod.json.roll && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
       JSON.stringify({ us0: us0.json.use, us1: us1.json.use, ust, roll: usR.json.roll, usM: usM.json.stamps, usS: usS.json.use, r2: !!usR2.json.roll }));
     await call('/api/island', { method: 'POST', token: K, body: { use: null } });
     /* v0.7 D: a post from a code stamped at an island that day is marked HERE, a person who was there; never which island */

@@ -804,7 +804,7 @@ async function keeper(db, env, req) {
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); }
     const su = isleSetup(b, !mod); await isleSet(db, p.id, su); Object.assign(p, su); }
   const cps = (await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, cst = (await db.prepare('SELECT speed FROM cardset WHERE card = ?').bind(p.id).first()) || {};
-  const u = useOf(p), roll = u && u.kind === 'class' ? await rollOf(db, p.id) : null;
+  const u = useOf(p), roll = u && u.kind === 'class' && !mod ? await rollOf(db, p.id) : null;   // the roll: the island's keeper and the approval page only
   return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
 }
 /* passes made for one island, and its own slips sent straight to it */
@@ -939,7 +939,8 @@ async function admin(db, env, req, parts) {
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('queued', 'printing')) AS queued,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed') AS printed,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'failed') AS failed FROM printers p ORDER BY p.created`).all();
-    return json({ printers: results.map(p => ({ ...p, pack: p.pack || 'full', ways: waysOf(p), mods: modsOf(p), use: useOf(p) })), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap });
+    const rolls = {}; for (const p of results) { const u = useOf(p); if (u && u.kind === 'class') rolls[p.id] = await rollOf(db, p.id); }
+    return json({ printers: results.map(p => ({ ...p, pack: p.pack || 'full', ways: waysOf(p), mods: modsOf(p), use: useOf(p), ...(rolls[p.id] ? { roll: rolls[p.id] } : {}) })), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap });
   }
   if (what === 'printers' && id && req.method === 'POST') {
     const b = await body(req); const p = await db.prepare('SELECT id FROM printers WHERE id = ?').bind(id).first(); if (!p) return fail(404, 'not found');
