@@ -397,7 +397,7 @@ async function mine(db, env, req, who, id) {
   if (id) { const r = await db.prepare('UPDATE stories SET gone = ? WHERE id = ? AND who = ? AND gone IS NULL').bind(now(), id, who).run(); return r.meta && r.meta.changes ? json({ ok: true }) : fail(404, 'not found'); }
   const { results } = await db.prepare(`SELECT id, code, kind, status, body, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo FROM stories WHERE who = ? AND gone IS NULL AND kind NOT IN ('example', 'play', 'message') ORDER BY created DESC LIMIT 100`).bind(who).all();
   const mk = await kinOf(db, who), kp = await db.prepare('SELECT COALESCE(keep, first + ?) AS k FROM makers WHERE who = ?').bind(KEEP.fresh, who).first();
-  const hk = new URL(req.url).searchParams.get('k'), st = hk && codeKey(env) && hk === await homeKey(env, who) ? await stampsOf(db, who) : null;
+  const hk = new URL(req.url).searchParams.get('k'), st = hk && codeKey(env) && await same(hk, await homeKey(env, who)) ? await stampsOf(db, who) : null;
   const own = st ? { stamps: st, animal: ((await db.prepare('SELECT animal FROM makers WHERE who = ?').bind(who).first()) || {}).animal != null, mods: (await db.prepare('SELECT id, name, number FROM printers WHERE mods LIKE ?').bind('%"' + who + '"%').all()).results.map(p => ({ id: p.id, name: p.name || p.id, number: p.number || null })) } : null;
   return json({ ...(own || {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
@@ -795,7 +795,7 @@ async function keeper(db, env, req) {
   if (await tooMany(db, env, req, 'keeper', 60, 10 * 60e3)) return fail(429, 'too many');
   const k = bearer(req), cols = 'id, name, paper, number, two, links, seen, gap, pack, ways, mods, use, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN (\'queued\', \'held\')) AS queued, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status = \'printed\') AS printed FROM printers';
   let p = null, mod = null;
-  if (/^[A-HJ-NP-Z2-9]{3,6}\.[0-9a-f]{16}$/.test(k)) { const [w, hk] = k.split('.'); if (!codeKey(env) || hk !== await homeKey(env, w)) return fail(401, 'key'); mod = w;
+  if (/^[A-HJ-NP-Z2-9]{3,6}\.[0-9a-f]{16}$/.test(k)) { const [w, hk] = k.split('.'); if (!codeKey(env) || !await same(hk, await homeKey(env, w))) return fail(401, 'key'); mod = w;
     const want = new URL(req.url).searchParams.get('id') || ''; p = (await db.prepare(`SELECT ${cols} WHERE mods LIKE ? ORDER BY number`).bind('%"' + w + '"%').all()).results.find(x => !want || x.id === want) || null;
   } else { if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key'); p = await db.prepare(`SELECT ${cols} WHERE owner = ?`).bind(await sha256(k)).first(); }
   if (!p || p.id === 'novelglobal') return fail(401, 'key');
@@ -1345,7 +1345,7 @@ async function makerPass(db, env, req) {
    What a code's stamps are is told only with its home key, handed to the phone that kept one: a short code alone never shows where its holder has been */
 const stampsReady = new WeakMap();
 const stampTable = db => { if (!stampsReady.has(db)) stampsReady.set(db, db.batch([db.prepare('CREATE TABLE IF NOT EXISTS stamps (pass TEXT PRIMARY KEY, who TEXT NOT NULL, island TEXT NOT NULL, day TEXT NOT NULL, at INTEGER NOT NULL)'), db.prepare('CREATE INDEX IF NOT EXISTS stamps_who ON stamps (who)')]).catch(e => { stampsReady.delete(db); throw e; })); return stampsReady.get(db); };
-async function homeGive(db, env, req, who, b) { if (!codeKey(env)) return null; const key = await homeKey(env, who); if ((req.headers.get('x-home') || '') === key) return key;
+async function homeGive(db, env, req, who, b) { if (!codeKey(env)) return null; const key = await homeKey(env, who); if (await same(req.headers.get('x-home') || '', key)) return key;
   if (!b || !b.home) return null;   // only a page that keeps the key asks for it
   const r = await db.prepare('UPDATE makers SET claimed = ? WHERE who = ? AND claimed IS NULL').bind(now(), who).run(); return r.meta && r.meta.changes ? key : null; }
 /* small lasting notes: an intro pass given, wrong animals tried */

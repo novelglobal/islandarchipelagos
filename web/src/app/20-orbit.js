@@ -107,7 +107,7 @@ function placesAround(lat, lng, R) {
   placesBusy = (async () => {
     const is = need.map(t => t[0]), js = need.map(t => t[1]);
     const bb = [Math.min(...is) * TILE, Math.min(...js) * TILE, (Math.max(...is) + 1) * TILE, (Math.max(...js) + 1) * TILE].map(v => v.toFixed(4)).join(',');
-    /* novel.global first, which keeps every tile for everyone; if it cannot answer in time, OpenStreetMap's own mirrors, as before */
+    /* novel.global alone, which keeps every tile for everyone */
     for (const url of [CONFIG.OSM_API, ...(CONFIG.OVERPASS || [])]) {
       try {
         const res = await fetch(url === CONFIG.OSM_API ? `${url}?q=places&bb=${bb}` : `${url}?data=${encodeURIComponent(PLACE_Q(bb))}`, url === CONFIG.OSM_API && AbortSignal.timeout ? { signal: AbortSignal.timeout(25000) } : undefined); if (!res.ok) throw new Error('HTTP ' + res.status);

@@ -1233,6 +1233,37 @@ if (run('onesound')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section onesound: ${e.message.split('\n')[0]}`); }
 
+// ───────── every page at a small phone, a phone, a tablet and a desk: nothing scrolls sideways, nothing runs off the edge (ONLY=sweep) ─────────
+if (run('sweep')) try {
+  const PAGES = ['/', '/studio?from=aura&only=radio', '/research.html?in=1', '/islands', '/island.html', '/kit.html', '/bench.html', '/archipelagos.html', '/play.html', '/cart.html', '/art.html', '/desk.html', '/x.html', '/c.html', '/note'];
+  const SIZES = [[320, 640, 1], [390, 844, 1], [768, 1024, 1], [1280, 800, 0]], bad = [], small = [], links = new Set();
+  for (const [w, h, touch] of SIZES) {
+    const ctx = await newCtx({ viewport: { width: w, height: h }, isMobile: !!touch && w < 700, hasTouch: !!touch }); await wire(ctx); const page = await ctx.newPage(); watch(page, 'sweep-' + w);
+    for (const u of PAGES) {
+      try { await page.goto('https://oan.test' + u, { waitUntil: 'load', timeout: 30000 }); } catch (e) { bad.push(`${w} ${u} load`); continue; }
+      await sleep(1600);
+      const r = await page.evaluate(() => { const W = innerWidth, out = [];
+        const sx = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0) - W;
+        for (const el of document.querySelectorAll('body *')) { const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed' && +cs.opacity === 0) continue;
+          const b = el.getBoundingClientRect(); if (!b.width || !b.height) continue; let p = el.parentElement, clip = false; while (p && p !== document.body) { const ps = getComputedStyle(p); if (/(hidden|auto|scroll|clip)/.test(ps.overflowX + ps.overflow)) { clip = true; break; } p = p.parentElement; }
+          if (!clip && b.right > -3000 && (b.right > W + 2 || b.left < -2) && b.width < W * 3) out.push((el.id ? '#' + el.id : el.tagName.toLowerCase() + '.' + String(el.className && el.className.baseVal != null ? el.className.baseVal : el.className).split(' ')[0]) + ' ' + Math.round(b.left) + '..' + Math.round(b.right)); }
+        const tiny = W < 700 ? [...document.querySelectorAll('button, a[href], input, select, [role=button]')].filter(el => { const b = el.getBoundingClientRect(), cs = getComputedStyle(el); return b.width && b.height && cs.visibility !== 'hidden' && b.right > 0 && b.left < W && b.top < innerHeight * 3 && Math.min(b.width, b.height) < 20 && !el.closest('[hidden], [aria-hidden=true]'); }).map(el => (el.id ? '#' + el.id : el.tagName.toLowerCase() + '.' + String(el.className).split(' ')[0]) + ' ' + Math.round(el.getBoundingClientRect().width) + 'x' + Math.round(el.getBoundingClientRect().height)) : [];
+        return { sx, out: out.slice(0, 4), tiny: tiny.slice(0, 6), nt: tiny.length }; });
+      if (w === 1280) for (const h of await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href]')].map(a => a.href).filter(h => h.startsWith(location.origin) && !/^blob:|#$/.test(h)).map(h => h.split('#')[0]))])) links.add(h);
+      if (r.nt) small.push(`${w} ${u} ${r.nt}: ${r.tiny.join(', ')}`);
+      if (r.sx > 2) bad.push(`${w} ${u} sideways ${r.sx}px`); if (r.out.length) bad.push(`${w} ${u} off: ${r.out.join(', ')}`);
+      if (u === '/' || u === '/research.html?in=1') await shot(page, `sweep-${w}-${u === '/' ? 'home' : 'research'}.png`);
+    }
+    await ctx.close();
+  }
+  check('every page, at 320, 390, 768 and 1280 wide: nothing scrolls sideways, nothing runs off the edge', !bad.length, bad.join(' | '));
+  { const ctx = await newCtx(); await wire(ctx); const pg = await ctx.newPage(), dead = [];
+    await pg.goto('https://oan.test/kit.html');
+    for (const h of links) { const st = await pg.evaluate(u => fetch(u).then(r => r.status, () => 0), h); if (!st || st >= 400) dead.push(h.replace('https://oan.test', '') + ' ' + st); }
+    check(`every link on those pages opens something (${links.size} links)`, !dead.length, dead.join(' | ')); await ctx.close(); }
+  if (small.length) results.push('NOTE  keys under 20 px on a phone: ' + small.join(' | '));
+} catch (e) { results.push(`FAIL  section sweep: ${e.message.split('\n')[0]}`); }
+
 // ───────── sharing: NOTICED, RESPONSE with nothing written, DIRECT ACTION to a partner; approval; the board; RECEIVE by code ─────────
 if (run('share')) try {
   /* what people make is shown to visitors once the approval page switches it on */
@@ -2059,7 +2090,8 @@ for (const HD of [false, true]) if (run('home')) try {
   const h1 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), sb = document.querySelector('#hm-sb');
     sb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); await z(600); for (let i = 0; i < 20; i++) { const a = sb.getBoundingClientRect().top; await z(100); if (Math.abs(sb.getBoundingClientRect().top - a) < 1) break; }
     const at = id => { const b = sb.querySelector('[data-j="' + id + '"]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }, j = sb.querySelector('[data-j="zine"]');
-    const drag = async to => { const [x, y] = at('zine'), [tx, ty] = at(to), ev = (t, X, Y) => j.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, clientX: X, clientY: Y, pointerId: 5, pointerType: 'touch' }));
+    const still = async () => { if (sb.classList.contains('low')) sb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); for (let i = 0; i < 20; i++) { const a = sb.getBoundingClientRect().top; await z(100); if (Math.abs(sb.getBoundingClientRect().top - a) < 1 && !sb.getAnimations().length) break; } };
+    const drag = async to => { await still(); const [x, y] = at('zine'), [tx, ty] = at(to), ev = (t, X, Y) => j.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, clientX: X, clientY: Y, pointerId: 5, pointerType: 'touch' }));
       ev('pointerdown', x, y); ev('pointermove', x + 12, y + 12); ev('pointermove', tx, ty); await z(120); const s = { ok: [...sb.querySelectorAll('.sl.ok')].map(q => q.dataset.s), dl: [...sb.querySelectorAll('.sl.dl')].map(q => q.dataset.s) }; ev('pointerup', tx, ty); await z(200); return s; };
     const toKit = await drag('kit'), w1 = HOME.wires(), toSpace = await drag('space'), w2 = HOME.wires();
     return { raised: !sb.classList.contains('low'), toKit, w1, toSpace, w2, oc: [...sb.querySelectorAll('.oc li')].map(li => li.textContent), space: (document.querySelector('[data-id="space"] .hm-lamps') || {}).textContent }; });
