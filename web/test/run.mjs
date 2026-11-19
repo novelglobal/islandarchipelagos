@@ -1273,9 +1273,9 @@ if (run('access')) try {
   const mini = await page.evaluate(() => { const m = document.getElementById('lbm'); m.getAnimations().forEach(a => a.finish()); const r = m.getBoundingClientRect(); return { lb: !!document.getElementById('lb'), t: m.querySelector('.lbm-s').textContent, w: r.width, l: r.left, r: r.right, b: r.bottom, H: innerHeight, W: innerWidth }; });
   await shot(page, 'access-card.png');
   await page.click('#lbm .lbm-o'); await sleep(700);
-  const full = await page.evaluate(() => { const l = document.getElementById('lb'), r = l && l.getBoundingClientRect(); return l ? { full: l.classList.contains('lb-full'), x: !!l.querySelector('.lb-x'), w: r.width, W: innerWidth, h: r.height, H: innerHeight, mini: !!document.getElementById('lbm') } : null; });
+  const full = await page.evaluate(() => { const l = document.getElementById('lb'), r = l && l.getBoundingClientRect(); return l ? { full: l.classList.contains('lb-full'), x: !!l.querySelector('.lb-cl'), w: r.width, W: innerWidth, h: r.height, H: innerHeight, mini: !!document.getElementById('lbm') } : null; });
   await shot(page, 'access-full.png');
-  await page.click('#lb .lb-x'); await sleep(900);
+  await page.click('#lb .lb-cl'); await sleep(900);
   const back = await page.evaluate(() => ({ lb: !!document.getElementById('lb'), mini: !!document.getElementById('lbm') }));
   await page.click('#lbm .lbm-x'); await sleep(500); const away = await page.evaluate(() => !document.getElementById('lbm'));
   check('the label as a card: one sentence on a small card inside the screen; a tap opens it over the full screen; closed, the card is back; × puts it away',
@@ -1286,22 +1286,31 @@ if (run('access')) try {
   check('the label as it was stays the way it comes: over the site, no small card', !old.full && !old.mini, JSON.stringify(old));
   await page.evaluate(() => { const l = document.getElementById('lb'); if (l) l.remove(); });
   const go = await page.evaluate(() => { const a = document.querySelector('.sk-intro .in-ia a.in-go'); return a ? { href: a.getAttribute('href'), t: a.textContent.trim(), tt: a.title } : null; });
-  check('the opener\'s Island Archipelagos is a key to the islands', go && go.href === '/islands' && /island archipelagos/i.test(go.t) && /printer/i.test(go.tt), JSON.stringify(go));
+  const gw = await page.evaluate(() => { const a = document.querySelector('.sk-intro .in-ia a.in-go'), s = a && getComputedStyle(a), r = a && a.getBoundingClientRect(); return a ? { bg: s.backgroundColor, c: s.color, h: r.height, fs: parseFloat(s.fontSize), ws: s.whiteSpace } : null; });
+  check('the opener\'s key reads ISLAND ARCHIPELAGOS: FIND A THERMAL PRINTER, orange with black type on one line, no target', go && go.href === '/islands' && /^island archipelagos: find a thermal printer$/i.test(go.t) && /printer/i.test(go.tt) && gw && gw.bg === 'rgb(242, 106, 33)' && gw.c === 'rgb(18, 18, 18)' && gw.ws === 'nowrap' && gw.h < gw.fs * 3.2, JSON.stringify([go, gw]));
   /* the islands: three, one open with its pop-up, one asleep, one out of paper */
   const ISLES = { isles: [{ id: 'milkbar', name: 'Milk Bar', number: 2, on: true, open: true, paper: 1, sig: 3, mesh: true, queue: 2, addr: '1 Test St, Brunswick VIC 3056', lat: -37.77, lng: 144.96, words: 'Mornings', pop: 'milkbar', card: true, home: { order: ['radio'] } },
     { id: 'deadtree', name: 'Dead Tree', number: 3, on: false, open: false, paper: null, sig: null, mesh: false, queue: 0 }, { id: 'novelglobal', name: 'novel.global', number: 1, on: true, open: false, paper: 0, sig: 1, mesh: false, queue: 0 }], paired: 3 };
+  ISLES.isles[0].find = 'Back counter, under the clock';
   await page.route('**/api/isles', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ISLES) }));
-  await page.goto('https://oan.test/islands'); await page.waitForSelector('#list li .row'); await sleep(400);
-  const ls = await page.evaluate(() => ({ n: [...document.querySelectorAll('#list .row .n')].map(e => e.textContent), cells: [...document.querySelectorAll('#list .row')].map(r => r.querySelector('.in').children.length), sub: [...document.querySelectorAll('#list .row .nm span')].map(e => e.textContent).join('|'), tally: document.getElementById('tally').textContent, sx: document.documentElement.scrollWidth - innerWidth }));
-  await page.click('#list li:has-text("Milk Bar") .row'); await sleep(300); await shot(page, 'islands-open.png');
-  const det = await page.evaluate(() => { const m = [...document.querySelectorAll('#list li')].find(l => /Milk Bar/.test(l.textContent)).querySelector('.more'); return { shown: !m.hidden, print: m.querySelector('.acts a.go').getAttribute('href'), chips: m.querySelector('.chips').textContent }; });
-  await page.click('#list li:has-text("Milk Bar") .acts button'); await sleep(300);
+  await page.goto('https://oan.test/islands'); await page.waitForSelector('#list li .row'); await sleep(400); await shot(page, 'islands-open.png');
+  const ls = await page.evaluate(() => ({ n: [...document.querySelectorAll('#list .row .n')].map(e => e.textContent), cells: [...document.querySelectorAll('#list .row')].map(r => r.querySelector('.gl').children.length), sub: document.querySelector('#list .row .nm span').textContent, tally: document.getElementById('tally').textContent, sx: document.documentElement.scrollWidth - innerWidth,
+    dots: document.querySelectorAll('#dots .isl').length, back: !document.getElementById('bk').hidden, names: (document.body.innerText.match(/novel\.global/gi) || []).length }));
+  const det = await page.evaluate(() => { const li = document.querySelector('#list li.pick'), m = li && li.querySelector('.more'); return m ? { id: li.dataset.id, find: m.querySelector('.fd') && m.querySelector('.fd').textContent, map: m.querySelector('.acts a.go').getAttribute('href') || '', gl: li.querySelector('.gl').innerText, print: !!document.querySelector('a[href*="popup"]'), mores: document.querySelectorAll('#list .more').length } : null; });
+  await Promise.all([page.waitForURL('https://oan.test/', { timeout: 15000 }), page.click('#list li.pick .acts button.isl')]); await sleep(300);
   const pick = await page.evaluate(() => JSON.parse(localStorage.getItem('da.pop.home') || 'null'));
   await page.goto('https://oan.test/'); await sleep(2500);
   const homeCard = await page.evaluate(() => !!document.querySelector('.hm-card[data-id="pop-milkbar"]'));
-  check('the islands, a live list: by number, each with its five glances, the place from its address; opened, PRINT goes to its pop-up; HOME makes novel.global open with its card',
-    ls.n.join() === '01,02,03' && ls.cells.every(c => c === 5) && /OPEN · BRUNSWICK/i.test(ls.sub) && /2 ON · 1 OPEN · 3/.test(ls.tally) && ls.sx <= 1 && det.shown && det.print === '/popup?p=milkbar' && /RADIO/.test(det.chips) && /QUEUE 2/.test(det.chips)
+  check('the finder: open first, one glance strip each, a dot each on the dial; the open one already picked with how to find it, MAP and HOME, no print; its strip in words; novel.global named once; ISLAND goes to it: novel.global opens as it, with its card',
+    ls.n.join() === '02,01,03' && ls.cells.every(c => c === 5) && /^OPEN · BRUNSWICK$/i.test(ls.sub) && /^2 ON · 1 OPEN$/.test(ls.tally) && ls.sx <= 1 && ls.dots === 3 && ls.back && ls.names === 1
+    && det && det.id === 'milkbar' && det.find === 'Back counter, under the clock' && /directions/.test(det.map) && /HAS PAPER/.test(det.gl) && /MESH/.test(det.gl) && /2\s*WAITING/.test(det.gl) && !det.print && det.mores === 1
     && pick && pick.pick === true && pick.id === 'milkbar' && pick.isle === 'milkbar' && homeCard, JSON.stringify({ ls, det, pick, homeCard }));
+  /* the opener's key opens the finder over the site */
+  await page.evaluate(() => localStorage.removeItem('da.pop.home')); await page.goto('https://oan.test/'); await page.waitForSelector('.sk-intro'); await sleep(1500);
+  await page.evaluate(() => { const c = document.querySelector('.sk-intro'); if (c && !c.classList.contains('flip')) c.classList.add('flip'); c.scrollIntoView(); }); await sleep(900); await shot(page, 'opener-key.png');
+  await page.evaluate(() => document.querySelector('.sk-intro .in-go').click()); await sleep(1800); await shot(page, 'finder-sheet.png');
+  const fr1 = await page.evaluate(() => { const f = [...document.querySelectorAll('iframe')].find(f => /islands\?in=1/.test(f.src)); return f ? { bk: f.contentDocument && f.contentDocument.getElementById('bk') ? f.contentDocument.getElementById('bk').hidden : null, url: location.pathname } : null; });
+  check('the opener\'s key opens the finder over the site, with no back key of its own (the sheet\'s own takes you back)', fr1 && fr1.bk === true && fr1.url === '/', JSON.stringify(fr1));
   await admin('settings', { label: L0 });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section access: ${e.message.split('\n')[0]}`); }
@@ -2156,7 +2165,7 @@ for (const HD of [false, true]) if (run('home')) try {
   /* v0.7 C: the code's home. /#home opens it; PLACES lists the islands where a pass was kept on the code, never when or how often by day */
   if (!HD) { await page.evaluate(() => { localStorage.setItem('da.who', JSON.stringify('K7Q')); localStorage.setItem('da.who.places', JSON.stringify([{ id: 'milkbar', name: 'Milk Bar', n: 7, use: { kind: 'shop', every: 5 } }, { id: 'novelglobal', name: 'novel.global', n: 1 }])); });
     await page.goto('https://oan.test/#home'); await sleep(2500);
-    const hm = await page.evaluate(() => { const dl = document.querySelector('.mn-id'), row = dl && [...dl.querySelectorAll('div')].find(d => (d.querySelector('dt') || {}).textContent === 'PLACES'); return { open: !!document.querySelector('[aria-label="HOME"].on'), hash: location.hash, code: dl && dl.querySelector('dd').textContent, places: row && row.querySelector('dd').textContent }; });
+    const hm = await page.evaluate(() => { const dl = document.querySelector('.mn-id'), row = dl && [...dl.querySelectorAll('div')].find(d => (d.querySelector('dt') || {}).textContent === 'JOINED'); return { open: !!document.querySelector('[aria-label="HOME"].on'), hash: location.hash, code: dl && dl.querySelector('dd').textContent, places: row && row.querySelector('dd').textContent }; });
     check(`home (${tag}): /#home opens the code's own home; PLACES names each island a pass was kept at, a shop's card as dots`, hm.open && hm.hash === '' && /K7Q/.test(hm.code || '') && hm.places === 'MILK BAR●●○○○ · NOVEL.GLOBAL', JSON.stringify(hm));
     /* v0.7: HOME in four folded parts; the animal hidden; a code opened on another phone needs its animal */
     await page.screenshot({ path: path.join(SHOTS, 'home-mine-code.png') });
@@ -2166,8 +2175,8 @@ for (const HD of [false, true]) if (run('home')) try {
       const sub = q('.mn-sec[data-s="code"] .mn-sub'); sub.open = true; const f = sub.querySelector('form'); f.c.value = 'K7Q'; f.a.value = '3'; f.requestSubmit(); await z(1200);
       out.said = (q('[data-say="open"]') || {}).textContent; out.kept = JSON.parse(localStorage.getItem('da.hm.secs') || '{}'); out.key = !!q('.mn-sec[data-s="isles"] .mn-sub form'); return out; });
     await page.screenshot({ path: path.join(SHOTS, 'home-mine-open.png') });
-    check(`home (${tag}): HOME folds into CODE, PRINT, ADMIN and ISLANDS, CODE open first; no animal shows as none; a code opened from another phone without its animal is refused; the parts left open are kept`,
-      ms.secs.join() === 'CODE,PRINT,ADMIN,ISLANDS' && ms.open.join() === 'code' && ms.an === '—' && ms.locked && ms.said === 'NO' && ms.kept.print === 1 && ms.kept.isles === 1 && ms.key, JSON.stringify(ms)); }
+    check(`home (${tag}): HOME folds into CODE, PRINT, ENGINE and ISLANDS, CODE open first; no animal shows as none; a code opened from another phone without its animal is refused; the parts left open are kept`,
+      ms.secs.join() === 'CODE,PRINT,ENGINE,ISLANDS' && ms.open.join() === 'code' && ms.an === '—' && ms.locked && ms.said === 'NO' && ms.kept.print === 1 && ms.kept.isles === 1 && ms.key, JSON.stringify(ms)); }
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }

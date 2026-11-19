@@ -4,114 +4,112 @@
 <title>Islands · novel.global</title>
 <link rel="icon" href="icon.svg">
 <style>
-  :root { --ink: #161514; --paper: #F3F2EE; --wall: #E4E2DC; --row: #EDEBE6; --line: rgba(22, 21, 20, .14); --dim: rgba(22, 21, 20, .56); --faint: rgba(22, 21, 20, .22); --on: #2FBF55; --sun: #E25C40; --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
-  @media (prefers-color-scheme: dark) { :root { --ink: #F1EFEA; --paper: #1C1B1A; --wall: #121212; --row: #232120; --line: rgba(241, 239, 234, .12); --dim: rgba(241, 239, 234, .58); --faint: rgba(241, 239, 234, .22); } }
+  :root { --ink: #161514; --paper: #F3F2EE; --wall: #E9E7E1; --row: #F3F2EE; --line: rgba(22, 21, 20, .14); --dim: rgba(22, 21, 20, .56); --faint: rgba(22, 21, 20, .22); --on: #2FBF55; --sun: #F26A21; --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+  @media (prefers-color-scheme: dark) { :root:not(.day) { --ink: #F1EFEA; --paper: #1C1B1A; --wall: #121212; --row: #1C1B1A; --line: rgba(241, 239, 234, .12); --dim: rgba(241, 239, 234, .58); --faint: rgba(241, 239, 234, .22); } }
+  :root.night { --ink: #F1EFEA; --paper: #1C1B1A; --wall: #121212; --row: #1C1B1A; --line: rgba(241, 239, 234, .12); --dim: rgba(241, 239, 234, .58); --faint: rgba(241, 239, 234, .22); }
   * { box-sizing: border-box; }
   html { background: var(--wall); color: var(--ink); -webkit-text-size-adjust: 100%; }
   body { margin: 0; font: 400 14px/1.4 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+  main { max-width: 560px; margin: 0 auto; padding: calc(10px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
   [hidden] { display: none !important; }
-  a { color: inherit; }
-  button { font: inherit; color: inherit; }
-  .mono { font-family: var(--mono); letter-spacing: .08em; }
+  a { color: inherit; } button { font: inherit; color: inherit; }
 
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
-  h1 { margin: 0; display: flex; align-items: center; gap: 10px; font: 700 15px/1 var(--mono); letter-spacing: .16em; }
-  h1 svg { width: 30px; height: 15px; }
-  h1 svg .s { fill: var(--ink); } h1 svg .c { fill: none; stroke: var(--ink); stroke-width: 9; }
-  header a { font: 600 11px/1 var(--mono); letter-spacing: .1em; text-decoration: none; padding: 10px 2px; opacity: .7; } header a:hover { opacity: 1; }
+  /* the strip: back, the name, and always the state: live, how many on and open */
+  .bar { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+  .bk { appearance: none; border: 0; background: none; width: 36px; height: 36px; margin-left: -8px; display: grid; place-items: center; cursor: pointer; text-decoration: none; }
+  .bk svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
+  h1 { margin: 0; display: flex; align-items: center; gap: 9px; font: 700 13px/1 var(--mono); letter-spacing: .16em; }
+  h1 svg { width: 26px; height: 13px; } h1 .s { fill: var(--ink); } h1 .c { fill: none; stroke: var(--ink); stroke-width: 9; stroke-dasharray: 1 13; stroke-linecap: round; }
+  .live { margin: 0 0 0 auto; display: flex; align-items: center; gap: 7px; font: 600 10px/1 var(--mono); letter-spacing: .1em; white-space: nowrap; }
+  .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--on); animation: pulse 2s ease-out infinite; flex: none; }
+  .live.stale .dot { background: var(--faint); animation: none; } .live span { color: var(--dim); }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47, 191, 85, .5); } 70%, 100% { box-shadow: 0 0 0 7px rgba(47, 191, 85, 0); } }
 
-  /* the strip: live, how many on, how many open, and the sort */
-  .bar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 -16px; padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top) * 0); background: var(--wall); border-bottom: 1px solid var(--line); }
-  .live { display: flex; align-items: center; gap: 10px; font: 600 10.5px/1 var(--mono); letter-spacing: .1em; white-space: nowrap; overflow: hidden; }
-  .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--on); box-shadow: 0 0 0 0 rgba(47, 191, 85, .5); animation: pulse 2s ease-out infinite; flex: none; }
-  .live.stale .dot { background: var(--faint); animation: none; }
-  .live b { font-weight: 700; } .live span { color: var(--dim); }
-  @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(47, 191, 85, 0); } 100% { box-shadow: 0 0 0 0 rgba(47, 191, 85, 0); } }
-  .seg { display: flex; flex: none; border: 1px solid var(--ink); }
-  .seg button { appearance: none; border: 0; background: none; padding: 7px 10px; min-width: 40px; font: 600 10.5px/1 var(--mono); letter-spacing: .1em; cursor: pointer; }
-  .seg button + button { border-left: 1px solid var(--ink); }
-  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--wall); }
-  #say { margin: 8px 2px 0; min-height: 15px; font: 500 10.5px/1.4 var(--mono); letter-spacing: .06em; color: var(--dim); }
-  #home { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 0; padding: 10px 12px; background: var(--ink); color: var(--wall); font: 600 11px/1.2 var(--mono); letter-spacing: .1em; }
-  #home button { appearance: none; border: 0; background: none; color: inherit; font: inherit; padding: 6px 4px; cursor: pointer; opacity: .75; } #home button:hover { opacity: 1; }
+  /* the dial: a radar. You at the middle, the islands as dots by their way and distance, the needle to the one picked */
+  .scope { position: relative; width: min(100%, 300px, 42vh); margin: 6px auto 0; aspect-ratio: 1; }
+  .scope svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .scope .rg { fill: none; stroke: var(--line); stroke-width: 1; } .scope .rg.d { stroke-dasharray: 1 5; stroke: var(--faint); }
+  .scope .tk { stroke: var(--faint); stroke-width: 1.2; } .scope text { fill: var(--dim); font: 600 9px var(--mono); letter-spacing: .1em; }
+  .scope .sw { transform-origin: 150px 150px; animation: sweep 8s linear infinite; } .scope .sw path { fill: url(#sw); }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  .scope .rose { transform-origin: 150px 150px; transition: transform .35s ease-out; }
+  .scope .isl { cursor: pointer; } .scope .isl circle { fill: var(--ink); } .scope .isl.shut circle { fill: var(--wall); stroke: var(--dim); stroke-width: 1.4; }
+  .scope .isl .hit { fill: transparent !important; stroke: none !important; }
+  .scope .isl.pick circle { fill: var(--sun); stroke: none; } .scope .isl .ring { fill: none !important; stroke: none !important; }
+  .scope .isl.pick .ring { stroke: var(--sun) !important; stroke-width: 1.4; animation: ping 2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes ping { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(2.2); } }
+  .scope .ndl { stroke: var(--sun); stroke-width: 2; stroke-linecap: square; transition: opacity .2s; } .scope .me { fill: var(--ink); }
+  .scope.lost .ndl { opacity: 0; }
+  .scope.here .me { fill: var(--sun); animation: ping 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .loc { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); appearance: none; border: 0; padding: 9px 13px; background: var(--ink); color: var(--wall); font: 700 10.5px/1 var(--mono); letter-spacing: .14em; cursor: pointer; box-shadow: 3px 3px 0 var(--sun); }
+  .loc:active { transform: translate(calc(-50% + 3px), calc(-50% + 3px)); box-shadow: none; }
+  .read { margin: 8px 0 14px; min-height: 0; text-align: center; font: 700 22px/1.1 var(--mono); letter-spacing: .04em; font-variant-numeric: tabular-nums; } .read:empty { margin: 0 0 6px; }
+  .read small { font-size: 11px; letter-spacing: .14em; color: var(--dim); margin-left: 6px; }
+  .read.here { color: var(--sun); letter-spacing: .3em; } .read.dim { font-size: 11px; letter-spacing: .14em; color: var(--dim); padding-top: 7px; }
 
-  /* the columns: number, island and place, how far, and the intel */
-  .head, .row { display: grid; grid-template-columns: 26px minmax(0, 1fr) 62px 86px; align-items: center; column-gap: 8px; }
-  .head { margin-top: 12px; padding: 0 12px 6px; font: 600 9px/1 var(--mono); letter-spacing: .12em; color: var(--dim); }
-  .head .r, .row .d { text-align: right; }
-  .head .in { display: flex; justify-content: flex-end; gap: 4px; }
-  ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-  li { border-bottom: 1px solid var(--line); background: var(--row); }
-  li.shut { background: transparent; }
-  li.shut .row .n, li.shut .row .nm, li.shut .row .d { opacity: .55; }
-  .row { width: 100%; appearance: none; border: 0; background: none; text-align: left; padding: 12px; min-height: 58px; cursor: pointer; }
-  .row:hover { background: rgba(128, 128, 128, .07); }
+  /* the islands: number, name and place, how far, and one glance strip each (the same strip, in words, when picked) */
+  ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+  li { border-bottom: 1px solid var(--line); }
+  li.pick { background: var(--row); border-bottom-color: var(--ink); }
+  .row { width: 100%; appearance: none; border: 0; background: none; text-align: left; padding: 12px 2px; min-height: 58px; cursor: pointer; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 7px; align-items: center; }
+  li.pick .row { padding-left: 10px; padding-right: 10px; }
   .row:focus-visible { outline: 2px solid var(--sun); outline-offset: -2px; }
-  .row .n { font: 600 12px/1 var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
-  .row .nm { min-width: 0; }
-  .row .nm b { display: block; font: 700 14px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: -.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
-  .row .nm span { display: block; margin-top: 3px; font: 500 10px/1.2 var(--mono); letter-spacing: .08em; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
-  .row .nm span em { font-style: normal; color: var(--on); } li.shut .row .nm span em { color: var(--dim); }
-  .row .d { font: 600 12px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-  .row .d svg { width: 13px; height: 13px; flex: none; fill: none; stroke: var(--sun); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
-  .row .d i { font-style: normal; color: var(--faint); }
-  li.flash { animation: flash 1.2s ease; } @keyframes flash { 0%, 30% { background: rgba(226, 92, 64, .16); } }
+  .n { grid-row: 1 / 3; align-self: start; padding-top: 2px; font: 600 11px/1 var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+  .nm { min-width: 0; } .nm b { display: block; font: 700 15px/1.15 'Helvetica Neue', Helvetica, Arial, sans-serif; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nm span { display: block; margin-top: 3px; font: 500 10px/1.2 var(--mono); letter-spacing: .08em; color: var(--dim); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nm span em { font-style: normal; color: var(--on); } li.shut .nm span em { color: var(--dim); } li.shut .nm b, li.shut .n { opacity: .55; }
+  .d { font: 600 12px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; align-items: center; gap: 4px; justify-self: end; }
+  .d svg { width: 13px; height: 13px; fill: none; stroke: var(--sun); stroke-width: 2.6; stroke-linecap: square; transition: transform .3s; } .d i { font-style: normal; color: var(--faint); }
+  li.flash { animation: flash 1.2s ease; } @keyframes flash { 0%, 30% { background: rgba(242, 106, 33, .16); } }
+  .gl { grid-column: 2 / 4; display: flex; align-items: center; gap: 12px; font: 600 9.5px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  .gl > span { display: inline-flex; align-items: center; gap: 5px; } .gl b { display: none; font-weight: 600; }
+  li.pick .gl { flex-wrap: wrap; gap: 8px 14px; color: var(--ink); } li.pick .gl b { display: inline; }
+  .gl svg { width: 13px; height: 13px; flex: none; }
+  .pw { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--faint); } .y > .pw { background: var(--on); border-color: var(--on); }
+  .pp rect { fill: none; stroke: currentColor; stroke-width: 1.6; } .pp .f { fill: currentColor; stroke: none; } .gl .no { color: var(--sun); } .gl .x { opacity: .4; }
+  .wf rect { fill: var(--faint); } .wf rect.y { fill: currentColor; }
+  .ms path, .ms circle { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .q { font-variant-numeric: tabular-nums; }
 
-  /* the intel: power, paper, Wi-Fi, radio, queue, each one glyph wide */
-  .in { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-  .in > * { flex: none; width: 13px; display: grid; place-items: center; }
-  .in .q { width: 18px; font: 600 11px/1 var(--mono); font-variant-numeric: tabular-nums; text-align: right; place-items: center end; }
-  .in svg { width: 13px; height: 13px; }
-  .pw { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--faint); margin: 0 2.5px; } .pw.y { background: var(--on); border-color: var(--on); }
-  .pp rect { fill: none; stroke: currentColor; stroke-width: 1.6; } .pp .f { fill: currentColor; stroke: none; } .pp.no { color: var(--sun); } .pp.un { color: var(--faint); }
-  .wf rect { fill: var(--faint); } .wf rect.y { fill: var(--ink); }
-  .rd path, .rd circle { fill: none; stroke: var(--faint); stroke-width: 1.7; stroke-linecap: round; } .rd.y path, .rd.y circle { stroke: var(--ink); }
-  .q.z { color: var(--faint); }
-
-  /* an island opened: its picture, its words, and what to do there */
-  .more { padding: 0 12px 14px 46px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-  .chips span { padding: 4px 7px; border: 1px solid var(--line); font: 600 9.5px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
-  .chips span.y { color: var(--ink); border-color: var(--ink); } .chips span.no { color: var(--sun); border-color: var(--sun); }
-  .pic { display: block; width: 100%; max-height: 260px; object-fit: contain; margin: 0 0 12px; background: rgba(0, 0, 0, .05); }
-  .ad { margin: 0; font-size: 14px; } .wd { margin: 4px 0 0; font-size: 13px; color: var(--dim); }
-  .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .acts a, .acts button { appearance: none; display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 13px; border: 1px solid var(--ink); background: none; font: 600 11px/1 var(--mono); letter-spacing: .12em; text-decoration: none; cursor: pointer; }
-  .acts .go { background: var(--ink); color: var(--wall); }
-  .acts .go:hover, .acts button[aria-pressed="true"] { background: var(--sun); border-color: var(--sun); color: #fff; }
-  .acts [aria-disabled="true"] { opacity: .35; pointer-events: none; }
-  .acts svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .no { margin: 30px 2px; font: 600 11px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); }
-  .key { margin: 18px 2px 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 9.5px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
-  .key span { display: inline-flex; align-items: center; gap: 5px; } .key .in > * { width: auto; }
-
-  @media (max-width: 360px) { .head, .row { grid-template-columns: 20px minmax(0, 1fr) 54px 80px; column-gap: 6px; } .row, .head { padding-left: 8px; padding-right: 8px; } .more { padding-left: 34px; padding-right: 8px; } .in { gap: 3px; } }
-  @media (min-width: 640px) { .head, .row { grid-template-columns: 34px minmax(0, 1fr) 90px 104px; column-gap: 14px; } .in { gap: 7px; } .row .nm b { font-size: 15px; } .more { padding-left: 60px; } }
-  @media (prefers-reduced-motion: reduce) { .live .dot, li.flash { animation: none; } }
+  /* picked: its art, how to find it, its words, then MAP and ISLAND (go to it) */
+  .more { padding: 0 10px 14px 44px; }
+  .pic { display: block; width: 100%; max-height: 300px; object-fit: contain; margin: 2px 0 12px; background: rgba(128, 128, 128, .08); }
+  .fd { margin: 0; font: 700 15px/1.3 'Helvetica Neue', Helvetica, Arial, sans-serif; } .fd::before { content: '→ '; color: var(--sun); }
+  .ad { margin: 6px 0 0; font: 500 11px/1.4 var(--mono); letter-spacing: .04em; color: var(--dim); } .wd { margin: 6px 0 0; font-size: 13px; }
+  .acts { display: flex; gap: 8px; margin-top: 14px; }
+  .acts a, .acts button { appearance: none; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--ink); background: none; font: 700 11px/1 var(--mono); letter-spacing: .14em; text-decoration: none; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+  .acts .go { background: var(--sun); border-color: var(--sun); color: #121212; box-shadow: 3px 3px 0 var(--ink); } .acts .go:active { transform: translate(3px, 3px); box-shadow: none; }
+  .acts .isl { background: var(--ink); color: var(--wall); border-color: var(--ink); } .acts .isl:hover svg { transform: translateX(3px); } .acts .isl svg { transition: transform .2s; }
+  .acts [aria-disabled="true"] { opacity: .3; pointer-events: none; box-shadow: none; }
+  .acts svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
+  .all { appearance: none; display: block; margin: 12px auto 0; padding: 8px 14px; border: 1px solid var(--line); background: none; font: 600 10px/1 var(--mono); letter-spacing: .14em; color: var(--dim); cursor: pointer; }
+  .none { margin: 30px 2px; text-align: center; font: 600 11px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  @media (prefers-reduced-motion: reduce) { .live .dot, li.flash, .scope .sw, .scope .isl.pick .ring, .scope.here .me { animation: none; } }
 </style></head>
 <body><main>
-  <header><h1><svg viewBox="0 0 237 112" aria-hidden="true"><rect class="s" x="10" y="10" width="92" height="92"/><circle class="c" cx="178" cy="56" r="46"/></svg>ISLANDS</h1><a href="/" title="Back to novel.global">NOVEL.GLOBAL</a></header>
   <div class="bar">
-    <p class="live stale" id="live" aria-live="polite"><i class="dot" aria-hidden="true"></i><b>LIVE</b><span id="tally"></span></p>
-    <div class="seg" role="group" aria-label="Sort">
-      <button type="button" data-sort="n" title="By island number" aria-pressed="true">#</button>
-      <button type="button" data-sort="near" title="Nearest first: asks this phone where it is, which never leaves it" aria-pressed="false">NEAR</button>
-      <button type="button" data-sort="on" title="On and open first" aria-pressed="false">ON</button>
-    </div>
+    <a class="bk" id="bk" href="/" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1><svg viewBox="0 0 237 112" aria-hidden="true"><rect class="s" x="10" y="10" width="92" height="92"/><circle class="c" cx="178" cy="56" r="46"/></svg>ISLANDS</h1>
+    <p class="live stale" id="live" aria-live="polite"><i class="dot" aria-hidden="true"></i><span id="tally"></span></p>
   </div>
-  <p id="say" aria-live="polite"></p>
-  <div id="home" hidden><span id="homet"></span><button type="button" id="unhome" title="novel.global as it comes">RESET</button></div>
-  <div class="head" aria-hidden="true"><span>#</span><span>ISLAND</span><span class="r">DIST</span><span class="r">STATUS</span></div>
+  <div class="scope lost" id="scope">
+    <svg viewBox="0 0 300 300" aria-hidden="true">
+      <defs><linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F26A21" stop-opacity="0"/><stop offset="1" stop-color="#F26A21" stop-opacity=".16"/></linearGradient></defs>
+      <g class="sw"><path d="M150 150L150 8A142 142 0 0 1 250.4 49.6Z"/></g>
+      <g class="rose" id="rose">
+        <circle class="rg" cx="150" cy="150" r="142"/><circle class="rg d" cx="150" cy="150" r="100"/><circle class="rg d" cx="150" cy="150" r="58"/>
+        <path class="tk" d="M150 2v14M150 284v14M2 150h14M284 150h14"/><text x="150" y="30" text-anchor="middle">N</text>
+        <line class="ndl" id="ndl" x1="150" y1="150" x2="150" y2="150"/>
+        <g id="dots"></g>
+      </g>
+      <circle class="me" cx="150" cy="150" r="4"/>
+    </svg>
+    <button type="button" class="loc" id="loc" title="Where you stand, to point the way: it never leaves this phone">LOCATE</button>
+  </div>
+  <p class="read" id="read" aria-live="polite"></p>
   <ol id="list"></ol>
-  <p class="no" id="none" hidden>NONE YET</p>
-  <div class="key" aria-label="Key">
-    <span><i class="pw y" aria-hidden="true"></i>ON</span>
-    <span><svg class="pp" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><rect x="3" y="1.5" width="8" height="11" rx="1"/><rect class="f" x="5" y="4" width="4" height="6"/></svg>PAPER</span>
-    <span><svg class="wf" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><rect class="y" x="1" y="9" width="3" height="4"/><rect class="y" x="5.5" y="5.5" width="3" height="7.5"/><rect class="y" x="10" y="2" width="3" height="11"/></svg>WI-FI</span>
-    <span><svg class="rd y" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><circle cx="7" cy="7" r="1.4"/><path d="M4 4a4.3 4.3 0 0 0 0 6M10 4a4.3 4.3 0 0 1 0 6M2 2a7.2 7.2 0 0 0 0 10M12 2a7.2 7.2 0 0 1 0 10"/></svg>RADIO</span>
-    <span><b class="mono" aria-hidden="true">3</b>QUEUE</span>
-  </div>
+  <button type="button" class="all" id="all" hidden>ALL</button>
+  <p class="none" id="none" hidden>NONE YET</p>
 </main>
 <script src="islands.js"></script>
 </body></html>

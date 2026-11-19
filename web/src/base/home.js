@@ -673,7 +673,7 @@
       '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new local area network (LAN)\nfrom e-waste') + '</h2>' +
       '<p class="in-l">independent web2print publishing. Open source. What can you do with a thermal printer network?</p>' +
-      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><a class="in-go" href="/islands" title="Find a printer"><span>Island Archipelagos</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></a></p></div>' +
+      '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><a class="in-go" href="/islands" data-find="" title="Find a thermal printer near you"><span>Island Archipelagos</span><i>: Find a thermal printer</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
       (ETH && ETH.k ? '<p class="in-eth"><a target="_blank" rel="noopener" href="/note#' + esc(ETH.k) + '">Ethics and AI disclosure</a></p>' : '') +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
@@ -775,7 +775,7 @@
   function labelBuild(L, mem, from) { var full = !!from;
     var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
     var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null, fv = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid') + (full ? ' lb-full' : '');
-    if (full) { lb.style.setProperty('--ox', Math.round(from.left + from.width / 2) + 'px'); lb.style.setProperty('--oy', Math.round(from.top + from.height / 2) + 'px'); var cx = mk('button', 'lb-x', null, lb); cx.type = 'button'; cx.setAttribute('aria-label', 'Close'); cx.title = 'Close'; cx.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; cx.addEventListener('click', function () { shutLb(); }); } lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
+    if (full) { lb.style.setProperty('--ox', Math.round(from.left + from.width / 2) + 'px'); lb.style.setProperty('--oy', Math.round(from.top + from.height / 2) + 'px'); var cx = mk('button', 'lb-cl', null, lb); cx.type = 'button'; cx.setAttribute('aria-label', 'Close'); cx.title = 'Close'; cx.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; cx.addEventListener('click', function () { shutLb(); }); } lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
     var fit = function () { var px = full ? 15 : 13.5; c.style.fontSize = px + 'px'; while (px > (full ? 11.5 : 8) && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
     var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen', '1'); if (nv.checked) mem(localStorage, 'da.label.never', '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
         lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (full && !nv.checked) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
@@ -783,7 +783,7 @@
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
     var fold = Math.max(0, Math.round(+L.fold) || 0), np = 0, b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', fold && np++ >= fold ? 'lb-x' : '', t, b); });
     /* the rest of the words, and the counts where they are set to wait there, open from one small key */
-    if (L.cnt === 'off') L.counts = []; var folded = !!b.querySelector('.lb-x') || (L.cnt === 'more' && Array.isArray(L.counts) && L.counts.length);
+    if (L.cnt === 'off') L.counts = []; var folded = !!b.querySelector('p.lb-x') || (L.cnt === 'more' && Array.isArray(L.counts) && L.counts.length);
     if (folded) { var mo = mk('button', 'lb-mo', L.more || 'More', c); mo.type = 'button'; mo.setAttribute('aria-expanded', 'false'); mo.addEventListener('click', function () { var o = c.classList.toggle('lb-open'); mo.textContent = o ? (L.less || 'Less') : (L.more || 'More'); mo.setAttribute('aria-expanded', String(o)); fit(); }); }
     /* the links: the back of the first card, the islands, the kit, the private page, or one of its own; plain links, so nothing blocks them */
     var go = { card: function () { shutLb(); col.scrollTo({ top: 0, behavior: 'smooth' }); var cd = col.querySelector('.sk-intro'); if (cd && !cd.classList.contains('flip')) { cd.classList.add('flip'); requestAnimationFrame(function () { introFit(); introArc(); }); } } };
@@ -1209,6 +1209,11 @@
   addEventListener('ng-sound', function (e) { var d = e.detail || {}; airSound(d.on, d.k || 'aura'); });
   /* the sheet slides up once its experience has drawn (or after a beat), and the banner goes only once the sheet covers it */
   var SH = { up: 0, top: 0, gone: [] };
+  /* the finder: the islands as a device over the site, pointing at one (a card's own island, or the best one); closed, back where you were.
+     ISLAND in it goes to that island: the sheet closes and novel.global opens again as it */
+  var FIND_HOME = false;
+  function finder(isle) { sheet('ISLANDS', inFrame('islands?in=1' + (isle && /^[a-z0-9-]{1,40}$/.test(isle) ? '&i=' + isle : '') + '#f')); }
+  addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.hm === 'isle-go') { FIND_HOME = true; if (xv.classList.contains('on')) shut(false); else location.reload(); } });
   function sheet(title, fill) {
     clearTimeout(SH.up); clearTimeout(SH.top); SH.gone.forEach(function (n) { n.remove(); }); SH.gone = [];
     noteOut(); xv.setAttribute('aria-label', title); $('#hm-mine').setAttribute('aria-pressed', String(title === 'HOME')); var body = xv.querySelector('.hm-body');
@@ -1219,7 +1224,7 @@
     if (fr && fr.dataset.ld) go(); else if (fr) { fr.addEventListener('load', function () { setTimeout(go, 80); }); SH.up = setTimeout(go, 1400); } else go();
     if (SH.swap) { SH.swap = false; history.replaceState({ hm: 'x' }, ''); } else history.pushState({ hm: 'x' }, ''); setTimeout(function () { xv.querySelector('.hm-back').focus(); }, 50);
   }
-  function shut(fromPop) { $('#hm-mine').setAttribute('aria-pressed', 'false'); tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
+  function shut(fromPop) { if (FIND_HOME) { FIND_HOME = false; setTimeout(function () { location.reload(); }, 480); } $('#hm-mine').setAttribute('aria-pressed', 'false'); tkHide(); TKH.card = null; clearTimeout(SH.up); clearTimeout(SH.top); intro(false); IN.id = null; xv.classList.remove('on'); H.classList.remove('hm-sheet', 'hm-up', 'hm-nosea');
     var old = [].slice.call(xv.children).filter(function (n) { return n.tagName === 'IFRAME' && WARM.indexOf(n) < 0; });
     if (AIR.fr && old.indexOf(AIR.fr) >= 0) { if (AIR.on) { old = old.filter(function (n) { return n !== AIR.fr; }); var af = AIR.fr; AIR.kept = true; setTimeout(function () { if (AIR.fr === af && AIR.kept) af.classList.add('hm-air'); }, 460); } else { AIR.fr = null; AIR.on = false; AIR.kept = false; } }
     old = old.filter(function (n) { if (n === AIR.fr || !warmable(n)) return true; WARM.push(n); setTimeout(function () { if (WARM.indexOf(n) >= 0) n.classList.add('hm-warm'); }, 460); return false; });
@@ -1300,7 +1305,8 @@
   root.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.hm-open')) e.preventDefault(); });
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
-    var r = e.target.closest('[data-radar]'); if (r) { beacon(r.dataset.radar, r); return; }
+    var r = e.target.closest('[data-radar]'); if (r) { var rc = byId(r.dataset.radar); finder(rc && rc.island); return; }
+    var fd = e.target.closest('[data-find]'); if (fd) { e.preventDefault(); e.stopPropagation(); finder(fd.dataset.find); return; }
     var ki = e.target.closest('[data-kitopen]'); if (ki) { e.preventDefault(); e.stopPropagation(); open('kit'); return; }
     var pg = e.target.closest('[data-plug]'); if (pg) { e.preventDefault(); e.stopPropagation(); plugOut(pg.dataset.plug); return; }
     var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); e.stopPropagation(); cardTalk(tb.dataset.talk); beep(620, 0.04); return; }
@@ -1533,7 +1539,7 @@
       (p.use ? '<p class="hm-h" title="Stamps to a full card, or to count as there">EVERY</p><div class="hm-row">' + (p.everys || []).map(function (n) { var on = p.use.every === n; return '<button class="hm-btn' + (on ? ' on' : '') + '" data-every="' + n + '" aria-pressed="' + on + '">' + n + '</button>'; }).join('') + '</div>' : '') +
       (p.roll ? '<p class="hm-h" title="Codes stamped here this moon">ROLL</p><ol class="hm-list hm-roll">' + (p.roll.map(function (x) { return '<li class="on"><i></i><span>' + esc(x.who) + '</span><b>' + (+x.n) + (p.use && x.n >= p.use.every ? ' ✓' : '') + '</b></li>'; }).join('') || '<li>—</li>') + '</ol>' : '') +
       '<p class="hm-h" title="Time between one person&#39;s prints here">GAP</p><div class="hm-row">' + [''].concat(p.gaps || []).map(function (g) { var on = String(p.gap == null ? '' : p.gap) === String(g); return '<button class="hm-btn' + (on ? ' on' : '') + '" data-gap="' + g + '" aria-pressed="' + on + '">' + GAPN[g] + '</button>'; }).join('') + '</div>' +
-      (p.mod ? '' : '<p class="hm-h" title="Codes that help run this island: they open it from their own home">MODS</p><ol class="hm-list hm-mods">' + ((p.mods || []).map(function (m) { return '<li class="on"><i></i><span>' + esc(m) + '</span><button class="hm-btn" data-unmod="' + esc(m) + '" aria-label="Take ' + esc(m) + ' off">×</button></li>'; }).join('') || '<li>—</li>') + '</ol><form class="hm-row hm-modf"><input maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="A code to help run this island"><button class="hm-btn">ADD</button></form>') +
+      (p.mod ? '' : '<p class="hm-h" title="This island’s gang: codes that help run it, from their own home. Not the keeper’s key, not admin">GANG</p><ol class="hm-list hm-mods">' + ((p.mods || []).map(function (m) { return '<li class="on"><i></i><span>' + esc(m) + '</span><button class="hm-btn" data-unmod="' + esc(m) + '" aria-label="Take ' + esc(m) + ' off">×</button></li>'; }).join('') || '<li>—</li>') + '</ol><form class="hm-row hm-modf"><input maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="A code to join this island’s gang"><button class="hm-btn">ADD</button></form>') +
       '<p class="hm-h">PASSES</p><div class="hm-row"><button class="hm-btn" data-pass title="Passes for today' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'PRINT</button></div>' +
       '<div class="hm-row"><button class="hm-btn" data-rn>RENAME</button>' + (own ? '<button class="hm-btn" data-out title="Forget this island’s key on this phone">FORGET</button>' : '') + '</div>';
       $$('[data-pack]', box).forEach(function (b) { b.addEventListener('click', function () { post({ pack: b.dataset.pack }); beep(550, 0.05); }); });
@@ -1779,7 +1785,9 @@
   col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
   /* your home, in four parts each folded on its own: CODE (the code, its animal, where it has been, and opening it on another phone),
-     PRINT (today's pass and what was printed), ADMIN (how this home is laid out), ISLANDS (the islands this code keeps or helps run) */
+     PRINT (today's pass and what was printed), ENGINE (how this home is laid out), ISLANDS (your home island, and the islands you keep or
+     are in the gang of). The words: HOME ISLAND (the one you set, else the first you joined), JOINED (an island where you kept a pass),
+     GANG (a code a keeper lets help run their island), KEEPER (whoever owns the printer). ADMIN is only the site's approval page */
   function mineIn(body) { body.classList.add('mn');
     var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
     var who, ok, pl, ps, hk, an, mods, ikey;
@@ -1792,7 +1800,7 @@
     var codePart = function () {
       return '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
         '<div title="Your second key: with your code it opens this home on another phone. Only you see it"><dt>ANIMAL</dt><dd class="mn-an' + (an == null ? ' no' : '') + '">' + (an == null ? '—' : SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' +
-        (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Islands where you kept a pass' : 'Keep a pass from a printer to mark the island here') + '"><dt>PLACES</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
+        (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Joined: islands where you kept a pass' : 'Keep a pass from a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
           return '<span' + (u ? ' title="' + (u.kind === 'shop' ? 'Card' + (full ? ', ' + full + ' full' : '') : 'Class') + '"' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (e ? '<i class="mn-card">' + Array(k + 1).join('●') + Array(e - k + 1).join('○') + '</i>' : p.n > 1 ? '<i>×' + (+p.n) + '</i>' : '') + '</span>'; }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
         (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="An animal given at random: remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
           : who ? '<p class="mn-say" title="This phone does not hold this code\'s key: open it below with its animal">LOCKED</p>' : '') +
@@ -1808,16 +1816,18 @@
         return '<li data-id="' + esc(c.id) + '"' + (off || jc ? ' class="' + (off ? 'off' : '') + jc + '"' : '') + (jc ? ' title="Joined: one size for the set"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
           '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small shares it">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
         '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>'; };
-    var islePart = function () {
-      return (ikey ? '<button type="button" class="mn-isl" data-isle="own" aria-pressed="' + (ISLE === 'own') + '" title="The island whose key is on this phone">KEEPER</button>' : '') +
-        mods.map(function (m) { return '<button type="button" class="mn-isl" data-isle="' + esc(m.id) + '" aria-pressed="' + (ISLE === m.id) + '" title="An island this code helps run">' + esc(String(m.name || m.id).toUpperCase()) + (m.number ? ' · ' + (+m.number) : '') + '</button>'; }).join('') +
-        (!ikey && !mods.length ? '<p class="mn-say" title="An island\'s key comes on its welcome slip; a keeper adds your code to help run theirs">—</p>' : '') +
+    var homeIsle = function () { var h = store.get('da.pop.home', null); return h && h.pick ? { id: h.isle, name: h.name } : pl.length ? { id: pl[0].id, name: pl[0].name } : { id: 'novelglobal', name: 'novel.global' }; };
+    var islePart = function () { var hi = homeIsle();
+      return '<dl class="mn-id"><div class="mn-wide" title="Your home island: the one you set in the finder, else the first you joined"><dt>HOME ISLAND</dt><dd>' + esc(String(hi.name || hi.id).toUpperCase()) + '</dd></div></dl>' +
+        '<p class="mn-row"><button type="button" data-find="' + esc(hi.id) + '" title="The islands: find one, or set your home island">FIND</button></p>' + (ikey ? '<button type="button" class="mn-isl" data-isle="own" aria-pressed="' + (ISLE === 'own') + '" title="The island whose key is on this phone">KEEPER</button>' : '') +
+        mods.map(function (m) { return '<button type="button" class="mn-isl" data-isle="' + esc(m.id) + '" aria-pressed="' + (ISLE === m.id) + '" title="In this island\'s gang: you help run it">GANG · ' + esc(String(m.name || m.id).toUpperCase()) + (m.number ? ' · ' + (+m.number) : '') + '</button>'; }).join('') +
+        (!ikey && !mods.length ? '<p class="mn-say" title="The keeper\'s key comes on an island\'s welcome slip; a keeper adds your code to their gang">NO KEEPER · NO GANG</p>' : '') +
         '<div class="mn-keeper"></div>' +
         (ikey ? '' : '<details class="mn-sub"><summary title="The key from an island\'s welcome slip">KEY</summary><form class="mn-row" data-f="key"><input name="k" maxlength="64" autocomplete="off" spellcheck="false" placeholder="KEY" aria-label="Island key"><button>OPEN</button></form></details>'); };
     var draw = function () { load();
       var isN = (ikey ? 1 : 0) + mods.length;
       body.innerHTML = '<div class="mn-secs">' + sec('code', 'CODE', who ? esc(who) : '—', codePart()) + sec('print', 'PRINT', ps ? esc(ps.code) : '—', printPart()) +
-        (who ? sec('admin', 'ADMIN', mainPer() + ' · ' + perPage(), adminPart()) : '') + sec('isles', 'ISLANDS', isN ? String(isN) : '—', islePart()) + '</div>';
+        (who ? sec('admin', 'ENGINE', mainPer() + ' · ' + perPage(), adminPart()) : '') + sec('isles', 'ISLANDS', esc(String(homeIsle().name || '').toUpperCase()) + (isN ? ' · ' + isN : ''), islePart()) + '</div>';
       if (ISLE) { var kb = $('.mn-keeper', body); if (ISLE === 'own') keeperIn(kb, ikey); else keeperIn(kb, who + '.' + hk, ISLE); }
       if (SEC.print && who && PRINTS == null && window.NG && NG.mine) NG.mine().then(function (l) { PRINTS = l || []; if (body.isConnected) draw(); }, function () { PRINTS = []; }); };
     body.addEventListener('toggle', function (e) { var d = e.target; if (!d.classList || !d.classList.contains('mn-sec')) return; SEC[d.dataset.s] = d.open ? 1 : 0; store.set('da.hm.secs', SEC); if (d.open && d.dataset.s === 'print' && PRINTS == null) draw(); }, true);
@@ -1827,6 +1837,7 @@
         NG.homeOpen(c, +a).then(function () { SHOWA = false; PRINTS = null; beep(880, 0.06); applyCards(null); draw(); }, function (er) { say.textContent = er && er.status === 423 ? 'LOCKED' : er && er.status === 429 ? 'WAIT' : 'NO'; say.title = er && er.status === 423 ? 'Too many wrong animals: open again in a week' : ''; beep(220, 0.08); }); }
       if (f.dataset.f === 'key') { var k = f.k.value.trim(); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return; store.set('da.hm.key', k); ISLE = 'own'; draw(); } });
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b || b.closest('.mn-keeper')) return;
+      if (b.dataset.find != null) { e.stopPropagation(); SH.swap = true; finder(b.dataset.find); return; }
       if (b.dataset.a === 'show') { SHOWA = !SHOWA; return draw(); }
       if (b.dataset.a === 'rand') { if (an != null && !confirm('Give this code a new animal?')) return; beep(660, 0.05); NG.animalSet(crypto.getRandomValues(new Uint8Array(1))[0] % A.length).then(function () { SHOWA = true; draw(); }, function () { draw(); }); return; }
       if (b.dataset.isle) { ISLE = ISLE === b.dataset.isle ? null : b.dataset.isle; beep(520, 0.05); return draw(); }

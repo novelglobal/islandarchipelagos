@@ -1767,7 +1767,7 @@ html.hm-night #lbm .lbm-g { background: #F4F2EE; color: #161514; }
 #lbm .lbm-g svg { width: 12px; height: 12px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } #lbm .lbm-g svg path[d^="M5"] { fill: none; }
 #lbm .lbm-o:hover .lbm-g, #lbm .lbm-o:focus-visible .lbm-g { background: #E25C40; color: #fff; }
 #lbm .lbm-x { flex: none; width: 40px; display: grid; place-items: start center; padding-top: 9px; opacity: .55; } #lbm .lbm-x:hover { opacity: 1; }
-#lbm .lbm-x svg, #lb .lb-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+#lbm .lbm-x svg, #lb .lb-cl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 #lbm.lbm-out { opacity: 0; transform: translateY(12px); }
 @keyframes lbm-in { from { opacity: 0; transform: translateY(16px); } }
 /* opened from it: the whole label over the full screen, grown from where the small card stood, the film first and large */
@@ -1777,14 +1777,20 @@ html.hm-night #lb.lb-full { background: #121212; }
 #lb.lb-full .lb-w { width: min(100%, 1040px); max-height: none; gap: 16px; align-items: center; }
 #lb.lb-full .lb-v { width: min(100%, calc(64vh * var(--r, 1.7778))); }
 #lb.lb-full .lb-c { width: min(100%, 620px); overflow: visible; box-shadow: none; }
-#lb .lb-x { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #161514; color: #F3F2EE; cursor: pointer; }
-html.hm-night #lb .lb-x { background: #F4F2EE; color: #161514; }
+#lb .lb-cl { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #161514; color: #F3F2EE; cursor: pointer; }
+html.hm-night #lb .lb-cl { background: #F4F2EE; color: #161514; }
 @media (prefers-reduced-motion: reduce) { #lbm, #lb.lb-full { animation: none; } }
 /* the opener's Island Archipelagos: a key to the islands, to find a printer */
-#hm .sk-intro .in-ia .in-go { display: inline-flex; align-items: center; gap: .6em; padding: .55em .9em .55em 1em; background: #222221; color: #F1EEE6; text-decoration: none; cursor: pointer; transition: background .2s; }
-#hm .sk-intro .in-ia .in-go span { text-shadow: none; }
-#hm .sk-intro .in-ia .in-go svg { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; }
-#hm .sk-intro .in-ia .in-go:hover, #hm .sk-intro .in-ia .in-go:focus-visible { background: #E25C40; }
+/* the key to the finder: an orange square, black type on one line, a hard black edge that the key presses into; now and then the arrow
+   leans out once, the only motion on it */
+#hm .sk-intro .in-ia .in-go { display: inline-flex; align-items: center; gap: 0; max-width: 100%; padding: .62em .7em .62em .85em; background: #F26A21; color: #121212; text-decoration: none; white-space: nowrap; cursor: pointer; font-size: clamp(8.5px, 2.6cqw, 12px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; box-shadow: 3px 3px 0 #121212; transition: transform .12s ease, box-shadow .12s ease, background .2s; }
+#hm .sk-intro .in-ia .in-go span, #hm .sk-intro .in-ia .in-go i { text-shadow: none; font: inherit; color: inherit; font-style: normal; letter-spacing: inherit; }
+#hm .sk-intro .in-ia .in-go svg { width: 1.2em; height: 1.2em; margin-left: .5em; flex: none; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: square; animation: in-lean 6s ease-in-out 2s infinite; }
+#hm .sk-intro .in-ia .in-go:hover { background: #FF7A30; } #hm .sk-intro .in-ia .in-go:hover svg { animation: none; transform: translateX(3px); transition: transform .2s; }
+#hm .sk-intro .in-ia .in-go:focus-visible { outline: 2px solid #121212; outline-offset: 3px; }
+#hm .sk-intro .in-ia .in-go:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #121212; }
+@keyframes in-lean { 0%, 88%, 100% { transform: none; } 92% { transform: translateX(4px); } 96% { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { #hm .sk-intro .in-ia .in-go svg { animation: none; } }
 #hm .sk-intro .in-ia .in-go::after { content: ''; position: absolute; inset: -8px -4px; } #hm .sk-intro .in-ia .in-go { position: relative; }
 
 /* RESEARCH BOARD: what have you noticed?, in the board's own hand at its top, written in once the board is first seen, and then it stays */

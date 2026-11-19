@@ -566,10 +566,15 @@ try {
     check('the label is there from the start, with a film; a play is counted and stops at the day\'s limit; its address answers a player here only', L0.on === true && !!L0.film && a1.status === 200 && /^\/api\/film\/\d{13}\.[0-9a-f]{32}$/.test(u) && a2.status === 200 && a3.status === 429 && noRange === 403 && tab === 403 && other === 403 && forged === 404 && ok === 404 && ad.json.today === 2 && ad.json.found === false,
       JSON.stringify([L0.on, a1.status, a2.status, a3.status, noRange, tab, other, forged, ok, ad.json])); }
   /* the label a first visit meets, and the islands to be found: both as the approval page set them, a closed island's place kept back */
-  { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T' }), isles: JSON.stringify({ novelglobal: { addr: '1 Test St', lat: -37.8, lng: 144.9 } }) } });
+  { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T' }), isles: JSON.stringify({ novelglobal: { addr: '1 Test St', lat: -37.8, lng: 144.9 }, milkbar: { addr: '2 Test St', lat: -37.7, lng: 144.9, open: true } }) } });
     const ps = await call('/api/settings'), is = await call('/api/isles');
     check('the label is public, the islands list says who is on and open, and where only while open', /"title":"T"/.test(ps.json.label || '') && ps.json.isles === undefined && Array.isArray(is.json.isles) && is.json.isles.every(i => i.open || i.addr === undefined), JSON.stringify([ps.json.label, is.json]));
     const raw = JSON.stringify(is.json);
+    { const pl0 = ((await call('/api/admin/printers', { key: KEY })).json.printers || []).find(x => x.id === 'milkbar'), was = !!(pl0 && pl0.live);
+      await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'live', on: false } }); const off = ((await call('/api/isles')).json.isles || []).find(i => i.id === 'milkbar');
+      await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'live', on: true } }); const on = ((await call('/api/isles')).json.isles || []).find(i => i.id === 'milkbar');
+      await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'live', on: was } });
+      check('an island is open only while the approval page has it online on the map: off, it is closed and its place is hidden', off && off.open === false && off.addr === undefined && on && on.open === true && on.addr === '2 Test St', JSON.stringify([off, on])); }
     check('each island carries its glances (paper, Wi-Fi, radio, queue) and, open, its pop-up; never a key or a desk link', is.json.isles.length && is.json.isles.every(i => typeof i.queue === 'number' && 'paper' in i && 'sig' in i && typeof i.mesh === 'boolean' && (i.open || i.pop === undefined)) && !/"(key|desk|token|allow)"/.test(raw), raw.slice(0, 600)); }
   /* a tape: kept on novel.global to be saved from any phone, under its one name, and refused without a code or a proper name */
   { const up = (q, t = 'audio/wav') => server.fetch(new URL('/api/tapes?' + q, O), { method: 'POST', headers: { origin: O, 'content-type': t }, body: Buffer.alloc(2048, 7) });
