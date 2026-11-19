@@ -850,8 +850,8 @@ function raster(cv) { return TH.raster(cv, pq().heat); }
     var o2 = Object.assign({}, o || {}); if (window.AbortSignal && AbortSignal.timeout) o2.signal = AbortSignal.timeout(8000);
     return fetch0(s, o2).then(function (r) { return r.ok ? r : direct(); }).catch(direct); }; })();
 function api(path, opt) {
-  opt = opt || {}; opt.headers = { 'content-type': 'application/json' };
-  return fetch(API + path, opt).then(function (r) { if (r.status === 204) return null; return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } return j; }); });
+  opt = opt || {}; opt.headers = { 'content-type': 'application/json' }; var hk = store.get('da.who.home', ''); if (/^[0-9a-f]{16}$/.test(hk)) opt.headers['x-home'] = hk;
+  return fetch(API + path, opt).then(function (r) { if (r.status === 204) return null; return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } homeTake(j); return j; }); });
 }
 /* a print refused for the minute between prints: WAIT and the seconds left */
 function waitSay(e) { return e && e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT'; }
@@ -1069,9 +1069,19 @@ function me() {
   store.set('da.who', c); meUsed(); return c;
 }
 /* the code's home key: handed to the phone that kept a pass on it; only with it does the site say where the code has been */
-function homeGo() { store.set('da.who.home', ''); store.set('da.who.places', null); }
+function homeGo() { store.set('da.who.home', ''); store.set('da.who.places', null); store.set('da.who.animal', null); store.set('da.who.mods', null); }
 function homeQ() { var k = store.get('da.who.home', ''); return /^[0-9a-f]{16}$/.test(k) ? '?k=' + k : ''; }
-function homeKept(j) { if (j && Array.isArray(j.stamps)) store.set('da.who.places', j.stamps.slice(0, 40)); }
+function homeKept(j) { if (!j || !Array.isArray(j.stamps)) return; store.set('da.who.places', j.stamps.slice(0, 40)); store.set('da.who.mods', (j.mods || []).slice(0, 12)); if (!j.animal) store.set('da.who.animal', null); }
+/* what the site hands back: the code's home key (once, to the first phone; or to the phone that holds it), and a pass won at an island */
+function homeTake(j) { if (!j || typeof j !== 'object') return; if (typeof j.home === 'string' && /^[0-9a-f]{16}$/.test(j.home)) store.set('da.who.home', j.home);
+  if (j.gift && j.gift.code) store.set('da.pass', { code: j.gift.code, island: j.gift.island, day: j.gift.day }); }
+/* the animal: the code's second key, never shown to anyone else. Chosen (or given at random) where the home key is; a code and its animal open the home on any phone */
+function animalOf() { var a = store.get('da.who.animal', null); return a == null || !isFinite(+a) ? null : +a; }
+function animalSet(a) { var k = store.get('da.who.home', ''); if (!k) return Promise.reject(new Error('key')); return api('/home', { method: 'POST', body: JSON.stringify({ who: me(), k: k, animal: a == null ? undefined : +a }) }).then(function (j) { if (j && j.animal != null) store.set('da.who.animal', +j.animal); return j && j.animal; }); }
+function homeOpen(c, a) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return Promise.reject(new Error('code'));
+  return api('/home', { method: 'POST', body: JSON.stringify({ who: c, animal: +a }) }).then(function (j) { return useCode(c).then(function () { store.set('da.who.home', j.home); store.set('da.who.animal', +a); proofAt = 0; return proof(); }); }); }
+/* a pass for finishing an island's intro, where the island gives them so */
+function giftIntro(island) { if (!island) return Promise.resolve(null); return api('/gift', { method: 'POST', body: JSON.stringify({ who: me(), island: island, why: 'intro' }) }).then(function (j) { if (j && j.code) store.set('da.pass', { code: j.code, island: j.island, day: j.day }); return j; }, function () { return null; }); }
 function setMe(c) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return false; if (c !== store.get('da.who', '')) homeGo(); store.set('da.who', c); store.set('da.who.pass', 1); meUsed(); return true; }
 function mine() { meUsed(); return api('/mine/' + me()).then(function (j) { if (j && j.kin != null) store.set('da.kin', j.kin); return (j && j.mine) || []; }); }
 /* a code typed from a print: this phone carries on as it, as far as it had got (asked of the site; offline, from where it is) */
@@ -1084,7 +1094,7 @@ function proof() { var c = store.get('da.who', ''); if (!c || !WHO_RE.test(c) ||
     var sh = ((j && j.mine) || []).filter(function (m) { return m.shown; }).map(function (m) { return m.code; }); if (sh.length) { var L0 = store.get('da.live', []) || []; store.set('da.live', sh.concat(L0.filter(function (q) { return sh.indexOf(q) < 0; })).slice(0, 60)); } return ok; }).catch(function () { return !!store.get('da.who.ok', 0); }); }
 function dropMine(id) { return api('/mine/' + me() + '/' + encodeURIComponent(id), { method: 'POST', body: '{}' }); }
 /* sent with the code, and where its maker is (the page sets NG.stageOf): for the approval page, never the public */
-function send(payload) { payload.who = payload.who || me(); meUsed(); payload.lv = +store.get('da.lv', 0) || 0; if (!payload.from) payload.from = BTH ? 'booth' : document.getElementById('aura') ? 'novel.global' : 'base'; if (!payload.stage) { try { payload.stage = String(window.NG && NG.stageOf ? NG.stageOf() : '').slice(0, 60); } catch (e) { /* none */ } } return api('/stories', { method: 'POST', body: JSON.stringify(payload) }); }
+function send(payload) { payload.who = payload.who || me(); payload.home = 1; meUsed(); payload.lv = +store.get('da.lv', 0) || 0; if (!payload.from) payload.from = BTH ? 'booth' : document.getElementById('aura') ? 'novel.global' : 'base'; if (!payload.stage) { try { payload.stage = String(window.NG && NG.stageOf ? NG.stageOf() : '').slice(0, 60); } catch (e) { /* none */ } } return api('/stories', { method: 'POST', body: JSON.stringify(payload) }); }
 /* where a print is now: asked again every few seconds while it is in view, and kept on the noticing */
 function follow(n, el, k) {
   k = k || 0; if (k > 100 || !n.sent || !n.sent.id) return;
@@ -1357,7 +1367,8 @@ function radioSheet(way) {
       }).catch(function (e) { if (e && e.wait) st.textContent = waitSay(e); else st.innerHTML = pips(e && e.status ? 'failed' : 'outbox'); }); });
       render(); return;
     }
-    var all = everything().slice(0, 60);
+    /* the sixty newest, one's own always among them */
+    var ev = everything(), own = ev.filter(function (n) { return n.mine; }).slice(0, 12), all = own.concat(ev.filter(function (n) { return !n.mine; }).slice(0, 60 - own.length)).sort(function (a, b) { return b.at - a.at; });
     body.innerHTML = all.length ? '<div class="tiles">' + all.map(function (n, i) { var pic = PHOTOS[n.id] || n.thumb || n.photoURL || n.icon || ''; return '<button data-i="' + i + '" id="t-' + esc(n.id) + '"' + (pic ? ' style="background-image:url(\'' + esc(pic) + '\')"' : '') + ' class="' + (n.mine ? 'mine' : '') + (WEB.nodes[n.id] ? ' seen' : '') + '" title="' + esc(nameOf(n) + ' · ' + ago(n.at)) + '"><span><i class="dot" style="background:' + toneOf(n) + '"></i>' + esc(nameOf(n)) + '</span></button>'; }).join('') + '</div>' : '<p class="empty">· · ·</p>';
     $$('.tiles button', body).forEach(function (b) { b.addEventListener('click', function () { var n = all[+b.dataset.i]; if (SEQ.rec && placeNote(n)) { lit(n); return; } peek(n); lit(n); }); });
     render();
@@ -2613,7 +2624,7 @@ function wipeAll() {
   if (navigator.serviceWorker) gone.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () {}));
   var go = function () { location.replace(location.origin + '/'); }; Promise.all(gone).then(go, go); setTimeout(go, 2500);
 }
-window.NG = { wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
+window.NG = { animals: KIN, animalOf: animalOf, animalSet: animalSet, homeOpen: homeOpen, giftIntro: giftIntro, wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
   read: read, wishOptions: wishOptions, wishLines: wishLines, context: context, weather: weather, db: db, DB: function () { return DB; }, outlookNow: outlookNow, nowItems: nowItems, seasonNow: seasonNow,
   reveal: reveal, far: far, dist: dist, code: code, SIGN: SIGN, actions: actions, PHOTOS: PHOTOS, notes: function () { return NOTES; }, saveNotes: saveNotes, attend: attend,
   place: function (c) { cur = c; place(); var n = cur.note; cur = null; return n; },

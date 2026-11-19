@@ -206,7 +206,7 @@ if (run('smoke')) try {
   await settle(page); await shot(page, '01-radar.png');
   await tab(page, 0); await sleep(600);
   const now = await page.evaluate(() => { const band = document.querySelector('#sec-heat'); const order = [...band.children].filter(e => !/^(mod-|flip-b|hack)/.test(e.className)).map(e => e.className.split(' ')[0]); return { open: !document.body.classList.contains('shut'), five: document.querySelectorAll('#sec-five .hero-row').length, months: document.querySelectorAll('#sec-heat .mo').length, order, steps: [...band.querySelectorAll('.st, .sn')].filter(e => !e.closest('.steps')).length, heads: band.querySelectorAll('h3, .lab').length, counts: band.querySelectorAll('.lyr .n').length, tags: document.querySelectorAll('#view .lab, #view .chips, #view .dg, #view .pill, #view .gigs').length }; });
-  check('RADIO, top to bottom: the printers’ pager and its VU meter, El Niño’s countdown (the steps on its screen), the equaliser on its own, play between loop and next, the four-track, the layers; no headline, numbers, headings or tags', now.open && now.five === 0 && now.months === 12 && now.order.join() === 'pager,vu,b-emerg,mstrip,hp-row,four,lyrs' && now.steps === 0 && now.heads === 0 && now.counts === 0 && now.tags === 0, JSON.stringify(now));
+  check('RADIO, top to bottom: the printers’ pager and its VU meter, El Niño’s countdown (the steps on its screen), the equaliser on its own, play between loop and next, the four-track, the layers; no headline, numbers, headings or tags', now.open && now.five === 0 && now.months === 12 && now.order.join() === 'gd-k,pager,vu,b-emerg,mstrip,hp-row,four,f4d,lyrs' && now.steps === 0 && now.heads === 0 && now.counts === 0 && now.tags === 0, JSON.stringify(now));
   const nw = await page.evaluate(() => { const band = document.querySelector('#sec-heat'); const five = document.querySelector('#sec-five'); const rows = five ? [...five.querySelectorAll('.hero-row')] : [];
     return { five: rows.length, why: five ? five.dataset.tip : '', names: rows.map(r => (r.querySelector('.nm b') || {}).textContent), chips: rows.some(r => r.querySelector('.chips')), pics: rows.filter(r => r.querySelector('.h-pic img, .h-pic canvas')).length, words: band.innerText }; });
   const eq = await page.evaluate(async () => { const cols = [...document.querySelectorAll('#sec-heat .mo')]; const lit = cols.map(c => c.querySelectorAll('.eq-c i.l:not(.up)').length); const none = !document.querySelector('.eq-read');
@@ -218,7 +218,7 @@ if (run('smoke')) try {
   const fv = await page.evaluate(() => { const da = window.__da; return da.life.items.filter(it => it.hero && da.life.shown(it)).length; });
   check('the five in greatest need stand on the map, not in a list', nw.five === 0 && fv === 5, JSON.stringify({ five: nw.five, fv }));
   check('no watch chip, no stage names in the outlook', !/WATCH|EARLY HEAT|DRY FLOWERING|HOT NIGHTS|DROUGHT/.test(nw.words), nw.words.replace(/\s+/g, ' '));
-  const hd = await page.evaluate(async () => { const ids = [...document.querySelectorAll('#view > section')].map(x => x.id).filter(Boolean); const d4 = [...document.querySelectorAll('#sec-heat .mo.d4 .eq-c i.l')]; const band = document.querySelector('#sec-heat'); const quiet = [...band.querySelectorAll('.cd, .hp-k small, .f4 small, .f4m small')].map(e => [e, e.textContent]); quiet.forEach(([e]) => { e.textContent = ''; }); const bare = band.innerText; quiet.forEach(([e, t]) => { e.textContent = t; }); const clues = ''; const cd = document.querySelector('#sec-heat .b-emerg .cd');
+  const hd = await page.evaluate(async () => { const ids = [...document.querySelectorAll('#view > section')].map(x => x.id).filter(Boolean); const d4 = [...document.querySelectorAll('#sec-heat .mo.d4 .eq-c i.l')]; const band = document.querySelector('#sec-heat'); const quiet = [...band.querySelectorAll('.cd, .hp-k small, .f4 small, .f4m small, .gd-k, .f4d')].map(e => [e, e.textContent]); quiet.forEach(([e]) => { e.textContent = ''; }); const bare = band.innerText; quiet.forEach(([e, t]) => { e.textContent = t; }); const clues = ''; const cd = document.querySelector('#sec-heat .b-emerg .cd');
     const cdx = () => (document.querySelector('#sec-heat .b-emerg .cd') || {}).textContent || ''; for (let i = 0; i < 12 && !/D \d/.test(cdx()); i++) await new Promise(r => setTimeout(r, 500)); const c0 = cdx(); let c1 = c0; for (let i = 0; i < 20 && c1 === c0; i++) { await new Promise(r => setTimeout(r, 250)); c1 = cdx(); }
     return { words: bare.replace((document.querySelector('#sec-heat .pager') || {}).innerText || '\u0000', '').replace(/[\d:]+D?|NOW/g, '').replace(/\b[JFMASOND]\b/g, '').trim(), sun: !!document.querySelector('#sec-heat .b-emerg .sun use[href="#g-heat"]'), orange: getComputedStyle(document.querySelector('#sec-heat .b-emerg .cd')).color, c0, c1, tip: (document.querySelector('#sec-heat .b-emerg') || {}).dataset ? document.querySelector('#sec-heat .b-emerg').dataset.tip : '',
       ids, d4: d4.length, d4bg: [...new Set(d4.map(i => getComputedStyle(i).backgroundColor))], yr: [...document.querySelectorAll('#sec-heat .mo')].map(m => [...m.querySelectorAll('.eq-c i.l')].map(i => getComputedStyle(i).backgroundColor.match(/\d+/g).map(Number)).filter(([r, g, b]) => r >= 180 && r > g + 40 && r > b + 40).length), up: Math.min(...[...document.querySelectorAll('#sec-heat .mo.d4')].map(m => +m.dataset.lit)) - Math.max(...[...document.querySelectorAll('#sec-heat .mo:not(.d4)')].map(m => +m.dataset.lit)), segs: [...new Set([...document.querySelectorAll('#sec-heat .mo .eq-c')].map(c => c.querySelectorAll('i:not(.eq-cap)').length))], box: [...document.querySelectorAll('#sec-heat .mo .eq-c')].every(c => { const r = c.getBoundingClientRect(); return [...c.children].every(i => { const q = i.getBoundingClientRect(); return !q.height || (q.top >= r.top - 1 && q.bottom <= r.bottom + 1); }); }), tel: document.querySelectorAll('#view a[href^="tel:"]').length, stations: !!document.querySelector('#sec-tracks, .tk-lvl') }; });
@@ -1207,11 +1207,12 @@ if (run('share')) try {
   const dp = await page.evaluate(code => ({ view: window.__da.S.view, mode: window.__da.S.mode, story: window.__da.PRESS.story === window.__da.S.signals.find(x => x.code === code).key, base: window.__da.zineObjects().some(o => o.daKind === 'base') }), s0.code);
   check('TO PRINT takes the receipt to the ZINEMAKER, at the head of the strip, ready to print', dp.view === 2 && !dp.mode && dp.story && dp.base, JSON.stringify(dp));
   /* the server's side of a print to a place: it waits for approval, its print with it */
+  await admin('settings', { freePrint: false });
   await page.evaluate(async code => { const da = window.__da; const s = da.S.signals.find(x => x.code === code); await da.directAction(s, 'milkbar'); da.openSignal(s.key); }, s0.code); await sleep(1200);
   const st0 = await page.evaluate(() => document.querySelector('#s-status').textContent);
   const waiting = await admin('stories?status=waiting'); const mine = waiting.stories.find(x => x.code === s0.code);
   check('sent to Milk Bar: it waits for approval, its print with it, and says so', /MILK BAR/.test(st0) && mine && mine.dest === 'milkbar' && mine.job === 'held', JSON.stringify({ st0, mine: mine && { code: mine.code, dest: mine.dest, job: mine.job } }));
-  await admin(`stories/${mine.id}`, { action: 'show' });
+  await admin('settings', { freePrint: true }); await admin(`stories/${mine.id}`, { action: 'show' });
   await page.evaluate(() => window.__da.checkSent()); await sleep(900);
   const st1 = await page.evaluate(() => document.querySelector('#s-status').textContent);
   check('approved: the sender sees it join the printer queue', /IN THE QUEUE/.test(st1) && /MILK BAR/.test(st1), st1);
@@ -1607,6 +1608,8 @@ async function exifJPEG() {
   return Buffer.concat([jpg.subarray(0, 2), head, t, jpg.subarray(2)]);
 }
 if (run('base')) try {
+  /* one print a minute for each person and address (da-v275): each print here comes from someone new */
+  let FRESH = 0; const fresh = async pg => { FRESH++; await pg.context().setExtraHTTPHeaders({ 'cf-connecting-ip': '10.7.0.' + FRESH }); await pg.evaluate(w => localStorage.setItem('da.who', JSON.stringify(w)), 'G' + 'ABCDEFGHJK'[FRESH % 10] + (2 + FRESH % 8)); };
   const src = fs.readFileSync(path.join(ROOT, 'src/base/base.js'), 'utf8');
   check('the base is plain script for old phones: no optional chaining, no ??, no class fields', !/\?\.[a-zA-Z_$[(]|\?\?/.test(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/'(?:\\.|[^'\\])*'/g, "''")));
   const ctx = await newCtx({ timezoneId: 'Australia/Melbourne' }); await wire(ctx, { plain: true }); const page = await ctx.newPage(); watch(page, 'base');
@@ -1633,7 +1636,7 @@ if (run('base')) try {
     const esc = [...atob(T.raster(strip, 3)).slice(0, 9)].map(c => c.charCodeAt(0));
     return { mono, ends: [lut[0], lut[128], lut[255]], pickFlat: T.pick(flat, W, H), pickSoft: T.pick(soft, W, H), strip: [strip.width, strip.height, grey], bad: [bad.fonts.head, !!bad.colours, bad.frame, !!bad.assets], pk: pk && pk.styles.map(s => s.id + ':' + s.fonts.body + ':' + (s.photo.dither || '')), esc, house: T.HOUSE.map(h => h.id), grid: [T.grid(512).dpi, T.grid(576).dpi], size: window.NG.pq().size, auto: window.NG.pq().dither }; });
   check('thermal: the curve sends black to the solid patch, half grey to the half patch and paper to paper, never turning back', thm.mono && thm.ends[0] === 26 && thm.ends[1] > 148 && thm.ends[1] < 160 && thm.ends[2] === 255, JSON.stringify(thm.ends));
-  check('thermal: the dots are chosen for each picture (a graphic black or white, a soft one Floyd-Steinberg), as built', thm.pickFlat === 'none' && thm.pickSoft === 'floyd' && thm.auto === 'auto', JSON.stringify([thm.pickFlat, thm.pickSoft, thm.auto]));
+  check('thermal: the dots are chosen for each picture (a graphic black or white, a soft one Floyd-Steinberg), as built', thm.pickFlat === 'none' && thm.pickSoft === 'floyd' && ['auto', 'atkinson'].includes(thm.auto), JSON.stringify([thm.pickFlat, thm.pickSoft, thm.auto]));
   check('thermal: the calibration strip is the printer\'s width and solid ink, and goes out as ESC/POS with its darkness first', thm.strip[0] === 512 && thm.strip[1] > 500 && thm.strip[2] === 0 && thm.esc.join() === '27,64,29,40,75,2,0,49,3', JSON.stringify({ strip: thm.strip, esc: thm.esc }));
   check('thermal: the TM-T88V grid is 512 dots at 180 dpi (576 at 203 for others); words on paper a third bigger as built', thm.grid.join() === '180,203' && thm.size === 1.3, JSON.stringify([thm.grid, thm.size]));
   check('styles: four house styles; a pack\'s fields checked (a bad font, colour, frame or asset let go), its styles kept', thm.house.join() === 'house,press,quiet,loud' && thm.bad.join() === 'sans,false,hand,false' && thm.pk && thm.pk.join() === 'one:mono:,two:sans:floyd', JSON.stringify({ house: thm.house, bad: thm.bad, pk: thm.pk }));
@@ -1775,7 +1778,10 @@ if (run('base')) try {
   check('SETS: every collection with its own shape; two touched are both added to the web and kept, each shown as a swell and a chip to take off', sets.t.includes('Rainbow Lorikeet') && sets.shapes.length === sets.t.length && new Set(sets.shapes).size > 1 && sel.sets.length === 2 && sel.chips === 2 && sel.swell >= 1, JSON.stringify({ t: sets.t.slice(0, 4), sel }));
   check('what prints or downloads is shown first: the web laid out by d3-force and drawn by hand with Rough.js', sel.w === 720 && sel.ink > 50 && sel.rough && sel.d3, JSON.stringify(sel));
   const wd = page.waitForEvent('download', { timeout: 15000 }).catch(() => null); await page.click('#r-dl'); const wf = await wd;
-  await page.click('#r-pr'); await page.waitForFunction(() => /●/.test(document.querySelector('#r-pst').textContent), null, { timeout: 10000 });
+  /* the print is read back once the site has answered it */
+  const RSP = page.waitForResponse(r => r.url().includes('/api/stories') && r.request().method() === 'POST', { timeout: 10000 }).catch(() => null);
+  await fresh(page); await page.click('#r-pr'); await page.waitForFunction(() => /●/.test(document.querySelector('#r-pst').textContent) && !document.querySelector('#r-pst .wait'), null, { timeout: 10000 });
+  await RSP;
   const wrec = (((await admin('stories?status=waiting')).stories) || []).find(x => x.kind === 'record' && /"web"/.test(x.body));
   check('⇩ downloads the web as a picture; ⎙ prints it on novel.global\'s printer', !!wf && /novel-global-web\.png$/.test(wf.suggestedFilename()) && !!wrec && wrec.dest === 'novelglobal', String(wf && wf.suggestedFilename()) + JSON.stringify(wrec || {}).slice(0, 120));
   await page.click('#r-sets button[data-x="0"]'); await sleep(300);
@@ -1932,7 +1938,7 @@ if (run('base')) try {
   const qrTo = qf ? await (async () => { const { data, info } = await sharp(await qf.path()).flatten({ background: '#ffffff' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); const q = jsQR(new Uint8ClampedArray(data), info.width, info.height); return q ? q.data : null; })() : null;
   check('SHOP keeps the booth\'s QR sticker with the other downloads, and it reads as the booth\'s page', qrTo === 'https://oan.test/#booth', String(qrTo));
   await page.evaluate(() => { window.__said = []; const f = CanvasRenderingContext2D.prototype.fillText; CanvasRenderingContext2D.prototype.fillText = function (t) { window.__said.push(String(t)); return f.apply(this, arguments); }; });
-  await page.click('#s-poster'); await page.waitForFunction(() => /●/.test(document.querySelector('#s-pst').textContent), null, { timeout: 10000 });
+  await fresh(page); await page.click('#s-poster'); await page.waitForFunction(() => /●/.test(document.querySelector('#s-pst').textContent) && !document.querySelector('#s-pst .wait'), null, { timeout: 10000 });
   const pw = (((await admin('stories?status=waiting')).stories) || []).find(x => x.kind === 'record' && /"poster"/.test(x.body));
   const pc0 = await page.evaluate(async () => { const c = await window.__base.poster('novelglobal', 512); return { url: c.toDataURL('image/png'), w: c.width, said: [...new Set(window.__said)] }; });
   const onPoster = await qrIn(pc0.url);
@@ -1947,7 +1953,7 @@ if (run('base')) try {
   check('then the whole receipt as it will print, every dot black or white at the printer 512 dots (the photo dithered by CanvasDither), all on one screen: the words, the stamps, one print key; no colour save before printing', ed.w === 512 && ed.mid === 0 && ed.ink > 0.1 && ed.ink < 0.9 && ed.keys.includes('<3') && ed.go === 'print' && !ed.dl && ed.st && ed.win, JSON.stringify(ed));
   await page.fill('#bt-w', 'hello from carlton'); await sleep(300);
   await page.click('#bt-st [data-k="1"]'); const bx = await page.locator('#bt-pv canvas').boundingBox(); await page.mouse.click(bx.x + bx.width * 0.3, bx.y + bx.height * 0.3); await sleep(400);
-  await shot(page, 'b06b-booth-edit.png'); await page.click('#bt-go');
+  await shot(page, 'b06b-booth-edit.png'); await fresh(page); await page.click('#bt-go');
   await page.waitForSelector('#bt-again', { timeout: 10000, state: 'attached' }); await page.waitForFunction(() => /●/.test(document.querySelector('#bt-pip').textContent) && document.querySelector('.pv.slip canvas'), null, { timeout: 10000 });
   const out = await page.evaluate(() => ({ url: document.querySelector('.pv.slip canvas').toDataURL('image/png'), w: document.querySelector('.pv.slip canvas').width, keys: [...document.querySelectorAll('#bt-on > *')].map(k => k.textContent.trim() + '>' + (k.getAttribute('href') || '')), st: window.__base.notes()[0].st }));
   const hid = await page.evaluate(() => document.querySelector('#bt-again').hidden);
@@ -2029,7 +2035,17 @@ for (const HD of [false, true]) if (run('home')) try {
   if (!HD) { await page.evaluate(() => { localStorage.setItem('da.who', JSON.stringify('K7Q')); localStorage.setItem('da.who.places', JSON.stringify([{ id: 'milkbar', name: 'Milk Bar', n: 2 }, { id: 'novelglobal', name: 'novel.global', n: 1 }])); });
     await page.goto('https://oan.test/#home'); await sleep(2500);
     const hm = await page.evaluate(() => { const dl = document.querySelector('.mn-id'), row = dl && [...dl.querySelectorAll('div')].find(d => (d.querySelector('dt') || {}).textContent === 'PLACES'); return { open: !!document.querySelector('[aria-label="HOME"].on'), hash: location.hash, code: dl && dl.querySelector('dd').textContent, places: row && row.querySelector('dd').textContent }; });
-    check(`home (${tag}): /#home opens the code's own home; PLACES names each island a pass was kept at`, hm.open && hm.hash === '' && /K7Q/.test(hm.code || '') && hm.places === 'MILK BAR×2 · NOVEL.GLOBAL', JSON.stringify(hm)); }
+    check(`home (${tag}): /#home opens the code's own home; PLACES names each island a pass was kept at`, hm.open && hm.hash === '' && /K7Q/.test(hm.code || '') && hm.places === 'MILK BAR×2 · NOVEL.GLOBAL', JSON.stringify(hm));
+    /* v0.7: HOME in four folded parts; the animal hidden; a code opened on another phone needs its animal */
+    await page.screenshot({ path: path.join(SHOTS, 'home-mine-code.png') });
+    const ms = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s), secs = [...document.querySelectorAll('.mn-sec')];
+      const out = { secs: secs.map(d => d.querySelector('summary b').textContent), open: secs.filter(d => d.open).map(d => d.dataset.s), an: (q('.mn-an') || {}).textContent, locked: !!q('.mn-say') && /LOCKED/.test(document.querySelector('.mn-in').textContent) };
+      q('.mn-sec[data-s="isles"] > summary').click(); q('.mn-sec[data-s="print"] > summary').click(); await z(400);
+      const sub = q('.mn-sec[data-s="code"] .mn-sub'); sub.open = true; const f = sub.querySelector('form'); f.c.value = 'K7Q'; f.a.value = '3'; f.requestSubmit(); await z(1200);
+      out.said = (q('[data-say="open"]') || {}).textContent; out.kept = JSON.parse(localStorage.getItem('da.hm.secs') || '{}'); out.key = !!q('.mn-sec[data-s="isles"] .mn-sub form'); return out; });
+    await page.screenshot({ path: path.join(SHOTS, 'home-mine-open.png') });
+    check(`home (${tag}): HOME folds into CODE, PRINT, ADMIN and ISLANDS, CODE open first; no animal shows as none; a code opened from another phone without its animal is refused; the parts left open are kept`,
+      ms.secs.join() === 'CODE,PRINT,ADMIN,ISLANDS' && ms.open.join() === 'code' && ms.an === '—' && ms.locked && ms.said === 'NO' && ms.kept.print === 1 && ms.kept.isles === 1 && ms.key, JSON.stringify(ms)); }
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }

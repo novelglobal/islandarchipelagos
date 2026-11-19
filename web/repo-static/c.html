@@ -49,8 +49,9 @@
       var who = ''; try { who = JSON.parse(localStorage.getItem('da.who') || '""'); } catch (e) { who = ''; }
       var go = function () { setTimeout(function () { location.href = '/'; }, 1400); };
       if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who)) return go();
-      fetch('/api/stamp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, pass: j.code }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (s) {
-        if (s && s.home) try { localStorage.setItem('da.who.home', JSON.stringify(s.home)); localStorage.setItem('da.who.ok', '1'); k.textContent = 'STAMPED'; } catch (e) { /* none */ } go(); }, go); });
+      var hk = ''; try { hk = JSON.parse(localStorage.getItem('da.who.home') || '""'); } catch (e) { hk = ''; }
+      fetch('/api/stamp', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, /^[0-9a-f]{16}$/.test(hk) ? { 'x-home': hk } : {}), body: JSON.stringify({ who: who, pass: j.code, home: 1 }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (s) {
+        if (s) try { if (s.home) localStorage.setItem('da.who.home', JSON.stringify(s.home)); localStorage.setItem('da.who.ok', '1'); k.textContent = 'STAMPED'; } catch (e) { /* none */ } go(); }, go); });
   }
   function open(c) {
     c = String(c || '').toUpperCase().replace(/[^A-Z0-9-]/g, ''); if (!c) return; inp.value = c; out.innerHTML = '<p class="say">· · ·</p>';

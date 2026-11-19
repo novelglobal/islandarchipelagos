@@ -285,7 +285,7 @@
     var inp = box.querySelector('input'), sp = box.querySelector('span'), done = function () { box.hidden = true; again(); };
     var go = function () { var v = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       if (/^[A-HJKMNP-TV-Z]{6}$/.test(v)) { var w = whoNow(); if (!w) { sp.textContent = '×'; return; } sp.textContent = '···';
-        fetch('/api/maker', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w, pass: v.slice(0, 3) + '-' + v.slice(3) }) })
+        fetch('/api/maker', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: w, pass: v.slice(0, 3) + '-' + v.slice(3), home: 1 }) })
           .then(function (r) { if (r.status === 201) { r.json().then(function (j) { if (j && j.home) try { localStorage.setItem('da.who.home', JSON.stringify(j.home)); } catch (e) { /* none */ } }, function () {}); done(); } else { sp.textContent = r.status === 409 ? 'USED' : r.status === 404 ? 'UNKNOWN' : r.status === 429 ? 'WAIT' : '×'; sp.title = r.status === 409 ? 'This pass was used already' : r.status === 404 ? 'Not a pass from today' : ''; } }, function () { sp.textContent = 'OFFLINE'; }); return; }
       if (/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(v)) { sp.textContent = '···';
         var p = NG && NG.useCode ? NG.useCode(v) : (function () { try { localStorage.setItem('da.who', JSON.stringify(v)); localStorage.setItem('da.who.at', JSON.stringify(Date.now())); } catch (e) { /* this visit */ } return Promise.resolve(true); })();

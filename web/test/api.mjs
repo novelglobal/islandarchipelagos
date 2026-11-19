@@ -197,7 +197,11 @@ try {
   await call('/api/admin/printers/kines', { method: 'POST', key: KEY, body: { action: 'touch', on: false } }); const tl3 = await call('/api/touch/kines', { token: TT });
   check('one press prints (queued), a long press squashes (gone); turned off, the token stops at once', pr.status === 200 && sq.status === 200 && rA.json.job.status === 'queued' && !rB.json.job && tl2.json.held.every(h => h.job !== tA.json.job.id && h.job !== tB.json.job.id) && tl3.status === 401,
     JSON.stringify({ pr: pr.status, sq: sq.status, a: rA.json.job, b: rB.json.job, tl3: tl3.status }));
-  /* one print a minute for each person: a second print inside the minute is asked to wait, and told how long */
+  /* the gap between one person's prints: none to begin with; set on the approval page (here a minute), and an island may set its own */
+  const g01 = await call('/api/stories', { method: 'POST', ip: '10.66.0.9', gap: true, body: { kind: 'record', code: 'DA-G4Q1', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
+  const g02 = await call('/api/stories', { method: 'POST', ip: '10.66.0.9', gap: true, body: { kind: 'record', code: 'DA-G4Q2', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
+  const gs0 = (await call('/api/admin/settings', { key: KEY })).json.printGap; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { printGap: 60 } });
+  check('no gap between prints to begin with; the approval page sets one', g01.status === 201 && g02.status === 201 && gs0 === 0, JSON.stringify([g01.status, g02.status, gs0]));
   const g1 = await call('/api/stories', { method: 'POST', ip: '10.66.0.1', gap: true, body: { kind: 'record', code: 'DA-G4P1', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
   const g2 = await call('/api/stories', { method: 'POST', ip: '10.66.0.1', gap: true, body: { kind: 'record', code: 'DA-G4P2', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
   const g3 = await call('/api/stories', { method: 'POST', ip: '10.66.0.2', gap: true, body: { kind: 'record', code: 'DA-G4P3', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=' } });
@@ -206,6 +210,10 @@ try {
   const dk = i => call('/api/stories', { method: 'POST', ip: '10.66.0.3', gap: true, body: { kind: 'record', code: 'DA-GDK' + 'ABCE'[i], body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'kines', escpos: 'G0A=', set: i < 3 ? 'deckAB12cd' : 'deckZZ99yy' } });
   const d1 = await dk(0), d2 = await dk(1), d3 = await dk(2), d4 = await dk(3);
   check('a deck prints all its pages; a new one inside the minute waits', [d1, d2, d3].every(r => r.status === 201) && d4.status === 429, JSON.stringify([d1.status, d2.status, d3.status, d4.status]));
+  const ng = i => call('/api/stories', { method: 'POST', ip: '10.66.0.4', gap: true, body: { kind: 'record', who: 'G5P', code: 'DA-GNG' + 'ABCD'[i], body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, dest: 'novelglobal', escpos: 'G0A=' } });
+  const gi = await call('/api/admin/printers/novelglobal', { method: 'POST', key: KEY, body: { action: 'setup', gap: 0 } }), d5a = await ng(0), d5 = await ng(1);
+  await call('/api/admin/printers/novelglobal', { method: 'POST', key: KEY, body: { action: 'setup', gap: null } }); const d6a = await ng(2), d6 = await ng(3); await call('/api/admin/settings', { method: 'POST', key: KEY, body: { printGap: 0 } });
+  check('an island with no gap of its own prints at once, while the site keeps one; set back, it follows the site', gi.json.gap === 0 && d5a.status === 201 && d5.status === 201 && d6a.status === 201 && d6.status === 429, JSON.stringify([gi.json.gap, d5a.status, d5.status, d6a.status, d6.status]));
 
   /* the showcase: nine at a time in an order; a like once for each code; the maker sees opens and likes, and changes only their own */
   const sc_pm = await call('/api/plays', { method: 'POST', key: KEY, ip: '10.0.0.61', body: { who: 'Q7M', n: 'tide clock', th: 'cyan', src: 'print("hi")' } });
@@ -400,7 +408,7 @@ try {
     const PCs = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', p3 = n => { const b = mc(IK, `p3:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date())}:${n}`); const c = [PCs[b[0] % 22], PCs[22 + b[1] % 8], PCs[b[2] % 30]]; if (b[3] & 1) [c[0], c[1]] = [c[1], c[0]]; return c.join(''); };
     const nk = await call(`/api/printers/${id}/next?pk=1`, { token: PT }), nk0 = await call(`/api/printers/${id}/next`, { token: PT });
     const sp = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), sc1 = await (async () => { for (let i = 0; i < 8; i++) { const r = await call(`/api/printers/${id}/next`, { token: PT }); const e = r.json && r.json.escpos; if (!e) return ''; const m = /\x1d!3([A-Z2-9]{3})\n/.exec(Buffer.from(e, 'base64').toString('latin1')); if (r.json.code === 'DA-PASS' && m) return m[1]; } return ''; })();
-    const sr = await call('/api/c/' + sc1.toLowerCase()), sr2 = await call(`/api/c/${sc1}?at=${id}`), sOff = p3(31), sMk = await call('/api/maker', { method: 'POST', ip: '10.0.0.82', body: { who: 'QX9', pass: sc1 } });
+    const sr = await call('/api/c/' + sc1.toLowerCase()), sr2 = await call(`/api/c/${sc1}?at=${id}`), sOff = p3(31), sMk = await call('/api/maker', { method: 'POST', ip: '10.0.0.82', body: { who: 'QX9', pass: sc1, home: 1 } });
     const uo = await call(`/api/printers/${id}/used`, { method: 'POST', token: PT, body: { day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date()), codes: [sOff] } }), uoX = await call(`/api/printers/${id}/used`, { method: 'POST', body: { day: '2026-01-01', codes: [] } });
     const sOffR = await call('/api/c/' + sOff), cart3 = await call('/api/c/ZZZ');
     check('short passes: the island is given its key once it asks; a pass printed is 3, a letter and a number, from the island\'s key; read by the reader at any island or this one; used once; one used at the island offline is told and never good again',
@@ -413,12 +421,31 @@ try {
     /* v0.7 C: a pass kept on a code is a stamp of the island; where a code has been is told only with its home key */
     const HK = w => createHmac('sha256', KEY).update('home:' + w).digest('hex').slice(0, 16);
     const hm0 = await call('/api/mine/QX9'), hm1 = await call('/api/mine/QX9?k=' + HK('QX9')), hmX = await call('/api/mine/QX9?k=0000000000000000');
-    const stT = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: sc1 } }), stN = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: p3(2) } }), stB = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: 'ZZ2' } });
+    const stT = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: sc1 } }), stN = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: p3(2), home: 1 } }), stB = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: 'ZZ2' } });
     const hm2 = await call('/api/mine/QY8?k=' + HK('QY8'));
     check('a pass kept on a code stamps it with the island, once and for that code only; the stamps are told only with its home key, handed back when it is kept',
       sMk.json.home === HK('QX9') && !hm0.json.stamps && !hmX.json.stamps && Array.isArray(hm1.json.stamps) && hm1.json.stamps.length === 1 && hm1.json.stamps[0].id === id && hm1.json.stamps[0].n === 1 && hm1.json.printed === true
       && stT.status === 409 && stN.status === 201 && stN.json.home === HK('QY8') && stN.json.island === id && stB.status === 404 && hm2.json.printed === true && hm2.json.stamps.length === 1,
       JSON.stringify({ home: sMk.json.home === HK('QX9'), hm0: !!hm0.json.stamps, hmX: !!hmX.json.stamps, hm1: hm1.json.stamps, stT: stT.status, stN: stN.json, stB: stB.status, hm2: hm2.json && [hm2.json.printed, hm2.json.stamps] }));
+    /* v0.7 C: the home key is given once, to the first phone; the animal opens it on another; three wrong ones lock it for a week */
+    const sx = await call('/api/stories', { method: 'POST', ip: '10.0.0.84', body: { kind: 'record', code: 'DA-AN1A', body: JSON.stringify(WISH), lat: -37.77, lng: 144.96, who: 'QY8', home: 1 } });
+    const an0 = await call('/api/home', { method: 'POST', ip: '10.0.0.85', body: { who: 'QY8', animal: 5 } }), anS = await call('/api/home', { method: 'POST', ip: '10.0.0.85', body: { who: 'QY8', k: HK('QY8'), animal: 7 } }), anB = await call('/api/home', { method: 'POST', ip: '10.0.0.85', body: { who: 'QY8', k: 'ffffffffffffffff', animal: 1 } });
+    const an1 = await call('/api/home', { method: 'POST', ip: '10.0.0.85', body: { who: 'QY8', animal: 6 } }), an2 = await call('/api/home', { method: 'POST', ip: '10.0.0.85', body: { who: 'qy8', animal: 7 } }), anM = await call('/api/mine/QY8?k=' + HK('QY8'));
+    const an3 = []; for (const a of [1, 2, 3]) an3.push((await call('/api/home', { method: 'POST', ip: '10.0.0.86', body: { who: 'QY8', animal: a } })).status); const an4 = await call('/api/home', { method: 'POST', ip: '10.0.0.86', body: { who: 'QY8', animal: 7 } });
+    check('the home key goes once, to the first phone; another phone opens it with the code and its animal, chosen only with the key; three wrong animals lock it',
+      !sx.json.home && an0.status === 403 && anS.json.animal === 7 && anB.status === 401 && an1.status === 403 && an2.status === 200 && an2.json.home === HK('QY8') && anM.json.animal === true && an3.join() === '403,403,403' && an4.status === 423,
+      JSON.stringify({ sxHome: sx.json.home, an0: an0.status, anS: anS.json, anB: anB.status, an1: an1.status, an2: an2.json, anM: anM.json.animal, an3, an4: an4.status }));
+    /* an island's own setup: its pack, how its passes are given, its gap, and who helps run it (a code, opening it with its home key) */
+    const su0 = await call('/api/island', { token: K }), su1 = await call('/api/island', { method: 'POST', token: K, body: { pack: 'utilities', ways: ['print', 'intro', 'random', 'loud'], gap: 30, mods: ['qx9', 'b!'] } });
+    const suP = (await call('/api/partners')).json.partners.find(x => x.id === id), suM = await call('/api/mine/QX9?k=' + HK('QX9'));
+    const md = await call('/api/island', { token: 'QX9.' + HK('QX9') }), mdX = await call('/api/island', { token: 'QX9.ffffffffffffffff' }), mdS = await call('/api/island', { method: 'POST', token: 'QX9.' + HK('QX9'), body: { pack: 'builder', mods: ['QX9', 'QY8'] } });
+    const gf1 = await call('/api/gift', { method: 'POST', ip: '10.0.0.87', body: { who: 'QX9', island: id, why: 'intro' } }), gf2 = await call('/api/gift', { method: 'POST', ip: '10.0.0.87', body: { who: 'QX9', island: id, why: 'intro' } }), gfN = await call('/api/gift', { method: 'POST', ip: '10.0.0.87', body: { who: 'QX9', island: 'novelglobal', why: 'intro' } });
+    await call('/api/island', { method: 'POST', token: K, body: { ways: ['touch'], gap: null, pack: 'full' } }); const ask0 = await call('/api/c', { method: 'POST', ip: '10.0.0.88', body: { ask: id } });
+    check('an island sets its pack, its ways to give passes, its gap and its mods; a mod opens it with code and home key and may change all but the mods; an intro pass once a code where it is given so; asking where it prints none is refused',
+      su0.json.pack === 'full' && su0.json.ways === null && su1.json.pack === 'utilities' && su1.json.ways.join() === 'print,intro,random' && su1.json.gap === 30 && su1.json.mods.join() === 'QX9' && suP.pack === 'utilities' && suP.cards.includes('weather') && suM.json.mods.length === 1 && suM.json.mods[0].id === id
+      && md.status === 200 && md.json.mod === true && !md.json.mods && mdX.status === 401 && mdS.json.pack === 'builder' && gf1.status === 201 && /^[A-Z2-9]{3}$/.test(gf1.json.code) && gf2.status === 409 && gfN.status === 403 && ask0.status === 403,
+      JSON.stringify({ su0: [su0.json.pack, su0.json.ways], su1: su1.json && [su1.json.pack, su1.json.ways, su1.json.gap, su1.json.mods], suP, suM: suM.json.mods, md: md.status, mdX: mdX.status, mdS: mdS.json && mdS.json.pack, gf: [gf1.status, gf1.json, gf2.status, gfN.status], ask0: ask0.status }));
+    await call('/api/island', { method: 'POST', token: K, body: { ways: null, mods: [] } });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { openJoin: false } });
     const pk2 = await call('/api/pair', { method: 'POST', ip: '192.0.2.42', body: { name: 'Shut Gate' } }), w2 = await call('/api/pair/poll', { method: 'POST', body: { device: pk2.json && pk2.json.device } });
     check('with open joining off, a new island waits for the approval page again', w2.status === 202, String(w2.status));
