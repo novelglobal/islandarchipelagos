@@ -64,7 +64,7 @@ function paintFace(f, wipe) {
   const o = S.mode === 'ping' ? S.byId.get(S.sel) : null; const tel = f === 'front' && o && (o.kind === 'injured' || o.kind === 'dead') ? telOf(o) : '';
   const lost = f === 'front' && o && o.kind === 'lost';
   altBtn.hidden = true; heroBtn.hidden = false; rec.classList.toggle('alarm', !!tel || lost); heroBtn.classList.remove('go'); altBtn.classList.add('go');
-  if (f === 'wish') { heroWord('base', 'W.I.S.H.'); altWord('receipt', 'PRINT'); altBtn.hidden = false; }
+  if (f === 'wish') { heroWord('base', 'RESEARCH'); altWord('receipt', 'PRINT'); altBtn.hidden = false; }
   else if (f === 'signal') heroWord('receipt', 'TO PRINT');
   else if (f === 'place') { heroWord('check', 'PLACE'); altWord('next', 'NOTICED'); altBtn.hidden = false; }
   else if (S.mode === 'tribe') heroWord('out', 'JOIN');
@@ -324,19 +324,21 @@ async function conUse(a) {
     const words = [name, ...strings.reach().filter(x => x.tied).map(x => strings.labelOf(x.key) || x.n || '')], rows = [0, 1, 2, 3].map(() => Array(32).fill('.'));
     words.forEach((n, i) => String(n).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 1).forEach((w, j) => { let h = 2166136261; for (const ch of w + i) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; const k = (i + j) % 4; let at = h % 32; at -= at % [1, 2, 4, 2][k]; if (rows[k][at] === '.') rows[k][at] = String(k === 3 ? h % 5 : h % 10); }));
     const code = 'v103' + rows.map(r => r.join('')).join('-'), kept = store.get('da.aura.songs', []) || []; if (!kept.some(q => q.code === code)) { kept.unshift({ code, at: Date.now(), name }); kept.splice(12); store.set('da.aura.songs', kept); }
-    made('song', name); snd.tick(1900); toast('✓'); return; }
+    made('song', name); snd.tick(1900); toast('✓ SONG'); return; }
   if (a === 'asIntel') {
     const tied = strings.reach().filter(x => x.tied).slice(0, 14), W = 600, H = 120 + tied.length * 34, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
     x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.fillStyle = '#111'; x.font = '600 28px Poppins, sans-serif'; x.fillText(name.slice(0, 30), 24, 48); x.font = '500 13px "IBM Plex Mono", monospace'; x.fillText(`${tied.length} TIED · ${nameOf(o).toUpperCase().slice(0, 30)}`, 24, 76);
     tied.forEach((k, i) => { const y = 112 + i * 34; x.font = '500 18px Poppins, sans-serif'; x.fillText(String(strings.labelOf(k.key) || k.n || '').slice(0, 34), 44, y); x.font = '500 12px "IBM Plex Mono", monospace'; x.fillText(String({ biz: 'PLACE', group: 'GROUP', water: 'WATER', life: 'LIFE', custom: 'KNOT' }[k.t] || '') + ' · ' + metres(k.d), W - 190, y); x.beginPath(); x.arc(28, y - 6, 4, 0, 7); x.fill(); });
-    const png = c.toDataURL('image/png'); made('intel', name); if (IN_AURA) toAura(png, true); else { setView(2); setTimeout(() => placeOnPage(png, 'art', 240), 500); } return;
+    const png = c.toDataURL('image/png'); made('intel', name); await toResearch(png, 260); return;
   }
   let svg = strings.chartOf(o.id, 120); if (!svg) return; if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   const im = new Image(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); await new Promise(r => { im.onload = r; im.onerror = r; });
   const c = document.createElement('canvas'); c.width = c.height = 600; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 600, 600); try { x.drawImage(im, 0, 0, 600, 600); } catch (e) { return; }
   x.fillStyle = '#111'; x.font = '600 26px Poppins, sans-serif'; x.fillText(name.slice(0, 32), 24, 572); const png = c.toDataURL('image/png'); made('art', name);
-  if (IN_AURA) toAura(png, true); else { setView(2); setTimeout(() => placeOnPage(png, 'art', 240), 500); }
+  await toResearch(png, 240);
 }
+/* ART and INTEL go onto the research board, beside the receipt, where the strings are kept: the radio stays open, a toast says where */
+async function toResearch(png, w) { try { await addToBoard(png, 'art', w); flyToTab(1, $('#r-strings')); snd.tick(1900); toast('✓ RESEARCH'); } catch (e) { toast('NOT KEPT'); } }
 function fillStrings() {
   const el = $('#r-strings'); const o = S.byId.get(S.sel); if (!o || S.mode !== 'ping' || o.ob) { el.innerHTML = ''; el.hidden = true; return; }
   const f = strings.fig; const n = f.e.length; const all = strings.reach(); const det = el.querySelector('details'); const open = det ? det.open : false; const pk = strings.peeked;

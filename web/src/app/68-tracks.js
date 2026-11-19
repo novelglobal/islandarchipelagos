@@ -379,9 +379,17 @@ function loopTrim() { const held = new Set(); try { (store.get('da.tapes.v1', []
   LOOPS.splice(16); }
 /* a song kept: newest first, eight at most, smaller and smaller until this phone has room for it */
 function keepLoop(m) {
+  /* one of each: the same song again is not kept twice (it comes to the top); a new take of the last song, same place, within ten minutes,
+     takes its place, the takes before it kept inside it (three), so a song being built is one song */
+  const nm = l => String((l.where || {}).place || l.name || ''), held = new Set(); try { (store.get('da.tapes.v1', []) || []).forEach(t => (t.ids || []).forEach(id => held.add(id))); } catch (e) { /* none */ }
+  const twin = LOOPS.find(l => l !== m && mixCode(l) === mixCode(m) && nm(l) === nm(m));
+  if (twin) { LOOPS.splice(LOOPS.indexOf(twin), 1); m.id = twin.id; if (twin.vers) m.vers = twin.vers; LOOPS.unshift(m); store.set('da.loops.v1', LOOPS); setTimeout(soundSync, 0); return true; }
+  const l0 = LOOPS[0], was = l0 && l0 !== m && nm(m) && nm(l0) === nm(m) && !(m.parts && m.parts.length) && !(l0.parts && l0.parts.length) && !l0.rec && !held.has(l0.id) && (m.at || 0) - (l0.at || 0) < 6e5 ? l0 : null;
+  if (was) { LOOPS.splice(LOOPS.indexOf(was), 1); const old = { ...was }; delete old.vers; m.vers = [old].concat(was.vers || []).slice(0, 3); }
   LOOPS.unshift(m); F4P = 0; loopTrim(); setTimeout(soundSync, 0);
   const thin = L => { if ((L.cells || []).length > 24) L.cells = L.cells.filter((c, i) => i % 2 === 0); };
   if (!store.set('da.loops.v1', LOOPS)) for (const l of LOOPS) for (const p of [l, ...(l.parts || [])]) Object.values(p.layers || {}).forEach(thin);
+  if (!store.set('da.loops.v1', LOOPS)) for (const l of LOOPS) delete l.vers;   // older takes go first when the phone is full
   while (!store.set('da.loops.v1', LOOPS) && LOOPS.length > 1) LOOPS.pop();
   return LOOPS[0] === m;
 }
