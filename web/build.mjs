@@ -64,6 +64,8 @@ const partners = (win.DA_PARTNERS || []).map(p => { const pl = (win.DA_PLACES ||
 if (win.DA_MASTER) partners.unshift({ id: win.DA_MASTER.id, n: win.DA_MASTER.n, sub: '', paper: String(win.DA_MASTER.paper || 80), printer: true });
 /* the parts a ghost's bench joins, as data in spec/parts: to the twin as parts.js, their ids to the worker */
 const partsDir = path.join(root, '..', 'spec', 'parts'), PARTS = fs.existsSync(partsDir) ? fs.readdirSync(partsDir).filter(f => f.endsWith('.json')).sort().map(f => { const { $schema, part, ...p } = JSON.parse(read(path.join(partsDir, f))); return p; }) : [];
+/* in the order a builder meets them: the kinds as they are joined, the tested first, 80 mm before 58 */
+const KINDS = ['printer', 'pi', 'sd', 'power', 'solar', 'battery', 'charger', 'converter', 'radio', 'screen', 'cable']; PARTS.sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || (b.tested ? 1 : 0) - (a.tested ? 1 : 0) || (b.paper || 0) - (a.paper || 0) || a.id.localeCompare(b.id, 'en', { numeric: true }));
 fs.writeFileSync(path.join(out, 'parts.js'), '/* the parts, from spec/parts (MIT) */\nwindow.PARTS = ' + JSON.stringify(PARTS) + ';\n');
 fs.writeFileSync(path.join(src, 'worker', 'stamp.js'), `/* written by build.mjs: never edited by hand, never committed */\nexport const BUILD = ${JSON.stringify(sha)};\nexport const PREVIEW = ${preview};\nexport const PARTNERS = ${JSON.stringify(partners)};\nexport const PART_IDS = ${JSON.stringify(PARTS.map(p => p.id))};\n`);
 /* the studio: the whole radio, W.I.S.H. and PRINT, as it was built through the pilot, at /studio */

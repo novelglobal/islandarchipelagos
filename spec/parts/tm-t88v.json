@@ -3,6 +3,8 @@
   "part": "kit",
   "id": "tm-t88v",
   "name": "TM-T88V",
+  "sub": "Epson · 80 mm",
+  "tested": true,
   "kind": "printer",
   "about": "Epson TM-T88V, 80 mm, USB. Tested with every slip.",
   "paper": 80,

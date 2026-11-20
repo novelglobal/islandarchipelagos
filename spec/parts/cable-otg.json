@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "cable-otg",
   "name": "OTG",
+  "sub": "micro · USB-B",
   "kind": "cable",
   "about": "Micro-USB OTG to USB-B: a printer on a Zero 2 W.",
   "ends": [

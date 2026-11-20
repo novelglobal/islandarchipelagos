@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "boost-24v",
   "name": "Boost",
+  "sub": "12 → 24 V · 5 A",
   "kind": "converter",
   "about": "12 V to 24 V DC boost converter, 5 A, with a lead to the printer’s round plug.",
   "watts": {

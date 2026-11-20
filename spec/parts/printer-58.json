@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "printer-58",
   "name": "58 MM",
+  "sub": "ESC/POS · 58 mm",
   "kind": "printer",
   "about": "Any 58 mm ESC/POS printer with USB and a barrel socket.",
   "paper": 58,

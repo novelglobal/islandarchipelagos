@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "pi-zero-2-w",
   "name": "Zero 2 W",
+  "sub": "2021 · 512 MB",
   "kind": "pi",
   "about": "Raspberry Pi Zero 2 W (2021). One micro-USB for things, Wi-Fi, 512 MB. Needs an OTG cable for a printer.",
   "watts": {

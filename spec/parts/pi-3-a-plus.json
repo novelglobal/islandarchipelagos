@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "pi-3-a-plus",
   "name": "Pi 3 A+",
+  "sub": "2018 · 512 MB",
   "kind": "pi",
   "about": "Raspberry Pi 3 Model A+ (2018). One USB, Wi-Fi, 512 MB. The one in the solar build.",
   "watts": {

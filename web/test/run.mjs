@@ -2176,10 +2176,23 @@ if (run('bench')) try {
   await wire(ctx, { plain: true }); await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('bn')) { sessionStorage.setItem('bn', '1'); localStorage.setItem('da.ghost.build', JSON.stringify({ pi: 'Pi 3 A+', printers: 'TM-T88V', power: ['Solar'] })); localStorage.removeItem('da.ghost.seeded'); } } catch (e) { /* private */ } });
   const page = await ctx.newPage(); watch(page, 'bench'); await page.goto('https://oan.test/archipelagos.html');
   const made = await page.evaluate(async () => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bench Bb' }) }), j = await r.json(); if (j.key) localStorage.setItem('da.hm.key', JSON.stringify(j.key)); return { s: r.status, id: j.id }; });
+  const pl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s); q('[data-go="hardware"]').click(); await z(200);
+    const pr = [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), tested = [...document.querySelectorAll('.plate .t')].map(t => t.closest('.plate').dataset.pn);
+    q('[data-tab="power"]').click(); await z(100); return { pr, tested, power: [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), drawn: document.querySelectorAll('.plate .pic svg').length }; });
+  check('ISLAND ARCHIPELAGOS plates are the bench\'s parts (spec/parts): printers with the tested TM-T88V first and marked, the power tab the whole solar kit, each drawn',
+    pl.pr[0] === 'tm-t88v' && pl.pr.includes('printer-58') && pl.tested.join() === 'tm-t88v' && pl.power.join() === 'ps-180,solar-100w,lifepo4-50ah,mppt-10a,boost-24v,buck-5v' && pl.drawn === 6, JSON.stringify(pl));
   await page.goto('https://oan.test/twin#bench'); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(900);
   const b0 = await page.evaluate(() => ({ open: document.querySelector('#bnd').open, parts: [...document.querySelectorAll('.bench .pt text:not(.pl)')].map(t => t.textContent), word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title }));
   check('bench: a ghost opened from START lands on its BENCH with the tray\'s Pi, printer and solar, and an SD for the Pi; SHORT says which parts have no power',
     made.s === 201 && b0.open && b0.parts.join() === 'SOLAR,PI 3 A+,SD 32 GB,TM-T88V' && b0.word === 'SHORT' && /Pi 3 A\+.*TM-T88V.*no power in/.test(b0.why), JSON.stringify({ made, b0 }));
+  /* on a phone nothing hovers: the word that says more is tapped; a port chosen marks the ports a cable would fit; what it lacks is marked under ADD */
+  const u0 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s);
+    q('.bench [data-port][aria-label="Pi 3 A+ USB"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); await z(50);
+    const fit = [...document.querySelectorAll('.bench .po.fit')].map(e => e.getAttribute('aria-label')); q('#bnp').click(); await z(50);
+    const r = { fit, why: q('#bnw').textContent, more: q('#bnp').classList.contains('more'), hint: (q('#bnk .hint') || {}).textContent, ring: q('.bench [data-port] .ph').getAttribute('r') };
+    q('.bench [data-port][aria-label="Pi 3 A+ USB"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); q('#bnp').click(); await z(50); r.after = q('#bnw').textContent; return r; });
+  check('bench: on a phone SHORT is tapped for its reason; a chosen port marks only the ports a cable fits; POWER is marked as what it lacks; each port a ring big enough to tap',
+    u0.fit.join() === 'TM-T88V USB' && u0.why === 'Pi 3 A+, TM-T88V have no power in' && u0.more && u0.hint === 'POWER' && +u0.ring >= 12 && u0.after === '', JSON.stringify(u0));
   /* real taps: the kind, the parts, then each cable port to port */
   const tap = async sel => { await page.locator(sel).first().scrollIntoViewIfNeeded(); await page.locator(sel).first().click(); await sleep(60); };
   const port = lab => `.bench [data-port][aria-label="${lab}"]`;

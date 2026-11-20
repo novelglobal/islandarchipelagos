@@ -208,23 +208,27 @@
       var sk = el('g', { transform: 'translate(' + X + ' ' + Y + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: 7 + i + x[1].length, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); g.appendChild(sk);
       var nm = el('text', { x: X + cw / 2, y: Y + 84, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
       var ps = p.ports || []; ps.forEach(function (o, k) { var px = X + cw * (k + 1) / (ps.length + 1), py = Y + 97, id = x[0] + '.' + o.id; at[id] = [px, py];
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { cx: px, cy: py, r: 5 })]);
-        var lb = el('text', { 'class': 'pl', x: px, y: py + 14, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); svg.appendChild(g); }); });
+        var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var lb = el('text', { 'class': 'pl', x: px, y: py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); svg.appendChild(g); }); });
     /* the cables behind the parts, hanging a little, as cables do */
     BN.j.forEach(function (j, i) { var a = at[j[0]], b = at[j[1]], r = P.J[i]; if (!a || !b) return; var sag = 26 + Math.abs(a[0] - b[0]) * .15, d = 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + (a[1] + sag) + ' ' + b[0] + ' ' + (b[1] + sag) + ' ' + b[0] + ' ' + b[1];
       var label = r.ok ? (r.cable ? r.cable.name : 'Straight in') : r.why; cg.appendChild(el('path', { d: d, 'class': 'cb' + (r.ok ? '' : ' bad') }));
       cg.appendChild(el('path', { d: d, 'class': 'hit', 'data-cut': String(i), role: 'button', 'aria-label': label + ': tap to take it out' }, [tt(label + ' · tap to take it out')])); });
-    var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '');
+    var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
+    var lack = P.w === 'SHORT' && /no power in|no sun|battery|night/.test(P.t) ? 'POWER' : '';
     $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w : 'EMPTY';
-    $('#bnk').innerHTML = GROUPS.map(function (g) { return '<button type="button" data-kind="' + g[0] + '" aria-pressed="' + (ADDK === g[0]) + '">' + g[0] + '</button>'; }).join('');
+    $('#bnk').innerHTML = GROUPS.map(function (g) { return '<button type="button" data-kind="' + g[0] + '" aria-pressed="' + (ADDK === g[0]) + '"' + (lack === g[0] && ADDK !== g[0] ? ' class="hint" title="What it lacks is here"' : '') + '>' + g[0] + '</button>'; }).join('');
     var G = GROUPS.filter(function (g) { return g[0] === ADDK; })[0], has = function (id) { return BN.p.some(function (x) { return x[1] === id; }); };
     $('#bnl').innerHTML = G ? PARTS.filter(function (p) { return G[1].indexOf(p.kind) >= 0; }).map(function (p) { return '<button type="button" data-part="' + esc(p.id) + '" aria-pressed="' + has(p.id) + '" title="' + esc(p.about || p.name) + '"' + (!has(p.id) && BN.p.length >= 12 ? ' disabled' : '') + '>' + esc(String(p.name).toUpperCase()) + '</button>'; }).join('') : ''; }
-  function benchSave(say) { $('#bnsay').textContent = say || ''; clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say ? say : 'SAVED'; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
+  function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
+  $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
+  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say ? say : 'SAVED'; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
   function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); }
   /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS (and an SD for its Pi) */
   function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice() } : { p: [], j: [] };
     var tray = store.get('da.ghost.build', null), done = store.get('da.ghost.seeded', '');
-    if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
+    if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
       [tray.pi, tray.printers].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       if (BN.p.some(function (x) { return PART[x[1]] && PART[x[1]].kind === 'pi'; })) partAdd('sd-32');
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
@@ -236,7 +240,7 @@
       else if (BN.p.length < 12) partAdd(id); benchDraw(); benchSave(); return; }
     if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
     var pid = t.dataset.port;
-    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').textContent = SEL ? 'TAP ANOTHER PORT' : ''; return; }
+    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = SEL ? 'TAP ANOTHER PORT' : ''; return; }
     var a = SEL, there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
     if (BN.j.length >= 24) { benchDraw(); $('#bnsay').textContent = 'FULL'; return; }

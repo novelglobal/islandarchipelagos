@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "tm-t20",
   "name": "TM-T20",
+  "sub": "Epson · 80 mm",
   "kind": "printer",
   "about": "Epson TM-T20, 80 mm, USB.",
   "paper": 80,

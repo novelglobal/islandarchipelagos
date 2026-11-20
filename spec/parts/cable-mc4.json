@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "cable-mc4",
   "name": "MC4",
+  "sub": "MC4 · MC4",
   "kind": "cable",
   "about": "Solar cable, 2.5 mm², MC4 at both ends.",
   "ends": [

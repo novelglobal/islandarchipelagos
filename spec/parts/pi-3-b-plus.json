@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "pi-3-b-plus",
   "name": "Pi 3 B+",
+  "sub": "2018 · 1 GB",
   "kind": "pi",
   "about": "Raspberry Pi 3 Model B+ (2018). Four USB, Wi-Fi, Ethernet, 1 GB.",
   "watts": {

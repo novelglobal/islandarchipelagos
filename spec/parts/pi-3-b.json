@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "pi-3-b",
   "name": "Pi 3 B",
+  "sub": "2016 · 1 GB",
   "kind": "pi",
   "about": "Raspberry Pi 3 Model B (2016). Four USB, Wi-Fi, Ethernet, 1 GB.",
   "watts": {

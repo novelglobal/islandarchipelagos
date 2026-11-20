@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "t-beam",
   "name": "T-Beam",
+  "sub": "LoRa · mesh",
   "kind": "radio",
   "about": "LILYGO T-Beam with Meshtastic: LoRa mesh, GPS, micro-USB. Powered by the Pi’s USB.",
   "watts": {

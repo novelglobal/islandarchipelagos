@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "touch-7",
   "name": "Touch",
+  "sub": "7 inch · DSI",
   "kind": "screen",
   "about": "Raspberry Pi 7-inch touch display: a ribbon to the Pi’s DSI, its own 5 V in.",
   "watts": {

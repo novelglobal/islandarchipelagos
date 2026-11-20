@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "ps-180",
   "name": "PS-180",
+  "sub": "Epson · 24 V",
   "kind": "power",
   "about": "Epson PS-180: 24 V, 2 A, from the wall. Its cord ends in the printer’s round plug.",
   "source": "wall",

@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "sd-32",
   "name": "SD 32 GB",
+  "sub": "microSD",
   "kind": "sd",
   "about": "A 32 GB microSD card, class 10 or better. Island OS fits on 8 GB.",
   "ports": [

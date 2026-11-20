@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "sd-16",
   "name": "SD 16 GB",
+  "sub": "microSD",
   "kind": "sd",
   "about": "A 16 GB microSD card, class 10 or better. Island OS fits on 8 GB.",
   "ports": [

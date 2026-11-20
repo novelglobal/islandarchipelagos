@@ -120,19 +120,6 @@
       drawJelly(g, J, now, inkC, paper); });
     requestAnimationFrame(frame); }
 
-  /* the hardware, as plates: 120 by 90 */
-  var KIT = {
-    t88: function () { return [['M14 80 L14 38 Q14 22 30 20 L92 18 Q106 18 106 34 L106 80 Z'], ['M14 48 L106 46'], ['M30 30 L90 29'], ['M38 29 C42 12 76 10 82 29', 1], [ell(95, 64, 3, 3)], ['M22 64 h4 M30 64 h4']]; },
-    t20: function () { return [[rect(12, 34, 96, 46)], ['M12 34 L22 22 L98 22 L108 34'], ['M30 28 L90 28'], ['M36 28 C40 12 78 12 84 28', 1], [ell(96, 60, 3, 3)]]; },
-    t70: function () { return [[rect(18, 18, 84, 64)], ['M18 30 L102 30'], ['M34 42 L86 42'], ['M38 42 L38 64 Q60 69 82 64 L82 42', 1], [ell(92, 74, 2.5, 2.5)]]; },
-    p: function () { return [['M36 80 L36 40 Q36 32 44 32 L76 32 Q84 32 84 40 L84 80 Z'], ['M45 39 L75 39'], ['M48 39 C50 24 70 24 72 39', 1], [ell(60, 64, 6, 6)]]; },
-    b: function () { return [[rect(12, 24, 92, 56)], [ell(17, 29, 2, 2)], [ell(65, 29, 2, 2)], [ell(17, 75, 2, 2)], [ell(65, 75, 2, 2)], [rect(40, 42, 16, 16), 1], [rect(96, 30, 16, 12)], [rect(96, 46, 16, 12)], [rect(98, 62, 14, 14)], ['M20 27 L84 27', 0, 'pins']]; },
-    a: function () { return [[rect(26, 24, 66, 56)], [ell(31, 29, 2, 2)], [ell(87, 29, 2, 2)], [ell(31, 75, 2, 2)], [ell(87, 75, 2, 2)], [rect(48, 44, 16, 16), 1], [rect(84, 48, 18, 13)], ['M34 27 L84 27', 0, 'pins']]; },
-    z: function () { return [[rect(14, 36, 92, 30)], [ell(19, 41, 2, 2)], [ell(101, 41, 2, 2)], [ell(19, 61, 2, 2)], [ell(101, 61, 2, 2)], [rect(50, 45, 14, 14), 1], [rect(30, 63, 9, 5)], [rect(74, 63, 9, 5)], ['M26 39 L94 39', 0, 'pins']]; },
-    brick: function () { return [['M24 40 Q24 34 30 34 L90 34 Q96 34 96 40 L96 70 Q96 76 90 76 L30 76 Q24 76 24 70 Z'], ['M34 48 L70 48 M34 56 L60 56'], ['M96 55 C112 55 106 28 116 24', 1]]; },
-    panel: function () { var s = [['M14 66 L30 20 L108 20 L98 66 Z']]; for (var i = 1; i < 4; i++) s.push(['M' + lerp(30, 108, i / 4).toFixed(1) + ' 20 L' + lerp(14, 98, i / 4).toFixed(1) + ' 66']); for (var j = 1; j < 3; j++) s.push(['M' + lerp(30, 14, j / 3).toFixed(1) + ' ' + lerp(20, 66, j / 3).toFixed(1) + ' L' + lerp(108, 98, j / 3).toFixed(1) + ' ' + lerp(20, 66, j / 3).toFixed(1)]); s.push(['M40 66 L36 84 M84 66 L88 84'], ['M60 4 l0 8 M48 8 l4 6 M72 8 l-4 6', 1]); return s; },
-    bat: function () { return [[rect(22, 30, 76, 50)], [rect(32, 24, 10, 6)], [rect(78, 24, 10, 6)], ['M33 44 h8 M37 40 v8', 1], ['M79 44 h8'], ['M32 62 L88 62']]; }
-  };
   var SKETCH = { basket: one, rope: two, web: three };
 
   var seed = 7;
@@ -148,18 +135,17 @@
   function sketch(host) { var k = host.dataset.sk, f = SKETCH[k]; if (!f) return; paint(host, f(), '0 0 200 150'); if (k === 'web') spinner(host); }
 
   /* ───────── the plates ───────── */
-  var PLATES = {
-    printers: [['TM-T88V', 'Epson · 80 mm', 't88', 'printer-top.jpg', 'TESTED'], ['TM-T88IV', 'Epson · 80 mm', 't88'], ['TM-T20', 'Epson · 80 mm', 't20'], ['TM-T70', 'Epson · 80 mm', 't70'], ['SRP-350', 'Bixolon · 80 mm', 't20'], ['TM-P20', 'Epson · 58 mm', 'p'], ['MTP-2', '58 mm', 'p'], ['PT-210', '58 mm', 'p']],
-    pi: [['Pi 3 A+', '2018', 'a'], ['Pi 3 B+', '2018', 'b'], ['Pi 3 B', '2016', 'b'], ['Zero 2 W', '2021', 'z']],
-    power: [['PS-180', 'Epson · 24 V', 'brick'], ['Solar', '100 W · 12 V', 'panel'], ['LiFePO4', '12.8 V · 50 Ah', 'bat']]
-  };
+  /* the plates: the parts the ghost's bench joins (spec/parts, as parts.js), one list for both, each with its own drawing */
+  var PARTS = window.PARTS || [], PART = {}; PARTS.forEach(function (p) { PART[p.id] = p; });
+  var TABS = { printers: ['printer'], pi: ['pi'], power: ['power', 'solar', 'battery', 'charger', 'converter'] }, PLATES = {};
+  Object.keys(TABS).forEach(function (t) { PLATES[t] = PARTS.filter(function (p) { return TABS[t].indexOf(p.kind) >= 0; }); });
   var HOVER = { printers: 'USB, ESC/POS', pi: 'Raspberry Pi', power: 'From the parts list' };
   function plates(tab) { var box = $('#plates'); box.innerHTML = ''; box.scrollLeft = 0;
     $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
-    PLATES[tab].forEach(function (p, i) { var f = D.createElement('figure'); f.className = 'plate' + (took(tab, p[0]) ? ' took' : ''); f.title = HOVER[tab]; f.dataset.take = tab; f.dataset.pn = p[0]; if (GHOST) { f.tabIndex = 0; f.setAttribute('role', 'button'); f.setAttribute('aria-pressed', String(took(tab, p[0]))); } var pic = D.createElement('div'); pic.className = 'pic'; f.appendChild(pic);
-      if (p[3]) { var im = D.createElement('img'); im.src = p[3]; im.alt = p[0]; im.loading = 'lazy'; pic.appendChild(im); } else { seed = 11 + i * 5; paint(pic, KIT[p[2]](), '0 0 120 90'); }
-      var c = D.createElement('figcaption'); c.innerHTML = '<span class="n"></span><span class="m mono"></span>'; c.firstChild.textContent = p[0]; c.lastChild.textContent = p[1]; f.appendChild(c);
-      if (p[4]) { var t = D.createElement('span'); t.className = 't mono'; t.textContent = p[4]; f.appendChild(t); } box.appendChild(f); }); }
+    PLATES[tab].forEach(function (p, i) { var f = D.createElement('figure'); f.className = 'plate' + (took(tab, p.id) ? ' took' : ''); f.title = p.about || HOVER[tab]; f.dataset.take = tab; f.dataset.pn = p.id; if (GHOST) { f.tabIndex = 0; f.setAttribute('role', 'button'); f.setAttribute('aria-pressed', String(took(tab, p.id))); } var pic = D.createElement('div'); pic.className = 'pic'; f.appendChild(pic);
+      if (p.photo) { var im = D.createElement('img'); im.src = p.photo; im.alt = p.name; im.loading = 'lazy'; pic.appendChild(im); } else { seed = 11 + i * 5; paint(pic, p.draw || [], '0 0 120 90'); }
+      var c = D.createElement('figcaption'); c.innerHTML = '<span class="n"></span><span class="m mono"></span>'; c.firstChild.textContent = p.name; c.lastChild.textContent = p.sub || ''; f.appendChild(c);
+      if (p.tested) { var t = D.createElement('span'); t.className = 't mono'; t.textContent = 'TESTED'; f.appendChild(t); } box.appendChild(f); }); }
   $$('.tabs [data-tab]').forEach(function (b) { b.addEventListener('click', function () { plates(b.dataset.tab); }); });
 
   /* ───────── the files: everything for a complete build ───────── */
@@ -214,14 +200,17 @@
   var gs = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private */ } } };
   var gq = /[?&]ghost=([01])/.exec(q); if (gq) gs.set('da.ghost.on', gq[1] === '1');
   var GHOST = !!gs.get('da.ghost.on', false), ISL = null, ISL_AT = 0, GB = gs.get('da.ghost.build', null) || {};
+  var idOf = function (n) { if (!n || PART[n]) return n || null; var m = PARTS.filter(function (p) { return String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : null; };
+  GB = { printers: idOf(GB.printers), pi: idOf(GB.pi), power: (Array.isArray(GB.power) ? GB.power : []).map(idOf).filter(Boolean) };
   var GW = { hardware: 'Pick the parts. Nothing to buy.', software: 'Flash a ghost SD. Nothing to download.', stories: 'Build cards for your ghost island.' };
   function took(tab, n) { var v = GB[tab]; return Array.isArray(v) ? v.indexOf(n) >= 0 : v === n; }
   function key() { var k = gs.get('da.hm.key', ''); return /^[A-Za-z0-9_-]{16,64}$/.test(k) ? k : ''; }
   var top = function (u) { try { (window.top || window).location.href = u; } catch (e) { location.href = u; } };
   function tray() { var t = $('#tray'); if (!t) return; t.hidden = !GHOST;
-    t.innerHTML = [['printers', 'PRINTER'], ['pi', 'PI'], ['power', 'POWER']].map(function (x) { var v = GB[x[0]], s = Array.isArray(v) ? v.join(' + ') : v || '';
+    var nm = function (v) { return (Array.isArray(v) ? v : v ? [v] : []).map(function (id) { return PART[id] ? PART[id].name : id; }).join(' + '); };
+    t.innerHTML = [['printers', 'PRINTER'], ['pi', 'PI'], ['power', 'POWER']].map(function (x) { var s = nm(GB[x[0]]);
       return '<span class="' + (s ? 'on' : '') + '">' + x[1] + '<b></b></span>'; }).join('');
-    $$('span b', t).forEach(function (b, i) { var v = GB[['printers', 'pi', 'power'][i]]; b.textContent = Array.isArray(v) ? v.join(' + ') : v || '—'; }); }
+    $$('span b', t).forEach(function (b, i) { var v = GB[['printers', 'pi', 'power'][i]]; b.textContent = nm(v) || '—'; }); }
   /* the ghost's key, said: none (a name and START), a ghost (its name and OPEN), or a real island's (a TEST ghost is a later stage) */
   function gkey() { var k = key(), boxes = $$('[data-gkey]');
     var say = function (h) { boxes.forEach(function (b) { b.innerHTML = h; }); };
@@ -239,14 +228,14 @@
   $('#gsw').addEventListener('click', function () { GHOST = !GHOST; gs.set('da.ghost.on', GHOST); ghostDraw(); });
   D.addEventListener('click', function (e) {
     var p = GHOST && e.target.closest('.plate[data-take]'); if (p) { var t = p.dataset.take, n = p.dataset.pn;
-      if (t === 'power') { var a = Array.isArray(GB.power) ? GB.power.slice() : [], i = a.indexOf(n); if (i >= 0) a.splice(i, 1); else a.push(n); GB.power = a.slice(0, 3); }
+      if (t === 'power') { var a = Array.isArray(GB.power) ? GB.power.slice() : [], i = a.indexOf(n); if (i >= 0) a.splice(i, 1); else a.push(n); GB.power = a.slice(0, 6); }
       else GB[t] = GB[t] === n ? null : n;
       gs.set('da.ghost.build', GB); p.classList.toggle('took', took(t, n)); p.setAttribute('aria-pressed', String(took(t, n))); tray(); return; }
     if (e.target.closest('[data-gup]')) { scrollTo({ top: 0, behavior: 'smooth' }); var i0 = $('[data-gkey] input'); if (i0) i0.focus({ preventScroll: true }); return; }
     if (e.target.closest('[data-gopen]')) { top('/twin#bench'); return; }
     var st = e.target.closest('[data-gstart]'); if (st) { var box = st.closest('[data-gkey]'), nm = ($('input', box).value || '').trim(), sy = $('[data-gsay]', box);
       st.disabled = true; sy.textContent = '· · ·';
-      fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: /58/.test(GB.printers ? (PLATES.printers.filter(function (x) { return x[0] === GB.printers; })[0] || [])[1] || '' : '') ? '58' : '80' }) })
+      fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: PART[GB.printers] && PART[GB.printers].paper === 58 ? '58' : '80' }) })
         .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
         .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); top('/twin#bench'); return; }
           sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; st.disabled = false; },

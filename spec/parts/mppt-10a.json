@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "mppt-10a",
   "name": "Charger",
+  "sub": "MPPT · 10 A",
   "kind": "charger",
   "about": "10 A MPPT solar charge controller: the panel in, the battery kept, 12 V out to the load.",
   "watts": {

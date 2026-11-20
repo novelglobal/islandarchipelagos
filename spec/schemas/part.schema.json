@@ -8,6 +8,7 @@
     "part",
     "id",
     "name",
+    "sub",
     "kind",
     "draw",
     "licence"
@@ -26,6 +27,15 @@
     "name": {
       "type": "string",
       "maxLength": 16
+    },
+    "sub": {
+      "type": "string",
+      "maxLength": 24,
+      "description": "One short line under its name: maker and size, or what it does"
+    },
+    "tested": {
+      "type": "boolean",
+      "description": "Printed with every slip on a real island"
     },
     "kind": {
       "enum": [

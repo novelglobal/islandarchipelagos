@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "solar-100w",
   "name": "Solar",
+  "sub": "100 W · 12 V",
   "kind": "solar",
   "about": "100 W, 12 V solar panel, MC4 leads. 4.5 hours of full sun a day is a fair year-round figure.",
   "source": "sun",

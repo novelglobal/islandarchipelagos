@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "tm-t70",
   "name": "TM-T70",
+  "sub": "Epson · 80 mm",
   "kind": "printer",
   "about": "Epson TM-T70, 80 mm, USB. Paper in from the front.",
   "paper": 80,

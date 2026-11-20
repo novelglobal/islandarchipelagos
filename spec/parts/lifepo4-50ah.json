@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "lifepo4-50ah",
   "name": "LiFePO4",
+  "sub": "12.8 V · 50 Ah",
   "kind": "battery",
   "about": "12.8 V, 50 Ah lithium iron phosphate: 640 Wh, about 576 Wh to use.",
   "source": "store",

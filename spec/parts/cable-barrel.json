@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "cable-barrel",
   "name": "Barrel",
+  "sub": "screw · 5.5 mm",
   "kind": "cable",
   "about": "Screw terminals to a 5.5 mm barrel plug: 12 V for a 58 mm printer.",
   "ends": [

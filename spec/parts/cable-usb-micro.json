@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "cable-usb-micro",
   "name": "USB to micro",
+  "sub": "USB-A · micro",
   "kind": "cable",
   "about": "USB-A to micro-USB: power for a Pi, or a T-Beam on the Pi.",
   "ends": [

@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "buck-5v",
   "name": "Buck",
+  "sub": "12 → 5 V · 3 A",
   "kind": "converter",
   "about": "12 V to 5 V USB buck converter, 3 A: power for the Pi.",
   "watts": {

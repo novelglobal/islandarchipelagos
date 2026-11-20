@@ -3,6 +3,7 @@
   "part": "kit",
   "id": "cable-wire",
   "name": "Wire",
+  "sub": "2.5 mm² · fused",
   "kind": "cable",
   "about": "2.5 mm² wire with an inline blade fuse, screw terminals both ends.",
   "ends": [
