@@ -1240,12 +1240,25 @@ async function importPlaces(db, req) {
 }
 async function resetSite(db, env, req) {
   const b = await body(req), t = now(), ops = [];
-  /* a fresh start, for good: every maker, poster (BOARD 00 aside), word of talk, tape, print and first sighting gone, their photographs
-     and recordings with them; the epoch moved, so every phone lets go of what it kept on its next visit. 888 is no maker, so it stays */
-  if (b.fresh) { if (env.MEDIA) { const { results } = await db.prepare("SELECT id FROM stories WHERE kind != 'example'").all(); for (const r of results) for (const k of [mediaKey(r.id), photoKey(r.id), `art/${r.id}`]) await env.MEDIA.delete(k).catch(() => {});
-      const tp = await db.prepare('SELECT id FROM tapes').all(); for (const r of tp.results) await env.MEDIA.delete(tapeKey(r.id)).catch(() => {}); }
-    ops.push(db.prepare('DELETE FROM jobs'), db.prepare("DELETE FROM stories WHERE kind != 'example'"), db.prepare('DELETE FROM makers'), db.prepare('DELETE FROM talk'), db.prepare('DELETE FROM tapes'), db.prepare('DELETE FROM hits'), db.prepare('DELETE FROM species'),
-      db.prepare("INSERT INTO settings (k, v) VALUES ('epoch', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind('e' + t.toString(36))); }
+  /* a fresh start, for good: every maker and code, poster (BOARD 00 aside), word of talk, tape, print, pass, joined island, like and play
+     count gone, their photographs and recordings with them; each pop-up's gang let go; the epoch moved, so every phone lets go
+     of what it kept on its next visit. Kept: the printers and their tokens, the pop-ups and their keys, the islands' places, the cards and
+     their pictures, posts, places, the species met (the radio's sightings), the radio's songs and the stickers (both built in), films, the
+     words and settings, the counts and the password. 888 is no maker, so it stays */
+  if (b.fresh) { const done = { files: 0 };
+    if (env.MEDIA) { const keys = [], pre = PREVIEW ? 'preview/' : '';
+      /* each print's files by its own name (art/ is shared with the preview, so never swept by prefix); then whatever is left under this
+         site's own full/, photo/ and tape/, so nothing orphaned stays. Deleted a thousand at a time: one request each, well inside the limit */
+      const { results } = await db.prepare("SELECT id FROM stories WHERE kind != 'example'").all(); for (const r of results) keys.push(mediaKey(r.id), photoKey(r.id), `art/${r.id}`);
+      for (const p of ['full/', 'photo/', 'tape/']) { let cur; do { const l = await env.MEDIA.list({ prefix: pre + p, cursor: cur, limit: 1000 }); for (const o of l.objects) keys.push(o.key); cur = l.truncated ? l.cursor : null; } while (cur && keys.length < 200000); }
+      const all = [...new Set(keys)]; for (let i = 0; i < all.length; i += 1000) { try { await env.MEDIA.delete(all.slice(i, i + 1000)); } catch (e) { /* gone already */ } } done.files = all.length; }
+    await Promise.all([stampTable(db), giftTable(db), linkTable(db), playTable(db), islePlayTable(db), passTable(db), passNTable(db), askTable(db)]);
+    ops.push(db.prepare('DELETE FROM jobs'), db.prepare("DELETE FROM stories WHERE kind != 'example'"), db.prepare('DELETE FROM makers'), db.prepare('DELETE FROM talk'), db.prepare('DELETE FROM tapes'), db.prepare('DELETE FROM hits'),
+      db.prepare('DELETE FROM stamps'), db.prepare('DELETE FROM gifts'), db.prepare('DELETE FROM links'), db.prepare('DELETE FROM play_likes'), db.prepare('DELETE FROM play_stats'), db.prepare('DELETE FROM isle_plays'), db.prepare('DELETE FROM passes'), db.prepare('DELETE FROM passn'), db.prepare('DELETE FROM asks'),
+      db.prepare("INSERT INTO settings (k, v) VALUES ('epoch', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind('e' + t.toString(36)));
+    const st = await settingsOf(db); let pd = null; try { pd = st.pops ? JSON.parse(st.pops) : null; } catch (e) { pd = null; }
+    if (pd && Array.isArray(pd.pops) && pd.pops.some(p => p && p.mods && p.mods.length)) { pd.pops.forEach(p => { if (p) delete p.mods; }); ops.push(db.prepare("UPDATE settings SET v = ? WHERE k = 'pops'").bind(JSON.stringify(pd))); }
+    b.done = done; }
   if (b.stories) ops.push(db.prepare("DELETE FROM jobs WHERE status IN ('held', 'queued')"), db.prepare("UPDATE stories SET status = 'deleted', decided = ? WHERE status != 'deleted' AND kind != 'example'").bind(t));
   if (b.example) ops.push(db.prepare("UPDATE stories SET status = 'deleted', decided = ? WHERE kind = 'example'").bind(t));
   if (b.places) ops.push(db.prepare("UPDATE places SET status = 'deleted', decided = ? WHERE status != 'deleted'").bind(t));
@@ -1254,7 +1267,7 @@ async function resetSite(db, env, req) {
   if (b.settings) ops.push(db.prepare("DELETE FROM settings WHERE k IN ('lifeLock', 'exampleEdit', 'phreak', 'sendLive', 'gates', 'fx', 'start', 'notice', 'country')"));
   if (b.traffic) ops.push(db.prepare('DELETE FROM traffic'));
   if (!ops.length) return fail(400, 'nothing');
-  await db.batch(ops); return json({ ok: true });
+  await db.batch(ops); return json({ ok: true, ...(b.done ? { files: b.done.files } : {}) });
 }
 /* traffic: a day's count of each kind of thing, added after the answer has gone */
 const BEATS = ['open-aura', 'open-studio', 'open-portfolio', 'begin', 'print', 'wall', 'song', 'device'];

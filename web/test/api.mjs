@@ -595,6 +595,15 @@ try {
       JSON.stringify([cc.json, rc.json, no.status, dg.json, junk.status])); }
   let last = 0; for (let i = 0; i < 21; i++) last = (await call('/api/stories', { method: 'POST', body: story('DA-2' + 'ABCDEFGHJKMNPQRSTVWXY'[i] + 'QR') })).status;
   check('a visitor sending too many in ten minutes is asked to wait', last === 429, String(last));
+  /* last of all, the fresh start: every maker, code, print, pass, like and gang gone, phones told to let go; printers, pop-ups, islands, posts, places and settings stay */
+  { const ex0 = (await call('/api/admin/export', { key: KEY })).json, ep0 = (await call('/api/settings')).json.epoch, pr0 = (ex0.printers || []).filter(p => p.paired).length, set0 = Object.keys(ex0.settings || {}).length;
+    const lk0 = ((await call('/api/admin/links', { key: KEY })).json.links || []).length;
+    const fr = await call('/api/admin/reset', { method: 'POST', key: KEY, body: { fresh: true } }), ex1 = (await call('/api/admin/export', { key: KEY })).json, ep1 = (await call('/api/settings')).json.epoch;
+    const lk1 = ((await call('/api/admin/links', { key: KEY })).json.links || []).length, pl1 = (await call('/api/plays?o=fresh&n=9&off=0')).json, is1 = (await call('/api/isles')).json;
+    const left = { makers: (ex1.makers || []).length, talk: (ex1.talk || []).length, stories: (ex1.stories || []).filter(x => x.kind !== 'example').length, links: lk1, plays: (pl1.plays || []).filter(x => !x.first).length };
+    check('a fresh start wipes every maker, code, print, talk, link and play, and tells every phone to let go; the printers, islands, species met and settings stay',
+      fr.status === 200 && (ex0.makers || []).length > 0 && (ex0.stories || []).length > 0 && Object.values(left).every(n => n === 0) && (ex1.species || []).length === (ex0.species || []).length && ep1 && ep1 !== ep0 && (ex1.printers || []).filter(p => p.paired).length === pr0 && Object.keys(ex1.settings || {}).length >= set0 && Array.isArray(is1.isles) && is1.isles.length === pr0,
+      JSON.stringify({ status: fr.status, body: fr.json, before: { makers: (ex0.makers || []).length, stories: (ex0.stories || []).length, links: lk0 }, left, ep0, ep1 })); }
 } catch (e) { results.push(`FAIL  api: ${e.stack || e.message}`); }
 await server.close();
 console.log(results.join('\n'));

@@ -440,6 +440,23 @@ if (run('portfolio')) try {
   await page.click('#tabs [data-tab="site"]'); await sleep(900); await page.click('button:has-text("SEE THE STRIP")'); await sleep(400);
   const cal = await page.evaluate(() => ({ strip: (document.querySelector('section.ed .big canvas') || {}).width || 0, styles: [...document.querySelectorAll('section.ed h3')].map(h => h.textContent).includes('STYLES · MOD PACKS'), house: /HOUSE · PRESS · QUIET · LOUD/.test(document.body.innerText) }));
   check('the approval page draws the calibration strip at the printer\'s width and lists the house styles beside the mod packs', cal.strip === 512 && cal.styles && cal.house, JSON.stringify(cal));
+  /* the photo test: the test photograph laid five ways on one slip, each way told apart, all of it pure black and white at the printer's width */
+  const t0 = Date.now(); await page.click('button:has-text("SEE ALL 5")'); await page.waitForFunction(() => /DOT FOR DOT/.test(document.body.innerText), null, { timeout: 30000 }); const ms = Date.now() - t0;
+  const pt = await page.evaluate(() => { const cs = [...document.querySelectorAll('section.ed .big canvas')], c = cs[cs.length - 1], d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let grey = 0; for (let i = 0; i < d.length; i += 4) if (d[i] !== 0 && d[i] !== 255) grey++;
+    return { w: c.width, h: c.height, grey, opts: [...document.querySelectorAll('select option')].filter(o => /PHOTO TEST/.test(o.textContent)).length }; });
+  const pc = await page.evaluate(() => { const cs = [...document.querySelectorAll('section.ed .big canvas')]; return cs[cs.length - 1].toDataURL('image/png'); }); fs.writeFileSync(path.join(SHOTS, 'photo-test-slip.png'), Buffer.from(pc.split(',')[1], 'base64'));
+  check('the photo test lays the test photograph five ways on one slip at the printer\'s width, pure black and white, and the five can be chosen for the site', pt.w === 512 && pt.h > 1500 && pt.h < 4000 && pt.grey === 0 && pt.opts === 5, JSON.stringify({ ...pt, ms }));
+  /* TUNE: the saved settings reach the paper. The owner's tweak beats the set and the style, a way from the photo test brings its own
+     tones, each step either side really changes the dots, and each heat band tells the printer its own darkness */
+  await page.click('button:has-text("SEE TUNE")'); await page.waitForFunction(() => { let e = [...document.querySelectorAll('section.ed h3')].find(h => h.textContent === 'TUNE'); while (e && !(e.classList && e.classList.contains('big'))) e = e.nextElementSibling; return e && e.querySelector('canvas'); }, null, { timeout: 30000 });
+  const tu = await page.evaluate(async () => { const T = window.THERMAL, im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = '/cards/found-dog.jpg'; });
+    const blacks = c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n / (d.length / 4); };
+    const Q = T.settle({ preset: 'crisp' }), lo = blacks(T.photo(im, 160, { ...Q, gamma: 0.55 }, 200)), hi = blacks(T.photo(im, 160, { ...Q, gamma: 0.95 }, 200));
+    const t = T.tune(im, { dots: 512, q: Q, heat: 2 }), raw = atob(T.raster(t.c, 2, t.steps)); let dens = 0; for (let i = 0; i < raw.length - 5; i++) if (raw.charCodeAt(i) === 0x1D && raw.charCodeAt(i + 1) === 0x28 && raw.charCodeAt(i + 2) === 0x4B && raw.charCodeAt(i + 5) === 0x31) dens++;
+    let e = [...document.querySelectorAll('section.ed h3')].find(h => h.textContent === 'TUNE'); while (e && !(e.classList && e.classList.contains('big'))) e = e.nextElementSibling; const c = e.querySelector('canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let grey = 0; for (let i = 0; i < d.length; i += 4) if (d[i] !== 0 && d[i] !== 255) grey++;
+    return { own: T.settle({ preset: 'soft', gamma: 1.1 }, { gamma: 0.7 }).gamma, way: T.settle({ dither: 'fs' }).gamma, lo: +lo.toFixed(3), hi: +hi.toFixed(3), dens, w: t.c.width, h: t.c.height, grey }; });
+  check('TUNE proves the saved settings print: the owner\'s tweak wins, a test way brings its tones, a step changes the dots, each heat band is sent', tu.own === 1.1 && tu.way === 0.78 && tu.hi - tu.lo > 0.04 && tu.dens >= 4 && tu.w === 512 && tu.h > 1500 && tu.grey === 0, JSON.stringify(tu));
+  const tc = await page.evaluate(() => { let e = [...document.querySelectorAll('section.ed h3')].find(h => h.textContent === 'TUNE'); while (e && !(e.classList && e.classList.contains('big'))) e = e.nextElementSibling; return e.querySelector('canvas').toDataURL('image/png'); }); fs.writeFileSync(path.join(SHOTS, 'tune-slip.png'), Buffer.from(tc.split(',')[1], 'base64'));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section portfolio: ${e.message.split('\n')[0]}`); }
 
@@ -2175,8 +2192,8 @@ for (const HD of [false, true]) if (run('home')) try {
       const sub = q('.mn-sec[data-s="code"] .mn-sub'); sub.open = true; const f = sub.querySelector('form'); f.c.value = 'K7Q'; f.a.value = '3'; f.requestSubmit(); await z(1200);
       out.said = (q('[data-say="open"]') || {}).textContent; out.kept = JSON.parse(localStorage.getItem('da.hm.secs') || '{}'); out.key = !!q('.mn-sec[data-s="isles"] .mn-sub form'); return out; });
     await page.screenshot({ path: path.join(SHOTS, 'home-mine-open.png') });
-    check(`home (${tag}): HOME folds into CODE, PRINT, ENGINE and ISLANDS, CODE open first; no animal shows as none; a code opened from another phone without its animal is refused; the parts left open are kept`,
-      ms.secs.join() === 'CODE,PRINT,ENGINE,ISLANDS' && ms.open.join() === 'code' && ms.an === '—' && ms.locked && ms.said === 'NO' && ms.kept.print === 1 && ms.kept.isles === 1 && ms.key, JSON.stringify(ms)); }
+    check(`home (${tag}): HOME folds into CODE, PRINT, LAYOUT and ISLANDS, CODE open first; no animal shows as none; a code opened from another phone without its animal is refused; the parts left open are kept`,
+      ms.secs.join() === 'CODE,PRINT,LAYOUT,ISLANDS' && ms.open.join() === 'code' && ms.an === '—' && ms.locked && ms.said === 'NO' && ms.kept.print === 1 && ms.kept.isles === 1 && ms.key, JSON.stringify(ms)); }
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }

@@ -1785,7 +1785,7 @@
   col.addEventListener('pointermove', function (e) { if (!e.target.closest || !e.target.closest('.sk-wish')) return; ORB.v = Math.max(-4, Math.min(4, ORB.v + (e.movementX || 0) * 0.012 - (e.movementY || 0) * 0.006)); }, { passive: true });
   $('#hm-snork').addEventListener('click', function (e) { e.stopPropagation(); reef(false); });
   /* your home, in four parts each folded on its own: CODE (the code, its animal, where it has been, and opening it on another phone),
-     PRINT (today's pass and what was printed), ENGINE (how this home is laid out), ISLANDS (your home island, and the islands you keep or
+     PRINT (today's pass and what was printed), LAYOUT (how this home is laid out), ISLANDS (your home island, and the islands you keep or
      are in the gang of). The words: HOME ISLAND (the one you set, else the first you joined), JOINED (an island where you kept a pass),
      GANG (a code a keeper lets help run their island), KEEPER (whoever owns the printer). ADMIN is only the site's approval page */
   function mineIn(body) { body.classList.add('mn');
@@ -1827,7 +1827,7 @@
     var draw = function () { load();
       var isN = (ikey ? 1 : 0) + mods.length;
       body.innerHTML = '<div class="mn-secs">' + sec('code', 'CODE', who ? esc(who) : '—', codePart()) + sec('print', 'PRINT', ps ? esc(ps.code) : '—', printPart()) +
-        (who ? sec('admin', 'ENGINE', mainPer() + ' · ' + perPage(), adminPart()) : '') + sec('isles', 'ISLANDS', esc(String(homeIsle().name || '').toUpperCase()) + (isN ? ' · ' + isN : ''), islePart()) + '</div>';
+        (who ? sec('admin', 'LAYOUT', mainPer() + ' · ' + perPage(), adminPart()) : '') + sec('isles', 'ISLANDS', esc(String(homeIsle().name || '').toUpperCase()) + (isN ? ' · ' + isN : ''), islePart()) + '</div>';
       if (ISLE) { var kb = $('.mn-keeper', body); if (ISLE === 'own') keeperIn(kb, ikey); else keeperIn(kb, who + '.' + hk, ISLE); }
       if (SEC.print && who && PRINTS == null && window.NG && NG.mine) NG.mine().then(function (l) { PRINTS = l || []; if (body.isConnected) draw(); }, function () { PRINTS = []; }); };
     body.addEventListener('toggle', function (e) { var d = e.target; if (!d.classList || !d.classList.contains('mn-sec')) return; SEC[d.dataset.s] = d.open ? 1 : 0; store.set('da.hm.secs', SEC); if (d.open && d.dataset.s === 'print' && PRINTS == null) draw(); }, true);

@@ -2229,18 +2229,11 @@ function boothPic(file) {
 /* every photograph that goes on paper is made ready for the dots the same way: stretched to its own darkest and lightest (a flat
    one is left as it is), lifted for the spread of a hot dot, sharpened a little, then dithered (CanvasDither's Atkinson) */
 /* ───────── print quality: five ways a print can be made, each a set of tweaks the approval page can change one by one ─────────
-   clip: how much of the darkest and lightest is let go when the tones are stretched (%); gamma: under 1 darker mid-tones (a thermal
-   head prints light, so a little under 1 holds them); contrast: an S-curve on top (0 to 1); sharpen: the edges lifted (0 to 2);
+   clip: how much of the darkest and lightest is let go when the tones are stretched (%); gamma: the mid-tones, higher darker; contrast: an S-curve on top (0 to 1); sharpen: the edges lifted (0 to 2);
    dither: atkinson (clean, bright), floyd (fuller, holds the darks), bayer (an even screen), none (black or white at half);
    lineCut: words and lines below this lightness print black (higher: bolder, fewer faint greys lost); bolden: dots added round
    words and lines (0 to 2); minText: the smallest words on a slip, in dots at 512 wide */
-var PQ_SETS = {
-  soft: { clip: 1, gamma: 0.8, contrast: 0, sharpen: 0.7, dither: 'atkinson', lineCut: 200, bolden: 0, minText: 14, heat: 0 },
-  crisp: { clip: 2, gamma: 0.72, contrast: 0.25, sharpen: 1.1, dither: 'auto', lineCut: 215, bolden: 0, minText: 18, heat: 2 },
-  bold: { clip: 3, gamma: 0.62, contrast: 0.4, sharpen: 1.3, dither: 'floyd', lineCut: 225, bolden: 1, minText: 20, heat: 4 },
-  screen: { clip: 2, gamma: 0.7, contrast: 0.3, sharpen: 0.9, dither: 'bayer', lineCut: 215, bolden: 0, minText: 18, heat: 2 },
-  graphic: { clip: 4, gamma: 0.75, contrast: 0.7, sharpen: 1.6, dither: 'none', lineCut: 230, bolden: 1, minText: 20, heat: 3 }
-};
+var PQ_SETS = window.THERMAL.SETS;
 var PQ_IN = null; siteOf().then(function (s) { try { PQ_IN = s && s.printq ? JSON.parse(s.printq) : null; } catch (e) { PQ_IN = null; } });
 /* ───────── styles: the house's own, those curated on the approval page from artists' packs, and one's own kept on this phone ─────────
    (thermal.js holds what a style is and checks every one) */
@@ -2257,23 +2250,11 @@ function styleDrop(id) { store.set('da.styles.mine', (store.get('da.styles.mine'
 function printStyle(st) { PSTY = st || null; }
 function styleNow() { return PSTY || styleBy(styleOn()); }
 /* the set, its tweaks from the approval page, the curve measured there (which stands for the set's mid-tones), then the style's own photograph */
-function pq() { var o = PQ_IN || {}, b = PQ_SETS[o.preset] || PQ_SETS.crisp, out = {}, k; for (k in b) out[k] = o[k] != null && o[k] !== '' ? o[k] : b[k];
-  out.cal = o.cal ? TH.cal(o.cal) : null; if (out.cal && o.gamma == null) out.gamma = 1;
-  var st = styleNow(), ph = (st && st.photo) || {}; for (k in ph) out[k] = ph[k]; out.size = st ? st.size : 1.3; return out; }
+function pq() { var st = styleNow(), out = TH.settle(PQ_IN, st && st.photo); out.size = st ? st.size : 1.3; return out; }
 var dots = function (L, W, H, how) { return TH.dots(L, W, H, how); };
 function printReady(x, W, H, D) {
-  var Q = pq(), img = x.getImageData(0, 0, W, H), d = img.data, n = W * H, L = new Float32Array(n), hist = new Uint32Array(256), i, l, cut = n * Math.max(0, Math.min(10, +Q.clip || 0)) / 100;
-  for (l = 0, i = 0; l < n; l++, i += 4) { L[l] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114; hist[L[l] | 0]++; }
-  var lo = 0, hi = 255, acc = 0; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc > cut) { lo = i; break; } } acc = 0; for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc > cut) { hi = i; break; } }
-  if (hi - lo < 40) { lo = 0; hi = 255; }
-  var span = hi - lo, B2 = new Float32Array(n), gm = Math.max(0.3, Math.min(1.6, +Q.gamma || 0.8)), ct = Math.max(0, Math.min(1, +Q.contrast || 0)), sh = Math.max(0, Math.min(2.5, +Q.sharpen || 0));
-  for (l = 0; l < n; l++) { var t = Math.pow(Math.max(0, Math.min(1, (L[l] - lo) / span)), gm); if (ct) t = t + ct * (t - 0.5) * (1 - Math.abs(2 * t - 1)) * 2; L[l] = 255 * Math.max(0, Math.min(1, t)); }
-  if (sh) { for (var y = 0; y < H; y++) for (var xx = 0; xx < W; xx++) { var s = 0, m = 0; for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var yy = y + dy, x2 = xx + dx; if (yy >= 0 && yy < H && x2 >= 0 && x2 < W) { s += L[yy * W + x2]; m++; } } B2[y * W + xx] = s / m; }
-    for (l = 0; l < n; l++) L[l] = L[l] + sh * (L[l] - B2[l]); }
-  for (l = 0; l < n; l++) L[l] = L[l] < 10 ? 0 : L[l] > 245 ? 255 : L[l];
-  /* the dots chosen for this picture (auto), then its tones through the curve measured on the printer: what is meant black prints solid */
-  var how = Q.dither === 'auto' ? TH.pick(L, W, H) : Q.dither, lut = Q.cal ? TH.curve(Q.cal) : null; printReady.how = how;
-  if (lut) for (l = 0; l < n; l++) L[l] = L[l] ? lut[L[l] | 0] : 0;
+  /* the tones made ready the one way the approval page's TUNE slip shows them (thermal.js), then the dots */
+  var Q = pq(), img = x.getImageData(0, 0, W, H), d = img.data, n = W * H, L = TH.luma(d, n), i, l, how = TH.tone(L, W, H, Q); printReady.how = how;
   /* CanvasDither's Atkinson when it is here and asked for; the others (and Atkinson without it) done here */
   if (how === 'atkinson' && D) { for (l = 0, i = 0; l < n; l++, i += 4) d[i] = d[i + 1] = d[i + 2] = L[l]; D.atkinson(img); x.putImageData(img, 0, 0); return; }
   dots(L, W, H, how); for (l = 0, i = 0; l < n; l++, i += 4) { d[i] = d[i + 1] = d[i + 2] = L[l]; d[i + 3] = 255; }
