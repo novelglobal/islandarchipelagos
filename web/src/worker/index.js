@@ -66,12 +66,12 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 20;
+const SCHEMA_V = 21;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
     const at = await db.prepare("SELECT v FROM settings WHERE k = '~schema'").first().catch(() => null);
-    if (!at || +at.v < SCHEMA_V) await upgrade(db);
+    if (!at || +at.v < SCHEMA_V) await upgrade(db, at ? +at.v || 0 : 0);
     /* every partner place has a print queue from the start; a printer joins it when its token is made on the approval page */
     if (PARTNERS.length) await db.batch(PARTNERS.map(p => db.prepare('INSERT OR IGNORE INTO printers (id, name, paper, created, links, two) VALUES (?, ?, ?, ?, ?, 1)').bind(p.id, p.n, p.paper, now(), '*')));
     /* a copy of the site from before the second island's new id may have put its old queue back: an unpaired one goes */
@@ -80,7 +80,7 @@ function ready(db) {
   })().catch(e => { readied.delete(db); throw e; }));
   return readied.get(db);
 }
-async function upgrade(db) {
+async function upgrade(db, was = 0) {
     await db.batch(SCHEMA.map(q => db.prepare(q)));
     /* live: shown online on the map, switched on the approval page (a column added after the first release) */
     try { await db.prepare('ALTER TABLE printers ADD COLUMN live INTEGER DEFAULT 0').run(); } catch (e) { /* already there */ }
@@ -169,6 +169,10 @@ async function upgrade(db) {
     for (const q of ['ALTER TABLE printers ADD COLUMN joins TEXT', 'ALTER TABLE printers ADD COLUMN ghost INTEGER DEFAULT 0']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 18. home: an island's own home (its main cards in order, which nines stand and which of their cards, and its label) */
     try { await db.prepare('ALTER TABLE printers ADD COLUMN home TEXT').run(); } catch (e) { /* already there */ }
+    /* version 21. GREY 16 ORDER 2 is every photograph's default (photo test 2, B): the saved print settings let go of their dots, their
+       grey order and the photograph tweaks made for dots, once; the set, words, speed and curve stay */
+    if (was && was < 21) { try { const r = await db.prepare("SELECT v FROM settings WHERE k = 'printq'").first(); const q = r && r.v ? JSON.parse(r.v) : null;
+      if (q && typeof q === 'object') { for (const k of ['dither', 'order', 'gamma', 'sharpen', 'local', 'contrast', 'clip']) delete q[k]; await db.prepare("UPDATE settings SET v = ? WHERE k = 'printq'").bind(JSON.stringify(q)).run(); } } catch (e) { /* none saved */ } }
     await db.prepare("INSERT INTO settings (k, v) VALUES ('~schema', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(SCHEMA_V)).run();
 }
 /* each printer's island number, given the first time it is paired, in that order: novel.global's own is 1, the islands 2 and up. It stays

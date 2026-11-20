@@ -165,7 +165,6 @@
   var PARTS = window.PARTS || [], PART = {}; PARTS.forEach(function (p) { PART[p.id] = p; });
   var BN = null, SEL = null, ADDK = '', bnTimer = 0, NS = 'http://www.w3.org/2000/svg';
   var GROUPS = [['PI', ['pi', 'sd']], ['PRINTER', ['printer']], ['POWER', ['power', 'solar', 'battery', 'charger', 'converter']], ['MORE', ['radio', 'screen']]];
-  var COL = { power: 0, solar: 0, battery: 0, charger: 0, converter: 0, pi: 1, sd: 1, printer: 2, radio: 2, screen: 2 };
   var PLUG = { 'usb-a': 'USB-A', 'usb-b': 'USB-B', 'micro-usb': 'micro-USB', 'micro-sd': 'microSD', dsi: 'DSI ribbon', 'power-din': 'round power plug', barrel: 'barrel', mc4: 'MC4', screw: 'screw terminal' };
   var STRAIGHT = ['micro-sd', 'dsi', 'power-din'], GIVE = { out: 1, host: 1, store: 1 }, TAKE = { 'in': 1, device: 1, store: 1 };
   var ROLE = { host: 'A host', device: 'A device', 'in': 'A power input', out: 'A power output', slot: 'A card slot', card: 'A card', store: 'A battery terminal' };
@@ -200,21 +199,47 @@
     res.on = on; res.J = J; return res; }
   function el(n, a, kids) { var e = D.createElementNS(NS, n); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
-  function benchDraw() { if (!BN) return; var svg = $('#bnv'), rc = window.rough ? rough.svg(svg) : null, P = power(), cols = [[], [], []], at = {}, cw = 100, ch = 122;
-    BN.p.forEach(function (x) { var p = PART[x[1]]; if (p) cols[COL[p.kind] == null ? 2 : COL[p.kind]].push(x); });
-    var Hh = Math.max(140, Math.max(cols[0].length, cols[1].length, cols[2].length) * ch + 30); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
+  /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
+     what it drives (the printer, the SD, the radio, the screen). Each row ordered under what it is joined to, so cables cross least.
+     A part takes at its top edge and gives at its bottom edge */
+  var ROWK = { power: 0, solar: 0, battery: 0, charger: 1, converter: 2, pi: 3, printer: 4, sd: 4, radio: 4, screen: 4 }, RH = 160, CW = 100;
+  var topSide = function (p, o) { return o.role === 'in' || o.role === 'device' || o.role === 'card' || (o.role === 'store' && !p.source); };
+  function layout() { var rows = {}, nb = {}, cx = {}, out = [], pos = {};
+    BN.j.forEach(function (j) { var a = j[0].split('.')[0], b = j[1].split('.')[0]; (nb[a] = nb[a] || []).push(b); (nb[b] = nb[b] || []).push(a); });
+    BN.p.forEach(function (x, i) { var p = PART[x[1]]; if (!p) return; var r = ROWK[p.kind] == null ? 4 : ROWK[p.kind]; (rows[r] = rows[r] || []).push([x, i]); });
+    Object.keys(rows).map(Number).sort(function (a, b) { return a - b; }).forEach(function (r) {
+      var row = rows[r].map(function (e) { var n = (nb[e[0][0]] || []).filter(function (id) { return cx[id] != null; }); return { x: e[0], k: n.length ? n.reduce(function (s, id) { return s + cx[id]; }, 0) / n.length : 1e3 + e[1] }; }).sort(function (a, b) { return a.k - b.k; });
+      /* each part sits under what feeds it, nudged apart so none overlap; a row that hangs from nothing spreads evenly */
+      for (var s = 0; s < row.length; s += 3) { var part = row.slice(s, s + 3), Y = out.length * RH + 18, xs = part.length === 1 ? [110] : part.length === 2 ? [55, 165] : [0, 110, 220];
+        if (part.some(function (e) { return e.k < 1e3; })) { xs = part.map(function (e, i) { return Math.max(0, Math.min(220, e.k < 1e3 ? e.k - CW / 2 : xs[i])); });
+          for (var i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + 110); for (i = xs.length - 1; i >= 0; i--) xs[i] = Math.min(xs[i], i === xs.length - 1 ? 220 : xs[i + 1] - 110); }
+        part.forEach(function (e, i) { pos[e.x[0]] = [xs[i], Y]; cx[e.x[0]] = xs[i] + CW / 2; }); out.push(part); } });
+    var ks = Object.keys(pos), lo = Math.min.apply(null, ks.map(function (k) { return pos[k][0]; })), hi = Math.max.apply(null, ks.map(function (k) { return pos[k][0]; })), dx = Math.round((220 - lo - hi) / 2);
+    if (ks.length && dx) ks.forEach(function (k) { pos[k][0] += dx; });
+    return { pos: pos, rows: out.length }; }
+  function benchDraw() { if (!BN) return; var svg = $('#bnv'), rc = window.rough ? rough.svg(svg) : null, P = power(), L = layout(), at = {}, cw = CW;
+    var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
     var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; });
-    cols.forEach(function (c, ci) { c.forEach(function (x, ri) { var p = PART[x[1]], X = ci * 110, Y = ri * ch + 4, g = el('g', { 'class': 'pt' + (p.watts && !p.source && !P.on[x[0]] ? ' off' : '') }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (p.watts && !p.source && !P.on[x[0]] ? ' · No power in' : '')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 89, rx: 6 })]);
-      var sk = el('g', { transform: 'translate(' + X + ' ' + Y + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: 7 + i + x[1].length, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); g.appendChild(sk);
-      var nm = el('text', { x: X + cw / 2, y: Y + 84, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
-      var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 14, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
-      var ps = p.ports || []; ps.forEach(function (o, k) { var px = X + cw * (k + 1) / (ps.length + 1), py = Y + 97, id = x[0] + '.' + o.id; at[id] = [px, py];
+    BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
+      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
+      var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: 7 + i + x[1].length, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); });
+      /* an SD being written fills from the bottom; being checked, a line runs down it */
+      if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
+      g.appendChild(sk);
+      var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
+      var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
+      var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
+      [[tops, Y, -1], [bots, Y + 104, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
-        var lb = el('text', { 'class': 'pl', x: px, y: py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); svg.appendChild(g); }); });
-    /* the cables behind the parts, hanging a little, as cables do */
-    BN.j.forEach(function (j, i) { var a = at[j[0]], b = at[j[1]], r = P.J[i]; if (!a || !b) return; var sag = 26 + Math.abs(a[0] - b[0]) * .15, d = 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + (a[1] + sag) + ' ' + b[0] + ' ' + (b[1] + sag) + ' ' + b[0] + ' ' + b[1];
-      var label = r.ok ? (r.cable ? r.cable.name : 'Straight in') : r.why; cg.appendChild(el('path', { d: d, 'class': 'cb' + (r.ok ? '' : ' bad') }));
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
+      svg.appendChild(g); });
+    /* the cables behind the parts, from what gives to what takes. Power that is there runs along its cable; power that is not stays grey */
+    BN.j.forEach(function (j, i) { var r = P.J[i], e = r.ok ? [r.give.iid + '.' + r.give.port.id, r.take.iid + '.' + r.take.port.id] : j, a = at[e[0]], b = at[e[1]]; if (!a || !b) return;
+      var k = Math.max(30, Math.abs(b[1] - a[1]) * .5), d = 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + (a[1] + a[2] * k) + ' ' + b[0] + ' ' + (b[1] + b[2] * k) + ' ' + b[0] + ' ' + b[1];
+      var pw = r.ok && (r.give.port.role === 'out' || r.give.port.role === 'store' || (r.give.port.role === 'host' && (r.take.port.role === 'in' || (r.take.port.role === 'device' && r.take.port.volts != null))));
+      var label = r.ok ? (r.cable ? r.cable.name : 'Straight in') + (pw ? (P.on[r.give.iid] ? ' · power' : ' · no power yet') : '') : r.why;
+      cg.appendChild(el('path', { d: d, 'class': 'cb' + (!r.ok ? ' bad' : pw ? ' pwr' + (P.on[r.give.iid] ? ' on' : '') : ' dat') }));
       cg.appendChild(el('path', { d: d, 'class': 'hit', 'data-cut': String(i), role: 'button', 'aria-label': label + ': tap to take it out' }, [tt(label + ' · tap to take it out')])); });
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
     var lack = P.w === 'SHORT' && /no power in|no sun|battery|night/.test(P.t) ? 'POWER' : '';
@@ -233,7 +258,7 @@
       [tray.pi, tray.printers].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       if (BN.p.some(function (x) { return PART[x[1]] && PART[x[1]].kind === 'pi'; })) partAdd('sd-32');
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
-    benchDraw(); if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
+    benchDraw(); if (!(BN.f || []).length) gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
   $('#bnd').addEventListener('click', function (e) { if (!BN) return; var t = e.target.closest('[data-port],[data-cut],[data-kind],[data-part]'); if (!t) return;
     if (t.dataset.kind) { ADDK = ADDK === t.dataset.kind ? '' : t.dataset.kind; benchDraw(); return; }
     if (t.dataset.part) { var id = t.dataset.part, x = BN.p.filter(function (q) { return q[1] === id; })[0];
@@ -262,7 +287,8 @@
     if (pis.length === 1 && !FL.dev) FL.dev = pis[0][0]; if (sds.length === 1 && !FL.sd) FL.sd = sds[0][0];
     var can = [true, !!FL.dev, !!FL.dev && !!OS, !!FL.dev && !!OS && !!FL.sd, !!FL.dev && !!OS && !!FL.sd && !!FL.name], nm = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? String(PART[x[1]].name).toUpperCase() : '—'; };
     var said = [nm(FL.dev), OS ? 'ISLAND OS ' + OS.version : OS === false ? 'OFFLINE' : '· · ·', nm(FL.sd), FL.name || '—', FL.done ? 'FLASHED' : ''];
-    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (can[i] && !FL.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
+    var dn = [!!FL.dev, !!OS && FL.step > 1, !!FL.sd && FL.step > 2, !!FL.name && FL.step > 3, !!FL.done];
+    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (dn[i] ? ' class="dn"' : '') + (can[i] && !FL.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
     var P = '', sdP = function (x) { var p = PART[x[1]], g = +(/(\d+)/.exec(p.id) || [])[1] || 0, small = OS && g * 1e9 * 0.93 < OS.size, f = flashedOf(x[0]); return '<button type="button" data-sd="' + x[0] + '" aria-pressed="' + (FL.sd === x[0]) + '"' + (small ? ' disabled title="Too small for ' + gb(OS.size) + '"' : ' title="' + (f ? 'Has Island OS ' + esc(f[1]) + ': writing again erases it' : 'Empty') + '"') + '>' + esc(String(p.name).toUpperCase()) + (f ? ' · ' + esc(f[1]) : '') + '</button>'; };
     if (!pis.length || !sds.length) P = '<p class="say">NEEDS ' + (!pis.length ? 'A PI' : '') + (!pis.length && !sds.length ? ' + ' : '') + (!sds.length ? 'AN SD' : '') + '</p>';
     else if (FL.step === 0) P = '<div class="opts">' + pis.map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (FL.dev === x[0]) + '" title="' + esc(PART[x[1]].about || '') + '">' + esc(String(PART[x[1]].name).toUpperCase()) + '</button>'; }).join('') + '</div>';
@@ -278,11 +304,12 @@
     $('#flp').innerHTML = P; }
   /* the write, as long as a real one at 20 MB/s, its check at 40 MB/s, each twenty times faster */
   function flWrite() { var size = OS.size || 3e9, w = size / 20e6 / 20 * 1000, v = size / 40e6 / 20 * 1000, t0 = performance.now(), sd = FL.sd, ver = OS.version, name = FL.name;
-    FL.run = { pc: 0, say: 'WRITING 0%' }; flDraw();
+    FL.run = { pc: 0, say: 'WRITING 0%' }; benchDraw();
     var tick = function () { if (!FL.run) return; var t = performance.now() - t0 + FL.run.skip;
       if (t < w) { FL.run.pc = t / w * 100; FL.run.say = 'WRITING ' + Math.floor(FL.run.pc) + '% · ' + gb(size * t / w) + ' · 20 MB/S'; }
       else if (t < w + v) { FL.run.pc = (t - w) / v * 100; FL.run.say = 'VERIFYING ' + Math.floor(FL.run.pc) + '%'; }
       else { FL.run = null; FL.done = ver; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); benchDraw(); benchSave('FLASHED'); flSlip(sd, ver); return; }
+      var sf = $('#sdf'); if (sf) { var wr = t < w, h = 54 * FL.run.pc / 100; sf.setAttribute('class', 'sdf' + (wr ? '' : ' v')); sf.setAttribute('y', wr ? 74 - h : 20 + h); sf.setAttribute('height', wr ? h : 1.6); }
       var b = $('#flp .bar i'), s = $('#flsay'); if (b && s) { b.style.width = FL.run.pc.toFixed(1) + '%'; s.textContent = FL.run.say; } else flDraw(); setTimeout(tick, 100); };
     FL.run.skip = 0; FL.run.end = w + v; tick(); }
   /* the settings, printed on the twin as the island will print them on its first start */

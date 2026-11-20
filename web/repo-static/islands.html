@@ -86,6 +86,7 @@
   .acts svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
   .all { appearance: none; display: block; margin: 12px auto 0; padding: 8px 14px; border: 1px solid var(--line); background: none; font: 600 10px/1 var(--mono); letter-spacing: .14em; color: var(--dim); cursor: pointer; }
   .none { margin: 30px 2px; text-align: center; font: 600 11px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  .none a { display: block; width: max-content; margin: 16px auto 0; padding: 10px 16px; border: 1.5px dashed var(--ink); color: var(--ink); text-decoration: none; letter-spacing: .16em; } .none a:active { transform: translate(2px, 2px); }
   @media (prefers-reduced-motion: reduce) { .live .dot, li.flash, .scope .sw, .scope .isl.pick .ring, .scope.here .me { animation: none; } }
 </style></head>
 <body><main>
@@ -111,7 +112,7 @@
   <p class="read" id="read" aria-live="polite"></p>
   <ol id="list"></ol>
   <button type="button" class="all" id="all" hidden>ALL</button>
-  <p class="none" id="none" hidden>NONE YET</p>
+  <p class="none" id="none" hidden>NONE YET<a href="archipelagos?ghost=1#hardware" title="No island near you yet: build a ghost one, pick its parts, print on its twin">GHOST</a></p>
 </main>
 <script src="islands.js"></script>
 </body></html>

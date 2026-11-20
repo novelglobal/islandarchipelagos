@@ -2167,23 +2167,25 @@
     var cdd = gi.getImageData(0, 0, W, H).data; for (var i1 = 0; i1 < md.length; i1 += 4) if (cdd[i1 + 3] > 40) md[i1] = 255;
     var anyPic = false; for (var i0 = 0; i0 < md.length; i0 += 64) if (md[i0] < 128) { anyPic = true; break; }
     /* a photograph's tones stretched to the full range, so it neither washes out nor sinks in the dither; then the style's filter and the curve */
-    var im = o.getImageData(0, 0, W, H), d = im.data;
+    var im = o.getImageData(0, 0, W, H), d = im.data, grey = false, A0 = null;
     if (anyPic) {
       var h = new Array(256).fill(0), n = 0; for (var i = 0; i < d.length; i += 4) if (md[i] < 128) { h[Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114)]++; n++; }
       var lo = 0, hi = 255, acc = 0; while (lo < 255 && (acc += h[lo]) < n * 0.02) lo++; acc = 0; while (hi > 0 && (acc += h[hi]) < n * 0.02) hi--;
       var pic = mk(H), pd = pic.getContext('2d').getImageData(0, 0, W, H), pdd = pd.data;
       for (var j = 0; j < d.length; j += 4) { var v0 = d[j] * 0.299 + d[j + 1] * 0.587 + d[j + 2] * 0.114, v = hi - lo >= 20 ? Math.max(0, Math.min(1, (v0 - lo) / (hi - lo))) : v0 / 255; pdd[j] = pdd[j + 1] = pdd[j + 2] = md[j] < 128 ? Math.round(v * 255) : 255; pdd[j + 3] = 255; }
-      pic.getContext('2d').putImageData(pd, 0, 0); var dt = NG.forPrint(pic, W, D), dd = dt.getContext('2d').getImageData(0, 0, W, H).data;
-      for (var q0 = 0; q0 < d.length; q0 += 4) if (md[q0] < 128) d[q0] = d[q0 + 1] = d[q0 + 2] = dd[q0] < 128 ? 0 : 255;
+      pic.getContext('2d').putImageData(pd, 0, 0); var dt = NG.forPrint(pic, W, D, true), dd = dt.getContext('2d').getImageData(0, 0, W, H).data; grey = dt.how === 'grey';
+      for (var q0 = 0; q0 < d.length; q0 += 4) if (md[q0] < 128) d[q0] = d[q0 + 1] = d[q0 + 2] = grey ? dd[q0] : dd[q0] < 128 ? 0 : 255;
     }
     /* everything else solid ink: black below the cut (a faint line still prints), then a dot or two bolder if asked */
     var PQ = NG.pq ? NG.pq() : { lineCut: 200, bolden: 0 }, lcut = Math.max(120, Math.min(250, +PQ.lineCut || 200)), bo = Math.max(0, Math.min(2, Math.round(+PQ.bolden || 0)));
     for (var t = 0; t < d.length; t += 4) { if (anyPic && md[t] < 128) { d[t + 3] = 255; continue; } var lum = d[t] * 0.299 + d[t + 1] * 0.587 + d[t + 2] * 0.114; d[t] = d[t + 1] = d[t + 2] = lum < lcut ? 0 : 255; d[t + 3] = 255; }
     for (var br = 0; br < bo; br++) { var ink = new Uint8Array(W * H); for (var t2 = 0; t2 < ink.length; t2++) ink[t2] = d[t2 * 4] === 0 ? 1 : 0; for (var t3 = 0; t3 < ink.length; t3++) { if (ink[t3] || (anyPic && md[t3 * 4] < 128)) continue; var cx3 = t3 % W; if ((cx3 > 0 && ink[t3 - 1]) || (cx3 < W - 1 && ink[t3 + 1]) || (t3 >= W && ink[t3 - W]) || (t3 < ink.length - W && ink[t3 + W])) d[t3 * 4] = d[t3 * 4 + 1] = d[t3 * 4 + 2] = 0; } }
-    o.putImageData(im, 0, 0);
+    o.putImageData(im, 0, 0); if (grey) A0 = o.getImageData(0, 0, W, H).data;
     /* words put on the picture, set again crisp over its dots: white round them, solid in the middle */
     usePaper(true); items(P, B0).forEach(function (it) { if (!it.glyph) return; var s3 = it.tf.s || 1; o.save(); o.setTransform(k, 0, 0, k, 0, 0); o.translate(it.X + it.w * s3 / 2, it.Y + it.h * s3 / 2); o.rotate((it.tf.r || 0) * Math.PI / 180); o.scale(s3, s3); o.translate(-it.w / 2, -it.h / 2); it.glyph(o); o.restore(); }); usePaper(false);
-    TH.solid(out, 128);
+    /* all solid ink but the photographs' greys (the printer's own sixteen, the default); a word put over one is made solid too */
+    if (!grey) TH.solid(out, 128); else { var im3 = o.getImageData(0, 0, W, out.height), d3 = im3.data; for (var g3 = 0; g3 < d3.length; g3 += 4) { if (md[g3] < 128 && d3[g3] === A0[g3] && d3[g3 + 1] === A0[g3 + 1]) { d3[g3 + 3] = 255; continue; }
+      var v3 = (d3[g3 + 3] < 128 ? 255 : d3[g3] * 0.299 + d3[g3 + 1] * 0.587 + d3[g3 + 2] * 0.114) < 128 ? 0 : 255; d3[g3] = d3[g3 + 1] = d3[g3 + 2] = v3; d3[g3 + 3] = 255; } o.putImageData(im3, 0, 0); }
     /* the style's own mark at the foot, solid ink */
     if (mark && mark.width) { var mh = Math.round(W * 0.14), mw = Math.round(mh * mark.width / mark.height), mc0 = document.createElement('canvas'); mc0.width = mw; mc0.height = mh; var mg = mc0.getContext('2d'); mg.fillStyle = '#fff'; mg.fillRect(0, 0, mw, mh); mg.drawImage(mark, 0, 0, mw, mh); TH.solid(mc0, 140);
       o.drawImage(mc0, Math.round(B0.pad * k), Math.max(0, H - Math.round(B0.pad * k) - mh)); }
@@ -2202,7 +2204,7 @@
     /* a little run-out at the end for the tear */
     var fin = mk(out.height + 40), fo = fin.getContext('2d'); fo.drawImage(out, 0, 0);
     if (night) { fo.fillStyle = '#000'; if (!shade) fo.fillRect(0, out.height, W, 40); else for (var ry = out.height; ry < fin.height; ry++) for (var rx = 0; rx < W; rx++) if (BAYER[(ry & 3) * 4 + (rx & 3)] < 10) fo.fillRect(rx, ry, 1, 1); }
-    return fin;
+    fin.grey = grey; return fin;
   }
   var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
   /* a part of the receipt turned to night: ink to white, paper to solid black (or a fine shade, with a dark edge round every white mark

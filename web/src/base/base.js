@@ -771,7 +771,7 @@ function slip(n, photo, r, opt, W, boardArt) {
       var head = Math.round(40 * u), ph = Math.max(Math.round(aw * 0.6), Math.min(Math.round(aw * 1.3), lowH));
       var out = document.createElement('canvas'); out.width = W; out.height = head + ph + lowH; var o = out.getContext('2d'); o.fillStyle = '#fff'; o.fillRect(0, 0, W, out.height); o.fillStyle = '#000'; o.textBaseline = 'top';
       o.font = F(Math.round(18 * u)); o.fillText('NOVEL.GLOBAL', pad, pad); var dt = when(n.at); o.font = F(Math.round(16 * u)); o.fillText(dt, W - pad - o.measureText(dt).width, pad + 2);
-      var top = head;
+      var top = head, gk = null;
       if (art === 'net' || !im) netArt(o, n, r, pad, top + 8, aw, ph - 16);
       else if (art === 'pixel' || boardArt) {
         var pa = boardArt && boardArt.tagName === 'CANVAS' ? boardArt : pixelArt(im, 44, 2, 8, n.at % 997 + 3);
@@ -779,13 +779,13 @@ function slip(n, photo, r, opt, W, boardArt) {
       } else {
         var c2 = document.createElement('canvas'); c2.width = aw; c2.height = ph; var cx = c2.getContext('2d');
         var sc = Math.max(aw / im.naturalWidth, ph / im.naturalHeight); cx.drawImage(im, (aw - im.naturalWidth * sc) / 2, (ph - im.naturalHeight * sc) / 2, im.naturalWidth * sc, im.naturalHeight * sc);
-        printReady(cx, aw, ph, window.CanvasDither); o.drawImage(c2, pad, top);
+        printReady(cx, aw, ph, window.CanvasDither, true); o.drawImage(c2, pad, top); if (printReady.how === 'grey') gk = [pad, top, aw, ph, o.getImageData(pad, top, aw, ph).data];
       }
       /* its icon, stamped in the corner of the art: pixel art, a pack's icon or a sprite of one's own */
       if (ic) { var iw = ic.naturalWidth || ic.width, ih = ic.naturalHeight || ic.height, sz = Math.round(aw * 0.26), kk = sz / Math.max(iw, ih), sw = Math.round(iw * kk), sh = Math.round(ih * kk), sx = pad + aw - sw - 8, sy = top + ph - sh - 8; o.fillStyle = '#fff'; o.fillRect(sx - 5, sy - 5, sw + 10, sh + 10); o.imageSmoothingEnabled = false; o.drawImage(ic, sx, sy, sw, sh); o.fillStyle = '#000'; }
       o.drawImage(Lc, 0, 0, W, lowH, 0, head + ph, W, lowH);
-      var id = o.getImageData(0, 0, W, out.height), d = id.data; for (var k2 = 0; k2 < d.length; k2 += 4) { var v = d[k2] < 150 ? 0 : 255; d[k2] = d[k2 + 1] = d[k2 + 2] = v; d[k2 + 3] = 255; } o.putImageData(id, 0, 0);
-      return out;
+      var id = o.getImageData(0, 0, W, out.height), d = id.data; for (var k2 = 0; k2 < d.length; k2 += 4) { if (gk && keptGrey(gk, (k2 >> 2) % W, (k2 >> 2) / W | 0, d, k2)) continue; var v = d[k2] < 150 ? 0 : 255; d[k2] = d[k2 + 1] = d[k2 + 2] = v; d[k2 + 3] = 255; } o.putImageData(id, 0, 0);
+      out.grey = !!gk; return out;
     });
   });
 }
@@ -807,15 +807,17 @@ function signSlip(n, photo, r, W) {
   if (act) { x.font = F(Math.round(26 * u)); wrapText(x, act, aw).forEach(function (l) { x.fillText(l, pad, y); y += Math.round(31 * u); }); y += Math.round(14 * u); }
   if (r.call) { var ch = Math.round(86 * u); x.lineWidth = Math.max(2, Math.round(4 * u)); x.strokeRect(pad, y, aw, ch); x.font = F(Math.round(18 * u)); x.fillText(r.call.label, pad + Math.round(14 * u), y + Math.round(12 * u)); x.font = F(Math.round(40 * u)); x.fillText(r.call.n, pad + Math.round(14 * u), y + Math.round(36 * u)); y += ch + Math.round(18 * u); }
   return Promise.all([photo ? loadImg(photo).catch(function () { return null; }) : null, qrLib()]).then(function (got) {
-    var im = got[0], Q = got[1], side = Math.round(aw * 0.46), top = y;
-    if (im) { var p = document.createElement('canvas'); p.width = p.height = side; var px2 = p.getContext('2d'); var sc = Math.max(side / im.naturalWidth, side / im.naturalHeight); px2.drawImage(im, (side - im.naturalWidth * sc) / 2, (side - im.naturalHeight * sc) / 2, im.naturalWidth * sc, im.naturalHeight * sc); printReady(px2, side, side, window.CanvasDither); x.drawImage(p, pad, top); }
+    var im = got[0], Q = got[1], side = Math.round(aw * 0.46), top = y, gs = null;
+    if (im) { var p = document.createElement('canvas'); p.width = p.height = side; var px2 = p.getContext('2d'); var sc = Math.max(side / im.naturalWidth, side / im.naturalHeight); px2.drawImage(im, (side - im.naturalWidth * sc) / 2, (side - im.naturalHeight * sc) / 2, im.naturalWidth * sc, im.naturalHeight * sc); printReady(px2, side, side, window.CanvasDither, true); x.drawImage(p, pad, top); if (printReady.how === 'grey') gs = [pad, top, side, side, x.getImageData(pad, top, side, side).data]; }
     if (Q) { try { var q = Q(0, 'L'); q.addData(noteURL(n)); q.make(); var k = q.getModuleCount(), m = Math.max(2, Math.floor(side / k)), ox = im ? W - pad - k * m : Math.round((W - k * m) / 2); for (var i = 0; i < k; i++) for (var j = 0; j < k; j++) if (q.isDark(i, j)) x.fillRect(ox + j * m, top + i * m, m, m); } catch (e) { /* no code */ } }
     y = top + side + Math.round(16 * u); x.font = F(Math.round(15 * u)); x.fillText(when(n.at) + '  ' + ll(n.lat, n.lng) + '  ' + n.code, pad, y); y += Math.round(30 * u);
     var out = document.createElement('canvas'); out.width = W; out.height = y; var o = out.getContext('2d'); o.drawImage(c, 0, 0, W, y, 0, 0, W, y);
-    var id = o.getImageData(0, 0, W, y), d = id.data; for (var z = 0; z < d.length; z += 4) { var v = d[z] < 150 ? 0 : 255; d[z] = d[z + 1] = d[z + 2] = v; d[z + 3] = 255; } o.putImageData(id, 0, 0);
-    return out;
+    var id = o.getImageData(0, 0, W, y), d = id.data; for (var z = 0; z < d.length; z += 4) { if (gs && keptGrey(gs, (z >> 2) % W, (z >> 2) / W | 0, d, z)) continue; var v = d[z] < 150 ? 0 : 255; d[z] = d[z + 1] = d[z + 2] = v; d[z + 3] = 255; } o.putImageData(id, 0, 0);
+    out.grey = !!gs; return out;
   });
 }
+/* a dot of a grey photograph left as it was laid (g: [x, y, w, h, its pixels then]); anything drawn over it since is made solid */
+function keptGrey(g, px, py, d, i) { if (px < g[0] || py < g[1] || px >= g[0] + g[2] || py >= g[1] + g[3]) return false; var j = ((py - g[1]) * g[2] + px - g[0]) * 4; if (g[4][j] !== d[i] || g[4][j + 1] !== d[i + 1]) return false; d[i + 3] = 255; return true; }
 function linksOf(n, r) {
   var out = (n.seen || []).map(function (s) { return { label: s.cn, sub: far(s.d) }; });
   (r.rel || []).forEach(function (o) { if (o.brief && out.length < 4) out.push({ label: o.label, sub: o.sub }); else if (!o.brief && !(n.seen || []).length && out.length < 3) out.push({ label: o.label, sub: '' }); });
@@ -862,7 +864,7 @@ var PRN = null, PRN_AT = 0;
    poster on the island) to the printer chosen on this phone */
 function printAgain(src, was) {
   return Promise.all([printers(), loadImg(src), ditherLib()]).then(function (r) { var p = prnPick(r[0]); if (!p) throw { status: 400 };
-    var cv = forPrint(r[1], +p.paper === 58 ? 384 : 512, r[2]), body = { type: 'poster', again: String(was || '').slice(0, 12), lat: +map.lat.toFixed(4), lng: +map.lng.toFixed(4) };
+    var cv = forPrint(r[1], +p.paper === 58 ? 384 : 512, r[2], true), body = { type: 'poster', again: String(was || '').slice(0, 12), lat: +map.lat.toFixed(4), lng: +map.lng.toFixed(4) };
     return send({ kind: 'record', code: code('a' + Date.now().toString(36) + Math.random()), body: JSON.stringify(body), lat: body.lat, lng: body.lng, dest: p.id, escpos: raster(cv), thumb: thumbOf(cv) }).then(function (j) { return j.job ? j.job.status : j.status; });
   });
 }
@@ -2273,7 +2275,7 @@ function inkPass(x, W, H, keep) {
 }
 function forPrint(src, W, D, grey) {
   var H = Math.round(src.height * W / src.width), c = document.createElement('canvas'); c.width = W; c.height = H; var x = c.getContext('2d');
-  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(src, 0, 0, W, H); printReady(x, W, H, D, grey); c.how = printReady.how; var mr = Math.max(6, Math.round(W * 0.022)); moonMark(x, W - mr * 2.2, H - mr * 2.2, mr, '#000', (window.NG && NG.map && NG.map.lat) || -37.8); return c;
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(src, 0, 0, W, H); printReady(x, W, H, D, grey); c.how = printReady.how; c.grey = c.how === 'grey'; var mr = Math.max(6, Math.round(W * 0.022)); moonMark(x, W - mr * 2.2, H - mr * 2.2, mr, '#000', (window.NG && NG.map && NG.map.lat) || -37.8); return c;
 }
 function drawStickers(x, W, H, ink) {
   BTH.st.forEach(function (s) {

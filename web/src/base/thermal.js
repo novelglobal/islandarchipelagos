@@ -80,7 +80,10 @@
   function am(L, W, H, p) { p = p || 6; var lut = amLut(p);
     for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) { var i = y * W + x, v = L[i]; L[i] = v >= 255 ? 255 : v <= 0 ? 0 : lut[v | 0] < amTh(x, y, p) ? 0 : 255; } return L; }
   T.DOTS_MORE = { fs: function (L, W, H) { return ser(L, W, H, FS, 16); }, jjn: function (L, W, H) { return ser(L, W, H, JJN, 48); }, am: function (L, W, H) { return am(L, W, H, 4); },
-    grey: function (L, W, H) { return ser(L, W, H, FS, 16, 17); } };
+    grey: function (L, W, H) { return ser(L, W, H, FS, 16, 17); }, greyw: function (L, W, H) { return ser(L, W, H, JJN, 48, 17); },
+    grey0: function (L, W, H) { for (var i = 0; i < L.length; i++) L[i] = Math.max(0, Math.min(255, Math.round(L[i] / 17) * 17)); return L; } };
+  var isGrey = function (id) { return /^grey/.test(String(id || '')); };
+  T.isGrey = isGrey;
 
   /* each way with the tones that suit it: how far the mid-tones are lifted against the dot gain (under 1 lighter), and how much the edges
      are lifted. The greys spread least, so they lift nothing. A and B are the same greys with their four layers sent in the two orders
@@ -93,9 +96,20 @@
     { key: 'E', id: 'atkinson', name: 'ATKINSON', how: 'Dots, clean and bright', gamma: 0.8, sharpen: 0.8, local: 0.15 },
     { key: 'F', id: 'am', name: 'CLUSTERED DOTS, 45°', how: 'Round dots, steadiest when hot', gamma: 0.9, sharpen: 0.4, local: 0.15 }
   ];
+  /* the default for every photograph: GREY 16 sent ORDER 2, with B's tones (photo test 2 chose it on the TM-T88V) */
+  T.BASE = { dither: 'grey', order: 'b', gamma: 1, sharpen: 0.6, local: 0.3, clip: 0.5, contrast: 0 };
+  /* the grey test: the default against one change at a time, each full size */
+  T.GREYS = [
+    { key: 'A', id: 'grey', name: 'AS SAVED', how: 'Grey 16, order 2' },
+    { key: 'B', id: 'greyw', name: 'SPREAD WIDE', how: 'Rounding error spread to 12' },
+    { key: 'C', id: 'grey0', name: 'NO SPREAD', how: 'Rounded to the sixteen' },
+    { key: 'D', id: 'grey', name: 'LIGHTER', how: 'Mid-tones lifted', d: { gamma: -0.15 } },
+    { key: 'E', id: 'grey', name: 'DARKER', how: 'Mid-tones deeper', d: { gamma: 0.15 } },
+    { key: 'F', id: 'grey', name: 'MORE DETAIL', how: 'Local contrast and edges up', d: { local: 0.2, sharpen: 0.4 } }
+  ];
   /* the ways the old photo test had that are gone, sent to the nearest kept */
   var OLD = { blue: 'fs', model: 'fs' };
-  T.dotName = function (id) { return id === 'grey' ? 'GREY 16' : String(id || 'auto').toUpperCase(); };
+  T.dotName = function (id) { return isGrey(id) ? 'GREY 16' : String(id || 'auto').toUpperCase(); };
   /* a photograph (an image or a canvas) laid one way at W dots across: scaled down in halves (no shimmer), stretched to its own black and
      white, its edges lifted, its mid-tones set for the way, through the measured curve when there is one (dots only), then the dots */
   T.lay = function (src, W, q, cal, maxH, crop) { return T.photo(src, W, { clip: 0.5, gamma: q.gamma, contrast: 0, local: q.local || 0, sharpen: q.sharpen, dither: q.id, cal: cal || null }, maxH, crop); };
@@ -119,12 +133,13 @@
   T.settle = function (o, photo) { o = o || {}; photo = photo || {}; var b = T.SETS[o.preset] || T.SETS.crisp, out = {}, k, qw = null, has = function (k2) { return o[k2] != null && o[k2] !== ''; };
     for (k in b) out[k] = b[k]; for (k in photo) if (photo[k] != null) out[k] = photo[k];
     if (has('dither')) { out.dither = OLD[o.dither] || o.dither; qw = T.QUALITY.filter(function (q) { return q.id === out.dither; })[0]; if (qw) { out.gamma = qw.gamma; out.sharpen = qw.sharpen; out.clip = 0.5; out.contrast = 0; out.local = qw.local || 0; } }
-    out.cal = o.cal ? T.cal(o.cal) : null; if (out.cal && !qw && photo.gamma == null) out.gamma = 1;
+    else if (photo.dither == null) for (k in T.BASE) if (k !== 'order') out[k] = T.BASE[k];
+    out.cal = o.cal ? T.cal(o.cal) : null; if (out.cal && !qw && !isGrey(out.dither) && photo.gamma == null) out.gamma = 1;
     for (k in b) if (k !== 'dither' && has(k) && isFinite(+o[k])) out[k] = +o[k];
-    out.order = o.order === 'b' ? 'b' : 'a';
+    out.order = o.order === 'a' ? 'a' : 'b';
     out.preset = T.SETS[o.preset] ? o.preset : 'crisp'; return out; };
   /* what the printer is told before a picture, from settled settings */
-  T.opts = function (Q) { Q = Q || {}; return { speed: +Q.speed || 0, parts: +Q.parts || 0, order: Q.order === 'b' ? 'b' : 'a' }; };
+  T.opts = function (Q) { Q = Q || {}; return { speed: +Q.speed || 0, parts: +Q.parts || 0, order: Q.order === 'a' ? 'a' : 'b' }; };
   /* a photograph's tones made ready for the dots, in place (L: lightness 0 to 255): stretched to its own black and white, mid-tones,
      contrast, edges, then through the measured curve (the curve is measured in dots, so the greys skip it). Gives back the way to lay it
      (auto: chosen for this picture) */
@@ -143,7 +158,8 @@
     if (sh) { var B = new Float32Array(n), y, x, dy, dx; for (y = 0; y < H; y++) for (x = 0; x < W; x++) { var s = 0, m = 0; for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) { var y2 = y + dy, x2 = x + dx; if (y2 >= 0 && y2 < H && x2 >= 0 && x2 < W) { s += L[y2 * W + x2]; m++; } } B[y * W + x] = s / m; }
       for (l = 0; l < n; l++) L[l] = L[l] + sh * (L[l] - B[l]); }
     for (l = 0; l < n; l++) L[l] = L[l] < 10 ? 0 : L[l] > 245 ? 255 : L[l];
-    var how = !Q.dither || Q.dither === 'auto' ? T.pick(L, W, H) : Q.dither, lut = Q.cal && how !== 'grey' ? T.curve(Q.cal) : null;
+    /* the greys are for photographs: drawn art (few mid-tones) stays black or white, crisp */
+    var how = !Q.dither || Q.dither === 'auto' ? T.pick(L, W, H) : isGrey(Q.dither) && T.pick(L, W, H) === 'none' ? 'none' : Q.dither, lut = Q.cal && !isGrey(how) ? T.curve(Q.cal) : null;
     if (lut) for (l = 0; l < n; l++) L[l] = L[l] ? lut[L[l] | 0] : 0;
     return how; };
   /* lightness of an image's pixels (sRGB weights) */
@@ -158,11 +174,11 @@
   function paint(c, L) { var x = c.getContext('2d'), im = x.createImageData(c.width, c.height); for (var p = 0; p < L.length; p++) { im.data[p * 4] = im.data[p * 4 + 1] = im.data[p * 4 + 2] = L[p]; im.data[p * 4 + 3] = 255; } x.putImageData(im, 0, 0); return c; }
   /* a photograph laid with settled settings Q, exactly as the site lays it: fitted, toned, dotted (or greyed). c.how: the way it was given */
   T.photo = function (src, W, Q, maxH, crop) { var c = T.fit(src, W, maxH, crop), w = c.width, h = c.height, x = c.getContext('2d'), L = T.luma(x.getImageData(0, 0, w, h).data, w * h);
-    var how = T.tone(L, w, h, Q); T.dots(L, w, h, how); paint(c, L); c.how = how; return c; };
+    var how = T.tone(L, w, h, Q); T.dots(L, w, h, how); paint(c, L); c.how = isGrey(how) ? 'grey' : how; return c; };
   /* sixteen steps black to paper, laid with Q (no stretch, no edges: the tones alone) */
   T.wedge = function (w, h, Q, n) { n = n || 16; var q = {}, k; for (k in Q) q[k] = Q[k]; q.clip = 0; q.sharpen = 0; var L = new Float32Array(w * h), x, y;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) L[y * w + x] = Math.min(255, Math.floor(x * n / w) * 255 / (n - 1)); var how = T.tone(L, w, h, q); if (q.dither === 'auto' || !q.dither) how = 'floyd'; T.dots(L, w, h, how);
-    var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c, L); c.how = how; return c; };
+    var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c, L); c.how = isGrey(how) ? 'grey' : how; return c; };
   /* the sixteen greys exactly, black (15) to paper (0), nothing done to them: the GREY CHECK */
   T.steps16 = function (w, h) { var L = new Float32Array(w * h), x, y; for (y = 0; y < h; y++) for (x = 0; x < w; x++) L[y * w + x] = Math.floor(x * 16 / w) * 17;
     var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c, L); c.how = 'grey'; return c; };
@@ -188,7 +204,7 @@
     var r = []; for (var i = 0; i < n; i++) r.push(r2(Math.max(a, Math.min(b, v + (lo + i) * d)))); return r; }
   var own = function (v) { return +v ? String(v) : 'OWN'; };
   /* every setting in two lines, for the top of a slip */
-  function said(Q, how) { return ['SET ' + String(Q.preset || 'crisp').toUpperCase() + ' · DOTS ' + T.dotName(Q.dither) + (Q.dither === 'auto' || !Q.dither ? ' (' + T.dotName(how) + ')' : '') + (how === 'grey' || Q.dither === 'grey' ? ' · ORDER ' + (Q.order === 'b' ? 2 : 1) : '') + ' · CURVE ' + (Q.cal ? Q.cal.b + '/' + Q.cal.m + '/' + Q.cal.w : 'OFF'),
+  function said(Q, how) { return ['SET ' + String(Q.preset || 'crisp').toUpperCase() + ' · DOTS ' + T.dotName(Q.dither) + (Q.dither === 'auto' || !Q.dither ? ' (' + T.dotName(how) + ')' : '') + (isGrey(how) || isGrey(Q.dither) ? ' · ORDER ' + (Q.order === 'a' ? 1 : 2) : '') + ' · CURVE ' + (Q.cal ? Q.cal.b + '/' + Q.cal.m + '/' + Q.cal.w : 'OFF'),
     'MID ' + r2(+Q.gamma || 0) + ' · CONTRAST ' + r2(+Q.contrast || 0) + ' · LOCAL ' + r2(+Q.local || 0) + ' · EDGES ' + r2(+Q.sharpen || 0) + ' · STRETCH ' + r2(+Q.clip || 0) + ' · SPEED ' + own(Q.speed) + ' · PARTS ' + own(Q.parts)]; }
 
   /* ───────── TUNE: the saved settings, and clear steps either side, on one slip ─────────
@@ -198,7 +214,9 @@
   T.tune = function (img, o) { o = o || {}; var W = T.grid(o.dots).dots, Q = o.q || T.settle({}), crop = o.crop || [0.18, 0.12, 0.64, 0.6], u = W / 512, sz = function (n) { return Math.max(1, Math.round(n * u)); }, pad = sz(10);
     var withQ = function (k, v) { var q = {}, j; for (j in Q) q[j] = Q[j]; q[k] = v; return q; };
     var pw = Math.floor((W - pad * 3) / 2), ph = Math.round(pw * 0.9), lab = sz(30), first = T.photo(img, W - pad * 2, Q, sz(380));
-    var groups = [['MID-TONES', 'gamma', 'MID', around(+Q.gamma || 0.8, 0.25, 4, 0.3, 1.6)], ['CONTRAST', 'contrast', 'CONTRAST', around(+Q.contrast || 0, 0.5, 2, 0, 1)], ['LOCAL CONTRAST', 'local', 'LOCAL', around(+Q.local || 0, 0.3, 2, 0, 1)], ['EDGES', 'sharpen', 'EDGES', around(+Q.sharpen || 0, 1.2, 2, 0, 2.5)]];
+    /* the greys show small changes, so their steps are finer */
+    var fine = isGrey(Q.dither), st = fine ? [0.1, 0.15, 0.15, 0.3] : [0.25, 0.5, 0.3, 1.2];
+    var groups = [['MID-TONES', 'gamma', 'MID', around(+Q.gamma || 0.8, st[0], 4, 0.3, 1.6)], ['CONTRAST', 'contrast', 'CONTRAST', around(+Q.contrast || 0, st[1], 2, 0, 1)], ['LOCAL CONTRAST', 'local', 'LOCAL', around(+Q.local || 0, st[2], 2, 0, 1)], ['EDGES', 'sharpen', 'EDGES', around(+Q.sharpen || 0, st[3], 2, 0, 2.5)]];
     var speeds = [13, 6, 1], bandH = sz(150), wl = W - pad * 3 - pw;
     var H = pad + sz(76) + first.height + sz(8) + sz(24) + sz(30) + groups.reduce(function (a, g) { return a + sz(34) + Math.ceil(g[3].length / 2) * (ph + lab); }, 0) + sz(34) + speeds.length * (bandH + sz(14)) + sz(40) + pad;
     var S = slip(W, H), y = pad, n = 0, L = function () { return String.fromCharCode(65 + n++); }, said2 = said(Q, first.how), keys = [], key = function (t) { keys.push(t); return t; };
@@ -217,24 +235,25 @@
     S.put('1 SLOWEST AND DARKEST · 13 FASTEST', 'mono', 12, pad, y + sz(10), W - pad * 2);
     return { c: S.done(), steps: steps, said: said2, keys: keys }; };
 
-  /* the photo test: first the GREY CHECK (the sixteen greys sent both orders: the one that steps evenly from black to paper is how this
-     printer reads them), then the photograph laid each way, big, its letter and every number under it and its steps beside. Gives back
-     { c, steps } for T.raster: each grey part is sent in its own order */
+  /* the photo test, round the default alone (GREY 16, ORDER 2): first the sixteen greys numbered, black to paper (where they stop
+     stepping evenly is the grey curve to come), then the photograph as saved and one change at a time, big, each with its numbers.
+     o.q: the saved settings (settled). Gives back { c, steps } for T.raster: every grey part sent ORDER 2 */
   T.photoTest = function (img, o) { o = o || {}; var g0 = T.grid(o.dots), W = g0.dots, u = W / 512, sz = function (n) { return Math.max(1, Math.round(n * u)); }, pad = sz(10);
-    var ways = T.QUALITY.filter(function (q) { return !o.ways || o.ways.indexOf(q.key) >= 0 || o.ways.indexOf(q.id) >= 0; }), pw = W - pad * 2, ph = sz(420), wh = sz(40), sh = sz(22);
-    var parts = ways.map(function (q) { return { q: q, p: T.lay(img, pw, q, q.id === 'grey' ? null : o.cal, ph), w: T.wedge(pw, sh, { gamma: 1, contrast: 0, dither: q.id, cal: q.id === 'grey' ? null : o.cal }) }; });
-    var H = pad + sz(60) + sz(30) + (wh + sz(24)) * 2 + sz(30) + parts.reduce(function (a, s) { return a + sz(10) + s.p.height + sh + sz(62); }, 0) + pad;
-    var S = slip(W, H), y = pad, steps = [];
-    var head = W + ' DOTS · ' + g0.dpi + ' DPI · SPEED ' + own(o.speed) + ' · PARTS ' + own(o.parts) + ' · CURVE ' + (o.cal ? o.cal.b + '/' + o.cal.m + '/' + o.cal.w : 'OFF'), keys = [];
-    S.put('PHOTO TEST' + (o.n ? ' · TEST ' + o.n : ''), 'sans', 24, pad, y, W - pad * 2); S.put(W + ' DOTS · ' + g0.dpi + ' DPI · SPEED ' + own(o.speed) + ' · PARTS ' + own(o.parts) + ' · CURVE ' + (o.cal ? o.cal.b + '/' + o.cal.m + '/' + o.cal.w : 'OFF'), 'mono', 13, pad, y + sz(32), W - pad * 2);
-    y += sz(60); S.rule(y); S.put('GREY CHECK · PICK THE EVEN ONE', 'sans', 18, pad, y + sz(8), W - pad * 2); y += sz(30);
-    ['a', 'b'].forEach(function (ord, k) { steps.push({ y: y, order: ord }); S.pic(T.steps16(pw, wh), pad, y);
-      S.put('ORDER ' + (k + 1) + '   15 BLACK → 0 PAPER', 'mono', 13, pad, y + wh + sz(5), pw); y += wh + sz(24); });
-    y += sz(30);
-    parts.forEach(function (s) { S.rule(y); y += sz(10); steps.push({ y: y, order: s.q.order || 'a' }); S.pic(s.p, pad + Math.round((pw - s.p.width) / 2), y); y += s.p.height; S.pic(s.w, pad, y); y += sh;
-      S.put(s.q.key + '  ' + s.q.name, 'sans', 20, pad, y + sz(8), pw); var nums = 'MID ' + s.q.gamma + ' · LOCAL ' + (s.q.local || 0) + ' · EDGES ' + s.q.sharpen; keys.push(s.q.key + '  ' + s.q.name + ' · ' + nums);
-      S.put(s.q.how.toUpperCase() + ' · ' + nums, 'mono', 13, pad, y + sz(36), pw); y += sz(62); });
-    return { c: S.done(), steps: steps, said: [head], keys: ['ORDER 1: LOW BIT FIRST · ORDER 2: HIGH BIT FIRST'].concat(keys) }; };
+    var Q0 = o.q || T.settle({}), base = {}, k; for (k in T.BASE) base[k] = T.BASE[k]; if (isGrey(Q0.dither)) ['gamma', 'sharpen', 'local', 'clip', 'contrast'].forEach(function (k2) { if (Q0[k2] != null) base[k2] = Q0[k2]; });
+    /* each photograph 360 dots tall: all seven grey parts still go as one print (under 900 KB sent) */
+    var pw = W - pad * 2, ph = sz(360), wh = sz(40), sh = sz(22), nums = function (q) { return 'MID ' + r2(q.gamma) + ' · LOCAL ' + r2(q.local) + ' · EDGES ' + r2(q.sharpen); };
+    var parts = T.GREYS.map(function (g) { var q = {}, j; for (j in base) q[j] = base[j]; q.dither = g.id; for (j in g.d || {}) q[j] = r2(Math.max(0, (+q[j] || 0) + g.d[j])); q.cal = null;
+      return { g: g, q: q, p: T.photo(img, pw, q, ph), w: T.wedge(pw, sh, { gamma: 1, contrast: 0, dither: g.id }) }; });
+    var H = pad + sz(60) + sz(30) + wh + sz(28) + sz(30) + parts.reduce(function (a2, s) { return a2 + sz(10) + s.p.height + sh + sz(62); }, 0) + pad;
+    var S = slip(W, H), y = pad, steps = [], keys = [], head = W + ' DOTS · ' + g0.dpi + ' DPI · GREY 16 · ORDER 2 · SPEED ' + own(o.speed) + ' · PARTS ' + own(o.parts);
+    S.put('PHOTO TEST' + (o.n ? ' · TEST ' + o.n : ''), 'sans', 24, pad, y, W - pad * 2); S.put(head, 'mono', 13, pad, y + sz(32), W - pad * 2);
+    y += sz(60); S.rule(y); S.put('GREY STEPS · WHERE DO THEY STOP CHANGING?', 'sans', 18, pad, y + sz(8), W - pad * 2); y += sz(30);
+    steps.push({ y: y, order: 'b' }); S.pic(T.steps16(pw, wh), pad, y); for (var i = 0; i < 16; i++) S.put(String(15 - i), 'mono', 12, pad + Math.round((i + 0.3) * pw / 16), y + wh + sz(5), pw / 16);
+    y += wh + sz(28) + sz(30);
+    parts.forEach(function (s) { S.rule(y); y += sz(10); steps.push({ y: y, order: 'b' }); S.pic(s.p, pad + Math.round((pw - s.p.width) / 2), y); y += s.p.height; S.pic(s.w, pad, y); y += sh;
+      S.put(s.g.key + '  ' + s.g.name, 'sans', 20, pad, y + sz(8), pw); keys.push(s.g.key + '  ' + s.g.name + ' · ' + nums(s.q));
+      S.put(s.g.how.toUpperCase() + ' · ' + nums(s.q), 'mono', 13, pad, y + sz(36), pw); y += sz(62); });
+    return { c: S.done(), steps: steps, said: [head], keys: ['GREY STEPS 15 BLACK → 0 PAPER'].concat(keys) }; };
 
   /* the text test: the site's words in each paper font at six sizes, set four ways (two cuts, bolder or not, each with a letter), lines one
      to three dots, then the printer's own letters sent as text (it draws those itself), to choose WORDS AND LINES CUT, BOLDER and the
@@ -263,8 +282,8 @@
     var bin = ''; for (var k = 0; k < out.length; k += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(k, k + 0x8000)); return w + ',' + h + ',' + btoa(bin); };
 
   /* ───────── to the printer ─────────
-     o: { speed (1 slowest and darkest to 13; 0 as the printer is set), parts (the head heated in 1, 2 or 4 parts; 0 as set), order ('a' or
-     'b': how the sixteen greys' four layers are sent), after (bytes sent after the picture, before the cut) }. A number (the old heat,
+     o: { speed (1 slowest and darkest to 13; 0 as the printer is set), parts (the head heated in 1, 2 or 4 parts; 0 as set), order ('b',
+     the default, or 'a': how the sixteen greys' four layers are sent), after (bytes sent after the picture, before the cut) }. A number (the old heat,
      which the TM-T88V never took) is let go; grey: true lets rows with greys go as greys (only a slip made for them: elsewhere a
      soft edge is not a grey, and every row goes one-bit). steps: [{ y, speed, parts, order }] a change from row y down.
      Rows of black and paper alone go as one-bit raster (GS v 0, 255 rows a time); rows with a grey in them as multi-tone graphics (GS ( L:
@@ -285,7 +304,7 @@
         for (y = a; y < b; y++) for (xb = 0; xb < bw; xb++) { v = 0; for (bit = 0; bit < 8; bit++) if (d[(y * W + xb * 8 + bit) * 4] < 128) v |= 0x80 >> bit; out.push(v); } }
       else { var n = bw * h + 10, lv = new Uint8Array(bw * 8 * h);
         for (y = a; y < b; y++) for (x = 0; x < bw * 8; x++) lv[(y - a) * bw * 8 + x] = 15 - Math.max(0, Math.min(15, Math.round(d[(y * W + x) * 4] / 17)));
-        for (var c = 0; c < 4; c++) { var sh = s.order === 'b' ? 3 - c : c; /* layer c (colour 49 + c) carries this bit of the darkness, 0 to 15 */
+        for (var c = 0; c < 4; c++) { var sh = s.order === 'a' ? c : 3 - c; /* layer c (colour 49 + c) carries this bit of the darkness, 0 to 15 */
           out.push(0x1D, 0x28, 0x4C, n & 0xFF, n >> 8, 0x30, 0x70, 0x34, 0x01, 0x01, 0x31 + c, (bw * 8) & 0xFF, (bw * 8) >> 8, h & 0xFF, h >> 8);
           for (p = 0; p < lv.length; p += 8) { v = 0; for (bit = 0; bit < 8; bit++) if ((lv[p + bit] >> sh) & 1) v |= 0x80 >> bit; out.push(v); } }
         out.push(0x1D, 0x28, 0x4C, 0x02, 0x00, 0x30, 0x32); }

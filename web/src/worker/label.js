@@ -107,5 +107,5 @@ export const NOTES = {
 export const BASE_TEXTS = {
   "opener": "{\"lede\":\"Independent web2print publishing. Open source.\"}",
   "curations": "[{\"name\":\"water\",\"about\":\"h2o\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"},{\"name\":\"\",\"about\":\"\"}]",
-  "printq": "{\"preset\":\"soft\",\"dither\":\"atkinson\"}"
+  "printq": "{\"preset\":\"soft\"}"
 };
