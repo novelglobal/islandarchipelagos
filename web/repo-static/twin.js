@@ -15,7 +15,7 @@
   /* ───────── ESC/POS to dots: what a TM-T88V would put on paper ───────── */
   var b64 = function (s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
   function run(u, W, g) {
-    var y = 0, i = 0, align = 0, bold = false, under = false, rev = false, sw = 1, sh = 1, lsp = 30, line = '', qrData = null, qrMod = 3, lineH = function () { return Math.max(lsp, 24 * sh + 6); };
+    var y = 0, i = 0, align = 0, bold = false, under = false, rev = false, sw = 1, sh = 1, lsp = 30, line = '', qrData = null, qrMod = 3, tone = [], lineH = function () { return Math.max(lsp, 24 * sh + 6); };
     var flush = function (nl) { if (line || nl) { if (g && line) { var cw = 12 * sw, w = line.length * cw, x0 = align === 1 ? (W - w) / 2 : align === 2 ? W - w : 0, base = y + 22 * sh;
         g.save(); g.font = (bold ? '700 ' : '600 ') + (22 * sh) + "px 'IBM Plex Mono', ui-monospace, monospace"; var m = g.measureText(line).width || 1;
         if (rev) { g.fillRect(x0, y, w, 24 * sh); g.fillStyle = '#fff'; }
@@ -51,6 +51,13 @@
               var mc = Q ? Q.getModuleCount() : 25, sz = mc * qrMod, qx = align === 1 ? (W - sz) >> 1 : align === 2 ? W - sz : 0;
               if (g) { g.fillStyle = '#1B1B19'; for (var my = 0; my < mc; my++) for (var mx = 0; mx < mc; mx++) if (Q ? Q.isDark(my, mx) : (mx * 7 + my * 3) % 5 < 2) g.fillRect(qx + mx * qrMod, y + my * qrMod, qrMod, qrMod); }
               y += sz + 6; } }
+          /* the sixteen greys: four one-bit layers stored (colours 1 to 4, read here as the low bit first), then printed as one */
+          if (fn === 0x4C && u[a] === 0x30 && u[a + 1] === 0x70 && len > 10) { var tc = u[a + 5] - 0x31; if (tc >= 0 && tc < 4) tone[tc] = { w: u[a + 6] | u[a + 7] << 8, h: u[a + 8] | u[a + 9] << 8, p: a + 10 }; }
+          if (fn === 0x4C && u[a] === 0x30 && u[a + 1] === 0x32 && tone[0]) { flush(false); var t0 = tone[0], tb = (t0.w + 7) >> 3;
+            if (g) { var tim = g.createImageData(t0.w, t0.h), td = tim.data; for (var ty = 0; ty < t0.h; ty++) for (var tx = 0; tx < t0.w; tx++) { var lv = 0, off = ty * tb + (tx >> 3), tm = 0x80 >> (tx & 7), tq = (ty * t0.w + tx) * 4;
+                for (var tl = 0; tl < 4; tl++) if (tone[tl] && u[tone[tl].p + off] & tm) lv |= 1 << tl; td[tq] = td[tq + 1] = Math.round(250 - lv * 223 / 15); td[tq + 2] = Math.round(244 - lv * 219 / 15); td[tq + 3] = 255; }
+              g.putImageData(tim, 0, y); }
+            y += t0.h; tone = []; }
           i = a + len; continue; }
         if (k === 0x21) { var s2 = u[i + 2]; sw = (s2 >> 4) + 1; sh = (s2 & 15) + 1; i += 3; continue; }
         if (k === 0x42) { rev = !!(u[i + 2] & 1); i += 3; continue; }

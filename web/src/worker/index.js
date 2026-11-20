@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 18;
+const SCHEMA_V = 19;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -91,6 +91,8 @@ async function upgrade(db) {
     try { await db.prepare('ALTER TABLE stories ADD COLUMN gone INTEGER').run(); } catch (e) { /* already there */ }
     /* thumb: a small one-bit picture of the print, "w,h,base64", for the touch screen to show while it waits */
     try { await db.prepare('ALTER TABLE jobs ADD COLUMN thumb TEXT').run(); } catch (e) { /* already there */ }
+    /* note: a test slip's record for the approval page's test log (its number, every setting, what each letter was, a small picture), kept after its bytes go */
+    try { await db.prepare('ALTER TABLE jobs ADD COLUMN note TEXT').run(); } catch (e) { /* already there */ }
     /* origin: where a story came from, for the approval page only: the page, the city and country Cloudflare saw (never the address), phone or computer, the stage, its mesh line */
     try { await db.prepare('ALTER TABLE stories ADD COLUMN origin TEXT').run(); } catch (e) { /* already there */ }
     /* full: its full-size photograph is kept in Cloudflare's storage (R2, bound as MEDIA), for the approval page only */
@@ -1058,6 +1060,9 @@ async function admin(db, env, req, parts) {
   if (what === 'reset' && req.method === 'POST') return resetSite(db, env, req);
   if (what === 'pair' && id && (req.method === 'GET' || req.method === 'POST')) return adminPair(db, req, id);
   if (what === 'film' && !id && req.method === 'GET') { const f = await filmOf(db); return json({ today: await filmToday(db), bucket: !!env.FILMS, found: !!(f && env.FILMS && await env.FILMS.head(f.file)) }); }
+  /* the test log: the test slips sent from PRINT QUALITY, newest first, with their records; next: the number the next one prints */
+  if (what === 'tests' && !id && req.method === 'GET') { const { results } = await db.prepare("SELECT j.printer, p.name, j.status, j.error, j.created, j.done, j.note FROM jobs j LEFT JOIN printers p ON p.id = j.printer WHERE j.code = 'DA-STRIP' AND j.note IS NOT NULL ORDER BY j.created DESC LIMIT 40").all();
+    const all = await db.prepare("SELECT COUNT(*) AS n FROM jobs WHERE code = 'DA-STRIP' AND note IS NOT NULL").first(); return json({ tests: results, next: (all ? all.n : 0) + 1 }); }
   if (what === 'printers' && !id) {
     const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.paper, p.mesh, p.auto, p.live, p.two, p.links, p.self, p.joins, p.ghost, p.home, p.token IS NOT NULL AS paired, p.touch IS NOT NULL AS touch, p.touch_seen, p.refused, p.seen, p.can, p.off, p.rst, p.net, p.touch_net, p.wifi, p.upd, p.gap, p.pack, p.ways, p.mods, p.use,
         (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed' AND j.done > (strftime('%s', 'now') - 86400) * 1000) AS day,
@@ -1095,7 +1100,8 @@ async function admin(db, env, req, parts) {
     if (b.action === 'paper' && ['58', '80'].includes(String(b.paper))) { await db.prepare('UPDATE printers SET paper = ? WHERE id = ?').bind(String(b.paper), id).run(); return json({ ok: true }); }
     /* the calibration strip, drawn on the approval page as the printer's own dots */
     if (b.action === 'passes' || b.action === 'look') return passDo(db, env, { id, name: (await db.prepare('SELECT name FROM printers WHERE id = ?').bind(id).first() || {}).name }, b);
-    if (b.action === 'strip') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'strip'); await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created) VALUES (?, ?, 'DA-STRIP', ?, 'queued', ?)").bind(rid(), id, b.escpos, now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
+    if (b.action === 'strip') { if (!b64ok(b.escpos, LIMIT.escpos)) return fail(400, 'strip'); const note = typeof b.note === 'string' && b.note.length <= 60e3 ? b.note : null;
+      await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, escpos, status, created, note) VALUES (?, ?, 'DA-STRIP', ?, 'queued', ?, ?)").bind(rid(), id, b.escpos, now(), note), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     if (b.action === 'test') { await db.batch([db.prepare("INSERT INTO jobs (id, printer, code, mesh, status, created) VALUES (?, ?, 'DA-TEST', ?, 'queued', ?)").bind(rid(), id, 'DIRECT ACTION - test print', now()), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(now(), id)]); return json({ ok: true }); }
     return fail(400, 'action');
   }

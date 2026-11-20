@@ -90,6 +90,11 @@ try {
   { const esc = Buffer.from([0x1B, 0x40, 0x1D, 0x76, 0x30, 0, 1, 0, 1, 0, 0xFF]).toString('base64');
     const sp = await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'strip', escpos: esc } }), sx = await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'strip', escpos: '<b>' } });
     const js = await call('/api/printers/milkbar/next', { token: T }); if (js.json && js.json.job) await call(`/api/printers/milkbar/jobs/${js.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
+    /* the test log: a test slip sent with its record keeps it after it prints; the next number follows */
+    const tl0 = await call('/api/admin/tests', { key: KEY }), note = JSON.stringify({ n: tl0.json.next, kind: 'TUNE', said: ['SET CRISP'], keys: ['A  MID 0.53'] });
+    await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'strip', escpos: esc, note } }); const jt = await call('/api/printers/milkbar/next', { token: T }); if (jt.json && jt.json.job) await call(`/api/printers/milkbar/jobs/${jt.json.job}`, { method: 'POST', token: T, body: { status: 'printed' } });
+    const tl1 = await call('/api/admin/tests', { key: KEY });
+    check('the test log keeps the number, settings and letters after it prints, counts on to the next', tl1.status === 200 && tl1.json.tests[0].note === note && tl1.json.tests[0].status === 'printed' && tl1.json.next === tl0.json.next + 1, JSON.stringify([tl0.json && tl0.json.next, tl1.json && tl1.json.next, tl1.json && tl1.json.tests && tl1.json.tests[0]]));
     const pack = JSON.stringify({ packs: [{ name: 'A PACK', by: 'an artist', styles: [{ id: 'grain', fonts: { body: 'mono' } }], off: [] }] });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { styles: pack } }); const pub = await call('/api/settings');
     check('the calibration strip prints with its own bytes (garbage refused); a mod pack is kept in the settings every phone reads', sp.status === 200 && sx.status === 400 && js.json && js.json.code === 'DA-STRIP' && js.json.escpos === esc && pub.json.styles === pack,

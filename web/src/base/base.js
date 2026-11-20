@@ -841,8 +841,8 @@ function thumbOf(cv) {
     var bin = ''; for (var k = 0; k < out.length; k++) bin += String.fromCharCode(out[k]); return w + ',' + h + ',' + btoa(bin);
   } catch (e) { return ''; }
 }
-/* heat: the head's darkness from the quality set (thermal.js lays the dots out for the printer) */
-function raster(cv) { return TH.raster(cv, pq().heat); }
+/* the printer's speed, head parts and grey order from the quality set (thermal.js lays the dots, or the greys, out for the printer) */
+function raster(cv) { var o = TH.opts(pq()); o.grey = !!(cv && cv.grey); return TH.raster(cv, o); }
 /* iNaturalist through novel.global (stage 4), with a way round: when novel.global is turned away (iNaturalist limits the shared
    addresses Cloudflare asks from) or slow, the browser asks iNaturalist itself, as it did before */
 (function () { var fetch0 = window.fetch.bind(window), DIRECT = 'https://api.inaturalist.org/v1/';
@@ -2253,9 +2253,10 @@ function styleNow() { return PSTY || styleBy(styleOn()); }
 /* the set, its tweaks from the approval page, the curve measured there (which stands for the set's mid-tones), then the style's own photograph */
 function pq() { var st = styleNow(), out = TH.settle(PQ_IN, st && st.photo); out.size = st ? st.size : 1.3; return out; }
 var dots = function (L, W, H, how) { return TH.dots(L, W, H, how); };
-function printReady(x, W, H, D) {
-  /* the tones made ready the one way the approval page's TUNE slip shows them (thermal.js), then the dots */
-  var Q = pq(), img = x.getImageData(0, 0, W, H), d = img.data, n = W * H, L = TH.luma(d, n), i, l, how = TH.tone(L, W, H, Q); printReady.how = how;
+function printReady(x, W, H, D, grey) {
+  /* the tones made ready the one way the approval page's TUNE slip shows them (thermal.js), then the dots. The printer's own greys only
+     where the slip keeps them (grey: the booth); everywhere else they are laid as dots */
+  var Q = pq(); if (Q.dither === 'grey' && !grey) Q.dither = 'fs'; var img = x.getImageData(0, 0, W, H), d = img.data, n = W * H, L = TH.luma(d, n), i, l, how = TH.tone(L, W, H, Q); printReady.how = how;
   /* CanvasDither's Atkinson when it is here and asked for; the others (and Atkinson without it) done here */
   if (how === 'atkinson' && D) { for (l = 0, i = 0; l < n; l++, i += 4) d[i] = d[i + 1] = d[i + 2] = L[l]; D.atkinson(img); x.putImageData(img, 0, 0); return; }
   dots(L, W, H, how); for (l = 0, i = 0; l < n; l++, i += 4) { d[i] = d[i + 1] = d[i + 2] = L[l]; d[i + 3] = 255; }
@@ -2270,9 +2271,9 @@ function inkPass(x, W, H, keep) {
   for (l = 0, i = 0; l < n; l++, i += 4) { if (inK(l)) continue; d[i] = d[i + 1] = d[i + 2] = k[l] ? 0 : 255; d[i + 3] = 255; }
   x.putImageData(img, 0, 0);
 }
-function forPrint(src, W, D) {
+function forPrint(src, W, D, grey) {
   var H = Math.round(src.height * W / src.width), c = document.createElement('canvas'); c.width = W; c.height = H; var x = c.getContext('2d');
-  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(src, 0, 0, W, H); printReady(x, W, H, D); var mr = Math.max(6, Math.round(W * 0.022)); moonMark(x, W - mr * 2.2, H - mr * 2.2, mr, '#000', (window.NG && NG.map && NG.map.lat) || -37.8); return c;
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(src, 0, 0, W, H); printReady(x, W, H, D, grey); c.how = printReady.how; var mr = Math.max(6, Math.round(W * 0.022)); moonMark(x, W - mr * 2.2, H - mr * 2.2, mr, '#000', (window.NG && NG.map && NG.map.lat) || -37.8); return c;
 }
 function drawStickers(x, W, H, ink) {
   BTH.st.forEach(function (s) {
@@ -2356,7 +2357,7 @@ function boothLine() {
 }
 function boothSlip(D, code, real) {
   /* the words in the style chosen on this phone, a third bigger than they were (the style's size), each size a whole number of dots */
-  var st = styleNow(), Z = st.size || 1.3, W = BTH.paper, pad = Math.round(W * 0.04 * st.margin), u = W / 512, p = forPrint(BTH.im, W, D), mt = Math.max(10, Math.min(28, +pq().minText || 14)), fz = function (n2) { return Math.round(Math.max(n2 * Z, mt) * u); };
+  var st = styleNow(), Z = st.size || 1.3, W = BTH.paper, pad = Math.round(W * 0.04 * st.margin), u = W / 512, p = forPrint(BTH.im, W, D, true), mt = Math.max(10, Math.min(28, +pq().minText || 14)), fz = function (n2) { return Math.round(Math.max(n2 * Z, mt) * u); };
   var fo = function (role, px) { return TH.font(st, st.fonts[role], px, true); }, band = st.top === 'band', lh = function (n2) { return Math.round(n2 * Z * st.lead * u); };
   var words = BTH.words.trim(), c = document.createElement('canvas'), x = c.getContext('2d'); x.font = fo('head', fz(34));
   var lines = words ? wrapText(x, words, W - pad * 2) : [];
@@ -2383,8 +2384,8 @@ function boothSlip(D, code, real) {
     x.font = fo('small', fz(14)); x.fillText('accounts are made only on paper', pad, y + Math.round(58 * u) + Math.round(fz(16) * 1.35)); }
     if (q) { var n = q.getModuleCount(), ox = W - pad - qs; for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) if (q.isDark(i, j)) x.fillRect(ox + j * mod, y + i * mod, mod, mod); }
     /* every dot black or white, as the printer lays it down: what is seen is what prints (the words and lines by the quality set, bolder if asked) */
-    inkPass(x, W, c.height, [0, head, W, p.height]);
-    var im2 = x.getImageData(0, 0, W, c.height), d2 = im2.data; for (var k2 = 0; k2 < d2.length; k2 += 4) { var v2 = d2[k2] * 0.299 + d2[k2 + 1] * 0.587 + d2[k2 + 2] * 0.114 < 128 ? 0 : 255; d2[k2] = d2[k2 + 1] = d2[k2 + 2] = v2; d2[k2 + 3] = 255; } x.putImageData(im2, 0, 0);
+    inkPass(x, W, c.height, [0, head, W, p.height]); c.grey = p.how === 'grey';
+    var im2 = x.getImageData(0, 0, W, c.height), d2 = im2.data, g0 = p.how === 'grey' ? head * W * 4 : -1, g1 = (head + p.height) * W * 4; for (var k2 = 0; k2 < d2.length; k2 += 4) { if (k2 >= g0 && k2 < g1 && g0 >= 0) continue; var v2 = d2[k2] * 0.299 + d2[k2 + 1] * 0.587 + d2[k2 + 2] * 0.114 < 128 ? 0 : 255; d2[k2] = d2[k2 + 1] = d2[k2 + 2] = v2; d2[k2 + 3] = 255; } x.putImageData(im2, 0, 0);
     return c;
   });
 }
