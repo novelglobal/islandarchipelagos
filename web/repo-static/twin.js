@@ -207,6 +207,7 @@
     cols.forEach(function (c, ci) { c.forEach(function (x, ri) { var p = PART[x[1]], X = ci * 110, Y = ri * ch + 4, g = el('g', { 'class': 'pt' + (p.watts && !p.source && !P.on[x[0]] ? ' off' : '') }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (p.watts && !p.source && !P.on[x[0]] ? ' · No power in' : '')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 89, rx: 6 })]);
       var sk = el('g', { transform: 'translate(' + X + ' ' + Y + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: 7 + i + x[1].length, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); g.appendChild(sk);
       var nm = el('text', { x: X + cw / 2, y: Y + 84, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
+      var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 14, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || []; ps.forEach(function (o, k) { var px = X + cw * (k + 1) / (ps.length + 1), py = Y + 97, id = x[0] + '.' + o.id; at[id] = [px, py];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
         var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
@@ -217,7 +218,7 @@
       cg.appendChild(el('path', { d: d, 'class': 'hit', 'data-cut': String(i), role: 'button', 'aria-label': label + ': tap to take it out' }, [tt(label + ' · tap to take it out')])); });
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
     var lack = P.w === 'SHORT' && /no power in|no sun|battery|night/.test(P.t) ? 'POWER' : '';
-    $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w : 'EMPTY';
+    $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY'; flDraw();
     $('#bnk').innerHTML = GROUPS.map(function (g) { return '<button type="button" data-kind="' + g[0] + '" aria-pressed="' + (ADDK === g[0]) + '"' + (lack === g[0] && ADDK !== g[0] ? ' class="hint" title="What it lacks is here"' : '') + '>' + g[0] + '</button>'; }).join('');
     var G = GROUPS.filter(function (g) { return g[0] === ADDK; })[0], has = function (id) { return BN.p.some(function (x) { return x[1] === id; }); };
     $('#bnl').innerHTML = G ? PARTS.filter(function (p) { return G[1].indexOf(p.kind) >= 0; }).map(function (p) { return '<button type="button" data-part="' + esc(p.id) + '" aria-pressed="' + has(p.id) + '" title="' + esc(p.about || p.name) + '"' + (!has(p.id) && BN.p.length >= 12 ? ' disabled' : '') + '>' + esc(String(p.name).toUpperCase()) + '</button>'; }).join('') : ''; }
@@ -226,7 +227,7 @@
   function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say ? say : 'SAVED'; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
   function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); }
   /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS (and an SD for its Pi) */
-  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice() } : { p: [], j: [] };
+  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice() } : { p: [], j: [], f: [] };
     var tray = store.get('da.ghost.build', null), done = store.get('da.ghost.seeded', '');
     if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
       [tray.pi, tray.printers].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
@@ -236,7 +237,7 @@
   $('#bnd').addEventListener('click', function (e) { if (!BN) return; var t = e.target.closest('[data-port],[data-cut],[data-kind],[data-part]'); if (!t) return;
     if (t.dataset.kind) { ADDK = ADDK === t.dataset.kind ? '' : t.dataset.kind; benchDraw(); return; }
     if (t.dataset.part) { var id = t.dataset.part, x = BN.p.filter(function (q) { return q[1] === id; })[0];
-      if (x) { BN.p = BN.p.filter(function (q) { return q !== x; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== x[0] && j[1].split('.')[0] !== x[0]; }); if (SEL && SEL.split('.')[0] === x[0]) SEL = null; }
+      if (x) { BN.p = BN.p.filter(function (q) { return q !== x; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== x[0] && j[1].split('.')[0] !== x[0]; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== x[0]; }); if (SEL && SEL.split('.')[0] === x[0]) SEL = null; }
       else if (BN.p.length < 12) partAdd(id); benchDraw(); benchSave(); return; }
     if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
     var pid = t.dataset.port;
@@ -246,6 +247,58 @@
     if (BN.j.length >= 24) { benchDraw(); $('#bnsay').textContent = 'FULL'; return; }
     BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); $('#bnsay').title = r.ok ? '' : r.why; benchSave(r.ok ? (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : 'WRONG'); });
   $('#bnd').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut]')) { e.preventDefault(); e.target.closest('[data-port],[data-cut]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+
+  /* ───────── FLASH: an SD on the bench written with Island OS as the Raspberry Pi Imager writes it. DEVICE, OS, STORAGE, SETTINGS,
+     WRITE (then VERIFY, then EJECT). The OS is the latest release as the real Imager lists it (/api/os); the write takes the time a
+     real one would at 20 MB/s, and its check 40 MB/s, both twenty times faster, with a skip. The Wi-Fi stays on this screen ───────── */
+  var FL = { step: 0, dev: '', sd: '', name: '', ssid: '', pw: '', cc: 'AU', run: null, done: '' }, OS, STEPS = ['DEVICE', 'OS', 'STORAGE', 'SETTINGS', 'WRITE'];
+  var gb = function (n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : Math.round(n / 1e6) + ' MB'; };
+  function osGet() { if (OS !== undefined) return; OS = null; var kept = store.get('da.os', null);
+    fetch('/api/os').then(function (r) { return r.json(); }).then(function (j) { OS = j.os || (kept ? Object.assign({}, kept, { kept: true }) : false); if (j.os) store.set('da.os', j.os); flDraw(); }, function () { OS = kept ? Object.assign({}, kept, { kept: true }) : false; flDraw(); }); }
+  function flashedOf(iid) { return (BN.f || []).filter(function (x) { return x[0] === iid; })[0]; }
+  function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32) || 'island'; }
+  function flDraw() { var host = $('#fl'); if (!host || !BN) return; var of = function (k) { return BN.p.filter(function (x) { return PART[x[1]] && PART[x[1]].kind === k; }); }, pis = of('pi'), sds = of('sd');
+    if (FL.dev && !pis.some(function (x) { return x[0] === FL.dev; })) FL.dev = ''; if (FL.sd && !sds.some(function (x) { return x[0] === FL.sd; })) FL.sd = '';
+    if (pis.length === 1 && !FL.dev) FL.dev = pis[0][0]; if (sds.length === 1 && !FL.sd) FL.sd = sds[0][0];
+    var can = [true, !!FL.dev, !!FL.dev && !!OS, !!FL.dev && !!OS && !!FL.sd, !!FL.dev && !!OS && !!FL.sd && !!FL.name], nm = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? String(PART[x[1]].name).toUpperCase() : '—'; };
+    var said = [nm(FL.dev), OS ? 'ISLAND OS ' + OS.version : OS === false ? 'OFFLINE' : '· · ·', nm(FL.sd), FL.name || '—', FL.done ? 'FLASHED' : ''];
+    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (can[i] && !FL.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
+    var P = '', sdP = function (x) { var p = PART[x[1]], g = +(/(\d+)/.exec(p.id) || [])[1] || 0, small = OS && g * 1e9 * 0.93 < OS.size, f = flashedOf(x[0]); return '<button type="button" data-sd="' + x[0] + '" aria-pressed="' + (FL.sd === x[0]) + '"' + (small ? ' disabled title="Too small for ' + gb(OS.size) + '"' : ' title="' + (f ? 'Has Island OS ' + esc(f[1]) + ': writing again erases it' : 'Empty') + '"') + '>' + esc(String(p.name).toUpperCase()) + (f ? ' · ' + esc(f[1]) : '') + '</button>'; };
+    if (!pis.length || !sds.length) P = '<p class="say">NEEDS ' + (!pis.length ? 'A PI' : '') + (!pis.length && !sds.length ? ' + ' : '') + (!sds.length ? 'AN SD' : '') + '</p>';
+    else if (FL.step === 0) P = '<div class="opts">' + pis.map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (FL.dev === x[0]) + '" title="' + esc(PART[x[1]].about || '') + '">' + esc(String(PART[x[1]].name).toUpperCase()) + '</button>'; }).join('') + '</div>';
+    else if (FL.step === 1) P = OS ? '<div class="opts"><button type="button" data-os="1" aria-pressed="' + (FL.step > 1 || !!FL.sd) + '" title="' + gb(OS.download) + ' to download, ' + gb(OS.size) + ' written · for ' + esc((OS.devices || []).join(', ')) + (OS.kept ? ' · offline: the last one seen' : '') + '">ISLAND OS ' + esc(OS.version) + '</button></div>' : '<p class="say">' + (OS === false ? 'OFFLINE' : '· · ·') + '</p>';
+    else if (FL.step === 2) P = '<div class="opts">' + sds.map(sdP).join('') + '</div>';
+    else if (FL.step === 3) P = '<form class="flf" id="flf"><label><span class="lbl">NAME</span><input name="name" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.name || slug(T && T.name)) + '" title="Its name on the network"></label>' +
+      '<label><span class="lbl" title="The network it joins on first start. Kept on this screen only, never sent">WI-FI</span><input name="ssid" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.ssid) + '"></label>' +
+      '<label><span class="lbl" title="Never sent or kept: a ghost joins no network">PASSWORD</span><input name="pw" type="password" maxlength="63" autocomplete="off" value="' + esc(FL.pw) + '"></label>' +
+      '<label><span class="lbl">COUNTRY</span><input name="cc" maxlength="2" autocomplete="off" autocapitalize="characters" value="' + esc(FL.cc) + '"></label><button class="on">NEXT</button></form>';
+    else if (FL.step === 4) P = FL.run ? '<div class="bar"><i style="width:' + Math.round(FL.run.pc) + '%"></i></div><div class="row"><p class="say" id="flsay">' + FL.run.say + '</p><button type="button" data-skip="1" title="Straight to the end">SKIP</button></div>'
+      : FL.done ? '<div class="row"><p class="say">FLASHED · ' + esc(FL.done) + '</p><button type="button" data-eject="1" title="Take the SD out: it goes in the Pi">EJECT</button></div>'
+      : '<div class="row"><button type="button" class="on" data-write="1" title="Everything on ' + esc(nm(FL.sd)) + ' is erased">WRITE</button><p class="say">' + esc(nm(FL.sd)) + ' · ' + gb(OS ? OS.size : 0) + '</p></div>';
+    $('#flp').innerHTML = P; }
+  /* the write, as long as a real one at 20 MB/s, its check at 40 MB/s, each twenty times faster */
+  function flWrite() { var size = OS.size || 3e9, w = size / 20e6 / 20 * 1000, v = size / 40e6 / 20 * 1000, t0 = performance.now(), sd = FL.sd, ver = OS.version, name = FL.name;
+    FL.run = { pc: 0, say: 'WRITING 0%' }; flDraw();
+    var tick = function () { if (!FL.run) return; var t = performance.now() - t0 + FL.run.skip;
+      if (t < w) { FL.run.pc = t / w * 100; FL.run.say = 'WRITING ' + Math.floor(FL.run.pc) + '% · ' + gb(size * t / w) + ' · 20 MB/S'; }
+      else if (t < w + v) { FL.run.pc = (t - w) / v * 100; FL.run.say = 'VERIFYING ' + Math.floor(FL.run.pc) + '%'; }
+      else { FL.run = null; FL.done = ver; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); benchDraw(); benchSave('FLASHED'); flSlip(sd, ver); return; }
+      var b = $('#flp .bar i'), s = $('#flsay'); if (b && s) { b.style.width = FL.run.pc.toFixed(1) + '%'; s.textContent = FL.run.say; } else flDraw(); setTimeout(tick, 100); };
+    FL.run.skip = 0; FL.run.end = w + v; tick(); }
+  /* the settings, printed on the twin as the island will print them on its first start */
+  function flSlip(sd, ver) { var x = BN.p.filter(function (q) { return q[0] === sd; })[0], d = BN.p.filter(function (q) { return q[0] === FL.dev; })[0];
+    var L = ['ISLAND OS ' + ver, 'NAME ' + FL.name, 'WI-FI ' + (FL.ssid || '-'), 'PASSWORD ' + (FL.pw ? '********' : '-'), 'COUNTRY ' + FL.cc, (x ? PART[x[1]].name : 'SD') + ' VERIFIED', 'FOR ' + (d ? PART[d[1]].name : 'PI'), 'SHA ' + (OS.sha || '')];
+    var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })); shown('f' + Date.now(), draw(u, T ? T.paper : '80'), 'FLASH', true, true); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
+  $('#fl').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.disabled || !BN) return; var d = b.dataset;
+    if (d.step != null) { FL.step = +d.step; if (FL.step === 1) osGet(); }
+    else if (d.dev) { FL.dev = d.dev; FL.step = 1; osGet(); }
+    else if (d.os) FL.step = 2;
+    else if (d.sd) { FL.sd = d.sd; FL.step = 3; }
+    else if (d.write) { if (!confirm('Everything on the SD is erased. Write Island OS ' + OS.version + '?')) return; FL.done = ''; flWrite(); return; }
+    else if (d.skip) { if (FL.run) FL.run.skip = FL.run.end; return; }
+    else if (d.eject) { FL.done = ''; FL.step = 0; $('#bnsay').textContent = 'EJECTED'; }
+    else return; flDraw(); });
+  $('#fl').addEventListener('submit', function (e) { e.preventDefault(); var f = e.target; var v = function (n) { return String(f.elements.namedItem(n).value || ''); }; FL.name = slug(v('name')); FL.ssid = v('ssid').slice(0, 32); FL.pw = v('pw'); FL.cc = (v('cc') || 'AU').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'AU'; FL.step = 4; flDraw(); });
 
   /* ───────── a printer added: the pair code a Pi prints ───────── */
   $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; } $('#bsay').textContent = '· · ·';

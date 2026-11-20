@@ -15,10 +15,10 @@ with lzma.open(img) as f:
         ext.update(b); size += len(b)
 
 json.dump({'os_list': [{
-    'name': 'island',
-    'description': 'island',
+    'name': 'Island Archipelagos OS',
+    'description': 'A thermal printer island: Raspberry Pi OS Lite (64-bit) with the island receiver.',
     'url': f'https://github.com/{repo}/releases/download/{tag}/{os.path.basename(img)}',
-    'icon': f'https://raw.githubusercontent.com/{repo}/{tag}/image/icon.png',
+    'icon': f'https://raw.githubusercontent.com/{repo}/{tag}/kit/image/icon.png',
     'website': f'https://github.com/{repo}',
     'release_date': date.today().isoformat(),
     'extract_size': size,

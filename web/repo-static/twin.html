@@ -80,6 +80,11 @@
   .pw { margin: 0; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; } .pw.short { color: var(--hot); }
   .more { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; } .why { color: var(--ink); margin-top: 6px; letter-spacing: .04em; line-height: 1.5; } .why:empty { display: none; }
   #bnk .hint { border-color: var(--hot); }
+  /* the imager, mimicked */
+  #flp { margin-top: 10px; } #flp .row { justify-content: space-between; } #flp .say { margin: 0; }
+  .bar { height: 6px; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 10px; } .bar i { display: block; height: 100%; background: var(--ink); transition: width .1s linear; }
+  .flf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; } .flf label { display: grid; gap: 6px; } .flf .lbl { margin: 0; } .flf input { width: 100%; font-size: 13px; } .flf button { justify-self: start; }
+  .bench .fv { font-size: 7.5px; fill: var(--hot); letter-spacing: .06em; }
   @media (prefers-reduced-motion: reduce) { .slip { transition: none; } .bench .po.fit circle { animation: none; } }
 </style>
 </head>
@@ -113,6 +118,7 @@
       <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
       <p class="pw" id="bnp"></p>
       <span class="lbl" title="Tap a kind, then a part: on the bench, or off it again">ADD</span><div class="opts" id="bnk"></div><div class="opts" id="bnl"></div>
+      <span class="lbl" title="Island OS written onto an SD on this bench, as the Raspberry Pi Imager writes it">FLASH</span><div id="fl"><div class="opts" id="fls"></div><div id="flp"></div></div>
       <p class="say" id="bnsay"></p><p class="say why" id="bnw" aria-live="polite"></p></details>
     <details id="jd"><summary><b>JOINS</b><span id="js"></span></summary>
       <svg class="map" id="jmap" viewBox="0 0 320 150" role="img" aria-label="This island's joins"></svg>

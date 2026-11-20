@@ -935,8 +935,17 @@ function benchIn(b) { const P = Array.isArray(b.p) ? b.p : [], J = Array.isArray
   const p = [], own = new Set(); for (const x of P) { if (!Array.isArray(x) || !/^p\d{1,3}$/.test(x[0]) || own.has(x[0]) || !PART_IDS.includes(x[1])) return null; own.add(x[0]); p.push([x[0], x[1]]); }
   const end = e => typeof e === 'string' && /^p\d{1,3}\.[a-z0-9]{1,8}$/.test(e) && own.has(e.split('.')[0]), j = [];
   for (const x of J) { if (!Array.isArray(x) || !end(x[0]) || !end(x[1]) || x[0].split('.')[0] === x[1].split('.')[0]) return null; j.push([x[0], x[1]]); }
-  return { p, j }; }
-function benchOf(s) { let b = null; try { b = JSON.parse(s || 'null'); } catch (e) { b = null; } return b && Array.isArray(b.p) ? b : { p: [], j: [] }; }
+  /* f: each SD flashed on the bench, [its own id, the island OS version, the name it was given]; never the Wi-Fi, which stays on the screen */
+  const F = Array.isArray(b.f) ? b.f : [], fl = [], sd = new Set(p.filter(x => /^sd-/.test(x[1])).map(x => x[0])); if (F.length > 12) return null;
+  for (const x of F) { if (!Array.isArray(x) || !sd.has(x[0]) || !/^v\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(x[1]) || !/^[a-z0-9-]{1,32}$/.test(x[2])) return null; fl.push([x[0], x[1], x[2]]); }
+  return { p, j, f: fl }; }
+function benchOf(s) { let b = null; try { b = JSON.parse(s || 'null'); } catch (e) { b = null; } return b && Array.isArray(b.p) ? { p: b.p, j: b.j || [], f: b.f || [] } : { p: [], j: [], f: [] }; }
+/* the island OS as the real Raspberry Pi Imager lists it: the latest release's os-list.json (kit/image/os-list.py), cached an hour.
+   A ghost's bench flashes this, version and sizes as they are */
+async function osNow() { let o = null; try { const r = await fetch('https://github.com/novelglobal/islandarchipelagos/releases/latest/download/os-list.json', { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) o = ((await r.json()).os_list || [])[0] || null; } catch (e) { o = null; }
+  const v = o && (/\/download\/(v\d+\.\d+\.\d+)\//.exec(o.url || '') || [])[1];
+  if (!v) return new Response(JSON.stringify({ os: null }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=300' } });
+  return new Response(JSON.stringify({ os: { version: v, download: +o.image_download_size || 0, size: +o.extract_size || 0, sha: String(o.extract_sha256 || '').slice(0, 12), devices: Array.isArray(o.devices) ? o.devices.slice(0, 8) : [] } }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } }); }
 async function ghostAdopt(db, p, code) {
   if (!p.ghost) return fail(400, 'not a ghost');
   await pairs(db); code = pairCode(code);
@@ -1871,6 +1880,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'island' && !p[1] && (m === 'GET' || m === 'POST')) return keeper(db, env, req);
   if (p[0] === 'ghost' && !p[1] && m === 'POST') return ghostNew(db, env, req);
   if (p[0] === 'twin' && !p[1] && (m === 'GET' || m === 'POST')) return twin(db, env, req, url);
+  if (p[0] === 'os' && !p[1] && m === 'GET') return osNow();
   if (p[0] === 'island' && p[1] === 'pics' && p[2] && !p[3] && (m === 'PUT' || m === 'DELETE')) return keeperPic(db, env, req, p[2]);
   if (p[0] === 'cards' && !p[1] && m === 'GET') return cardList(db);
   if (p[0] === 'cards' && p[1] && p[2] && !p[3] && m === 'GET') return cardPic(db, env, p[1], p[2]);

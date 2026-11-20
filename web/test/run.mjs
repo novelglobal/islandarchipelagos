@@ -2209,6 +2209,17 @@ if (run('bench')) try {
   check('bench: a Pi, an SD, a TM-T88V and solar (charger, battery, boost, buck) joined by taps read ENOUGH, the sums in its hover; kept with the ghost through a reload; nothing runs off the phone',
     b1.cables === 8 && !b1.bad && !b1.off && b1.word === 'ENOUGH' && /Uses 113 Wh a day · the sun gives 338 Wh \(4\.5 h\) · the battery holds 576 Wh, 123 h with no sun/.test(b1.why) && b1.sum === '8 PARTS · ENOUGH' && b1.wide && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
     JSON.stringify({ b1, b2 }));
+  /* FLASH: the imager mimicked on the bench's Pi and SD, the latest release as the real Imager lists it; the Wi-Fi never leaves the screen */
+  await page.route('**/api/os', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ os: { version: 'v1.1.1', download: 612317232, size: 3112173568, sha: '7d99383403ba', devices: ['pi3-64bit', 'pi4-64bit', 'pi5-64bit'] } }) }));
+  const posts = []; page.on('request', r => { if (r.url().endsWith('/api/twin') && r.method() === 'POST') posts.push(r.postData() || ''); });
+  const fl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s), c = s => q(s).click(), o = {}; window.confirm = () => true;
+    o.steps = [...document.querySelectorAll('#fls button')].map(b => b.textContent + (b.disabled ? '-' : '')).join(); c('[data-step="1"]'); await z(400); o.os = q('#flp').textContent; c('[data-os]'); await z(30);
+    o.sd = q('#flp').textContent; c('[data-sd]'); await z(30); q('#flf [name=ssid]').value = 'reefnet'; q('#flf [name=pw]').value = 'secret12'; q('#flf button').click(); await z(30);
+    c('[data-write]'); await z(400); o.mid = q('#flsay').textContent; c('[data-skip]'); await z(400); o.end = q('#flp').textContent; o.fv = q('.bench .fv') ? q('.bench .fv').lastChild.textContent : ''; o.tag = (q('#roll .slip .tag') || {}).textContent; o.sum = q('#bns').textContent; return o; });
+  await sleep(900); const bk = await page.evaluate(async () => (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench);
+  check('bench: FLASH walks DEVICE, OS (the latest release), STORAGE, SETTINGS, WRITE, VERIFY; the SD reads its version, the settings print on the twin, and the Wi-Fi is never sent',
+    /^DEVICE,OS,STORAGE,SETTINGS,WRITE$/.test(fl.steps.replace(/-/g, '')) && fl.os === 'ISLAND OS v1.1.1' && fl.sd === 'SD 32 GB' && /^WRITING \d+% · .* · 20 MB\/S$/.test(fl.mid) && /^FLASHED · v1\.1\.1/.test(fl.end) && fl.fv === 'v1.1.1' && fl.tag === 'FLASH' && / · FLASHED$/.test(fl.sum)
+    && JSON.stringify(bk.f) === '[["p4","v1.1.1","bench-bb"]]' && posts.length > 0 && !posts.some(p => /reefnet|secret12/.test(p)), JSON.stringify({ fl, f: bk.f, posts: posts.length }));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }
 
