@@ -851,6 +851,7 @@ function raster(cv) { return TH.raster(cv, pq().heat); }
     return fetch0(s, o2).then(function (r) { return r.ok ? r : direct(); }).catch(direct); }; })();
 function api(path, opt) {
   opt = opt || {}; opt.headers = { 'content-type': 'application/json' }; var hk = store.get('da.who.home', ''); if (/^[0-9a-f]{16}$/.test(hk)) opt.headers['x-home'] = hk;
+  if (path === '/partners') { var ik = store.get('da.hm.key', ''); if (/^[A-Za-z0-9_-]{16,64}$/.test(ik)) opt.headers.authorization = 'Bearer ' + ik; }   /* a ghost island shows only to its own key */
   return fetch(API + path, opt).then(function (r) { if (r.status === 204) return null; return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; e.wait = j.wait; throw e; } homeTake(j); return j; }); });
 }
 /* a print refused for the minute between prints: WAIT and the seconds left */

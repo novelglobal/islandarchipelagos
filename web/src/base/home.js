@@ -77,7 +77,7 @@
   var SMALL = {
     radio: '', wish: '<p class="sm-sub st-sub">strategic storytelling</p>', research: '', zine: '',
     kit: '',
-    space: '<div class="sm-o sm-prn">' + PRN_HTML + '<a class="sm-inst" data-gh href="https://github.com/novelglobal/islandarchipelagos/tree/main/kit" target="_blank" rel="noopener"><i></i>ONE CLICK INSTALL</a><b class="sm-inst sm-parts" data-kitopen><i></i>PARTS LIST</b></div>',
+    space: '<div class="sm-o sm-prn">' + PRN_HTML + '<a class="sm-inst" data-gh href="https://github.com/novelglobal/islandarchipelagos/tree/main/kit" target="_blank" rel="noopener"><i></i>ONE CLICK INSTALL</a><b class="sm-inst sm-parts" data-kitopen><i></i>PARTS LIST</b><b class="sm-inst sm-ghost" data-ghostopen><i></i>GHOST ISLAND</b></div>',
     portfolio: '<div class="sm-o sm-slip"><img alt="" decoding="async" loading="lazy" src="/cards/found-tap.jpg"><b>DA-ISL1</b></div>'
   };
   var SMALL_T = { radio: 'Direct action radio', wish: 'bluepaper', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
@@ -853,7 +853,7 @@
   addEventListener('resize', function () { requestAnimationFrame(introFit); requestAnimationFrame(wlSize); });
   addEventListener('click', function (e) { var f = e.target.closest && (e.target.closest('[data-inflip]') || e.target.closest('.sk-intro .in-front')); if (!f) return; var cd = f.closest('.sk-intro'); if (!cd) return; e.preventDefault(); e.stopPropagation(); cd.classList.toggle('flip'); if (cd.classList.contains('flip')) requestAnimationFrame(function () { introFit(); introArc(); }); }, true);
   /* small-card keys that lie under the card's open-button answer where they show */
-  addEventListener('click', function (e) { if (e.clientX == null || (e.target.closest && e.target.closest('.rd-mute, [data-inflip]'))) return; var k = $$('[data-gh], .sm-f [data-kitopen]').filter(function (m) { var r = m.getBoundingClientRect(); return r.width && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; })[0]; if (!k) return; e.preventDefault(); e.stopPropagation(); if (k.hasAttribute('data-gh')) window.__hmLeave(k.href, e.clientX, e.clientY); else open('kit'); }, true);
+  addEventListener('click', function (e) { if (e.clientX == null || (e.target.closest && e.target.closest('.rd-mute, [data-inflip]'))) return; var k = $$('[data-gh], .sm-f [data-kitopen], .sm-f [data-ghostopen]').filter(function (m) { var r = m.getBoundingClientRect(); return r.width && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; })[0]; if (!k) return; e.preventDefault(); e.stopPropagation(); if (k.hasAttribute('data-gh')) window.__hmLeave(k.href, e.clientX, e.clientY); else if (k.hasAttribute('data-ghostopen')) ghostOpen(); else open('kit'); }, true);
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set('da.hm.mine', MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
@@ -871,7 +871,7 @@
     else if (sk === 'zine') inner = '<h2 class="hm-t vh">' + t + '</h2><i class="zt-sw" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b></i><span class="hm-lamps"></span>';
     else if (sk === 'research') inner = '<h2 class="hm-t">' + t.split(' ').map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'kit') inner = (c.tag ? '<p class="hm-tag"><i></i>' + esc(c.tag) + '</p>' : '') + '<h2 class="hm-t">' + esc(c.line || c.title) + '</h2><p class="kt-fz">build a solar thermal<br>printer from e-waste</p><span class="hm-sp"></span><span class="hm-lamps"></span>';
-    else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<a class="hm-tag sp-inst" data-gh href="https://github.com/novelglobal/islandarchipelagos/tree/main/kit" target="_blank" rel="noopener" title="The island OS"><i></i>ONE CLICK INSTALL</a><button type="button" class="hm-tag sp-inst sp-parts" data-kitopen title="Every part, to tick off"><i></i>PARTS LIST</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
+    else if (sk === 'space') inner = (OPT.one ? '<div class="sp-prn">' + PRN_HTML + '<a class="hm-tag sp-inst" data-gh href="https://github.com/novelglobal/islandarchipelagos/tree/main/kit" target="_blank" rel="noopener" title="The island OS"><i></i>ONE CLICK INSTALL</a><button type="button" class="hm-tag sp-inst sp-parts" data-kitopen title="Every part, to tick off"><i></i>PARTS LIST</button><button type="button" class="hm-tag sp-inst sp-ghost' + (store.get('da.ghost.on', false) ? ' on' : '') + '" data-ghostopen title="Build, design and print with a fantasy island"><i></i>GHOST ISLAND</button></div><p class="kt-fz sp-fz">build a solar thermal<br>printer from e-waste</p>' : '') + '<span class="hm-sp"></span>' + MARK + '<h2 class="hm-t">' + esc(c.title.toLowerCase()) + '</h2><span class="hm-lamps"></span>';
     else if (sk === 'play') inner = '<span class="hm-sp"></span>' + (c.star ? '<i class="pl-star" title="Starred by novel.global" aria-label="Starred">★</i>' : '') + '<h2 class="hm-t pl-t">' + t + '</h2><b class="sl-un pl-go"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></b>';
     else if (sk === 'wx') { var nm = (t.charAt(0) + t.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
       inner = '<h2 class="hm-t vh">' + t + '</h2><div class="wx-f"><i class="wx-a" aria-hidden="true"></i><i class="wx-b" aria-hidden="true"></i>' + (c.g === 'week' ? '<span class="wx-wk" aria-hidden="true"></span>' : '') + '<b class="wx-k">' + nm + '</b>' +
@@ -1180,7 +1180,11 @@
     d.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b && e.target.closest('.sn-disc')) return; shut(); if (b && b.dataset.a === '1') open('space', { mode: c.mode, t: c.t }); });
     addEventListener('keydown', esc1); document.body.appendChild(d); d.querySelector('[data-a="1"]').focus(); }
   /* a card opened is a print on its way: the printers are told to ask every few seconds for a while (one small call, at most every 90 s) */
+  /* what opening a code from another phone last said: kept, so a redraw of HOME does not wipe it */
+  var OPENSAY = '';
   var WARMED = 0; function warmUp() { if (Date.now() - WARMED < 90e3) return; WARMED = Date.now(); try { fetch('/api/warm', { method: 'POST', keepalive: true }).catch(function () { /* none */ }); } catch (e) { /* none */ } }
+  /* GHOST ISLAND: the archipelagos, switched to ghost (the switch is kept on this phone) */
+  function ghostOpen() { store.set('da.ghost.on', true); open('space'); }
   function open(id, opt) {
     var c = byId(id); if (!c) return;
     /* a card still being built: a small nudge, nothing opens */
@@ -1326,6 +1330,7 @@
     var r = e.target.closest('[data-radar]'); if (r) { var rc = byId(r.dataset.radar); finder(rc && rc.island); return; }
     var fd = e.target.closest('[data-find]'); if (fd) { e.preventDefault(); e.stopPropagation(); finder(fd.dataset.find); return; }
     var ki = e.target.closest('[data-kitopen]'); if (ki) { e.preventDefault(); e.stopPropagation(); open('kit'); return; }
+    var gk = e.target.closest('[data-ghostopen]'); if (gk) { e.preventDefault(); e.stopPropagation(); ghostOpen(); return; }
     var pg = e.target.closest('[data-plug]'); if (pg) { e.preventDefault(); e.stopPropagation(); plugOut(pg.dataset.plug); return; }
     var tb = e.target.closest('[data-talk]'); if (tb) { e.preventDefault(); e.stopPropagation(); cardTalk(tb.dataset.talk); beep(620, 0.04); return; }
   });
@@ -1639,7 +1644,7 @@
 
   /* ───────── the printers: who is listening, for the radar keys ───────── */
   var PRN = [], PRN_AT = 0;
-  function partners(force) { if (!force && Date.now() - PRN_AT < 60e3) return Promise.resolve(PRN); return fetch('/api/partners').then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) { var pk0 = JSON.stringify(atPack()); PRN = j.partners || []; PRN_AT = Date.now(); radars(); isleFresh(); if (JSON.stringify(atPack()) !== pk0) applyCards(null); return PRN; }).catch(function () { return PRN; }); }
+  function partners(force) { if (!force && Date.now() - PRN_AT < 60e3) return Promise.resolve(PRN); var ik = store.get('da.hm.key', ''); return fetch('/api/partners', /^[A-Za-z0-9_-]{16,64}$/.test(ik) ? { headers: { authorization: 'Bearer ' + ik } } : {}).then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) { var pk0 = JSON.stringify(atPack()); PRN = j.partners || []; PRN_AT = Date.now(); radars(); isleFresh(); if (JSON.stringify(atPack()) !== pk0) applyCards(null); return PRN; }).catch(function () { return PRN; }); }
   function isleFresh() { if (!PLACE || !PLACE.isle || PLACE.isle === 'novelglobal') return; var p = PRN.filter(function (x) { return x.id === PLACE.isle; })[0]; if (!p) return; var h = p.home || null;
     if (JSON.stringify(h) === JSON.stringify(IH)) return; IH = h; PLACE.ihome = h; store.set('da.pop.home', PLACE); applyCards(null); }
   function turn(el, dir, mid) { if (RM.matches || !el.animate) { mid(); return; } var p = 'perspective(1400px) rotateY(';
@@ -1860,7 +1865,7 @@
           return '<span' + (u ? ' title="' + (u.kind === 'shop' ? 'Card' + (full ? ', ' + full + ' full' : '') : 'Class') + '"' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (e ? '<i class="mn-card">' + Array(k + 1).join('●') + Array(e - k + 1).join('○') + '</i>' : p.n > 1 ? '<i>×' + (+p.n) + '</i>' : '') + '</span>'; }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
         (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="An animal given at random: remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
           : who ? '<p class="mn-say" title="This phone does not hold this code\'s key: open it below with its animal">LOCKED</p>' : '') +
-        '<details class="mn-sub"><summary title="Your code and its animal, from another phone">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open"></p></details>'; };
+        '<details class="mn-sub"><summary title="Your code and its animal, from another phone">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
     var printPart = function () {
       return '<dl class="mn-id"><div class="mn-wide" title="' + (ps ? 'A print pass for today: your next print there goes straight out' : 'A print pass comes from a printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
         (who ? '<ol class="mn-pl">' + (PRINTS == null ? '<li class="no">· · ·</li>' : PRINTS.length ? PRINTS.slice(0, 12).map(function (m) { return '<li><b>' + esc(m.code) + '</b><span>' + (m.shown ? 'SHOWN' : 'WAITING') + '</span></li>'; }).join('') : '<li class="no">—</li>') + '</ol>' : ''); };
@@ -1890,15 +1895,15 @@
     body.addEventListener('toggle', function (e) { var d = e.target; if (!d.classList || !d.classList.contains('mn-sec')) return; SEC[d.dataset.s] = d.open ? 1 : 0; store.set('da.hm.secs', SEC); if (d.open && d.dataset.s === 'print' && PRINTS == null) draw(); }, true);
     body.addEventListener('change', function (e) { var t = e.target; if (t.dataset.a !== 'pick' || t.value === '') return; beep(550, 0.05); NG.animalSet(+t.value).then(function () { SHOWA = true; draw(); }, function () { draw(); }); });
     body.addEventListener('submit', function (e) { e.preventDefault(); var f = e.target, say;
-      if (f.dataset.f === 'open') { say = $('[data-say="open"]', body); var c = f.c.value, a = f.a.value; if (!c || a === '') { say.textContent = '×'; return; } say.textContent = '· · ·';
-        NG.homeOpen(c, +a).then(function () { SHOWA = false; PRINTS = null; beep(880, 0.06); applyCards(null); draw(); }, function (er) { say.textContent = er && er.status === 423 ? 'LOCKED' : er && er.status === 429 ? 'WAIT' : 'NO'; say.title = er && er.status === 423 ? 'Too many wrong animals: open again in a week' : ''; beep(220, 0.08); }); }
+      if (f.dataset.f === 'open') { say = { set textContent(t) { OPENSAY = t; var e2 = $('[data-say="open"]'); if (e2) e2.textContent = t; }, set title(t) { var e2 = $('[data-say="open"]'); if (e2) e2.title = t; } }; var c = f.c.value, a = f.a.value; if (!c || a === '') { say.textContent = '×'; return; } say.textContent = '· · ·';
+        NG.homeOpen(c, +a).then(function () { OPENSAY = ''; SHOWA = false; PRINTS = null; beep(880, 0.06); applyCards(null); draw(); }, function (er) { say.textContent = er && er.status === 423 ? 'LOCKED' : er && er.status === 429 ? 'WAIT' : 'NO'; say.title = er && er.status === 423 ? 'Too many wrong animals: open again in a week' : ''; beep(220, 0.08); }); }
       if (f.dataset.f === 'key') { var k = f.k.value.trim(); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return; store.set('da.hm.key', k); ISLE = 'own'; draw(); } });
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b || b.closest('.mn-keeper')) return;
       if (b.dataset.find != null) { e.stopPropagation(); SH.swap = true; finder(b.dataset.find); return; }
       if (b.dataset.a === 'show') { SHOWA = !SHOWA; return draw(); }
       if (b.dataset.a === 'rand') { if (an != null && !confirm('Give this code a new animal?')) return; beep(660, 0.05); NG.animalSet(crypto.getRandomValues(new Uint8Array(1))[0] % A.length).then(function () { SHOWA = true; draw(); }, function () { draw(); }); return; }
       if (b.dataset.isle) { ISLE = ISLE === b.dataset.isle ? null : b.dataset.isle; beep(520, 0.05); return draw(); }
-      if (b.hasAttribute('data-ghost')) { location.href = '/twin'; return; }
+      if (b.hasAttribute('data-ghost')) { ghostOpen(); return; }
       if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
       if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
       if (b.dataset.main) { MINE = MINE || {}; MINE.main = +b.dataset.main; return keep(null); }

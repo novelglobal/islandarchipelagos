@@ -1557,6 +1557,9 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 #hm .sm-prn .sm-inst::after, #hm .sk-space .sp-prn .sp-inst::after { content: ''; position: absolute; left: 100%; top: 50%; width: 10px; border-top: 1px solid currentColor; opacity: .7; }
 #hm .sk-space .sp-prn .sp-inst { left: auto; right: 64%; top: 29%; white-space: nowrap; }
 #hm .sk-space .sp-prn .sp-inst.sp-parts { top: 62%; right: 76%; }
+/* GHOST ISLAND: the third key, dashed like a part not yet found; lit while the switch is on */
+#hm .sm-prn .sm-inst.sm-ghost, #hm .sk-space .sp-prn .sp-inst.sp-ghost { top: auto; bottom: 9%; right: 64%; border-style: dashed; }
+#hm .sk-space .sp-prn .sp-inst.sp-ghost.on { border-style: solid; }
 
 /* THE WALL: past the logo at the foot, one artwork to a screen, whole and in colour on black; nothing else on it until it is tapped */
 .hm-wall { position: relative; flex: none; height: 92vh; margin: 0; background: #050505; scroll-snap-align: start; overflow: hidden; }

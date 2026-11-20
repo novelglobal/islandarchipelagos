@@ -156,7 +156,7 @@
   var HOVER = { printers: 'USB, ESC/POS', pi: 'Raspberry Pi', power: 'From the parts list' };
   function plates(tab) { var box = $('#plates'); box.innerHTML = ''; box.scrollLeft = 0;
     $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
-    PLATES[tab].forEach(function (p, i) { var f = D.createElement('figure'); f.className = 'plate'; f.title = HOVER[tab]; var pic = D.createElement('div'); pic.className = 'pic'; f.appendChild(pic);
+    PLATES[tab].forEach(function (p, i) { var f = D.createElement('figure'); f.className = 'plate' + (took(tab, p[0]) ? ' took' : ''); f.title = HOVER[tab]; f.dataset.take = tab; f.dataset.pn = p[0]; if (GHOST) { f.tabIndex = 0; f.setAttribute('role', 'button'); f.setAttribute('aria-pressed', String(took(tab, p[0]))); } var pic = D.createElement('div'); pic.className = 'pic'; f.appendChild(pic);
       if (p[3]) { var im = D.createElement('img'); im.src = p[3]; im.alt = p[0]; im.loading = 'lazy'; pic.appendChild(im); } else { seed = 11 + i * 5; paint(pic, KIT[p[2]](), '0 0 120 90'); }
       var c = D.createElement('figcaption'); c.innerHTML = '<span class="n"></span><span class="m mono"></span>'; c.firstChild.textContent = p[0]; c.lastChild.textContent = p[1]; f.appendChild(c);
       if (p[4]) { var t = D.createElement('span'); t.className = 't mono'; t.textContent = p[4]; f.appendChild(t); } box.appendChild(f); }); }
@@ -208,6 +208,52 @@
   var STARTS = [['ghost', 'GHOST CAPTURE'], ['armband', 'ARMBAND'], ['quest', 'TEXT GAME'], ['comic', 'COMICS'], ['memo', 'SPEECH PRINT'], ['pobox', 'PO BOX'], ['album', 'PHOTO SEND'], ['link', 'LINK PLAY'], ['sky', 'ASTRONOMY']];
   $('#starts').innerHTML = STARTS.map(function (t) { return '<a href="bench?' + (IN ? 'in=1&' : '') + 'm=live&t=' + t[0] + (nm ? '&night=' + nm[1] : '') + '#b">' + t[1] + '</a>'; }).join('');
 
+  /* ───────── GHOST: one switch turns the page and the mode ghost. Kept on this phone (da.ghost.on), or opened by ?ghost=1.
+     A ghost island is an island with no printer, printed on its twin; private to its key. START makes one; its parts are
+     the tray's (da.ghost.build) until the bench keeps them with it ───────── */
+  var gs = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private */ } } };
+  var gq = /[?&]ghost=([01])/.exec(q); if (gq) gs.set('da.ghost.on', gq[1] === '1');
+  var GHOST = !!gs.get('da.ghost.on', false), ISL = null, ISL_AT = 0, GB = gs.get('da.ghost.build', null) || {};
+  var GW = { hardware: 'Pick the parts. Nothing to buy.', software: 'Flash a ghost SD. Nothing to download.', stories: 'Build cards for your ghost island.' };
+  function took(tab, n) { var v = GB[tab]; return Array.isArray(v) ? v.indexOf(n) >= 0 : v === n; }
+  function key() { var k = gs.get('da.hm.key', ''); return /^[A-Za-z0-9_-]{16,64}$/.test(k) ? k : ''; }
+  var top = function (u) { try { (window.top || window).location.href = u; } catch (e) { location.href = u; } };
+  function tray() { var t = $('#tray'); if (!t) return; t.hidden = !GHOST;
+    t.innerHTML = [['printers', 'PRINTER'], ['pi', 'PI'], ['power', 'POWER']].map(function (x) { var v = GB[x[0]], s = Array.isArray(v) ? v.join(' + ') : v || '';
+      return '<span class="' + (s ? 'on' : '') + '">' + x[1] + '<b></b></span>'; }).join('');
+    $$('span b', t).forEach(function (b, i) { var v = GB[['printers', 'pi', 'power'][i]]; b.textContent = Array.isArray(v) ? v.join(' + ') : v || '—'; }); }
+  /* the ghost's key, said: none (a name and START), a ghost (its name and OPEN), or a real island's (a TEST ghost is a later stage) */
+  function gkey() { var k = key(), boxes = $$('[data-gkey]');
+    var say = function (h) { boxes.forEach(function (b) { b.innerHTML = h; }); };
+    if (!k) { say('<input name="gn" maxlength="40" autocomplete="off" placeholder="NAME" aria-label="The ghost island’s name"><button type="button" class="act mono" data-gstart>START</button><span class="say mono" data-gsay></span>'); return; }
+    if (!ISL || Date.now() - ISL_AT > 60e3) { say('<span class="say mono">· · ·</span>');
+      fetch('/api/island', { headers: { authorization: 'Bearer ' + k } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { ISL = j ? { ghost: !!j.ghost, name: j.name || j.id } : { none: true }; ISL_AT = Date.now(); gkey(); }, function () { ISL = { none: true }; ISL_AT = Date.now(); gkey(); }); return; }
+    if (ISL.none) { gs.set('da.hm.key', ''); ISL = null; return gkey(); }
+    var nm = String(ISL.name || '').toUpperCase(), e = D.createElement('b'); e.textContent = nm;
+    if (ISL.ghost) say('<span class="say mono">● ' + e.innerHTML + '</span><button type="button" class="act mono" data-gopen>OPEN</button>');
+    else say('<span class="say mono">' + e.innerHTML + '</span><span class="act soft mono" title="A ghost beside this island, for testing">TEST · SOON</span>'); }
+  function ghostDraw() { H.classList.toggle('ghost', GHOST); $('#gsw').setAttribute('aria-checked', String(GHOST)); $('#gbox').hidden = !GHOST;
+    $$('.way').forEach(function (w) { var p = $('p', w); if (!p) return; if (p.dataset.r == null) p.dataset.r = p.textContent; p.textContent = GHOST ? GW[w.dataset.go] : p.dataset.r; });
+    $$('.hd p').forEach(function (p) { var s = p.closest('section'); if (p.dataset.r == null) p.dataset.r = p.textContent; p.textContent = GHOST && s ? GW[s.id] : p.dataset.r; });
+    tray(); if (GHOST) gkey(); if (!$('#hardware').hidden) plates(($('.tabs [aria-selected="true"]') || { dataset: { tab: 'printers' } }).dataset.tab); }
+  $('#gsw').addEventListener('click', function () { GHOST = !GHOST; gs.set('da.ghost.on', GHOST); ghostDraw(); });
+  D.addEventListener('click', function (e) {
+    var p = GHOST && e.target.closest('.plate[data-take]'); if (p) { var t = p.dataset.take, n = p.dataset.pn;
+      if (t === 'power') { var a = Array.isArray(GB.power) ? GB.power.slice() : [], i = a.indexOf(n); if (i >= 0) a.splice(i, 1); else a.push(n); GB.power = a.slice(0, 3); }
+      else GB[t] = GB[t] === n ? null : n;
+      gs.set('da.ghost.build', GB); p.classList.toggle('took', took(t, n)); p.setAttribute('aria-pressed', String(took(t, n))); tray(); return; }
+    if (e.target.closest('[data-gup]')) { scrollTo({ top: 0, behavior: 'smooth' }); var i0 = $('[data-gkey] input'); if (i0) i0.focus({ preventScroll: true }); return; }
+    if (e.target.closest('[data-gopen]')) { top('/twin'); return; }
+    var st = e.target.closest('[data-gstart]'); if (st) { var box = st.closest('[data-gkey]'), nm = ($('input', box).value || '').trim(), sy = $('[data-gsay]', box);
+      st.disabled = true; sy.textContent = '· · ·';
+      fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: /58/.test(GB.printers ? (PLATES.printers.filter(function (x) { return x[0] === GB.printers; })[0] || [])[1] || '' : '') ? '58' : '80' }) })
+        .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+        .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); top('/twin'); return; }
+          sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; st.disabled = false; },
+          function () { sy.textContent = 'OFFLINE'; st.disabled = false; }); } });
+  D.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.plate[data-take]')) { e.preventDefault(); e.target.click(); }
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-gkey] input')) { var b = $('[data-gstart]', e.target.closest('[data-gkey]')); if (b) b.click(); } });
+
   /* ───────── the three ways ───────── */
   var WAYS = ['hardware', 'software', 'stories'];
   function show(id) { if (WAYS.indexOf(id) < 0) id = '';
@@ -217,7 +263,7 @@
     if (id === 'stories') projs();
     history.replaceState(null, '', location.pathname + location.search + '#' + (id || 'a')); scrollTo(0, 0); }
   $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go); }); });
-  show(location.hash.slice(1));
+  show(location.hash.slice(1)); ghostDraw();
   /* opened again from the front page: back to the start */
   addEventListener('hashchange', function () { show(location.hash.slice(1)); });
   addEventListener('pageshow', function (e) { if (e.persisted) projs(); });

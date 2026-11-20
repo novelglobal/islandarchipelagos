@@ -212,7 +212,8 @@
 
   /* ───── printers: each island keeps its own build ───── */
   function printers() {
-    return fetch('/api/partners').then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) {
+    var ik = ''; try { ik = JSON.parse(localStorage.getItem('da.hm.key') || '""') || ''; } catch (e) { /* none */ }   /* a ghost island shows only to its own key */
+    return fetch('/api/partners', /^[A-Za-z0-9_-]{16,64}$/.test(ik) ? { headers: { authorization: 'Bearer ' + ik } } : {}).then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) {
       var l = (j.partners || []); ISL = Math.max(1, l.length);
       var on = l.filter(function (p) { return p.ready || p.id === 'novelglobal'; }), last = S.at || (NG && NG.store ? NG.store.get('da.base.printer', '') : '');
       $('#to').innerHTML = on.length ? on.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === last ? ' selected' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (p.ready ? '' : ' · WAITS') + '</option>'; }).join('') : '<option value="">—</option>';

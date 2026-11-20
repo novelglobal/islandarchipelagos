@@ -458,7 +458,8 @@ async function send(db, env, req) {
   const cf = req.cf || {}, ua = req.headers.get('user-agent') || '', str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
   const origin = JSON.stringify({ ...(popP && b.from === 'pop' ? { pop: String(popP.id).slice(0, 24) } : {}), from: str(b.from, 24), stage: str(b.stage, 60), city: str(cf.city, 40), region: str(cf.region, 40), country: str(cf.country, 4), dev: /Mobi|Android|iPhone|iPad/i.test(ua) ? 'phone' : 'computer', mesh: str(b.mesh, 240) });
   const id = rid(); const t = now(); const inR2 = pic ? await toR2(db, env, photoKey(id), pic) : false;
-  const live = !dest && kind === 'record' && !!(await settingsOf(db)).sendLive, st0 = live ? 'shown' : 'waiting';
+  /* a ghost's stories stay its own: never waiting for approval, never shown */
+  const live = !dest && kind === 'record' && !!(await settingsOf(db)).sendLive, st0 = P && P.ghost ? 'ghost' : live ? 'shown' : 'waiting';
   const ops = [db.prepare('INSERT INTO stories (id, code, kind, status, body, photo, pic, lat, lng, dest, created, decided, who, origin, here) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, b.code, kind, st0, b.body, inR2 ? null : pic, inR2 ? pic.length : null, lat, lng, dest || null, t, live ? t : null, who, origin, here)];
   let job = null, relay = null, only = false;
   if (P && (b.escpos || b.mesh)) {
@@ -470,7 +471,7 @@ async function send(db, env, req) {
     job = { id: rid(), status: free || P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     /* joins: the same print at the islands this one echoes to; sent only there, nothing prints here and the receipt follows it there */
-    const J = joinsOf(P), R = J.to.length && b.escpos ? await relayTo(db, J.to, P.id) : []; only = J.only && R.length > 0;
+    const J = joinsOf(P), R = J.to.length && b.escpos ? await relayTo(db, J.to, P.id, !!P.ghost) : []; only = J.only && R.length > 0;
     if (!only) ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(job.id, dest, id, b.code, b.escpos || null, P.mesh ? (b.mesh || null) : null, job.status, t, thumb));
     if (R.length) { relay = R.map(r => ({ id: r.id, name: r.name || r.id, number: r.number || null, status: free || r.auto ? 'queued' : 'held' }));
       relay.forEach((r, i) => { const jid = only && !i ? job.id : rid(); ops.push(db.prepare('INSERT INTO jobs (id, printer, story, code, escpos, mesh, status, created, thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(jid, r.id, id, b.code, b.escpos, R[i].mesh ? (b.mesh || null) : null, r.status, t - (only ? 0 : 1), thumb), db.prepare('UPDATE printers SET warm = ? WHERE id = ?').bind(t, r.id)); });
@@ -576,9 +577,10 @@ const joinsOf = p => { const j = jsonOf(p && p.joins) || {}, ok = x => typeof x 
 const joinsIn = (j, id) => { const o = joinsOf({ id, joins: JSON.stringify(j || {}) }); return o.to.length || o.mirror ? JSON.stringify(o) : null; };
 const linksAt = r => r.id === 'novelglobal' ? LINKS : linksOf(r.links);
 /* the islands a print here goes on to: each one there, paired or a ghost, taking W.I.S.H., its queue not full */
-async function relayTo(db, ids, from) { if (!ids.length) return [];
+/* a ghost relays only to ghosts: nothing it makes reaches a real printer */
+async function relayTo(db, ids, from, ghost) { if (!ids.length) return [];
   const { results } = await db.prepare(`SELECT p.id, p.name, p.number, p.auto, p.mesh, p.links, p.ghost, p.token IS NOT NULL AS paired, (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('held', 'queued', 'printing')) AS q FROM printers p WHERE p.id IN (${ids.map(() => '?').join(', ')})`).bind(...ids).all();
-  return ids.map(id => results.find(r => r.id === id)).filter(r => r && r.id !== from && (r.paired || r.ghost) && linksAt(r).includes('wish') && r.q < LIMIT.perPrinter); }
+  return ids.map(id => results.find(r => r.id === id)).filter(r => r && r.id !== from && (r.paired || r.ghost) && (!ghost || r.ghost) && linksAt(r).includes('wish') && r.q < LIMIT.perPrinter); }
 /* an island that mirrors another shows its picks, when that one shares its cards */
 async function isleSrc(db, id) { const p = await db.prepare('SELECT id, joins FROM printers WHERE id = ?').bind(id).first(), m = p && joinsOf(p).mirror; if (!m) return id;
   const s = await db.prepare('SELECT id, links FROM printers WHERE id = ?').bind(m).first(); return s && linksAt(s).includes('cards') ? m : id; }
@@ -622,10 +624,12 @@ async function posterArt(db, env, id, any) {
 async function settingsOf(db) { const { results } = await db.prepare('SELECT k, v FROM settings').all(); const out = { ...SETTINGS, ...Object.fromEntries(Object.keys(TEXTS).map(k => [k, ''])) }; for (const k in CHOICES) out[k] = CHOICES[k][0]; for (const r of results) { if (r.k in CHOICES) { const v = CHOICES[r.k].find(x => String(x) === r.v); if (v !== undefined) out[r.k] = v; } else if (r.k in SETTINGS) out[r.k] = r.v === '1'; else if (r.k in TEXTS) out[r.k] = r.v; } const had = new Set(results.map(r => r.k)); for (const k in BASE_TEXTS) if (!had.has(k)) out[k] = BASE_TEXTS[k]; if (!out.label) out.label = LABEL_TEXT; if (!out.notes) out.notes = NOTES_TEXT; return out; }
 const LABEL_TEXT = JSON.stringify(LABEL), NOTES_TEXT = JSON.stringify(NOTES);
 /* the partner places: whether a printer is there and listening, and how much it has printed */
-async function partners(db) {
-  const { results } = await db.prepare(`SELECT p.id, p.name, p.paper, p.mesh, p.live, p.two, p.links, p.pack, p.joins, p.ghost, p.home, p.token IS NOT NULL AS paired, p.seen,
+/* a ghost is in the list only for the phone holding its key */
+async function partners(db, req) { const k = req ? bearer(req) : '', oh = /^[A-Za-z0-9_-]{16,64}$/.test(k) ? await sha256(k) : null;
+  const { results: all } = await db.prepare(`SELECT p.id, p.name, p.paper, p.mesh, p.live, p.two, p.links, p.pack, p.joins, p.ghost, p.home, p.owner, p.token IS NOT NULL AS paired, p.seen,
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('queued', 'printing')) AS queued,
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed') AS printed FROM printers p ORDER BY p.created`).all();
+  const results = all.filter(p => !p.ghost || (oh && p.owner === oh));
   return json({ partners: results.map(p => ({ id: p.id, name: p.name, ...(p.pack && PACKS[p.pack] ? { pack: p.pack, cards: PACKS[p.pack] } : {}), paper: p.paper, paired: !!p.paired, mesh: !!p.mesh && !!p.paired, live: !!p.live, two: !!p.two, links: p.id === 'novelglobal' ? LINKS : linksOf(p.links), ready: !!p.seen && now() - p.seen < 2 * 60e3, queued: p.queued, printed: p.printed, ...(p.ghost ? { ghost: true } : {}), ...(p.home && homeOfIsle(p.home) ? { home: homeOfIsle(p.home) } : {}), ...(() => { const j = joinsOf(p); return { ...(j.to.length ? { to: j.to, only: j.only } : {}), ...(j.mirror ? { mirror: j.mirror } : {}) }; })() })) });
 }
 
@@ -870,8 +874,9 @@ async function keeper(db, env, req) {
     if (!has('name')) delete b.name; if (!has('pics')) delete b.speed; if (!has('links')) delete b.links; if (!has('cards')) delete b.pack; if (!has('passes')) delete b.ways; if (!has('use')) delete b.use; if (!has('gap')) delete b.gap; if (!has('gang')) delete b.mods; if (!has('joins')) delete b.joins; if (!has('home')) delete b.home;
     if (b.home && typeof b.home === 'object') { p.home = homeIn(jsonOf(p.home), b.home, true); await db.prepare('UPDATE printers SET home = ? WHERE id = ?').bind(p.home, p.id).run(); }
     if (b.joins && typeof b.joins === 'object') { const j = joinsIn(b.joins, p.id), jo = joinsOf({ id: p.id, joins: j }), want = [...jo.to, ...(jo.mirror ? [jo.mirror] : [])];
-      const there = want.length ? (await db.prepare(`SELECT id FROM printers WHERE id IN (${want.map(() => '?').join(', ')}) AND (token IS NOT NULL OR ghost = 1)`).bind(...want).all()).results.map(r => r.id) : [];
-      if (want.some(x => !there.includes(x))) return fail(400, 'no such island'); p.joins = j; await db.prepare('UPDATE printers SET joins = ? WHERE id = ?').bind(j, p.id).run(); }
+      const got = want.length ? (await db.prepare(`SELECT id, ghost FROM printers WHERE id IN (${want.map(() => '?').join(', ')}) AND (token IS NOT NULL OR ghost = 1)`).bind(...want).all()).results : [], there = got.map(r => r.id);
+      if (want.some(x => !there.includes(x))) return fail(400, 'no such island');
+      if (p.ghost && got.some(r => !r.ghost)) return fail(400, 'ghost');   /* a ghost joins only ghosts: nothing it makes reaches a real printer */ p.joins = j; await db.prepare('UPDATE printers SET joins = ? WHERE id = ?').bind(j, p.id).run(); }
     const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
     if (b.speed != null) await cardSet(db, p.id, { speed: b.speed });
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); }
@@ -880,7 +885,7 @@ async function keeper(db, env, req) {
   const u = useOf(p), roll = u && u.kind === 'class' && !mod && has('use') ? await rollOf(db, p.id) : null;   // the roll: the island's keeper and the approval page only
   /* joins: this island's, and the islands it can join (those taking prints, or sharing cards or art, and any it already joins) */
   let jn = null; if (has('joins')) { const J = joinsOf(p), { results: os } = await db.prepare('SELECT id, name, number, links, ghost FROM printers WHERE id != ? AND (token IS NOT NULL OR ghost = 1) ORDER BY ghost, number, created LIMIT 200').bind(p.id).all();
-    jn = { ...J, isles: os.map(o => { const l = linksAt(o); return { id: o.id, name: o.name || o.id, number: o.number || null, ghost: !!o.ghost, takes: l.includes('wish'), cards: l.includes('cards'), art: l.includes('art') }; }).filter(o => o.takes || o.cards || o.art || J.to.includes(o.id) || J.mirror === o.id) }; }
+    jn = { ...J, isles: os.map(o => { const l = linksAt(o); return { id: o.id, name: o.name || o.id, number: o.number || null, ghost: !!o.ghost, takes: l.includes('wish'), cards: l.includes('cards'), art: l.includes('art') }; }).filter(o => (o.ghost ? J.to.includes(o.id) || J.mirror === o.id : !p.ghost) && (o.takes || o.cards || o.art || J.to.includes(o.id) || J.mirror === o.id)) }; }   /* ghosts are listed to no one; a ghost is offered no real island */
   return json({ id: p.id, build: can, ...(jn ? { joins: jn } : {}), ...(has('home') ? { home: homeOfIsle(p.home) } : {}), ...(p.ghost ? { ghost: true } : {}), name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
 }
 /* ───────── a ghost island: an island with no printer yet. Its keeper gets its key once; its paper is the twin, a page that takes its
@@ -981,7 +986,8 @@ async function admin(db, env, req, parts) {
   }
   if (what === 'stories' && id && req.method === 'POST') {
     const b = await body(req); const t = now();
-    if (b.action === 'show') { await db.batch([db.prepare("UPDATE stories SET status = 'shown', decided = ? WHERE id = ?").bind(t, id), db.prepare("UPDATE jobs SET status = 'queued' WHERE story = ? AND status = 'held'").bind(id), db.prepare('UPDATE printers SET warm = ? WHERE id IN (SELECT printer FROM jobs WHERE story = ?)').bind(t, id)]); return json({ ok: true }); }
+    if (b.action === 'show') { if ((await db.prepare('SELECT status FROM stories WHERE id = ?').bind(id).first() || {}).status === 'ghost') return fail(403, 'ghost');
+      await db.batch([db.prepare("UPDATE stories SET status = 'shown', decided = ? WHERE id = ?").bind(t, id), db.prepare("UPDATE jobs SET status = 'queued' WHERE story = ? AND status = 'held'").bind(id), db.prepare('UPDATE printers SET warm = ? WHERE id IN (SELECT printer FROM jobs WHERE story = ?)').bind(t, id)]); return json({ ok: true }); }
     if (b.action === 'refuse') { await db.batch([db.prepare("UPDATE stories SET status = 'refused', decided = ? WHERE id = ?").bind(t, id), db.prepare("DELETE FROM jobs WHERE story = ? AND status IN ('held', 'queued')").bind(id)]); return json({ ok: true }); }
     if (b.action === 'big' || b.action === 'small') { const r = await db.prepare("SELECT body FROM stories WHERE id = ? AND kind = 'play'").bind(id).first(); if (!r) return fail(404, 'not found'); let j = {}; try { j = JSON.parse(r.body) || {}; } catch (e) { return fail(400, 'play'); }
       if (b.action === 'big') j.big = 'yes'; else delete j.big; await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), id).run(); return json({ ok: true, big: j.big || '' }); }
@@ -1808,7 +1814,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'tapes' && p[1] && !p[2] && m === 'GET') return tapeGet(db, env, p[1]);
   if (p[0] === 'mine' && p[1] && !p[3] && (m === 'GET' && !p[2] || m === 'POST' && p[2])) return mine(db, env, req, p[1], p[2]);
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
-  if (p[0] === 'partners' && m === 'GET') return partners(db);
+  if (p[0] === 'partners' && m === 'GET') return partners(db, req);
   if (p[0] === 'isles' && m === 'GET') return isles(db);
   /* the joined slip's words, for a printer that has just joined a Wi-Fi: plain lines a receipt can print */
   if (p[0] === 'welcome' && m === 'GET') { let w = null; try { w = JSON.parse((await settingsOf(db)).welcome || 'null'); } catch (e) { w = null; } w = w && typeof w === 'object' ? w : WELCOME;

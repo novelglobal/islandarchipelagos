@@ -471,27 +471,27 @@ try {
     { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { freePrint: true } });
       const gA = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Aa' }, ip: '10.66.0.1' }), gB = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Bb' }, ip: '10.66.0.2' });
       const KA = gA.json.key, KB = gB.json.key, A = gA.json.id, B = gB.json.id, tw = (k, q = '') => call('/api/twin' + q, { token: k }), esc = Buffer.from([0x1B, 0x40, 72, 73, 10, 0x1D, 0x56, 0x42, 0]).toString('base64');
-      const t0 = await tw(KA), map0 = await call('/api/isles'), pt0 = await call('/api/partners');
+      const t0 = await tw(KA), map0 = await call('/api/isles'), pt0 = await call('/api/partners'), ptK = await call('/api/partners', { token: KA }), ptR = await call('/api/partners', { token: KB });
       const jBad = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: ['no-such-isle'] } } });
-      const jA = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B] } } });
-      const e1 = await call('/api/stories', { method: 'POST', body: story('DA-9GHK', { dest: A, escpos: esc, thumb: '8,1,AA==' }) }), tA1 = await tw(KA), tB1 = await tw(KB);
+      const jReal = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B, 'milkbar'] } } }), jA = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B] } } });
+      const e1 = await call('/api/stories', { method: 'POST', body: story('DA-9GHK', { dest: A, escpos: esc, thumb: '8,1,AA==' }) }), tA1 = await tw(KA), tB1 = await tw(KB), e1W = await call('/api/admin/stories?status=waiting', { key: KEY }), e1Show = await call(`/api/admin/stories/${e1.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
       await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B], only: true } } });
       const e2 = await call('/api/stories', { method: 'POST', body: story('DA-9GHM', { dest: A, escpos: esc }) }), tA2 = await tw(KA), tB2 = await tw(KB), rc2 = await call(`/api/receipts/${e2.json.id}`);
       await call('/api/island', { method: 'POST', token: KB, body: { links: ['radio'] } });
       const e3 = await call('/api/stories', { method: 'POST', body: story('DA-9GHN', { dest: A, escpos: esc }) }), tA3 = await tw(KA);
       await call('/api/island', { method: 'POST', token: KB, body: { links: ['wish', 'cards', 'art'] } });
-      const jM = await call('/api/island', { method: 'POST', token: KA, body: { joins: { mirror: B } } }), pt1 = await call('/api/partners');
-      check('a ghost island has its key once and a twin, is kept off the map, and its joins go only to islands that are there',
-        gA.status === 201 && !!KA && t0.status === 200 && t0.json.ghost === true && !t0.json.paired && !map0.json.isles.some(i => i.id === A) && pt0.json.partners.some(p => p.id === A && p.ghost) && jBad.status === 400 && jA.json.joins.to.join() === B && jA.json.build.includes('joins'),
+      const jM = await call('/api/island', { method: 'POST', token: KA, body: { joins: { mirror: B } } }), pt1 = await call('/api/partners', { token: KA });
+      check('a ghost island has its key once and a twin, is kept off the map and off the partner list (but for its own key), and its joins go only to islands that are there',
+        gA.status === 201 && !!KA && t0.status === 200 && t0.json.ghost === true && !t0.json.paired && !map0.json.isles.some(i => i.id === A) && !pt0.json.partners.some(p => p.id === A) && ptK.json.partners.some(p => p.id === A && p.ghost) && !ptR.json.partners.some(p => p.id === A) && jBad.status === 400 && jReal.status === 400 && jReal.json.error === 'ghost' && jA.json.joins.to.join() === B && jA.json.build.includes('joins'),
         JSON.stringify({ gA: gA.status, t0: t0.json, bad: jBad.status, jA: jA.json.joins }));
-      check('ECHO prints at both islands, ONLY THERE prints only at the other (the receipt follows it), and nothing is relayed to an island with W.I.S.H. off',
-        e1.json.relay && e1.json.relay[0].id === B && e1.json.only === false && tA1.json.took.length === 1 && tB1.json.took.length === 1 && tB1.json.took[0].escpos === esc
+      check('ECHO prints at both islands, ONLY THERE prints only at the other (the receipt follows it), and nothing is relayed to an island with W.I.S.H. off; a ghost relays only to ghosts, and its stories never wait for approval nor can be shown',
+        e1.json.relay && e1.json.relay[0].id === B && e1.json.status === 'ghost' && e1Show.status === 403 && !e1W.json.stories.some(x => x.id === e1.json.id) && e1.json.only === false && tA1.json.took.length === 1 && tB1.json.took.length === 1 && tB1.json.took[0].escpos === esc
         && e2.json.only === true && tA2.json.took.length === 0 && tB2.json.took.length === 1 && rc2.json.job.at === B && !e3.json.relay && tA3.json.took.length === 1,
         JSON.stringify({ e1: e1.json.relay, a1: tA1.json.took.length, b1: tB1.json.took.length, e2: [e2.json.only, tA2.json.took.length, tB2.json.took.length, rc2.json.job], e3: [e3.json.relay, tA3.json.took.length] }));
       /* an island's home: its big cards in order, its nines, a card left out, its label (a link that is not https is dropped); the film is the approval page's */
       const hm1 = await call('/api/island', { method: 'POST', token: KB, body: { home: { line: '  Harbour   wall, by the sea  ' + 'x'.repeat(80), main: ['zine', 'radio', 'nope'], nines: ['soon', 'utils'], off: ['tarot'], label: { title: 'Harbour', body: 'One.\n\nTwo.', links: [{ t: 'Map', u: 'https://example.org/m' }, { t: 'Bad', u: 'http://example.org' }], film: { file: 'sneak.mp4' } } } } });
       const hmF = await call(`/api/admin/printers/${B}`, { method: 'POST', key: KEY, body: { action: 'home', film: 'harbour.mp4' } }), hmBad = await call(`/api/admin/printers/${B}`, { method: 'POST', key: KEY, body: { action: 'home', film: '../x' } });
-      const hm2 = await call('/api/island', { method: 'POST', token: KB, body: { home: { nines: ['dev'] } } }), ptH = await call('/api/partners'), hmP = ptH.json.partners.find(p => p.id === B) || {};
+      const hm2 = await call('/api/island', { method: 'POST', token: KB, body: { home: { nines: ['dev'] } } }), ptH = await call('/api/partners', { token: KB }), hmP = ptH.json.partners.find(p => p.id === B) || {};
       check('an island\'s home: its keeper sets its big cards in order, its nines and its label; a film comes only from the approval page and stays through the keeper\'s changes',
         JSON.stringify(hm1.json.home.main) === '["zine","radio"]' && hm1.json.home.line.startsWith('Harbour wall, by the sea x') && hm1.json.home.line.length <= 60 && hmP.home.line === hm1.json.home.line && hm1.json.home.nines.join() === 'soon,utils' && hm1.json.home.off.join() === 'tarot' && hm1.json.home.label.links.length === 1 && !hm1.json.home.label.film
         && hmF.json.home.label.film.file === 'harbour.mp4' && hmBad.status === 400 && hm2.json.home.nines.join() === 'dev' && hm2.json.home.label.film.file === 'harbour.mp4' && hmP.home && hmP.home.main.join() === 'zine,radio' && hmP.home.label.title === 'Harbour',
