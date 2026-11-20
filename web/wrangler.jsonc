@@ -15,5 +15,6 @@
   ]
   // the full-size photographs, for the approval page only (free up to 10 GB); the bucket is made by itself on deploy (docs/rebuild.md)
   , "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "front-media" }, { "binding": "FILMS", "bucket_name": "films" }]
-  , "previews": {}
+  // a preview gets the preview database only, never the live one
+  , "previews": { "d1_databases": [{ "binding": "DB_PREVIEW", "database_name": "front-db-preview", "database_id": "172d5df4-1185-457d-b015-e3a3ffc733d9" }], "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "front-media" }, { "binding": "FILMS", "bucket_name": "films" }] }
 }
