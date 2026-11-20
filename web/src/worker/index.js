@@ -8,7 +8,7 @@
    Kept to a minimum: no accounts, no addresses kept. A sender's network address is only ever counted, hashed with a
    salt that changes each day, and forgotten within the hour. A story not approved within 30 days is deleted; a print
    job waits a day at most, and once printed only its status is kept, for a week. A preview build has its own database. */
-import { BUILD, PREVIEW, PARTNERS, PART_IDS } from './stamp.js';
+import { BUILD, PREVIEW, PARTNERS, PART_IDS, PART_KIND } from './stamp.js';
 import { FIRST_PLAY } from './first-play.js';
 import { LABEL, WELCOME, NOTES, BASE_TEXTS } from './label.js';
 
@@ -959,7 +959,8 @@ async function moveDo(db, env, p, b, has) {
   const m = { w, at: now() };
   if (w === 'home' || w === 'label') { const th = homeOfIsle(T.home) || {}; m.was = p.home || null;
     await db.prepare('UPDATE printers SET home = ? WHERE id = ?').bind(homeIn(jsonOf(p.home), w === 'label' ? { label: th.label || null } : { main: th.main || null, nines: th.nines || null, off: th.off || [], line: th.line || '' }, true), p.id).run(); }
-  if (w === 'build') { m.was = p.bench || null; await db.prepare('UPDATE printers SET bench = ? WHERE id = ?').bind(T.bench || null, p.id).run(); }
+  /* the build alone: the parts and cables, never the TEST's first start or its paper */
+  if (w === 'build') { m.was = p.bench || null; const nb = benchOf(T.bench); await db.prepare('UPDATE printers SET bench = ? WHERE id = ?').bind(T.bench ? JSON.stringify({ p: nb.p, j: nb.j, f: nb.f, m: 0 }) : null, p.id).run(); }
   if (w === 'card') { if (!env.MEDIA) return fail(503, 'no media');
     const was = { pics: (await db.prepare('SELECT slot, type, bytes, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, set: await db.prepare('SELECT speed, shade FROM cardset WHERE card = ?').bind(p.id).first() || null };
     for (const r of was.pics) { const o = await env.MEDIA.get(`card/${p.id}/${r.slot}`); if (o) await env.MEDIA.put(`move/${p.id}/${m.at}/${r.slot}`, await o.arrayBuffer(), { httpMetadata: { contentType: r.type } }); }
@@ -988,7 +989,10 @@ async function twin(db, env, req, url) {
   if (req.method === 'POST') { const b = await body(req, 8192);
     if (typeof b.pair === 'string') return ghostAdopt(db, p, b.pair);
     if (b.bench && typeof b.bench === 'object') { if (!p.ghost) return fail(400, 'not a ghost'); const v = benchIn(b.bench); if (!v) return fail(400, 'bench');
-      await db.prepare('UPDATE printers SET bench = ? WHERE id = ?').bind(JSON.stringify(v), p.id).run(); return json({ ok: true, bench: v }); }
+      /* a radio on the bench joined to a Pi or a supply is the ghost's MESH: what is sent to it carries its mesh line */
+      const kindOf = iid => PART_KIND[(v.p.find(x => x[0] === iid) || [])[1]], feeds = { pi: 1, power: 1, converter: 1 };
+      const mesh = v.p.some(x => PART_KIND[x[1]] === 'radio' && v.j.some(j => { const a = j[0].split('.')[0], b = j[1].split('.')[0]; return (a === x[0] && feeds[kindOf(b)]) || (b === x[0] && feeds[kindOf(a)]); })) ? 1 : 0;
+      await db.prepare('UPDATE printers SET bench = ?, mesh = ? WHERE id = ?').bind(JSON.stringify(v), mesh, p.id).run(); return json({ ok: true, bench: v, mesh: !!mesh }); }
     if (typeof b.job === 'string' && p.ghost) { const ok = b.ok !== false; await db.prepare("UPDATE jobs SET status = ?, error = ?, done = ?, escpos = NULL, mesh = NULL WHERE id = ? AND printer = ? AND status = 'printing'").bind(ok ? 'printed' : 'failed', ok ? null : String(b.error || '').slice(0, 60), t, b.job, p.id).run(); return json({ ok: true }); }
     return fail(400, 'action'); }
   let took = [];

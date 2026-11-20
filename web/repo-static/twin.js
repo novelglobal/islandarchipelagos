@@ -10,7 +10,7 @@
   var hk = /(?:^#|&)k=([A-Za-z0-9_-]{16,64})/.exec(location.hash); if (hk) { store.set('da.hm.key', hk[1]); history.replaceState(null, '', location.pathname + location.search); }
   /* a real island's TEST opens on the twin by the real key, with ?isle=test (it never opens the real one); its paper kept apart */
   var TESTQ = /[?&]isle=test/.test(location.search), TS = TESTQ ? '.test' : '';
-  var KEY = store.get('da.hm.key', ''), T = null, ISLE = null, ROLL = store.get('da.twin.roll' + TS, []) || [], SEEN = {}, RADIO = store.get('da.twin.radio' + TS, []) || [], OUT = null, timer = 0;
+  var KEY = store.get('da.hm.key', ''), T = null, ISLE = null, ROLL = store.get('da.twin.roll' + TS, []) || [], SEEN = {}, RADIO = [], OUT = null, timer = 0;
   var api = function (path, o) { o = o || {}; if (TESTQ && /^\/api\/(twin|island)/.test(path)) path += (path.indexOf('?') < 0 ? '?' : '&') + 'isle=test'; o.headers = Object.assign({ authorization: 'Bearer ' + KEY, 'content-type': 'application/json' }, o.headers || {});
     return fetch(path, o).then(function (r) { if (r.status === 401) { if (!TESTQ) { KEY = ''; store.set('da.hm.key', ''); } gate('LOCKED'); throw new Error('key'); } return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; throw e; } return j; }); }); };
 
@@ -96,9 +96,23 @@
   function shown(id, cv, tag, feed, kept, label) { if (SEEN[id]) return; SEEN[id] = 1; var e = slipEl(cv, tag, feed); e.setAttribute('role', 'img'); e.setAttribute('aria-label', label || tag || 'A slip'); if (kept) keep(id, cv, tag); }
   var BACK = 0;
   function seen(cv) { look($('.stage'), 'start'); clearTimeout(BACK); BACK = setTimeout(function () { if (BT.run) return; look($('.bench .pt.want') || (WANT && WANT.k === 'done' ? $('#rite') : null) || $('#bnlog'), 'center'); }, (RM.matches ? 300 : Math.max(500, Math.min(4000, cv.height / 0.6))) + 900); }
-  function radio(line, from) { RADIO.unshift({ t: String(line).slice(0, 240), f: from || '' }); RADIO = RADIO.slice(0, 40); store.set('da.twin.radio' + TS, RADIO); radioDraw(); }
-  function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
-    $('#rs').textContent = T && T.mesh ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; }
+  var rkey = function () { return 'da.twin.radio.' + (T ? T.id : '') + TS; };
+  function radio(line, from, who) { RADIO.unshift({ t: String(line).slice(0, 240), f: from || '', w: who ? String(who).slice(0, 12) : '' }); RADIO = RADIO.slice(0, 40); if (T) store.set(rkey(), RADIO.filter(function (r) { return r.f !== 'in'; })); radioDraw(); }
+  /* on air: a ghost's radio on its bench with power in; a real island's MESH; or a radio linked to this screen */
+  var ML = window.MESH || { link: {}, usb: false, bt: false }, TX = 0, MSEEN = {};
+  function benchRadio() { var r = BN && T && T.ghost ? ofKind('radio')[0] : null; return r && power().on[r[0]] ? r : null; }
+  function radioWay(r) { return portIds(r, 'device').some(function (e) { return BN.j.some(function (j) { var o = j[0] === e ? j[1] : j[1] === e ? j[0] : null, q = o && portOf(o); return q && q.part.kind === 'pi' && joinOf(j[0], j[1]).ok; }); }) ? 'USB' : 'WI-FI'; }
+  function onAir() { return !!ML.link.on || (T && T.ghost ? !!benchRadio() : !!(T && T.mesh)); }
+  /* where a line typed here really goes: a radio linked to this screen, or the ghost's own radio on its bench */
+  function canSay() { return !!ML.link.on || !!(T && T.ghost && benchRadio()); }
+  function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
+    var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; $('#rd').classList.toggle('air', air);
+    $('#mf').hidden = !canSay(); $('#madd').hidden = !(T && T.ghost && BN && !ofKind('radio').length);
+    [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
+  /* a line out: in the log, through a radio linked here, the bench radio's waves, and the muse stirs */
+  function meshOut(line, mine) { line = String(line || '').trim(); if (!line) return; if (ML.cut) line = ML.cut(line); radio(line, 'out'); clearTimeout(TX); TX = setTimeout(function () { TX = 0; benchDraw(); }, 2400); benchDraw();
+    var ik = $('#rite .ik'); if (ik && !BT.run) { ik.classList.add('beat'); setTimeout(function () { if (!BT.run) ik.classList.remove('beat'); }, 2200); }
+    if (ML.link.on && (mine || !T || !T.ghost)) ML.say(line).catch(function (e) { $('#msay').textContent = '× ' + String(e && e.message || e).slice(0, 40).toUpperCase(); }); }
   /* what this screen kept, first, so the roll is there with no signal */
   ROLL.slice().reverse().forEach(function (r) { var im = new Image(); im.alt = ''; im.src = r.u; SEEN[r.id] = 1; slipEl(im, r.tag, false); });
 
@@ -117,16 +131,16 @@
 
   /* ───────── the island ───────── */
   function bodyDraw() { if (!T) return; var w = T.paired ? 'PI' : OUT ? OUT.name : 'GHOST', on = T.paired ? T.ready : true;
-    $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + T.paper + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
+    $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
     $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
-  function take(j) { var cv = j.escpos ? draw(j.escpos, T.paper) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), T.paper) : null;
-    if (j.mesh) radio(j.mesh, 'out');
+  function take(j) { var cv = j.escpos ? draw(j.escpos, paperOf()) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), paperOf()) : null;
+    if (j.mesh && !MSEEN[j.id]) { MSEEN[j.id] = 1; meshOut(j.mesh); }
     if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
-    if (OUT && j.escpos) return OUT.write(b64(j.escpos)).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
+    if (OUT) return (j.escpos ? OUT.write(b64(j.escpos)) : Promise.resolve()).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
     return Promise.resolve(); }
   function tick() { clearTimeout(timer); if (!KEY || (OFF && T)) return;
-    api('/api/twin' + (OUT ? '?usb=1' : '')).then(function (j) { var first = !T; T = j; $('#nm').textContent = j.name; D.title = j.name + ' · Twin'; bodyDraw(); joinsDraw(); benchLoad(j);
+    api('/api/twin' + (OUT ? '?usb=1' : '')).then(function (j) { var first = !T; T = j; if (first) RADIO = (store.get(rkey(), []) || []).concat(RADIO.filter(function (r) { return r.f === 'in'; })).slice(0, 40); $('#nm').textContent = j.name; D.title = j.name + ' · Twin'; benchLoad(j); bodyDraw(); joinsDraw(); radioDraw();
       var p = Promise.resolve(); (j.took || []).forEach(function (x) { p = p.then(function () { return take(x); }); });
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
       (j.roll || []).slice().reverse().forEach(function (x) { if (SEEN[x.id] || (j.took || []).some(function (y) { return y.id === x.id; })) return;
@@ -173,14 +187,15 @@
   var PLUG = { 'usb-a': 'USB-A', 'usb-b': 'USB-B', 'micro-usb': 'micro-USB', 'micro-sd': 'microSD', dsi: 'DSI ribbon', 'power-din': 'round power plug', barrel: 'barrel', mc4: 'MC4', screw: 'screw terminal' };
   var STRAIGHT = ['micro-sd', 'dsi', 'power-din'], GIVE = { out: 1, host: 1, store: 1 }, TAKE = { 'in': 1, device: 1, store: 1 };
   var ROLE = { host: 'A host', device: 'A device', 'in': 'A power input', out: 'A power output', slot: 'A card slot', card: 'A card', store: 'A battery terminal' };
-  var OK = { 'host device': 1, 'out in': 1, 'host in': 1, 'slot card': 1, 'store store': 1 };
+  var OK = { 'host device': 1, 'out in': 1, 'host in': 1, 'slot card': 1, 'store store': 1, 'out device': 1 };
+  var dataOnly = function (g, t) { return g.role === 'out' && t.role === 'device' && t.volts == null; };
   var TWO = { host: 'Two hosts: one end must be a device', device: 'Two devices: one end must be a Pi', 'in': 'Two inputs: one end must give power', out: 'Two outputs: one end must take power', slot: 'Two slots: one end must be a card', card: 'Two cards: one end must be a slot' };
   function portOf(end) { var a = String(end).split('.'), x = (BN.p.filter(function (q) { return q[0] === a[0]; })[0] || []), p = PART[x[1]]; return p ? { iid: a[0], part: p, port: (p.ports || []).filter(function (o) { return o.id === a[1]; })[0] } : null; }
   var vs = function (v) { return Array.isArray(v) ? v[0] + '–' + v[1] : String(v); }, inside = function (v, r) { var a = Array.isArray(v) ? v[0] : v; return Array.isArray(r) ? a >= r[0] - 0.01 && a <= r[1] + 0.01 : Math.abs(a - r) < 0.5; };
   /* a join, checked: the two roles fit, a cable has the two plugs (or one plugs straight in), and what one gives the other takes */
   function joinOf(e1, e2) { var A = portOf(e1), B = portOf(e2); if (!A || !B || !A.port || !B.port) return { ok: false, why: 'That part is gone' };
     var a = A.port, b = B.port, ab = a.role + ' ' + b.role, ba = b.role + ' ' + a.role;
-    if (!OK[ab] && !OK[ba]) return { ok: false, why: a.role === b.role ? TWO[a.role] : (ROLE[a.role] + ' and ' + ROLE[b.role].toLowerCase() + ' do not join') };
+    if ((!OK[ab] && !OK[ba]) || dataOnly(a, b) || dataOnly(b, a)) return { ok: false, why: a.role === b.role ? TWO[a.role] : (ROLE[a.role] + ' and ' + ROLE[b.role].toLowerCase() + ' do not join') };
     var g = a.role === 'store' && b.role === 'store' ? (B.part.source ? b : a) : OK[ab] ? a : b, t = g === a ? b : a, cable = null;   // a battery gives to its charger, whichever end was first
     if (!(a.plug === b.plug && STRAIGHT.indexOf(a.plug) >= 0)) { cable = PARTS.filter(function (p) { return p.kind === 'cable' && p.ends && ((p.ends[0] === a.plug && p.ends[1] === b.plug) || (p.ends[1] === a.plug && p.ends[0] === b.plug)); })[0];
       if (!cable) return { ok: false, why: 'No cable from ' + PLUG[a.plug] + ' to ' + PLUG[b.plug] }; }
@@ -205,6 +220,7 @@
     res.on = on; res.J = J; res.need = need; res.sun = sun; res.sunH = sunH; res.kept = kept; res.wall = wall; return res; }
   function el(n, a, kids) { var e = D.createElementNS(NS, n); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
+  function nameN(x) { if (!BN) return PART[x[1]].name; var same = BN.p.filter(function (q) { return q[1] === x[1]; }), i = same.indexOf(x); return PART[x[1]].name + (i > 0 ? ' #' + (i + 1) : ''); }
   /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
      what it drives (the printer, the SD, the radio, the screen). Each row ordered under what it is joined to, so cables cross least.
      A part takes at its top edge and gives at its bottom edge */
@@ -236,23 +252,23 @@
   var inUse = function (id) { return BN.j.some(function (j) { return j[0] === id || j[1] === id; }); };
   var idsOf = function (k) { return PARTS.filter(function (p) { return p.kind === k; }).map(function (p) { return p.id; }); };
   /* a part (not yet on the bench) that could give what this port takes: the roles fit, the volts fit, a cable has both plugs */
-  function canGive(p, o) { return (p.ports || []).some(function (g) { if (!OK[g.role + ' ' + o.role]) return false; if (g.volts != null && o.volts != null && !inside(g.volts, o.volts)) return false;
+  function canGive(p, o) { return (p.ports || []).some(function (g) { if (!OK[g.role + ' ' + o.role] || dataOnly(g, o)) return false; if (g.volts != null && o.volts != null && !inside(g.volts, o.volts)) return false;
     return (g.plug === o.plug && STRAIGHT.indexOf(g.plug) >= 0) || PARTS.some(function (c) { return c.kind === 'cable' && c.ends && ((c.ends[0] === g.plug && c.ends[1] === o.plug) || (c.ends[1] === g.plug && c.ends[0] === o.plug)); }); }); }
   function wantOf(P) { var pr = ofKind('printer')[0], pi = ofKind('pi')[0], i, k;
     if (!pr) return { k: 'part', ids: idsOf('printer'), near: null };
     if (!pi) return { k: 'part', ids: idsOf('pi'), near: pr[0] };
     var slot = portIds(pi, 'slot')[0]; if (slot && !inUse(slot)) { var sd = ofKind('sd').filter(function (x) { return !portIds(x, 'card').some(inUse); })[0];
-      return sd ? { k: 'join', a: slot, b: portIds(sd, 'card')[0] } : { k: 'part', ids: idsOf('sd'), near: pi[0] }; }
+      return !sd ? { k: 'part', ids: idsOf('sd'), near: pi[0] } : !flashedOf(sd[0]) ? { k: 'flash', iid: sd[0] } : { k: 'join', a: slot, b: portIds(sd, 'card')[0] }; }
     var link = P.J.some(function (r) { return r.ok && ((r.give.iid === pi[0] && r.take.iid === pr[0]) || (r.give.iid === pr[0] && r.take.iid === pi[0])); });
     if (!link) { var hs = portIds(pi, 'host').filter(function (h) { return !inUse(h); }), ds = portIds(pr, 'device');
       for (i = 0; i < hs.length; i++) for (k = 0; k < ds.length; k++) if (joinOf(hs[i], ds[k]).ok) return { k: 'join', a: hs[i], b: ds[k] }; }
     /* power, from what is cold, backwards: an unfed input is joined to a part already here with a free output, or a part is asked for */
     var order = [pr, pi].concat(BN.p.filter(function (x) { return x !== pr && x !== pi; }));
     for (i = 0; i < order.length; i++) { var x = order[i], p = PART[x[1]]; if (!p || !p.watts || p.source || P.on[x[0]]) continue;
-      var ins = (p.ports || []).filter(function (o) { return o.role === 'in' && !inUse(x[0] + '.' + o.id); }); if (!ins.length) continue; var o = ins[0], to = x[0] + '.' + o.id;
-      /* a screw terminal takes a second wire, as a real one does; every other output feeds one thing */
-      for (k = 0; k < BN.p.length; k++) { var y = BN.p[k]; if (y === x) continue; var gs = ((PART[y[1]] || {}).ports || []).filter(function (g) { return GIVE[g.role] && g.role !== 'store' && (g.role !== 'host' || !BRAIN[p.kind]) && (g.plug === 'screw' || !inUse(y[0] + '.' + g.id)); });
-        for (var m = 0; m < gs.length; m++) if (joinOf(y[0] + '.' + gs[m].id, to).ok) return { k: 'join', a: y[0] + '.' + gs[m].id, b: to }; }
+      var ins = (p.ports || []).filter(function (o) { return (o.role === 'in' || (o.role === 'device' && o.volts != null)) && !inUse(x[0] + '.' + o.id); }); if (!ins.length) continue; var o = ins[0], to = x[0] + '.' + o.id;
+      /* a screw terminal takes a second wire, as a real one does; every other output feeds one thing. A Pi's USB (power and data) before a supply */
+      var gv = []; for (k = 0; k < BN.p.length; k++) { var y = BN.p[k]; if (y === x) continue; ((PART[y[1]] || {}).ports || []).forEach(function (g) { if (GIVE[g.role] && g.role !== 'store' && (g.role !== 'host' || !BRAIN[p.kind]) && (g.plug === 'screw' || !inUse(y[0] + '.' + g.id))) gv.push([y[0] + '.' + g.id, g.role === 'host' ? 0 : 1]); }); }
+      gv.sort(function (a, b) { return a[1] - b[1]; }); for (k = 0; k < gv.length; k++) if (joinOf(gv[k][0], to).ok) return { k: 'join', a: gv[k][0], b: to };
       /* the parts that could feed it, the island's own (sun, battery, converters) before the wall */
       var c = PARTS.filter(function (q) { return FEEDS[q.kind] && q.id !== x[1] && canGive(q, o); }).sort(function (a, b) { return (a.source === 'wall') - (b.source === 'wall'); }).map(function (q) { return q.id; });
       if (c.length) return { k: 'part', ids: c, near: x[0], port: to }; }
@@ -305,16 +321,17 @@
         g.appendChild(el('g', { 'class': 'roll' }, [tt(Math.round(left * ROLLMM / 1000) + ' m of paper left · about ' + Math.round(left * ROLLMM / 160) + ' receipts'), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 12.5, 'class': 'rl0' }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: rr, 'class': 'rl' + (left < .1 ? ' low' : '') }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 2.2, 'class': 'rc' })])); }
       /* the Pi's two lights: red while it has power, the other flickering as it reads its SD; and what it waits for, drawn above it */
       if (p.kind === 'pi' && P.on[x[0]]) { var bo = W0.k === 'done' || W0.k === 'paper'; g.appendChild(el('g', { 'class': 'leds' }, [tt(BT.run ? 'Starting' : bo ? 'On' : 'Power: red light on'), el('circle', { 'class': 'lp', cx: X + 11, cy: Y + 30, r: 2.4 }), el('circle', { 'class': 'la' + (BT.run ? ' run' : bo ? ' idle' : '') + (LAMP ? ' rd' : ''), cx: X + 11, cy: Y + 38, r: 2.4 })])); }
+      if (p.kind === 'radio' && P.on[x[0]]) { var ax = X + 80 * cw / 120, ay = Y + 8 + 6 * cw / 120; g.appendChild(el('g', { 'class': 'air' + (TX ? ' tx' : '') }, [tt('On air · ' + (radioWay(x) === 'USB' ? 'by USB to the Pi' : 'by the island’s Wi-Fi')), el('path', { d: 'M' + (ax - 6) + ' ' + (ay + 1) + ' Q' + ax + ' ' + (ay - 7) + ' ' + (ax + 6) + ' ' + (ay + 1) }), el('path', { d: 'M' + (ax - 11) + ' ' + (ay + 2) + ' Q' + ax + ' ' + (ay - 13) + ' ' + (ax + 11) + ' ' + (ay + 2) })])); }
       if (wk && /^(boot|wifi|pair)$/.test(W0.k)) { var cx0 = X + cw - 14, cy0 = Y + 18, CUE = { boot: 'M' + (cx0 - 4.6) + ' ' + (cy0 - 3.4) + ' A6 6 0 1 0 ' + (cx0 + 4.6) + ' ' + (cy0 - 3.4) + ' M' + cx0 + ' ' + (cy0 - 7) + ' V' + (cy0 - 0.5),
           wifi: 'M' + (cx0 - 8) + ' ' + (cy0 - 1) + ' Q' + cx0 + ' ' + (cy0 - 9) + ' ' + (cx0 + 8) + ' ' + (cy0 - 1) + ' M' + (cx0 - 4.6) + ' ' + (cy0 + 2.4) + ' Q' + cx0 + ' ' + (cy0 - 2.6) + ' ' + (cx0 + 4.6) + ' ' + (cy0 + 2.4) + ' M' + cx0 + ' ' + (cy0 + 5.6) + ' v.1',
           pair: 'M' + (cx0 - 7) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 + 2) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 - 7) + ' ' + (cy0 + 2) + ' h5 v5 h-5 Z M' + (cx0 + 3) + ' ' + (cy0 + 3) + ' h3 v3' };
         g.appendChild(el('path', { 'class': 'cue', d: CUE[W0.k] })); }
-      var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
+      var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = nameN(x).toUpperCase(); g.appendChild(nm);
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
       [[tops, Y, -1], [bots, Y + 104, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
         var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
       svg.appendChild(g); });
     /* the cables behind the parts, from what gives to what takes. Power that is there runs along its cable; power that is not stays grey */
@@ -331,7 +348,7 @@
     $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); riteDraw(); }
   function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
   $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
-  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say || ''; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
+  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function (r) { if (T && r && r.mesh != null) T.mesh = r.mesh; radioDraw(); if (!SEL) $('#bnsay').textContent = say || ''; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
   function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); return 'p' + n; }
   function partOff(iid) { var ko0 = (PART[(BN.p.filter(function (q) { return q[0] === iid; })[0] || [])[1]] || {}).kind; if (BN.o && (BN.o[0] === iid || ko0 === 'pi' || ko0 === 'printer')) BN.o = null; BN.p = BN.p.filter(function (q) { return q[0] !== iid; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== iid && j[1].split('.')[0] !== iid; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== iid; }); if (SEL && SEL.split('.')[0] === iid) SEL = null; }
   /* paper: each print on a ghost's twin takes its length off the roll */
@@ -339,7 +356,7 @@
   /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS; the SD is left for the build to ask for */
   function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice(), m: +j.bench.m || 0, o: Array.isArray(j.bench.o) ? j.bench.o.slice() : null } : { p: [], j: [], f: [], m: 0, o: null };
     var tray = store.get('da.ghost.build', null), done = store.get('da.ghost.seeded', '');
-    if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
+    if (!TESTQ && !BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
       [tray.printers, tray.pi].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
     benchDraw(); if (WANT && WANT.k !== 'done') gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
@@ -531,16 +548,24 @@
   function offDraw() { var b = $('#body'); b.setAttribute('aria-pressed', String(OFF)); b.classList.toggle('off', OFF); if (OFF) { $('#bodyw').textContent = 'OFFLINE'; $('#led').className = 'led'; } else bodyDraw(); }
   $('#body').addEventListener('click', function () { if (!T || !T.ghost) return; OFF = !OFF; clearTimeout(timer); offDraw(); if (!OFF) tick(); });
 
+  /* ───────── the mesh: a T-Beam for the bench; a real Meshtastic radio linked to this screen (mesh.js); a line out ───────── */
+  $('#madd').addEventListener('click', function () { if (!BN || ofKind('radio').length || BN.p.length >= 12) return; partAdd('t-beam'); TRAY = null; $('#bnd').open = true; benchDraw(); benchSave('T-BEAM'); radioDraw(); setTimeout(function () { look($('.bench .po.want') || $('#bnv'), 'center'); }, 60); });
+  var mlink = function (how, name) { if (ML.link.on) { if (ML.link.name === name) ML.link.close(); return; } $('#msay').textContent = '· · ·';
+    ML[how]().then(function () { $('#msay').textContent = ''; radioDraw(); }, function (e) { $('#msay').textContent = e && e.name === 'NotFoundError' ? '' : '× ' + String(e && e.message || e).slice(0, 48).toUpperCase(); radioDraw(); }); };
+  $('#mu').addEventListener('click', function () { mlink('serial', 'USB'); }); $('#mb').addEventListener('click', function () { mlink('ble', 'BLUETOOTH'); });
+  if (ML.hear) ML.hear(function (text, who) { if (text == null) { radioDraw(); return; } radio(text, 'in', who); var d = $('#rd'); d.classList.remove('rx'); void d.offsetWidth; d.classList.add('rx'); });
+  $('#mf').addEventListener('submit', function (e) { e.preventDefault(); var l = $('#ml').value.trim(); if (!l || !canSay()) return; meshOut(l, true); $('#ml').value = ''; });
+
   /* ───────── a printer added: the pair code a Pi prints ───────── */
   $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; }
     /* a ghost's own code, the one its Pi printed: paired here, and nowhere else */
     if (T && T.ghost && BN && c === pairCode()) { $('#pf button').classList.remove('want'); $('#pc').value = ''; if (WANT && WANT.k === 'pair') { $('#bsay').textContent = 'PAIRED'; bootStep('pair'); } else $('#bsay').textContent = BN.o && BN.o[2] === 3 ? 'PAIRED' : '× NOT YET'; return; }
     $('#bsay').textContent = '· · ·';
     api('/api/twin', { method: 'POST', body: JSON.stringify({ pair: c }) }).then(function (j) { $('#bsay').textContent = j.waiting ? 'WAIT LIST' : 'PAIRED · THE PI TAKES OVER'; $('#pc').value = ''; setTimeout(tick, 6e3); }, function (er) { $('#bsay').textContent = er.status === 404 ? '× NO SUCH CODE' : er.status === 409 ? '× TAKEN' : '× ' + String(er.message || '').toUpperCase(); }); });
-  $('#test').addEventListener('click', function () { var id = 't' + Date.now(), cv = draw(textSlip(['DIRECT ACTION', T ? String(T.name).toUpperCase() : 'TWIN', 'TEST', T && T.number ? 'ISLAND ' + T.number : 'GHOST']), paperOf()); shown(id, cv, 'TEST', true, false, 'Test slip'); paperUse(cv);
-    if (OUT) OUT.write(textSlip(['DIRECT ACTION', 'TEST'])).catch(function () { $('#bsay').textContent = '× ' + OUT.name; }); });
+  $('#test').addEventListener('click', function () { var id = 't' + Date.now(), u = SLIPS.strip(), cv = draw(u, paperOf()); shown(id, cv, '', true, false, 'Test strip'); paperUse(cv);
+    if (OUT) OUT.write(u).catch(function () { $('#bsay').textContent = '× ' + OUT.name; }); if (canSay()) meshOut('DA-TEST ' + isleNm()); });
   $('#kcopy').addEventListener('click', function () { var b = this; if (navigator.clipboard) navigator.clipboard.writeText(KEY).then(function () { b.textContent = 'COPIED'; }); });
-  $('#kout').addEventListener('click', function () { if (!confirm('Forget this island’s key on this screen?')) return; store.set('da.hm.key', ''); store.set('da.twin.roll', []); store.set('da.twin.radio', []); location.reload(); });
+  $('#kout').addEventListener('click', function () { if (!confirm('Forget this island’s key on this screen?')) return; store.set('da.hm.key', ''); store.set('da.twin.roll', []); if (T) { store.set('da.twin.radio.' + T.id, []); store.set('da.twin.radio.' + T.id + '.test', []); } store.set('da.twin.roll.test', []); location.reload(); });
 
   /* ───────── no key here: start a ghost, or open an island by its key ───────── */
   function gate(say) { $('#twin').hidden = true; $('#gate').hidden = false; if (say) $('#gsay').textContent = say; clearTimeout(timer); }

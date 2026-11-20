@@ -2206,8 +2206,18 @@ if (run('bench')) try {
   await page.evaluate(() => document.querySelector('.bench .hit').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await sleep(60);
   /* the build, followed: each time, whatever the island wants (a ghost tapped for the parts that fit, or the two breathing ports joined), until it has all it needs.
      The first cable is pulled by hand from one port to the other */
+  /* FLASH: the imager mimicked on the bench's Pi and SD, the latest release as the real Imager lists it; the Wi-Fi never leaves the screen */
+  await page.route('**/api/os', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ os: { version: 'v1.1.1', download: 612317232, size: 3112173568, sha: '7d99383403ba', devices: ['pi3-64bit', 'pi4-64bit', 'pi5-64bit'] } }) }));
+  const posts = []; page.on('request', r => { if (r.url().endsWith('/api/twin') && r.method() === 'POST') posts.push(r.postData() || ''); });
+  let fl0 = null, fl = null; const doFlash = async () => { fl0 = await page.evaluate(() => document.querySelector('#fl').hidden); await tap('.bench .pt.want.flash .bk');
+  fl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s), c = s => q(s).click(), o = {}; window.confirm = () => true;
+    o.open = !q('#fl').hidden; o.fromLoose = !document.querySelector('.bench .cb:not(.bad)') || ![...document.querySelectorAll('.bench .cb title')].some(t => /SD/.test(t.textContent));
+    o.steps = [...document.querySelectorAll('#fls button')].map(b => b.textContent + (b.disabled ? '-' : '')).join(); c('[data-step="1"]'); await z(400); o.os = q('#flp').textContent; c('[data-os]'); await z(30);
+    o.sd = q('#flp').textContent; c('[data-sd]'); await z(30); q('#flf [name=ssid]').value = 'reefnet'; q('#flf [name=pw]').value = 'secret12'; q('#flf button').click(); await z(30);
+    c('[data-write]'); await z(400); o.mid = q('#flsay').textContent; o.fill = q('#sdf') ? +q('#sdf').getAttribute('height') : 0; c('[data-skip]'); await z(400); o.end = q('#flp').textContent; o.fv = q('.bench .fv') ? q('.bench .fv').lastChild.textContent : ''; o.tag = (q('#roll .slip .tag') || {}).textContent; o.sum = q('#bns').textContent; o.dots = document.querySelectorAll('#fls .dn').length; return o; }); };
   const wants = [], trays = []; let dragged = false;
   for (let i = 0; i < 24; i++) {
+    if (!fl && await page.evaluate(() => !!document.querySelector('.bench .pt.want.flash'))) { wants.push('F'); await doFlash(); await sleep(300); continue; }
     const w = await page.evaluate(() => { const g = document.querySelector('.bench .gh'); if (g) return { g: g.getAttribute('aria-label').replace('Wanted here: ', '') }; const p = [...document.querySelectorAll('.bench .po.want')].map(e => e.getAttribute('aria-label')); return p.length === 2 && document.querySelector('.bench .cbg') ? { p } : null; });
     if (!w) break;
     if (w.g) { wants.push(w.g); await tap('.bench .gh'); const ids = await page.evaluate(() => [...document.querySelectorAll('#bnl [data-part]')].map(b => b.dataset.part)); trays.push(ids.join('/')); await tap(`#bnl [data-part="${ids.includes('sd-32') ? 'sd-32' : ids[0]}"]`); continue; }
@@ -2223,24 +2233,15 @@ if (run('bench')) try {
   await shot(page, "bench-built.png");
   await page.reload(); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(600);
   const b2 = await page.evaluate(() => ({ cables: document.querySelectorAll('.bench .cb').length, word: document.querySelector('#bnp').textContent, n: document.querySelectorAll('.bench .pt').length }));
-  check('bench: followed want by want, the island asks for its SD, the cables, then power backwards from what is cold (24 V for the printer, so the boost; 5 V for the Pi, so the buck; then the charger they hang from, the sun into it, a battery for the night), its own parts before the wall; the first cable pulled by hand',
-    wants.join() === 'sd,J,J,converter,J,converter,J,charger,J,J,J,battery,J' && /sd-32/.test(trays[0]) && /^boost-24v\/.*ps-180$/.test(trays[1]) && /^buck-5v/.test(trays[2]) && /^mppt-10a/.test(trays[3]) && /lifepo4-50ah/.test(trays[4]) && dragged === 'Pi 3 A+ SD→SD 32 GB SD', JSON.stringify({ wants, trays, dragged }));
-  check('bench: built, a Pi, an SD, a TM-T88V and solar (charger, battery, boost, buck) read ENOUGH, the sums in its hover; it reads top to bottom from the sun to the paper, power running along its cables; the day drawn (the sun, the battery, never asleep); what it wants now is its SD written; kept with the ghost through a reload; nothing runs off the phone',
-    b1.cables === 8 && !b1.bad && !b1.off && b1.word === 'ENOUGH' && /Uses 113 Wh a day · the sun gives 338 Wh \(4\.5 h\) · the battery holds 576 Wh, 123 h with no sun/.test(b1.why) && b1.sum === '8 PARTS · ENOUGH' && b1.wide && b1.on === 6 && b1.dat === 2 && b1.rows.every((y, i) => y >= 0 && (!i || y > b1.rows[i - 1]))
-    && b1.next === 'pt want flash:SD 32 GB' && b1.day === '1|1|0|Awake all day and night' && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
+  check('bench: followed want by want, the island asks for its SD, then to write it (as in a computer, before it goes in the Pi), the cables, then power backwards from what is cold (24 V for the printer, so the boost; 5 V for the Pi, so the buck; then the charger they hang from, the sun into it, a battery for the night), its own parts before the wall; the first cable pulled by hand',
+    wants.join() === 'sd,F,J,J,converter,J,converter,J,charger,J,J,J,battery,J' && /sd-32/.test(trays[0]) && /^boost-24v\/.*ps-180$/.test(trays[1]) && /^buck-5v/.test(trays[2]) && /^mppt-10a/.test(trays[3]) && /lifepo4-50ah/.test(trays[4]) && dragged === 'Pi 3 A+ SD→SD 32 GB SD', JSON.stringify({ wants, trays, dragged }));
+  check('bench: built, a Pi, an SD, a TM-T88V and solar (charger, battery, boost, buck) read ENOUGH, the sums in its hover; it reads top to bottom from the sun to the paper, power running along its cables; the day drawn (the sun, the battery, never asleep); what it wants now is to start; kept with the ghost through a reload; nothing runs off the phone',
+    b1.cables === 8 && !b1.bad && !b1.off && b1.word === 'ENOUGH' && /Uses 113 Wh a day · the sun gives 338 Wh \(4\.5 h\) · the battery holds 576 Wh, 123 h with no sun/.test(b1.why) && b1.sum === '8 PARTS · ENOUGH · FLASHED' && b1.wide && b1.on === 6 && b1.dat === 2 && b1.rows.every((y, i) => y >= 0 && (!i || y > b1.rows[i - 1]))
+    && b1.next === 'pt want boot:Pi 3 A+' && b1.day === '1|1|0|Awake all day and night' && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
     JSON.stringify({ b1, b2 }));
-  /* FLASH: the imager mimicked on the bench's Pi and SD, the latest release as the real Imager lists it; the Wi-Fi never leaves the screen */
-  await page.route('**/api/os', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ os: { version: 'v1.1.1', download: 612317232, size: 3112173568, sha: '7d99383403ba', devices: ['pi3-64bit', 'pi4-64bit', 'pi5-64bit'] } }) }));
-  const posts = []; page.on('request', r => { if (r.url().endsWith('/api/twin') && r.method() === 'POST') posts.push(r.postData() || ''); });
-  const fl0 = await page.evaluate(() => document.querySelector('#fl').hidden); await tap('.bench .pt.want.flash .bk');
-  const fl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s), c = s => q(s).click(), o = {}; window.confirm = () => true;
-    o.open = !q('#fl').hidden;
-    o.steps = [...document.querySelectorAll('#fls button')].map(b => b.textContent + (b.disabled ? '-' : '')).join(); c('[data-step="1"]'); await z(400); o.os = q('#flp').textContent; c('[data-os]'); await z(30);
-    o.sd = q('#flp').textContent; c('[data-sd]'); await z(30); q('#flf [name=ssid]').value = 'reefnet'; q('#flf [name=pw]').value = 'secret12'; q('#flf button').click(); await z(30);
-    c('[data-write]'); await z(400); o.mid = q('#flsay').textContent; o.fill = q('#sdf') ? +q('#sdf').getAttribute('height') : 0; c('[data-skip]'); await z(400); o.end = q('#flp').textContent; o.fv = q('.bench .fv') ? q('.bench .fv').lastChild.textContent : ''; o.tag = (q('#roll .slip .tag') || {}).textContent; o.sum = q('#bns').textContent; o.dots = document.querySelectorAll('#fls .dn').length; return o; });
   await sleep(900); const bk = await page.evaluate(async () => (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench);
   check('bench: FLASH walks DEVICE, OS (the latest release), STORAGE, SETTINGS, WRITE, VERIFY; the SD fills as it is written, each step done keeps a dot; the SD reads its version, the settings print on the twin, and the Wi-Fi is never sent',
-    /^DEVICE,OS,STORAGE,SETTINGS,WRITE$/.test(fl.steps.replace(/-/g, '')) && fl.os === 'ISLAND OS v1.1.1' && fl.sd === 'SD 32 GB' && /^WRITING \d+% · .* · 20 MB\/S$/.test(fl.mid) && /^FLASHED · v1\.1\.1/.test(fl.end) && fl.fill > 0 && fl.dots === 5 && fl.fv === 'v1.1.1' && fl.tag === 'FLASH' && / · FLASHED$/.test(fl.sum)
+    /^DEVICE,OS,STORAGE,SETTINGS,WRITE$/.test(fl.steps.replace(/-/g, '')) && fl.os === 'ISLAND OS v1.1.1' && fl.sd === 'SD 32 GB' && /^WRITING \d+% · .* · 20 MB\/S$/.test(fl.mid) && /^FLASHED · v1\.1\.1/.test(fl.end) && fl.fill > 0 && fl.dots === 5 && fl.fv === 'v1.1.1' && fl.tag === 'FLASH' && / · FLASHED$/.test(fl.sum) && fl.fromLoose
     && fl0 && fl.open && JSON.stringify(bk.f) === '[["p4","v1.1.1","bench-bb"]]' && posts.length > 0 && !posts.some(p => /reefnet|secret12/.test(p)), JSON.stringify({ fl, f: bk.f, posts: posts.length }));
   /* written, the Pi waits to start: a touch powers it on, its log runs (a tap skips), its test strip and setup slip print; then its Wi-Fi, then its pair code. The rite lights as it goes */
   const rite = () => page.evaluate(() => [...document.querySelectorAll('#rite .st')].map(g => g.classList.contains('lit') ? 'L' : g.classList.contains('now') ? 'N' : '-').join(''));
@@ -2268,14 +2269,43 @@ if (run('bench')) try {
   /* on, nothing glows on the bench (the rite's HOME is next); a touch on the printer is a print, and the roll is shorter by what came out */
   const r0 = await page.evaluate(() => ({ next: [...document.querySelectorAll('.bench .pt.want')].map(g => g.getAttribute('class')).join(), roll: document.querySelector('.bench .roll title').textContent, r: +document.querySelector('.bench .roll .rl').getAttribute('r') }));
   await page.evaluate(() => [...document.querySelectorAll('.bench .pt')].find(g => /^TM-T88V/.test(g.querySelector('title').textContent)).querySelector('.bk').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await sleep(1400);
-  const r1 = await page.evaluate(async () => ({ tags: [...document.querySelectorAll('#roll .slip .tag')].map(t => t.textContent).join(), r: +document.querySelector('.bench .roll .rl').getAttribute('r'), m: (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench.m }));
-  check('bench: on, a touch on the printer makes a print; its 80 m roll is drawn on it and gets smaller with each print, kept with the ghost',
-    r0.next === '' && /^\d\d m of paper left · about \d+ receipts$/.test(r0.roll) && r0.r < 12 && /^TEST/.test(r1.tags) && r1.m > 100 && r1.m < 1500, JSON.stringify({ r0, r1 }));
+  const r1 = await page.evaluate(async () => ({ tags: [...document.querySelectorAll('#roll .slip')].map(t => t.getAttribute('aria-label')).join('|'), tag: document.querySelectorAll('#roll .slip:first-child .tag').length, r: +document.querySelector('.bench .roll .rl').getAttribute('r'), m: (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench.m }));
+  check('bench: on, a touch on the printer makes a print (the test strip, as TEST makes); its 80 m roll is drawn on it and gets smaller with each print, kept with the ghost',
+    r0.next === '' && /^\d\d m of paper left · about \d+ receipts$/.test(r0.roll) && r0.r < 12 && /^Test strip\|/.test(r1.tags) && !r1.tag && r1.m > 100 && r1.m < 1500, JSON.stringify({ r0, r1 }));
   /* OFFLINE: the twin stops asking the site; back, it asks again */
   let asks = 0; page.on('request', q => { if (/\/api\/twin$/.test(q.url()) && q.method() === 'GET') asks++; });
   await tap('#body'); const off = await page.evaluate(() => ({ p: document.querySelector('#body').getAttribute('aria-pressed'), w: document.querySelector('#bodyw').textContent })); asks = 0; await sleep(6000); const offAsks = asks;
   await tap('#body'); await sleep(1500);
   check('offline: the light opens up, OFFLINE, and the twin asks the site nothing; tapped again it asks', off.p === 'true' && off.w === 'OFFLINE' && offAsks === 0 && asks > 0, JSON.stringify({ off, offAsks, asks }));
+  /* MESH: RADIO offers a T-Beam; on the bench it asks for its power (the Pi 3 A+'s one USB is the printer's, so a 5 V supply off the charger); on air it waves, and a line goes out */
+  await tap('#rd summary'); await sleep(200); const m0 = await page.evaluate(() => ({ add: !document.querySelector('#madd').hidden, form: !document.querySelector('#mf').hidden, rs: document.querySelector('#rs').textContent }));
+  await tap('#madd'); await sleep(500); const mw = [];
+  for (let i = 0; i < 8; i++) { const w = await page.evaluate(() => { const g = document.querySelector('.bench .gh'); if (g) return { g: 1 }; const p = [...document.querySelectorAll('.bench .po.want')].map(e => e.dataset.port), l = [...document.querySelectorAll('.bench .po.want')].map(e => e.getAttribute('aria-label')); return p.length === 2 ? { p, l } : null; });
+    if (!w) break; if (w.g) { await tap('.bench .gh'); const ids = await page.evaluate(() => [...document.querySelectorAll('#bnl [data-part]')].map(b => b.dataset.part)); mw.push(ids[0]); await tap(`#bnl [data-part="${ids[0]}"]`); continue; }
+    mw.push(w.l.join('→')); await tap(`.bench [data-port="${w.p[0]}"]`); await tap(`.bench [data-port="${w.p[1]}"]`); }
+  await sleep(900); await page.evaluate(() => { document.querySelector('#rd').open = true; });
+  const m1 = await page.evaluate(async () => ({ air: document.querySelectorAll('.bench .air').length, rd: document.querySelector('#rd').classList.contains('air'), rs: document.querySelector('#rs').textContent, form: !document.querySelector('#mf').hidden, add: !document.querySelector('#madd').hidden, word: document.querySelector('#bnp').textContent,
+    mesh: (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).mesh }));
+  await page.fill('#ml', 'tide turning at the reef'); await page.press('#ml', 'Enter'); await sleep(200); await tap('#test'); await sleep(600);
+  const m2 = await page.evaluate(() => ({ log: [...document.querySelectorAll('#rlog li')].slice(0, 2).map(l => l.textContent), tx: document.querySelectorAll('.bench .air.tx').length }));
+  check('mesh: RADIO offers a T-Beam; on the bench it asks for its power (no USB free on a Pi 3 A+, so a 5 V supply off the charger), then it is on air: waves from its aerial, MESH on RADIO and on the island, a line box; a line typed and the test strip go out as mesh lines',
+    m0.add && !m0.form && /^buck-5v,(T-Beam USB→Buck #2 5 V|Buck #2 5 V→T-Beam USB),(Charger 12 V→Buck #2 12 V|Buck #2 12 V→Charger 12 V)$/.test(mw.join()) && m1.air === 1 && m1.rd && /^MESH · \d+$/.test(m1.rs) && m1.form && !m1.add && m1.word === 'ENOUGH' && m1.mesh === true
+    && m2.log[0] === '→DA-TEST BENCH BB' && m2.log[1] === '→tide turning at the reef' && m2.tx === 1, JSON.stringify({ m0, mw, m1, m2 }));
+  await shot(page, 'bench-mesh.png'); for (const [sel, nm] of [['#bnv', 'bench-mesh-parts.png'], ['#rd', 'bench-mesh-radio.png']]) { const e = await page.$(sel); if (e) await e.screenshot({ path: 'test/shots/' + nm }).catch(() => {}); }
+  /* a Meshtastic radio on this screen's USB (mocked: what is written is kept, what it says is fed in): the frames as the radio reads them; a line from a node, by its name */
+  await page.addInitScript(() => { window.__w = []; let push = null; const rs = new ReadableStream({ start(c) { push = c; } }); window.__in = u => push.enqueue(new Uint8Array(u));
+    Object.defineProperty(navigator, 'serial', { configurable: true, value: { requestPort: async () => ({ open: async () => {}, close: async () => {}, readable: rs, writable: { getWriter: () => ({ write: async u => { window.__w.push(Array.from(u)); }, releaseLock() {} }) } }) } }); });
+  await page.reload(); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(700); await page.evaluate(() => { document.querySelector('#rd').open = true; });
+  await tap('#mu'); await sleep(400); await page.fill('#ml', 'heard you'); await page.press('#ml', 'Enter'); await sleep(300);
+  const mu0 = await page.evaluate(() => { const w = window.__w, last = w[w.length - 1], R = MESH._read, to = R(new Uint8Array(last.slice(4))), pk = R(to[1][0]), dt = R(pk[4][0]);
+    const v = (n, o) => { n >>>= 0; while (n > 127) { o.push(n & 127 | 128); n >>>= 7; } o.push(n); return o; }, by = (f, b, o) => { v(f << 3 | 2, o); v(b.length, o); o.push(...b); return o; }, te = t => [...new TextEncoder().encode(t)], F = p => [0x94, 0xC3, p.length >> 8, p.length & 255, ...p];
+    const ni = by(2, by(3, te('REEF'), []), v(1 << 3, []).concat(v(0x1234, []))), data = by(2, te('hello island'), [8, 1]), pkt = [13, 0x34, 0x12, 0, 0]; by(4, data, pkt);
+    window.__in([...te('INFO | boot\n'), ...F(by(4, ni, [])), ...F(by(2, pkt, []))]);
+    return { n: w.length, wake: w[0].length === 32 && w[0].every(b => b === 0xC3), hello: w[1][0] === 0x94 && w[1][1] === 0xC3 && R(new Uint8Array(w[1].slice(4)))[3] != null, to: pk[2][0] === 0xFFFFFFFF, port: dt[1][0], text: new TextDecoder().decode(dt[2][0]), on: document.querySelector('#mu').getAttribute('aria-pressed') }; });
+  await sleep(400); const mu1 = await page.evaluate(() => ({ top: document.querySelector('#rlog li').textContent, inn: document.querySelector('#rlog li').classList.contains('in'), rx: document.querySelector('#rd').classList.contains('rx') }));
+  await tap('#mu'); await sleep(300); const mu2 = await page.evaluate(() => document.querySelector('#mu').getAttribute('aria-pressed'));
+  check('mesh: a Meshtastic radio on USB: woken, asked for its config, then a line goes out as a text packet to every node; a line from a node shows by its short name, its log passed over; tapped again it lets go',
+    mu0.wake && mu0.hello && mu0.to && mu0.port === 1 && mu0.text === 'heard you' && mu0.on === 'true' && mu1.top === '←REEF hello island' && mu1.inn && mu1.rx && mu2 === 'false', JSON.stringify({ mu0, mu1, mu2 }));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }
 

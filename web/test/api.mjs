@@ -517,6 +517,9 @@ try {
       const pr = await call('/api/pair', { method: 'POST', body: { name: 'Pi Aa', paper: '80' }, ip: '10.66.0.3' }), ad0 = await call('/api/twin', { method: 'POST', token: KA, body: { pair: 'ZZZZZZZZ' } });
       const ad = await call('/api/twin', { method: 'POST', token: KA, body: { pair: pr.json.code } }), pp = await call('/api/pair/poll', { method: 'POST', body: { device: pr.json.device }, ip: '10.66.0.3' });
       const kA = await call('/api/island', { token: KA }), tA4 = await tw(KA);
+      /* a radio on the bench, joined, is the ghost's MESH; off the bench, it is not */
+      const bnR1 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [['p1.usb2', 'p2.usb']] }), twR = await tw(KB), bnR0 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [] }), twR0 = await tw(KB), bnRw = await bnS(KB, { p: [['p1', 'tm-t88v'], ['p2', 't-beam']], j: [['p1.usb', 'p2.usb']] });
+      check('a T-Beam joined on a ghost\'s bench makes it MESH (its twin says so); unjoined, or joined only to a printer, not', bnR1.json.mesh === true && twR.json.mesh === true && bnR0.json.mesh === false && twR0.json.mesh === false && bnRw.json.mesh === false, JSON.stringify({ w: bnRw.json.mesh, a: bnR1.json.mesh, b: twR.json.mesh, c: bnR0.json.mesh, d: twR0.json.mesh }));
       const bnReal = await bnS(KA, { p: [], j: [] }); check('a real island\'s twin keeps no bench (a ghost\'s only)', bnReal.status === 400 && !('bench' in tA4.json), JSON.stringify({ s: bnReal.status, t: Object.keys(tA4.json) }));
       /* stage F: A (real now) keeps a TEST beside it, opened by A's own key with ?isle=test; what works there MOVEs to A, and UNDO puts it back */
       { const isl = (q, o) => call(q, { ip: '10.66.1.1', ...o }), TQ = '?isle=test', put = (q, b, k) => server.fetch(new URL('/api/island/pics/' + q, O), { method: 'PUT', headers: { origin: O, 'cf-connecting-ip': '10.66.1.1', authorization: `Bearer ${k}` }, body: b });
@@ -553,10 +556,10 @@ try {
           JSON.stringify({ m1: m1.json.home, m2: m2.json.home, u1: u1.json.home, u2: u2.json.home, u3: u3.status }));
         await put('2', JPEG_B, KA); const aPic = await isl('/api/island', { token: KA });
         const mc = await mv(KA, 'card'), clM = await call('/api/cards'), uc = await mv(KA), back = uc.json.pics && uc.json.pics[0] ? await call(uc.json.pics[0].url) : {};
-        await call('/api/twin' + TQ, { method: 'POST', token: KA, body: { bench: { p: [['p1', 'tm-t88v'], ['p2', 'sd-32']], j: [] } } }); const mb = await mv(KA, 'build'), ub = await mv(KA);
-        check('MOVE card carries the TEST\'s pictures and speed onto the real card, and UNDO brings its own back; MOVE build carries the bench, UNDO clears it',
+        await call('/api/twin' + TQ, { method: 'POST', token: KA, body: { bench: { p: [['p1', 'tm-t88v'], ['p2', 'sd-32']], j: [], f: [['p2', 'v1.1.1', 'reef']], m: 900, o: ['p2', 'v1.1.1', 3] } } }); const mb = await mv(KA, 'build'), ub = await mv(KA);
+        check('MOVE card carries the TEST\'s pictures and speed onto the real card, and UNDO brings its own back; MOVE build carries the bench (its parts, cables and written SDs, never its first start or paper), UNDO clears it',
           aPic.json.pics.map(x => x.slot).join() === '2' && mc.json.pics.map(x => x.slot).join() === '0' && mc.json.speed === 5 && (clM.json.cards[A] || {}).pics.length === 1 && !(T in clM.json.cards)
-          && uc.json.pics.map(x => x.slot).join() === '2' && uc.json.speed === null && back.status === 200 && back.bin && back.bin.equals(JPEG_B) && mb.json.bench.p.length === 2 && ub.json.bench.p.length === 0,
+          && uc.json.pics.map(x => x.slot).join() === '2' && uc.json.speed === null && back.status === 200 && back.bin && back.bin.equals(JPEG_B) && mb.json.bench.p.length === 2 && !mb.json.bench.o && mb.json.bench.m === 0 && mb.json.bench.f.length === 1 && ub.json.bench.p.length === 0,
           JSON.stringify({ a: aPic.json.pics, mc: [mc.status, mc.json], uc: [uc.status, uc.json, back.status], mb: mb.json.bench, ub: ub.json.bench }));
         const no = [await mv(KA, 'label', TQ), await mv(KB, 'label'), await mv('x'.repeat(32), 'label'), await mv(KA, 'nope')];
         for (let i = 0; i < 6; i++) await mv(KA, 'label'); const m6 = await isl('/api/island', { token: KA });

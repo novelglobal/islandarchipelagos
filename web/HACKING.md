@@ -21,7 +21,8 @@
 | `src/worker/first-play.js` | the first play |
 | `src/base/` | the home: `base.js`, `home.js` (keeper panel, TEST / MOVE), `aura.js`, `thermal.js` (photo to dots) |
 | `src/app/` | the map app, joined in name order |
-| `repo-static/twin.html`, `twin.js` | the twin: a ghost's paper, BENCH, FLASH, BOOT, the rite, OFFLINE |
+| `repo-static/twin.html`, `twin.js` | the twin: a ghost's paper, BENCH, FLASH, BOOT, the rite, OFFLINE, RADIO |
+| `repo-static/mesh.js` | Meshtastic by USB or Bluetooth, text lines |
 | `repo-static/parts.js` | generated: never edit, edit `../spec/parts/*.json` |
 | `repo-static/sw.js` | service worker: bump `V` on every change |
 | `receiver/` | the Python receiver (`pull.py`) |
@@ -31,7 +32,7 @@
 
 ## Pages
 
-`/` home · `/twin` twin (`?isle=test` a real island's TEST) · `/twin#bench` its bench · `/admin` approval page · `/islands` · `/island` · `/archipelagos` · `/bench` · `/kit` · `/desk` · `/art` · `/play` · `/play-box` · `/research` · `/note` · `/c` · `/cart` · `/t` · `/x` · `/popup`
+`/` home · `/twin` twin (Chrome: USB, serial, Bluetooth) (`?isle=test` a real island's TEST) · `/twin#bench` its bench · `/admin` approval page · `/islands` · `/island` · `/archipelagos` · `/bench` · `/kit` · `/desk` · `/art` · `/play` · `/play-box` · `/research` · `/note` · `/c` · `/cart` · `/t` · `/x` · `/popup`
 
 ## Routes (`/api/…`)
 
@@ -61,6 +62,7 @@
 
 - schema: `SCHEMA_V` in `index.js`; a new column is an `ALTER TABLE` in a try, under a new version
 - `printers.ghost`: 1 for a ghost
+- `printers.mesh`: radio on; a ghost's from its bench
 - `printers.test_of`: a TEST's real island
 - `printers.moves`: the last 5 MOVEs, each with what it replaced
 - `printers.bench`: JSON `{p, j, f, m, o}`
@@ -81,6 +83,7 @@
 | HOME | keeper panel | `src/base/home.js` |
 | TEST + MOVE | keeper panel of a real island | `src/base/home.js`; `index.js` `action:'test'|'move'|'undo'` |
 | OFFLINE | the GHOST light on the twin | `twin.js` `OFF` |
+| MESH | RADIO on the twin: T-BEAM, USB, BLUETOOTH, LINE | `twin.js` `meshOut`, `radioDraw`; `mesh.js` |
 | the rite | the five stations on the twin | `twin.js` `riteDraw` |
 
 ## Privacy rules (checked in `test/api.mjs`)
@@ -90,6 +93,8 @@
 - a ghost relays only to ghosts; a TEST takes echo only from its own real island
 - the Wi-Fi typed in FLASH stays on the screen
 - a ghost's pair code pairs nothing
+- a ghost's mesh lines: its own screen's radio only
+- `/twin`: own CSP, self only
 
 ## Add a part
 
@@ -103,3 +108,4 @@
 2. owner merges to `main` (GitHub Desktop)
 3. live: novel.global; its build id is `<meta name="build">`
 4. Island OS: tag `v*` → `.github/workflows/release.yml`
+5. SAFE: tag `safe-<sw version>` once live

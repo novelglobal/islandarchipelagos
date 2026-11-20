@@ -67,7 +67,7 @@ const partsDir = path.join(root, '..', 'spec', 'parts'), PARTS = fs.existsSync(p
 /* in the order a builder meets them: the kinds as they are joined, the tested first, 80 mm before 58 */
 const KINDS = ['printer', 'pi', 'sd', 'power', 'solar', 'battery', 'charger', 'converter', 'radio', 'screen', 'cable']; PARTS.sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || (b.tested ? 1 : 0) - (a.tested ? 1 : 0) || (b.paper || 0) - (a.paper || 0) || a.id.localeCompare(b.id, 'en', { numeric: true }));
 fs.writeFileSync(path.join(out, 'parts.js'), '/* the parts, from spec/parts (MIT) */\nwindow.PARTS = ' + JSON.stringify(PARTS) + ';\n');
-fs.writeFileSync(path.join(src, 'worker', 'stamp.js'), `/* written by build.mjs: never edited by hand, never committed */\nexport const BUILD = ${JSON.stringify(sha)};\nexport const PREVIEW = ${preview};\nexport const PARTNERS = ${JSON.stringify(partners)};\nexport const PART_IDS = ${JSON.stringify(PARTS.map(p => p.id))};\n`);
+fs.writeFileSync(path.join(src, 'worker', 'stamp.js'), `/* written by build.mjs: never edited by hand, never committed */\nexport const BUILD = ${JSON.stringify(sha)};\nexport const PREVIEW = ${preview};\nexport const PARTNERS = ${JSON.stringify(partners)};\nexport const PART_IDS = ${JSON.stringify(PARTS.map(p => p.id))};\nexport const PART_KIND = ${JSON.stringify(Object.fromEntries(PARTS.map(p => [p.id, p.kind])))};\n`);
 /* the studio: the whole radio, W.I.S.H. and PRINT, as it was built through the pilot, at /studio */
 const body = read(path.join(src, 'body.html'));
 fs.writeFileSync(path.join(out, 'studio.html'), `<!doctype html>
@@ -162,6 +162,7 @@ const HUMAN = 'https://challenges.cloudflare.com';   // Cloudflare Turnstile, th
 const CSP = [`default-src 'self'`, `script-src 'self' ${HUMAN} ${[...new Set(inline)].join(' ')}`, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob: ${[...DATA, ...INAT_MEDIA].join(' ')}`,
   `media-src 'self' data: blob: ${INAT_MEDIA.join(' ')}`, `connect-src 'self' data: blob: ${HUMAN} ${[...DATA, ...INAT_MEDIA].join(' ')}`, `font-src 'self' data:`, `worker-src 'self' blob:`, `frame-src 'self' ${HUMAN}`,
   `frame-ancestors 'self'`, `base-uri 'self'`, `form-action 'self'`, `object-src 'none'`].join('; ');
+const TWIN_CSP = `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`;
 fs.appendFileSync(path.join(out, '_headers'), `
 # every page: the security policy, written by build.mjs
 /*
@@ -172,6 +173,14 @@ fs.appendFileSync(path.join(out, '_headers'), `
   ! Content-Security-Policy
 /play-box
   ! Content-Security-Policy
+
+# the twin: the one page that holds a Wi-Fi password and reaches a printer or radio beside the screen; its scripts and data from here alone
+/twin
+  ! Content-Security-Policy
+  Content-Security-Policy: ${TWIN_CSP}
+/twin.html
+  ! Content-Security-Policy
+  Content-Security-Policy: ${TWIN_CSP}
 `);
 const listing = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => (d.isDirectory() ? listing(path.join(dir, d.name), base) : [path.relative(base, path.join(dir, d.name))])).sort();
 const all = listing(out);
