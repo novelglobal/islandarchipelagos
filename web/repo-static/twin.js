@@ -116,7 +116,7 @@
     $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#pf').hidden = !T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
   function take(j) { var cv = j.escpos ? draw(j.escpos, T.paper) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), T.paper) : null;
     if (j.mesh) radio(j.mesh, 'out');
-    if (cv) shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true);
+    if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
     if (OUT && j.escpos) return OUT.write(b64(j.escpos)).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
     return Promise.resolve(); }
   function tick() { clearTimeout(timer); if (!KEY) return;
@@ -160,11 +160,10 @@
     else if (b.dataset.mir != null) mir = b.dataset.mir || null; else return;
     joinsSave({ to: to, only: only && to.length > 0, mirror: mir }); });
 
-  /* ───────── the bench: a ghost's parts (spec/parts, as parts.js), drawn by hand; tap a port, then another, for a cable. A wrong
+  /* ───────── the bench: a ghost's parts (spec/parts, as parts.js), drawn by hand; pull a cable from one port to another (or tap one, then the other). A wrong
      join stays, dull and dashed, and says why. Power as one word: ENOUGH or SHORT, the sums in its hover ───────── */
   var PARTS = window.PARTS || [], PART = {}; PARTS.forEach(function (p) { PART[p.id] = p; });
-  var BN = null, SEL = null, ADDK = '', bnTimer = 0, NS = 'http://www.w3.org/2000/svg';
-  var GROUPS = [['PI', ['pi', 'sd']], ['PRINTER', ['printer']], ['POWER', ['power', 'solar', 'battery', 'charger', 'converter']], ['MORE', ['radio', 'screen']]];
+  var BN = null, SEL = null, bnTimer = 0, NS = 'http://www.w3.org/2000/svg';
   var PLUG = { 'usb-a': 'USB-A', 'usb-b': 'USB-B', 'micro-usb': 'micro-USB', 'micro-sd': 'microSD', dsi: 'DSI ribbon', 'power-din': 'round power plug', barrel: 'barrel', mc4: 'MC4', screw: 'screw terminal' };
   var STRAIGHT = ['micro-sd', 'dsi', 'power-din'], GIVE = { out: 1, host: 1, store: 1 }, TAKE = { 'in': 1, device: 1, store: 1 };
   var ROLE = { host: 'A host', device: 'A device', 'in': 'A power input', out: 'A power output', slot: 'A card slot', card: 'A card', store: 'A battery terminal' };
@@ -176,7 +175,7 @@
   function joinOf(e1, e2) { var A = portOf(e1), B = portOf(e2); if (!A || !B || !A.port || !B.port) return { ok: false, why: 'That part is gone' };
     var a = A.port, b = B.port, ab = a.role + ' ' + b.role, ba = b.role + ' ' + a.role;
     if (!OK[ab] && !OK[ba]) return { ok: false, why: a.role === b.role ? TWO[a.role] : (ROLE[a.role] + ' and ' + ROLE[b.role].toLowerCase() + ' do not join') };
-    var g = OK[ab] ? a : b, t = g === a ? b : a, cable = null;
+    var g = a.role === 'store' && b.role === 'store' ? (B.part.source ? b : a) : OK[ab] ? a : b, t = g === a ? b : a, cable = null;   // a battery gives to its charger, whichever end was first
     if (!(a.plug === b.plug && STRAIGHT.indexOf(a.plug) >= 0)) { cable = PARTS.filter(function (p) { return p.kind === 'cable' && p.ends && ((p.ends[0] === a.plug && p.ends[1] === b.plug) || (p.ends[1] === a.plug && p.ends[0] === b.plug)); })[0];
       if (!cable) return { ok: false, why: 'No cable from ' + PLUG[a.plug] + ' to ' + PLUG[b.plug] }; }
     if (g.volts != null && t.volts != null && !inside(g.volts, t.volts)) return { ok: false, why: vs(g.volts) + ' V into ' + vs(t.volts) + ' V' };
@@ -190,13 +189,14 @@
     var need = 0, cold = [], sun = 0, sunH = 0, kept = 0, used = 0, wall = false;
     BN.p.forEach(function (x) { var p = PART[x[1]]; if (!p || !p.watts || p.source) return; used++; if (!on[x[0]]) { cold.push(p.name); return; } if (from[x[0]].wall) wall = true; else need += p.watts.avg; });
     /* the sun and the battery count only into a charger */
-    J.forEach(function (r) { if (!r.ok || r.take.part.kind !== 'charger') return; var p = r.give.part;
-      if (p.make && r.take.port.role === 'in') { sun += p.make.watts * p.make.sun * 0.75; sunH = Math.max(sunH, p.make.sun); } if (p.store) kept += p.store.wh * (p.store.use || 1); });
+    /* a battery and its charger join either way round: whichever end the cable was started from */
+    J.forEach(function (r) { if (!r.ok) return; var ch = r.take.part.kind === 'charger' ? r.take : r.give.part.kind === 'charger' && r.take.part.store ? r.give : null; if (!ch) return; var p = (ch === r.take ? r.give : r.take).part;
+      if (p.make && ch.port.role === 'in') { sun += p.make.watts * p.make.sun * 0.75; sunH = Math.max(sunH, p.make.sun); } if (p.store) kept += p.store.wh * (p.store.use || 1); });
     var day = need * 24, r0 = function (v) { return Math.round(v); }, say = 'Uses ' + r0(day) + ' Wh a day · the sun gives ' + r0(sun) + ' Wh (' + sunH + ' h) · the battery holds ' + r0(kept) + ' Wh';
     var res = !used ? { w: '—', t: 'Nothing here draws power yet' } : cold.length ? { w: 'SHORT', t: cold.join(', ') + (cold.length > 1 ? ' have' : ' has') + ' no power in' }
       : !need ? { w: 'ENOUGH', t: wall ? 'From the wall' : '' } : sun < day ? { w: 'SHORT', t: sun ? say : 'Uses ' + r0(day) + ' Wh a day, and no sun comes in' }
       : kept < need * (24 - sunH) ? { w: 'SHORT', t: kept ? say + ': not enough for a night' : 'Nothing kept for the night: a battery on the charger' } : { w: 'ENOUGH', t: say + ', ' + r0(kept / need) + ' h with no sun' + (wall ? ' · the rest from the wall' : '') };
-    res.on = on; res.J = J; return res; }
+    res.on = on; res.J = J; res.need = need; res.sun = sun; res.sunH = sunH; res.kept = kept; res.wall = wall; return res; }
   function el(n, a, kids) { var e = D.createElementNS(NS, n); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
   /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
@@ -217,61 +217,152 @@
     var ks = Object.keys(pos), lo = Math.min.apply(null, ks.map(function (k) { return pos[k][0]; })), hi = Math.max.apply(null, ks.map(function (k) { return pos[k][0]; })), dx = Math.round((220 - lo - hi) / 2);
     if (ks.length && dx) ks.forEach(function (k) { pos[k][0] += dx; });
     return { pos: pos, rows: out.length }; }
-  function benchDraw() { if (!BN) return; var svg = $('#bnv'), rc = window.rough ? rough.svg(svg) : null, P = power(), L = layout(), at = {}, cw = CW;
+  /* ───────── the build: the island says what it wants next, in the order a real one is built ─────────
+     The printer first; then its brain (a Pi), the Pi's memory (an SD, in its slot), the cable between them; then power, asked for
+     backwards from what is cold: the printer wants 24 V, so whatever gives 24 V is offered; that wants 12 V, so the charger; the
+     charger wants the sun, and a battery for the night. Then the SD is written, and the island prints. Each want is drawn where it
+     goes: a ghost of the part (tap it for the parts that fit), or two ports breathing for the cable between them. No menus */
+  var ROLLMM = 80000, MMDOT = 512 / 72, WANT = null, TRAY = null, FLOPEN = false;
+  /* what answers a want for power: the power parts only (a Pi's USB gives 5 V, but never to the Pi or the printer it serves) */
+  var FEEDS = { power: 1, solar: 1, battery: 1, charger: 1, converter: 1 }, BRAIN = { pi: 1, printer: 1 };
+  var ofKind = function (k) { return BN.p.filter(function (x) { return PART[x[1]] && PART[x[1]].kind === k; }); };
+  var portIds = function (x, role) { return ((PART[x[1]] || {}).ports || []).filter(function (o) { return o.role === role; }).map(function (o) { return x[0] + '.' + o.id; }); };
+  var inUse = function (id) { return BN.j.some(function (j) { return j[0] === id || j[1] === id; }); };
+  var idsOf = function (k) { return PARTS.filter(function (p) { return p.kind === k; }).map(function (p) { return p.id; }); };
+  /* a part (not yet on the bench) that could give what this port takes: the roles fit, the volts fit, a cable has both plugs */
+  function canGive(p, o) { return (p.ports || []).some(function (g) { if (!OK[g.role + ' ' + o.role]) return false; if (g.volts != null && o.volts != null && !inside(g.volts, o.volts)) return false;
+    return (g.plug === o.plug && STRAIGHT.indexOf(g.plug) >= 0) || PARTS.some(function (c) { return c.kind === 'cable' && c.ends && ((c.ends[0] === g.plug && c.ends[1] === o.plug) || (c.ends[1] === g.plug && c.ends[0] === o.plug)); }); }); }
+  function wantOf(P) { var pr = ofKind('printer')[0], pi = ofKind('pi')[0], i, k;
+    if (!pr) return { k: 'part', ids: idsOf('printer'), near: null };
+    if (!pi) return { k: 'part', ids: idsOf('pi'), near: pr[0] };
+    var slot = portIds(pi, 'slot')[0]; if (slot && !inUse(slot)) { var sd = ofKind('sd').filter(function (x) { return !portIds(x, 'card').some(inUse); })[0];
+      return sd ? { k: 'join', a: slot, b: portIds(sd, 'card')[0] } : { k: 'part', ids: idsOf('sd'), near: pi[0] }; }
+    var link = P.J.some(function (r) { return r.ok && ((r.give.iid === pi[0] && r.take.iid === pr[0]) || (r.give.iid === pr[0] && r.take.iid === pi[0])); });
+    if (!link) { var hs = portIds(pi, 'host').filter(function (h) { return !inUse(h); }), ds = portIds(pr, 'device');
+      for (i = 0; i < hs.length; i++) for (k = 0; k < ds.length; k++) if (joinOf(hs[i], ds[k]).ok) return { k: 'join', a: hs[i], b: ds[k] }; }
+    /* power, from what is cold, backwards: an unfed input is joined to a part already here with a free output, or a part is asked for */
+    var order = [pr, pi].concat(BN.p.filter(function (x) { return x !== pr && x !== pi; }));
+    for (i = 0; i < order.length; i++) { var x = order[i], p = PART[x[1]]; if (!p || !p.watts || p.source || P.on[x[0]]) continue;
+      var ins = (p.ports || []).filter(function (o) { return o.role === 'in' && !inUse(x[0] + '.' + o.id); }); if (!ins.length) continue; var o = ins[0], to = x[0] + '.' + o.id;
+      /* a screw terminal takes a second wire, as a real one does; every other output feeds one thing */
+      for (k = 0; k < BN.p.length; k++) { var y = BN.p[k]; if (y === x) continue; var gs = ((PART[y[1]] || {}).ports || []).filter(function (g) { return GIVE[g.role] && g.role !== 'store' && (g.role !== 'host' || !BRAIN[p.kind]) && (g.plug === 'screw' || !inUse(y[0] + '.' + g.id)); });
+        for (var m = 0; m < gs.length; m++) if (joinOf(y[0] + '.' + gs[m].id, to).ok) return { k: 'join', a: y[0] + '.' + gs[m].id, b: to }; }
+      /* the parts that could feed it, the island's own (sun, battery, converters) before the wall */
+      var c = PARTS.filter(function (q) { return FEEDS[q.kind] && q.id !== x[1] && canGive(q, o); }).sort(function (a, b) { return (a.source === 'wall') - (b.source === 'wall'); }).map(function (q) { return q.id; });
+      if (c.length) return { k: 'part', ids: c, near: x[0], port: to }; }
+    /* the night: a charger with nothing kept asks for a battery */
+    var ch = ofKind('charger')[0]; if (ch) { var bt = portIds(ch, 'store').filter(function (s) { return !inUse(s); })[0];
+      if (bt && P.need && P.kept < P.need * (24 - P.sunH)) { var have = BN.p.filter(function (y) { return PART[y[1]].kind === 'battery' && !portIds(y, 'store').some(inUse); })[0];
+        return have ? { k: 'join', a: portIds(have, 'store')[0], b: bt } : { k: 'part', ids: idsOf('battery'), near: ch[0], port: bt }; } }
+    var sd2 = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0]; if (sd2 && !flashedOf(sd2[0])) return { k: 'flash', iid: sd2[0] };
+    if ((+BN.m || 0) >= ROLLMM) return { k: 'paper', iid: pr[0] };
+    return { k: 'done', iid: pr[0] }; }
+  /* a small sketch of a part, for the tray */
+  function mini(p) { return '<svg viewBox="0 0 120 90" aria-hidden="true">' + (p.draw || []).map(function (st) { return '<path d="' + st[0] + '"' + (st[1] ? ' class="ac"' : '') + '/>'; }).join('') + '</svg>'; }
+  function trayDraw() { var t = $('#bnl'); if (!TRAY) { t.innerHTML = ''; t.hidden = true; return; } t.hidden = false;
+    var here = TRAY.iid ? BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0] : null;
+    t.innerHTML = TRAY.ids.map(function (id) { var p = PART[id]; return '<button type="button" class="tile' + (here && here[1] === id ? ' on' : '') + '" data-part="' + esc(id) + '" title="' + esc(p.about || p.name) + '">' + mini(p) + '<b>' + esc(String(p.name).toUpperCase()) + '</b>' + (p.tested ? '<i>TESTED</i>' : '') + '</button>'; }).join('') +
+      (here ? '<button type="button" class="tile x" data-off="' + esc(here[0]) + '" title="Take it off the bench">×</button>' : ''); }
+  /* power through a day: the sun's arc, what the battery holds hour by hour, and the hours the island sleeps. No clock, just the day */
+  function dayDraw(P) { var s = $('#bnday'); if (!s) return; var W = 320, H = 46, h, out = '';
+    if (!P.need || (!P.sun && !P.wall)) { s.innerHTML = ''; s.setAttribute('hidden', ''); return; } s.removeAttribute('hidden');   /* an svg has no .hidden of its own */
+    if (P.wall && !P.sun) { s.innerHTML = '<line x1="0" y1="10" x2="' + W + '" y2="10" class="dk"/><title>From the wall: never dark</title>'; return; }
+    var sh = P.sunH || 1, rise = 12 - sh / 2, kWh = P.kept, lv = kWh, sun = [], lvl = [], dark = [];
+    for (var day = 0; day < 3; day++) for (h = 0; h < 96; h++) { var t = (h + .5) / 4, z = P.sun && t > rise && t < rise + sh ? Math.sin(Math.PI * (t - rise) / sh) : 0, gain = z * P.sun * Math.PI / 2 / sh;
+      lv = Math.max(0, Math.min(kWh, lv + (gain - P.need) / 4)); if (day === 2) { sun.push(z); lvl.push(kWh ? lv / kWh : 0); dark.push(lv <= 0 && gain < P.need); } }
+    var X = function (i) { return (i + .5) * W / 96; };
+    out += '<path class="sun" d="M' + sun.map(function (z, i) { return X(i) + ' ' + (H - 6 - z * (H - 14)); }).join(' L') + '"/>';
+    out += '<path class="lv" d="M0 ' + (H - 2) + ' L' + lvl.map(function (v, i) { return X(i) + ' ' + (H - 2 - v * (H - 10)); }).join(' L') + ' L' + W + ' ' + (H - 2) + 'Z"/>';
+    dark.forEach(function (d, i) { if (d) out += '<rect class="nt" x="' + (i * W / 96) + '" y="0" width="' + (W / 96 + .5) + '" height="' + H + '"/>'; });
+    var asleep = dark.filter(Boolean).length; s.innerHTML = out + '<title>' + (asleep ? 'Asleep ' + Math.round(asleep / 96 * 100) + '% of the day: more sun or a bigger battery' : 'Awake all day and night') + '</title>'; }
+  function benchDraw() { if (!BN) return; var svg = $('#bnv'), rc = window.rough ? rough.svg(svg) : null, P = power(), W0 = wantOf(P), at = {}, cw = CW; WANT = W0;
+    /* a part wanted is laid out with the rest, as a ghost beside what wants it */
+    var gid = null; if (W0.k === 'part') { gid = 'p999'; BN.p.push([gid, W0.ids[0]]); if (W0.near) BN.j.push([gid + '.x', W0.near + '.x']); }
+    var L = layout(); if (gid) { BN.p.pop(); if (W0.near) BN.j.pop(); }
     var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
-    var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; });
+    var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; }); var want = {}; if (W0.k === 'join') want[W0.a] = want[W0.b] = 1;
+    var sketch = function (p, X, Y, seed) { var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
+    if (gid && L.pos[gid]) { var gp = PART[W0.ids[0]], gx = L.pos[gid][0], gy = L.pos[gid][1];
+      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + String(gp.kind) }, [tt('Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 6 }), sketch(gp, gx, gy, 3)]);
+      var plus = el('text', { 'class': 'gp', x: gx + cw / 2, y: gy + 98, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
-      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
-      var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: 7 + i + x[1].length, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); });
+      var wk = (W0.k === 'flash' || W0.k === 'paper' || W0.k === 'done') && W0.iid === x[0];
+      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wk && W0.k === 'flash' ? ' · tap to write Island OS onto it' : wk && W0.k === 'done' ? ' · tap: its first print' : wk && W0.k === 'paper' ? ' · out of paper: tap for a new roll' : ' · tap to swap or take off')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
+      var sk = sketch(p, X, Y, 7 + x[1].length);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
       g.appendChild(sk);
+      /* the printer's roll: 80 mm × 80 m, smaller with every print */
+      if (p.kind === 'printer') { var left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rr = 3 + 9 * Math.sqrt(left);
+        g.appendChild(el('g', { 'class': 'roll' }, [tt(Math.round(left * ROLLMM / 1000) + ' m of paper left · about ' + Math.round(left * ROLLMM / 160) + ' receipts'), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 12.5, 'class': 'rl0' }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: rr, 'class': 'rl' + (left < .1 ? ' low' : '') }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 2.2, 'class': 'rc' })])); }
       var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
       [[tops, Y, -1], [bots, Y + 104, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': p.name + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
         var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
       svg.appendChild(g); });
     /* the cables behind the parts, from what gives to what takes. Power that is there runs along its cable; power that is not stays grey */
+    var curve = function (a, b) { var k = Math.max(30, Math.abs(b[1] - a[1]) * .5); return 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + (a[1] + a[2] * k) + ' ' + b[0] + ' ' + (b[1] + b[2] * k) + ' ' + b[0] + ' ' + b[1]; };
     BN.j.forEach(function (j, i) { var r = P.J[i], e = r.ok ? [r.give.iid + '.' + r.give.port.id, r.take.iid + '.' + r.take.port.id] : j, a = at[e[0]], b = at[e[1]]; if (!a || !b) return;
-      var k = Math.max(30, Math.abs(b[1] - a[1]) * .5), d = 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + (a[1] + a[2] * k) + ' ' + b[0] + ' ' + (b[1] + b[2] * k) + ' ' + b[0] + ' ' + b[1];
-      var pw = r.ok && (r.give.port.role === 'out' || r.give.port.role === 'store' || (r.give.port.role === 'host' && (r.take.port.role === 'in' || (r.take.port.role === 'device' && r.take.port.volts != null))));
+      var d = curve(a, b), pw = r.ok && (r.give.port.role === 'out' || r.give.port.role === 'store' || (r.give.port.role === 'host' && (r.take.port.role === 'in' || (r.take.port.role === 'device' && r.take.port.volts != null))));
       var label = r.ok ? (r.cable ? r.cable.name : 'Straight in') + (pw ? (P.on[r.give.iid] ? ' · power' : ' · no power yet') : '') : r.why;
       cg.appendChild(el('path', { d: d, 'class': 'cb' + (!r.ok ? ' bad' : pw ? ' pwr' + (P.on[r.give.iid] ? ' on' : '') : ' dat') }));
       cg.appendChild(el('path', { d: d, 'class': 'hit', 'data-cut': String(i), role: 'button', 'aria-label': label + ': tap to take it out' }, [tt(label + ' · tap to take it out')])); });
+    /* the cable wanted, dotted where it will go */
+    if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
-    var lack = P.w === 'SHORT' && /no power in|no sun|battery|night/.test(P.t) ? 'POWER' : '';
-    $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY'; flDraw();
-    $('#bnk').innerHTML = GROUPS.map(function (g) { return '<button type="button" data-kind="' + g[0] + '" aria-pressed="' + (ADDK === g[0]) + '"' + (lack === g[0] && ADDK !== g[0] ? ' class="hint" title="What it lacks is here"' : '') + '>' + g[0] + '</button>'; }).join('');
-    var G = GROUPS.filter(function (g) { return g[0] === ADDK; })[0], has = function (id) { return BN.p.some(function (x) { return x[1] === id; }); };
-    $('#bnl').innerHTML = G ? PARTS.filter(function (p) { return G[1].indexOf(p.kind) >= 0; }).map(function (p) { return '<button type="button" data-part="' + esc(p.id) + '" aria-pressed="' + has(p.id) + '" title="' + esc(p.about || p.name) + '"' + (!has(p.id) && BN.p.length >= 12 ? ' disabled' : '') + '>' + esc(String(p.name).toUpperCase()) + '</button>'; }).join('') : ''; }
+    $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY';
+    $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); }
   function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
   $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
   function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say ? say : 'SAVED'; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
-  function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); }
-  /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS (and an SD for its Pi) */
-  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice() } : { p: [], j: [], f: [] };
+  function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); return 'p' + n; }
+  function partOff(iid) { BN.p = BN.p.filter(function (q) { return q[0] !== iid; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== iid && j[1].split('.')[0] !== iid; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== iid; }); if (SEL && SEL.split('.')[0] === iid) SEL = null; }
+  /* paper: each print on a ghost's twin takes its length off the roll */
+  function paperUse(cv) { if (!BN || !T || !T.ghost || !cv) return; BN.m = Math.min(ROLLMM, (+BN.m || 0) + Math.round(cv.height / MMDOT)); benchDraw(); benchSave(); }
+  /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS; the SD is left for the build to ask for */
+  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice(), m: +j.bench.m || 0 } : { p: [], j: [], f: [], m: 0 };
     var tray = store.get('da.ghost.build', null), done = store.get('da.ghost.seeded', '');
     if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
-      [tray.pi, tray.printers].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
-      if (BN.p.some(function (x) { return PART[x[1]] && PART[x[1]].kind === 'pi'; })) partAdd('sd-32');
+      [tray.printers, tray.pi].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
     benchDraw(); if (!(BN.f || []).length) gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
-  $('#bnd').addEventListener('click', function (e) { if (!BN) return; var t = e.target.closest('[data-port],[data-cut],[data-kind],[data-part]'); if (!t) return;
-    if (t.dataset.kind) { ADDK = ADDK === t.dataset.kind ? '' : t.dataset.kind; benchDraw(); return; }
-    if (t.dataset.part) { var id = t.dataset.part, x = BN.p.filter(function (q) { return q[1] === id; })[0];
-      if (x) { BN.p = BN.p.filter(function (q) { return q !== x; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== x[0] && j[1].split('.')[0] !== x[0]; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== x[0]; }); if (SEL && SEL.split('.')[0] === x[0]) SEL = null; }
-      else if (BN.p.length < 12) partAdd(id); benchDraw(); benchSave(); return; }
-    if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
-    var pid = t.dataset.port;
-    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = SEL ? 'TAP ANOTHER PORT' : ''; return; }
-    var a = SEL, there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
+  /* a join made: by two taps, or by dragging from one port to another */
+  function joinTo(a, pid) { var there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
     if (BN.j.length >= 24) { benchDraw(); $('#bnsay').textContent = 'FULL'; return; }
-    BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); $('#bnsay').title = r.ok ? '' : r.why; benchSave(r.ok ? (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : 'WRONG'); });
-  $('#bnd').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut]')) { e.preventDefault(); e.target.closest('[data-port],[data-cut]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+    BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); $('#bnsay').title = r.ok ? '' : r.why; benchSave(r.ok ? (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : 'WRONG'); }
+  $('#bnd').addEventListener('click', function (e) { if (!BN) return; if (DRAG && DRAG.moved) return; var t = e.target.closest('[data-port],[data-cut],[data-part],[data-off],[data-want],[data-body]'); if (!t) return;
+    if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids }; trayDraw(); return; }
+    if (t.dataset.off) { partOff(t.dataset.off); TRAY = null; benchDraw(); benchSave(); return; }
+    if (t.dataset.part) { var id = t.dataset.part;
+      if (TRAY && TRAY.iid) { var here = BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0]; if (here && here[1] !== id) { here[1] = id; BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== here[0] && j[1].split('.')[0] !== here[0]; }); } }
+      else if (BN.p.length < 12) partAdd(id);
+      TRAY = null; benchDraw(); benchSave(String(PART[id].name).toUpperCase()); return; }
+    if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
+    if (t.dataset.body) { var x = BN.p.filter(function (q) { return q[0] === t.dataset.body; })[0], p = x && PART[x[1]]; if (!p) return;
+      if (WANT.k === 'paper' && WANT.iid === x[0]) { BN.m = 0; benchDraw(); benchSave('NEW ROLL'); return; }
+      if (WANT.k === 'done' && WANT.iid === x[0]) { $('#test').click(); return; }
+      if (p.kind === 'sd') { FLOPEN = !FLOPEN; TRAY = null; benchDraw(); if (FLOPEN) setTimeout(function () { $('#fl').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50); return; }
+      TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; trayDraw(); return; }
+    var pid = t.dataset.port;
+    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = ''; return; }
+    joinTo(SEL, pid); });
+  $('#bnd').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut],[data-want],[data-body]')) { e.preventDefault(); e.target.closest('[data-port],[data-cut],[data-want],[data-body]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+  /* a cable drawn by hand: press on a port, pull to another, let go */
+  var DRAG = null;
+  $('#bnv').addEventListener('pointerdown', function (e) { var t = e.target.closest('[data-port]'); if (!t || !BN) return; var svg = $('#bnv'), m = svg.getScreenCTM(); if (!m) return; var c = t.querySelector('circle:not(.ph)');
+    DRAG = { from: t.dataset.port, x0: e.clientX, y0: e.clientY, moved: false, a: [+c.getAttribute('cx'), +c.getAttribute('cy')], line: null, id: e.pointerId }; });
+  $('#bnv').addEventListener('pointermove', function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; if (!DRAG.moved && Math.hypot(e.clientX - DRAG.x0, e.clientY - DRAG.y0) < 8) return;
+    var svg = $('#bnv'), m = svg.getScreenCTM().inverse(), p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; p = p.matrixTransform(m);
+    if (!DRAG.moved) { DRAG.moved = true; try { svg.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } DRAG.line = el('path', { 'class': 'cbd' }); svg.appendChild(DRAG.line); SEL = DRAG.from; }
+    DRAG.line.setAttribute('d', 'M' + DRAG.a[0] + ' ' + DRAG.a[1] + ' Q' + DRAG.a[0] + ' ' + ((DRAG.a[1] + p.y) / 2 + 20) + ' ' + p.x + ' ' + p.y); e.preventDefault(); });
+  var dragEnd = function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; var d = DRAG; if (d.line) d.line.remove();
+    if (d.moved) { var over = D.elementFromPoint(e.clientX, e.clientY), t = over && over.closest && over.closest('[data-port]'); SEL = null; if (t && t.dataset.port.split('.')[0] !== d.from.split('.')[0]) joinTo(d.from, t.dataset.port); else benchDraw(); setTimeout(function () { DRAG = null; }, 0); }
+    else DRAG = null; };
+  $('#bnv').addEventListener('pointerup', dragEnd); $('#bnv').addEventListener('pointercancel', function (e) { if (DRAG && DRAG.line) DRAG.line.remove(); DRAG = null; SEL = null; benchDraw(); });
 
   /* ───────── FLASH: an SD on the bench written with Island OS as the Raspberry Pi Imager writes it. DEVICE, OS, STORAGE, SETTINGS,
      WRITE (then VERIFY, then EJECT). The OS is the latest release as the real Imager lists it (/api/os); the write takes the time a
@@ -315,7 +406,7 @@
   /* the settings, printed on the twin as the island will print them on its first start */
   function flSlip(sd, ver) { var x = BN.p.filter(function (q) { return q[0] === sd; })[0], d = BN.p.filter(function (q) { return q[0] === FL.dev; })[0];
     var L = ['ISLAND OS ' + ver, 'NAME ' + FL.name, 'WI-FI ' + (FL.ssid || '-'), 'PASSWORD ' + (FL.pw ? '********' : '-'), 'COUNTRY ' + FL.cc, (x ? PART[x[1]].name : 'SD') + ' VERIFIED', 'FOR ' + (d ? PART[d[1]].name : 'PI'), 'SHA ' + (OS.sha || '')];
-    var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })); shown('f' + Date.now(), draw(u, T ? T.paper : '80'), 'FLASH', true, true); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
+    var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })), cv = draw(u, T ? T.paper : '80'); shown('f' + Date.now(), cv, 'FLASH', true, true); paperUse(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   $('#fl').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.disabled || !BN) return; var d = b.dataset;
     if (d.step != null) { FL.step = +d.step; if (FL.step === 1) osGet(); }
     else if (d.dev) { FL.dev = d.dev; FL.step = 1; osGet(); }
@@ -330,7 +421,7 @@
   /* ───────── a printer added: the pair code a Pi prints ───────── */
   $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; } $('#bsay').textContent = '· · ·';
     api('/api/twin', { method: 'POST', body: JSON.stringify({ pair: c }) }).then(function (j) { $('#bsay').textContent = j.waiting ? 'WAIT LIST' : 'PAIRED · THE PI TAKES OVER'; $('#pc').value = ''; setTimeout(tick, 6e3); }, function (er) { $('#bsay').textContent = er.status === 404 ? '× NO SUCH CODE' : er.status === 409 ? '× TAKEN' : '× ' + String(er.message || '').toUpperCase(); }); });
-  $('#test').addEventListener('click', function () { var id = 't' + Date.now(); shown(id, draw(textSlip(['DIRECT ACTION', T ? String(T.name).toUpperCase() : 'TWIN', 'TEST', T && T.number ? 'ISLAND ' + T.number : 'GHOST']), T ? T.paper : '80'), 'TEST', true, false);
+  $('#test').addEventListener('click', function () { var id = 't' + Date.now(), cv = draw(textSlip(['DIRECT ACTION', T ? String(T.name).toUpperCase() : 'TWIN', 'TEST', T && T.number ? 'ISLAND ' + T.number : 'GHOST']), T ? T.paper : '80'); shown(id, cv, 'TEST', true, false); paperUse(cv);
     if (OUT) OUT.write(textSlip(['DIRECT ACTION', 'TEST'])).catch(function () { $('#bsay').textContent = '× ' + OUT.name; }); });
   $('#kcopy').addEventListener('click', function () { var b = this; if (navigator.clipboard) navigator.clipboard.writeText(KEY).then(function () { b.textContent = 'COPIED'; }); });
   $('#kout').addEventListener('click', function () { if (!confirm('Forget this island’s key on this screen?')) return; store.set('da.hm.key', ''); store.set('da.twin.roll', []); store.set('da.twin.radio', []); location.reload(); });

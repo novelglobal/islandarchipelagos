@@ -82,13 +82,28 @@
   .bench .hit { stroke: transparent; stroke-width: 14; cursor: pointer; }
   .pw { margin: 0; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; } .pw.short { color: var(--hot); }
   .more { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; } .why { color: var(--ink); margin-top: 6px; letter-spacing: .04em; line-height: 1.5; } .why:empty { display: none; }
-  #bnk .hint { border-color: var(--hot); }
+  /* the build: what the island wants next is drawn where it goes. A ghost of the part, or two ports breathing and a dotted cable */
+  .bench .gh { cursor: pointer; color: var(--grey); opacity: .5; outline: none; animation: ghost 2.4s ease-in-out infinite alternate; } @keyframes ghost { to { opacity: .95; } }
+  .bench .gh .bk { fill: transparent; pointer-events: all; stroke: var(--grey); stroke-dasharray: 4 4; } .bench .gh:hover .bk, .bench .gh:focus-visible .bk { stroke: var(--hot); }
+  .bench .gp { font-size: 15px; fill: var(--hot); }
+  .bench .po { touch-action: none; } .bench .po.want circle:not(.ph) { stroke: var(--hot); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: want .9s ease-in-out infinite alternate; } @keyframes want { to { transform: scale(1.45); } }
+  .bench .cbg { stroke: var(--hot); stroke-width: 1.5; stroke-dasharray: 1 6; stroke-linecap: round; animation: flow 1.4s linear infinite; }
+  .bench .cbd { stroke: var(--hot); stroke-width: 1.8; fill: none; pointer-events: none; }
+  .bench [data-body] { cursor: pointer; outline: none; } .bench [data-body]:focus-visible .bk { stroke: var(--hot); }
+  .bench .pt.want .bk { stroke: var(--hot); stroke-width: 1.6; animation: pulse 1.3s ease-in-out infinite alternate; } @keyframes pulse { to { stroke-opacity: .2; } }
+  .bench .roll .rl0 { fill: none; stroke: var(--line); } .bench .roll .rl { fill: var(--bg); stroke: var(--ink); stroke-width: 1.2; transition: r .6s; } .bench .roll .rl.low { stroke: var(--hot); } .bench .roll .rc { fill: var(--ink); }
+  .tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin: 2px 0 12px; } .tray[hidden] { display: none; }
+  .tile { display: grid; justify-items: center; align-content: start; gap: 4px; padding: 8px 4px 6px; font: 600 8.5px/1.25 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+  .tile svg { width: 72px; height: 54px; color: var(--ink); } .tile svg path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; } .tile svg .ac { stroke: var(--hot); }
+  .tile i { font-style: normal; font-size: 7px; color: var(--hot); letter-spacing: .16em; } .tile.on { border-color: var(--hot); } .tile.x { font-size: 20px; font-weight: 400; color: var(--grey); align-content: center; }
+  .day { display: block; width: 100%; height: auto; margin: 0 0 8px; } .day[hidden] { display: none; }
+  .day .sun { fill: none; stroke: var(--hot); stroke-width: 1.4; } .day .lv { fill: var(--ink); fill-opacity: .12; stroke: var(--ink); stroke-width: 1; } .day .nt { fill: var(--ink); opacity: .1; } .day .dk { stroke: var(--ink); stroke-width: 1.4; }
   /* the imager, mimicked */
   #flp { margin-top: 10px; } #flp .row { justify-content: space-between; } #flp .say { margin: 0; }
   .bar { height: 6px; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 10px; } .bar i { display: block; height: 100%; background: var(--ink); transition: width .1s linear; }
   .flf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; } .flf label { display: grid; gap: 6px; } .flf .lbl { margin: 0; } .flf input { width: 100%; font-size: 13px; } .flf button { justify-self: start; }
   .bench .fv { font-size: 7.5px; fill: var(--hot); letter-spacing: .06em; }
-  @media (prefers-reduced-motion: reduce) { .slip { transition: none; } .bench .po.fit circle, .bench .cb.pwr.on { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .slip { transition: none; } .bench .po.fit circle, .bench .cb.pwr.on, .bench .gh, .bench .po.want circle, .bench .cbg, .bench .pt.want .bk { animation: none; } }
 </style>
 </head>
 <body><main>
@@ -119,9 +134,10 @@
   <div class="parts">
     <details id="bnd" hidden><summary><b>BENCH</b><span id="bns"></span></summary>
       <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
+      <div class="tray" id="bnl" hidden></div>
+      <svg class="day" id="bnday" viewBox="0 0 320 46" role="img" aria-label="A day of this island's power: the sun, the battery, the hours asleep" hidden></svg>
       <p class="pw" id="bnp"></p>
-      <span class="lbl" title="Tap a kind, then a part: on the bench, or off it again">ADD</span><div class="opts" id="bnk"></div><div class="opts" id="bnl"></div>
-      <span class="lbl" title="Island OS written onto an SD on this bench, as the Raspberry Pi Imager writes it">FLASH</span><div id="fl"><div class="opts" id="fls"></div><div id="flp"></div></div>
+      <div id="fl" hidden><span class="lbl" title="Island OS written onto the SD on this bench, as the Raspberry Pi Imager writes it">FLASH</span><div class="opts" id="fls"></div><div id="flp"></div></div>
       <p class="say" id="bnsay"></p><p class="say why" id="bnw" aria-live="polite"></p></details>
     <details id="jd"><summary><b>JOINS</b><span id="js"></span></summary>
       <svg class="map" id="jmap" viewBox="0 0 320 150" role="img" aria-label="This island's joins"></svg>

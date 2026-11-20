@@ -6,6 +6,7 @@
 (function () {
   'use strict';
   var T = {};
+  var r2 = function (v) { return Math.round(v * 100) / 100; };
   /* the printer's own grid: its dots across, its dots to the inch */
   T.grid = function (dots) { dots = +dots || 512; return { dots: dots - dots % 8, dpi: dots >= 576 ? 203 : 180 }; };
 
@@ -96,8 +97,16 @@
     { key: 'E', id: 'atkinson', name: 'ATKINSON', how: 'Dots, clean and bright', gamma: 0.8, sharpen: 0.8, local: 0.15 },
     { key: 'F', id: 'am', name: 'CLUSTERED DOTS, 45°', how: 'Round dots, steadiest when hot', gamma: 0.9, sharpen: 0.4, local: 0.15 }
   ];
-  /* the default for every photograph: GREY 16 sent ORDER 2, with B's tones (photo test 2 chose it on the TM-T88V) */
-  T.BASE = { dither: 'grey', order: 'b', gamma: 1, sharpen: 0.6, local: 0.3, clip: 0.5, contrast: 0 };
+  /* the default for every photograph: GREY 16 sent ORDER 2 (photo test 2, B), mid-tones lifted as photo test 3's D (0.85) and its
+     detail a sixth more (local 0.35, edges 0.7), as chosen on the TM-T88V */
+  T.BASE = { dither: 'grey', order: 'b', gamma: 0.85, sharpen: 0.7, local: 0.35, clip: 0.5, contrast: 0 };
+  /* the dial on the print device: light, detail and contrast, each -0.5 to 0.5 (half as much again, either way) on top of the settled
+     settings. light lifts the mid-tones (0.5: half the curve), detail scales local contrast and edges, contrast bends the S either way */
+  T.DIAL = ['light', 'detail', 'contrast'];
+  T.dial = function (Q, d) { if (!d) return Q; var v = function (k) { var x = +d[k]; return isFinite(x) ? Math.max(-0.5, Math.min(0.5, x)) : 0; }, l = v('light'), e = v('detail'), c = v('contrast');
+    if (l) Q.gamma = r2(Math.max(0.3, Math.min(1.6, (+Q.gamma || 0.85) * (1 - l))));
+    if (e) { Q.local = r2(Math.max(0, Math.min(1, (+Q.local || 0) * (1 + e)))); Q.sharpen = r2(Math.max(0, Math.min(2.5, (+Q.sharpen || 0) * (1 + e)))); }
+    if (c) Q.contrast = r2(Math.max(-1, Math.min(1, (+Q.contrast || 0) + c))); return Q; };
   /* the grey test: the default against one change at a time, each full size */
   T.GREYS = [
     { key: 'A', id: 'grey', name: 'AS SAVED', how: 'Grey 16, order 2' },
@@ -133,7 +142,7 @@
   T.settle = function (o, photo) { o = o || {}; photo = photo || {}; var b = T.SETS[o.preset] || T.SETS.crisp, out = {}, k, qw = null, has = function (k2) { return o[k2] != null && o[k2] !== ''; };
     for (k in b) out[k] = b[k]; for (k in photo) if (photo[k] != null) out[k] = photo[k];
     if (has('dither')) { out.dither = OLD[o.dither] || o.dither; qw = T.QUALITY.filter(function (q) { return q.id === out.dither; })[0]; if (qw) { out.gamma = qw.gamma; out.sharpen = qw.sharpen; out.clip = 0.5; out.contrast = 0; out.local = qw.local || 0; } }
-    else if (photo.dither == null) for (k in T.BASE) if (k !== 'order') out[k] = T.BASE[k];
+    else if (photo.dither == null || isGrey(photo.dither)) for (k in T.BASE) if (k !== 'order' && photo[k] == null) out[k] = T.BASE[k];
     out.cal = o.cal ? T.cal(o.cal) : null; if (out.cal && !qw && !isGrey(out.dither) && photo.gamma == null) out.gamma = 1;
     for (k in b) if (k !== 'dither' && has(k) && isFinite(+o[k])) out[k] = +o[k];
     out.order = o.order === 'a' ? 'a' : 'b';
@@ -152,7 +161,7 @@
     var n = W * H, hist = new Uint32Array(256), l, i, cut = n * Math.max(0, Math.min(10, +Q.clip || 0)) / 100;
     for (l = 0; l < n; l++) hist[Math.max(0, Math.min(255, L[l] | 0))]++;
     var lo = 0, hi = 255, acc = 0; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc > cut) { lo = i; break; } } acc = 0; for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc > cut) { hi = i; break; } } if (hi - lo < 40) { lo = 0; hi = 255; }
-    var span = hi - lo, gm = Math.max(0.3, Math.min(1.6, +Q.gamma || 0.8)), ct = Math.max(0, Math.min(1, +Q.contrast || 0)), sh = Math.max(0, Math.min(2.5, +Q.sharpen || 0));
+    var span = hi - lo, gm = Math.max(0.3, Math.min(1.6, +Q.gamma || 0.8)), ct = Math.max(-1, Math.min(1, +Q.contrast || 0)), sh = Math.max(0, Math.min(2.5, +Q.sharpen || 0));
     for (l = 0; l < n; l++) { var t = Math.pow(Math.max(0, Math.min(1, (L[l] - lo) / span)), gm); if (ct) t = t + ct * (t - 0.5) * (1 - Math.abs(2 * t - 1)) * 2; L[l] = 255 * Math.max(0, Math.min(1, t)); }
     var lc = Math.max(0, Math.min(1, +Q.local || 0)); if (lc) { var Bl = soft(L, W, H, Math.max(3, Math.round(Math.min(W, H) / 24))); for (l = 0; l < n; l++) L[l] = L[l] + lc * (L[l] - Bl[l]); }
     if (sh) { var B = new Float32Array(n), y, x, dy, dx; for (y = 0; y < H; y++) for (x = 0; x < W; x++) { var s = 0, m = 0; for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) { var y2 = y + dy, x2 = x + dx; if (y2 >= 0 && y2 < H && x2 >= 0 && x2 < W) { s += L[y2 * W + x2]; m++; } } B[y * W + x] = s / m; }
@@ -198,7 +207,6 @@
       rule: function (y0) { for (var dx = s.sz(10); dx < W - s.sz(10); dx += s.sz(8)) x.fillRect(dx, y0, s.sz(3), 1); },
       done: function (h) { T.solid(c, 128); later.forEach(function (l) { x.drawImage(l[0], l[1], l[2]); }); if (!h || h >= H) return c; var o = document.createElement('canvas'); o.width = W; o.height = h; o.getContext('2d').drawImage(c, 0, 0); return o; } };
     return s; }
-  var r2 = function (v) { return Math.round(v * 100) / 100; };
   /* n steps d apart that hold v, moved whole to stay between a and b */
   function around(v, d, n, a, b) { var lo = -Math.floor((n - 1) / 2); while (lo < 0 && v + lo * d < a - 1e-9) lo++; while (lo > -(n - 1) && v + (lo + n - 1) * d > b + 1e-9) lo--;
     var r = []; for (var i = 0; i < n; i++) r.push(r2(Math.max(a, Math.min(b, v + (lo + i) * d)))); return r; }

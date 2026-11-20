@@ -1382,6 +1382,7 @@
     frame: '<path d="M6 6h20v20H6z" class="d"/><path d="M10 10h12v12H10z"/>',
     paper: '<path d="M8 4h16v24H8z"/><path d="M8 4h8v24H8z" class="f"/>',
     style: '<path d="M6 26h20"/><path d="M9.5 21.5L16 5.5l6.5 16M11.8 16h8.4"/>',
+    tone: '<circle cx="16" cy="16" r="10"/><path d="M16 6a10 10 0 0 1 0 20z" class="f"/>',
     near: 'Places and wildlife nearby. Tap to add.',
     pxjelly: '<path d="M8 15c0-6 3.5-9 8-9s8 3 8 9z"/><path d="M11 18v6M14.5 18v8M17.5 18v8M21 18v6" class="d"/>',
     pxmoon: '<circle cx="16" cy="16" r="10"/><path d="M16 6a10 10 0 0 1 0 20a5 10 0 0 0 0-20z" class="f"/>',
@@ -2393,6 +2394,25 @@
     else if (f === 'paper' || f === 'ink') { var cl = c.colours || { paper: '#17457f', ink: '#f4f1e8' }; cl[f] = v; c.colours = cl; }
     var kept = NG.styleKeep(c); if (!kept) return; STYV++; P.style = kept.id; NG.setStyle(kept.id); P._base = null; changed(); redraw(); if (!st.mine) styleBox(true);
   }
+  /* the dial: three sliders, each half as much again either way, DEFAULT in the middle; the photograph laid as it will print, in its greys */
+  var TONES = [['light', 'LIGHT', 'Lighter or darker: the mid-tones, up to half either way'], ['detail', 'DETAIL', 'Local contrast and edges, up to half more or less'], ['contrast', 'CONTRAST', 'Bolder or flatter: the S-curve either way']];
+  var toneSay = function (v) { v = Math.round(v * 100); return v ? (v > 0 ? '+' : '−') + Math.abs(v) + '%' : 'DEFAULT'; };
+  function toneBox(open) {
+    var old = $('#au-tnp'), pr = $('#au-wpress'); if (!open || !P || !pr) { if (old) old.remove(); return; }
+    var d = NG.dial() || {}, box = document.createElement('div'); box.id = 'au-tnp'; box.className = 'au-tnp';
+    box.innerHTML = '<div class="au-tns">' + TONES.map(function (t) { var v = +d[t[0]] || 0; return '<label title="' + t[2] + '"><span>' + t[1] + '</span><input type="range" data-t="' + t[0] + '" min="-50" max="50" step="5" value="' + Math.round(v * 100) + '" aria-label="' + t[1] + '"><output>' + toneSay(v) + '</output></label>'; }).join('') +
+      '<button type="button" class="au-tn0" title="Back to the default: GREY 16, as tested"' + (NG.dial() ? '' : ' disabled') + '>DEFAULT</button></div><figure class="au-tnf"><canvas aria-label="The photograph as the printer will lay it"></canvas><figcaption></figcaption></figure>';
+    if (old) old.replaceWith(box); else pr.parentNode.insertBefore(box, pr.nextSibling);
+    var tm = 0, look = function () { clearTimeout(tm); tm = setTimeout(tonePic, 120); };
+    [].forEach.call(box.querySelectorAll('[data-t]'), function (e) { e.addEventListener('input', function () { var o = NG.dial() || {}; o[e.dataset.t] = (+e.value || 0) / 100; NG.dial(o); e.nextElementSibling.textContent = toneSay(o[e.dataset.t]);
+      box.querySelector('.au-tn0').disabled = !NG.dial(); var k = $('#au-tone'); if (k) { k.classList.toggle('set', !!NG.dial()); k.dataset.fw = NG.dial() ? 'tone set' : 'tone'; } look(); }); });
+    box.querySelector('.au-tn0').addEventListener('click', function () { NG.dial(null); toneBox(true); var k = $('#au-tone'); if (k) { k.classList.remove('set'); k.dataset.fw = 'tone'; } bell(4, 0.12); });
+    tonePic(); }
+  /* the piece's photograph laid exactly as the print lays it (the same tones, greys and dots), small */
+  function tonePic() { var f = $('#au-tnp figure'); if (!f || !P) return; var src = P.photo || P.spPhoto || '', cap = f.querySelector('figcaption');
+    if (!src) { f.classList.add('none'); cap.textContent = 'NO PHOTO'; return; } f.classList.remove('none');
+    NG.loadImg(src).then(function (im) { var c = NG.forPrint(im, 256, null, true), cv = f.querySelector('canvas'); if (!cv) return; cv.width = c.width; cv.height = c.height; cv.getContext('2d').drawImage(c, 0, 0);
+      var q = NG.pq(); cap.textContent = (c.how === 'grey' ? 'GREY 16' : String(c.how).toUpperCase()) + ' · MID ' + q.gamma + ' · DETAIL ' + q.local + '/' + q.sharpen + ' · CONTRAST ' + (+q.contrast || 0); }).catch(function () { cap.textContent = 'NO PHOTO'; }); }
   function styleBox(open) {
     var old = $('#au-stp'), pr = $('#au-wpress'); if (!open || !P || !pr) { if (old) old.remove(); return; }
     var st = styleOf(P), cl = st.colours || { paper: '#17457f', ink: '#f4f1e8' }, f0 = String(st.fonts.body).split(':')[0], ph = st.photo || {};
@@ -2401,7 +2421,7 @@
     box.innerHTML = '<nav>' + NG.styles().map(function (q) { return '<button data-sty="' + esc(q.id) + '" class="' + (q.id === st.id ? 'on' : '') + '"' + (q.by ? ' title="' + esc(q.by) + '"' : '') + '>' + esc(q.name) + '</button>'; }).join('') + '</nav>' +
       '<div class="au-stf"><label>type' + sel('font', TH.PAPER_FONTS.indexOf(f0) >= 0 ? f0 : 'sans', TH.PAPER_FONTS) + '</label>' +
       '<label>size<input type="range" data-f="size" min="0.8" max="2" step="0.05" value="' + st.size + '"></label>' +
-      '<label>dots' + sel('dither', ph.dither || 'auto', ['auto', 'atkinson', 'floyd', 'bayer', 'none']) + '</label>' +
+      '<label>dots' + sel('dither', ph.dither || 'grey', ['grey', 'auto', 'atkinson', 'floyd', 'bayer', 'none']) + '</label>' +
       '<label>contrast<input type="range" data-f="contrast" min="0" max="1" step="0.05" value="' + (ph.contrast != null ? ph.contrast : 0.25) + '"></label>' +
       '<label>frame' + sel('frame', st.frame, ['hand', 'rule', 'box', 'none']) + '</label><label>top' + sel('top', st.top, ['mark', 'band', 'none']) + '</label>' +
       '<label>paper<input type="color" data-f="paper" value="' + cl.paper + '"></label><label>ink<input type="color" data-f="ink" value="' + cl.ink + '"></label>' +
@@ -2418,6 +2438,7 @@
     LIVE = store.get('da.live', LIVE) || LIVE; var pm = pmode(), isLive = !!f.code && (LIVE || []).indexOf(f.code) >= 0 && !f.down, canLive = ownSlide(f) && !!f.code && !f.wall && !f.down && !!store.get('da.who.pass', 0);
     if (f.now) pr.innerHTML = nav(-1) + hand('au-big', svgI('print'), 'id="au-print" data-fw="' + (S.pmode === 'wall' ? 'hang' : S.pmode === 'send' ? 'send' : 'print') + '" aria-label="' + (S.pmode === 'wall' ? 'Hang it on the wall' : S.pmode === 'send' ? 'Send it to novel.global' : 'Print') + '"') +
       hand('au-sm au-stk', svgI('style'), 'id="au-style" data-fw="style" aria-label="Style: ' + esc(styleOf(P).name) + '"') +
+      hand('au-sm au-tonek' + (NG.dial && NG.dial() ? ' set' : ''), svgI('tone'), 'id="au-tone" data-fw="' + (NG.dial && NG.dial() ? 'tone set' : 'tone') + '" aria-label="Tone: how the photograph prints from this phone" aria-expanded="' + !!$('#au-tnp') + '"') +
       hand('au-sm au-mode m-' + S.pmode, svgI(pm[1]) + '<small class="au-mw">' + esc(pm[2]) + '</small>', 'id="au-mode" aria-label="Where it goes: ' + pm[2] + '"') + prnKey() + hand('au-sm', svgI('save'), 'id="au-save" data-fw="save" aria-label="Save"') + hand('au-sm au-morek', '<b>···</b>', 'id="au-more" aria-label="More" aria-expanded="false"') + '<span class="au-more" hidden>' + hand('au-sm', svgI('pencil'), 'id="au-sted" data-fw="your style" aria-label="Make the style your own" aria-expanded="false"') + hand('au-sm', svgI('sig'), 'id="au-sigk" data-fw="signal" aria-label="Signal"') +
       hand('au-sm', svgI('paper'), 'id="au-paper" data-fw="paper" aria-label="Blue paper or white" aria-pressed="' + (P.paper === 'white') + '"') + hand('au-sm', svgI(printNight() ? 'moon2' : 'sun'), 'id="au-pnight" data-fw="' + (printNight() ? 'night print' : 'day print') + '" aria-label="Print it dark or light" aria-pressed="' + printNight() + '"') + hand('au-sm au-reset au-del', svgI('bin'), 'id="au-reset" data-fw="delete draft" aria-label="Delete this draft and start again"') + '</span><span class="au-pips" id="au-pips"></span>' + (P && P.sent ? hand('au-sm au-seedk', svgI('seed'), 'id="au-newk" data-fw="new" aria-label="Begin a new piece"') : '') + nav(1);
     else pr.innerHTML = nav(-1) + /* already live: no key for it, nothing to ask again */ (canLive && !isLive ? hand('au-big au-live' + (isLive ? ' on' : ''), svgI('live') + '<small class="au-lw">' + (isLive ? 'LIVE' : 'ISLAND') + '</small>', 'id="au-golive" data-fw="' + (isLive ? 'live' : 'to the island') + '" aria-label="' + (isLive ? 'Live for everyone on novel.global' : 'Put it live for everyone on novel.global') + '"' + (isLive ? ' disabled' : '')) : '') + hand('au-sm', svgI('save'), 'id="au-wsave" data-fw="save" aria-label="Save"') +
@@ -2430,6 +2451,9 @@
       $('#au-style').addEventListener('click', function () { var all = NG.styles(), i = all.map(function (q) { return q.id; }).indexOf(styleOf(P).id); styleUse(all[(i + 1) % all.length].id); bell(3 + (Math.max(0, i) % 4), 0.14); });
       $('#au-sted').addEventListener('click', function () { var on = !$('#au-stp'); styleBox(on); this.setAttribute('aria-expanded', String(on)); });
       if ($('#au-stp')) styleBox(true);
+      /* TONE: light, detail and contrast for the photograph, on this phone, with the photograph as the printer will lay it */
+      $('#au-tone').addEventListener('click', function () { var on = !$('#au-tnp'); toneBox(on); this.setAttribute('aria-expanded', String(on)); bell(on ? 3 : 1, 0.1); });
+      if ($('#au-tnp')) toneBox(true);
       /* the rest, folded: signal, paper, day or night, delete */
       $('#au-more').addEventListener('click', function () { var m = pr.querySelector('.au-more'), on = m.hidden; m.hidden = !on; this.setAttribute('aria-expanded', String(on)); bell(on ? 3 : 1, 0.08); });
       $('#au-mode').addEventListener('click', function () { var i = PMODES.indexOf(pmode()); S.pmode = PMODES[(i + 1) % PMODES.length][0]; store.set('da.aura.pmode', S.pmode); wallPress(); bell(4 + i, 0.14); flashWords(0); });

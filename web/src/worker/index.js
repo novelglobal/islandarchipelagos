@@ -942,8 +942,10 @@ function benchIn(b) { const P = Array.isArray(b.p) ? b.p : [], J = Array.isArray
   /* f: each SD flashed on the bench, [its own id, the island OS version, the name it was given]; never the Wi-Fi, which stays on the screen */
   const F = Array.isArray(b.f) ? b.f : [], fl = [], sd = new Set(p.filter(x => /^sd-/.test(x[1])).map(x => x[0])); if (F.length > 12) return null;
   for (const x of F) { if (!Array.isArray(x) || !sd.has(x[0]) || !/^v\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(x[1]) || !/^[a-z0-9-]{1,32}$/.test(x[2])) return null; fl.push([x[0], x[1], x[2]]); }
-  return { p, j, f: fl }; }
-function benchOf(s) { let b = null; try { b = JSON.parse(s || 'null'); } catch (e) { b = null; } return b && Array.isArray(b.p) ? { p: b.p, j: b.j || [], f: b.f || [] } : { p: [], j: [], f: [] }; }
+  /* m: millimetres of the 80 m roll used by prints on the twin */
+  const m = Math.max(0, Math.min(80000, Math.round(+b.m || 0)));
+  return { p, j, f: fl, m }; }
+function benchOf(s) { let b = null; try { b = JSON.parse(s || 'null'); } catch (e) { b = null; } return b && Array.isArray(b.p) ? { p: b.p, j: b.j || [], f: b.f || [], m: +b.m || 0 } : { p: [], j: [], f: [], m: 0 }; }
 /* the island OS as the real Raspberry Pi Imager lists it: the latest release's os-list.json (kit/image/os-list.py), cached an hour.
    A ghost's bench flashes this, version and sizes as they are */
 async function osNow() { let o = null; try { const r = await fetch('https://github.com/novelglobal/islandarchipelagos/releases/latest/download/os-list.json', { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) o = ((await r.json()).os_list || [])[0] || null; } catch (e) { o = null; }

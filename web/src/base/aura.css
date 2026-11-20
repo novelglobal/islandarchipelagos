@@ -980,8 +980,8 @@ html.au-frozen #au-cv { visibility: hidden; }
 #aura .au-more[hidden] { display: none; }
 #aura .au-press .au-pips:empty { display: none; }
 #aura .au-more { display: contents; }
-/* the fold open on a phone: its keys go to a second line, so PRINT never leaves the screen */
-@media (max-width: 759px) { #aura .au-press:has(.au-more:not([hidden])) { flex-wrap: wrap; row-gap: 10px; } }
+/* the fold open: its keys go to a second line, so PRINT never leaves the screen */
+#aura .au-press:has(.au-more:not([hidden])) { flex-wrap: wrap; row-gap: 10px; }
 #aura .au-morek b { font: 700 16px/1 "Departure Mono", ui-monospace, monospace; letter-spacing: .05em; }
 /* the print preview is the sheet itself: crisp dots on white */
 #aura .au-eslide.now canvas.sheet { image-rendering: pixelated; background: #fff; }
@@ -1121,6 +1121,20 @@ html.aura-dark .au-talkp { background: rgba(20, 21, 24, .96); }
 .au-stf label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--faint); }
 .au-stf select, .au-stf input[type=range] { width: 62%; min-width: 0; font: inherit; color: var(--ink); background: transparent; border: 0; box-shadow: inset 0 -1px 0 var(--line); }
 .au-stf select option { color: #111; }
+/* TONE: three sliders and the photograph as it will print, side by side; DEFAULT in the middle of each */
+#aura .au-tonek.set::after { content: ''; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+#aura .au-tonek { position: relative; }
+.au-tnp { display: grid; grid-template-columns: minmax(0, 1fr) 128px; gap: 14px; align-items: start; margin: 6px auto 10px; max-width: 520px; font: 600 10px "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.au-tns { display: grid; gap: 10px; }
+.au-tns label { display: grid; grid-template-columns: 64px minmax(0, 1fr) 54px; align-items: center; gap: 8px; }
+.au-tns input[type=range] { width: 100%; min-width: 0; margin: 0; accent-color: var(--ink); background: linear-gradient(var(--line), var(--line)) 50% 50% / 1px 12px no-repeat; }
+.au-tns output { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+#aura .au-tn0 { justify-self: start; padding: 7px 11px; border-radius: 999px; box-shadow: inset 0 0 0 1.2px var(--line); color: var(--ink); font: inherit; letter-spacing: inherit; }
+#aura .au-tn0:disabled { opacity: .35; }
+.au-tnf { margin: 0; } .au-tnf canvas { display: block; width: 100%; height: auto; background: #f4f1e8; image-rendering: auto; }
+.au-tnf figcaption { margin-top: 6px; font-size: 8px; letter-spacing: .08em; line-height: 1.5; color: var(--faint); }
+.au-tnf.none canvas { display: none; }
+@media (max-width: 420px) { .au-tnp { grid-template-columns: 1fr; } .au-tnf { max-width: 160px; } }
 .au-stf input[type=color] { width: 34px; height: 22px; padding: 0; border: 0; background: none; }
 #aura .au-stf .au-stx { justify-self: start; font-size: 18px; color: var(--ink); }
 
