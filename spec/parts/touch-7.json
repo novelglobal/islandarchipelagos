@@ -1,0 +1,43 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "touch-7",
+  "name": "Touch",
+  "kind": "screen",
+  "about": "Raspberry Pi 7-inch touch display: a ribbon to the Pi’s DSI, its own 5 V in.",
+  "watts": {
+    "avg": 2.5,
+    "peak": 3
+  },
+  "ports": [
+    {
+      "id": "dsi",
+      "label": "DSI",
+      "plug": "dsi",
+      "role": "device"
+    },
+    {
+      "id": "pwr",
+      "label": "5 V",
+      "plug": "micro-usb",
+      "role": "in",
+      "volts": 5
+    }
+  ],
+  "draw": [
+    [
+      "M12 16 h96 v60 h-96 Z"
+    ],
+    [
+      "M19 22 h82 v46 h-82 Z"
+    ],
+    [
+      "M60 76 L60 84 M40 84 h40"
+    ],
+    [
+      "M68 58 q4 -12 12 -8",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

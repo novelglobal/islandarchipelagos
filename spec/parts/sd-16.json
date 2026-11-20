@@ -1,0 +1,29 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "sd-16",
+  "name": "SD 16 GB",
+  "kind": "sd",
+  "about": "A 16 GB microSD card, class 10 or better. Island OS fits on 8 GB.",
+  "ports": [
+    {
+      "id": "sd",
+      "label": "SD",
+      "plug": "micro-sd",
+      "role": "card"
+    }
+  ],
+  "draw": [
+    [
+      "M44 18 L72 18 L80 26 L80 76 L44 76 Z"
+    ],
+    [
+      "M50 24 v9 M56 24 v9 M62 24 v9 M68 24 v9",
+      1
+    ],
+    [
+      "M50 50 h24 M50 58 h16"
+    ]
+  ],
+  "licence": "MIT"
+}

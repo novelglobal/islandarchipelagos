@@ -64,6 +64,19 @@
   #gate h1 { font-size: 44px; }
   #gate form { display: flex; gap: 8px; } #gate input { flex: 1; }
   #gate .alt { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
+  /* the bench: each part drawn by hand, its ports below it; tap a port, then another, for a cable */
+  .bench { display: block; width: 100%; height: auto; margin: 4px 0 6px; color: var(--ink); overflow: visible; }
+  .bench path { fill: none; }
+  .bench .pt { color: var(--ink); transition: opacity .3s; } .bench .pt.off { opacity: .42; }
+  .bench .ac { color: var(--hot); }
+  .bench .bk { fill: var(--bg); }
+  .bench text { font: 600 8.5px 'IBM Plex Mono', monospace; letter-spacing: .12em; fill: var(--ink); }
+  .bench .pl { font-size: 6.5px; fill: var(--grey); letter-spacing: .08em; }
+  .bench .po { cursor: pointer; outline: none; } .bench .po circle { fill: var(--bg); stroke: var(--ink); stroke-width: 1.3; }
+  .bench .po:hover circle, .bench .po:focus-visible circle { stroke: var(--hot); } .bench .po.sel circle { fill: var(--hot); stroke: var(--hot); } .bench .po.used circle { fill: var(--ink); }
+  .bench .cb { stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; } .bench .cb.bad { stroke: var(--dim); stroke-dasharray: 3 3; }
+  .bench .hit { stroke: transparent; stroke-width: 14; cursor: pointer; }
+  .pw { margin: 0; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; cursor: help; } .pw.short { color: var(--hot); }
   @media (prefers-reduced-motion: reduce) { .slip { transition: none; } }
 </style>
 </head>
@@ -93,6 +106,11 @@
     <p class="empty" id="none" hidden title="Prints sent to this island come out here">READY</p>
   </div>
   <div class="parts">
+    <details id="bnd" hidden><summary><b>BENCH</b><span id="bns"></span></summary>
+      <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
+      <p class="pw" id="bnp"></p>
+      <span class="lbl" title="Tap a kind, then a part: on the bench, or off it again">ADD</span><div class="opts" id="bnk"></div><div class="opts" id="bnl"></div>
+      <p class="say" id="bnsay"></p></details>
     <details id="jd"><summary><b>JOINS</b><span id="js"></span></summary>
       <svg class="map" id="jmap" viewBox="0 0 320 150" role="img" aria-label="This island's joins"></svg>
       <span class="lbl" title="Up to three islands that print what prints here">ECHO</span><div class="opts" id="jto"></div>
@@ -109,5 +127,7 @@
 </div>
 </main>
 <script src="vendor/qrcode.js"></script>
+<script src="vendor/rough.js"></script>
+<script src="parts.js"></script>
 <script src="twin.js"></script>
 </body></html>

@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "cable-usb-micro",
+  "name": "USB to micro",
+  "kind": "cable",
+  "about": "USB-A to micro-USB: power for a Pi, or a T-Beam on the Pi.",
+  "ends": [
+    "usb-a",
+    "micro-usb"
+  ],
+  "draw": [
+    [
+      "M14 40 h18 v10 h-18 Z"
+    ],
+    [
+      "M32 45 C60 45 54 66 88 64"
+    ],
+    [
+      "M88 61 h10 v6 h-10 Z"
+    ],
+    [
+      "M18 43 h10",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

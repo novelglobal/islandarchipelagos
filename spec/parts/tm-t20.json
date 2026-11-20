@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "tm-t20",
+  "name": "TM-T20",
+  "kind": "printer",
+  "about": "Epson TM-T20, 80 mm, USB.",
+  "paper": 80,
+  "profile": "tm-t20ii",
+  "watts": {
+    "avg": 3,
+    "peak": 43
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-b",
+      "role": "device"
+    },
+    {
+      "id": "pwr",
+      "label": "24 V",
+      "plug": "power-din",
+      "role": "in",
+      "volts": 24
+    }
+  ],
+  "draw": [
+    [
+      "M12 34 h96 v46 h-96 Z"
+    ],
+    [
+      "M12 34 L22 22 L98 22 L108 34"
+    ],
+    [
+      "M30 28 L90 28"
+    ],
+    [
+      "M36 28 C40 12 78 12 84 28",
+      1
+    ],
+    [
+      "M93 60 A3 3 0 1 0 99 60 A3 3 0 1 0 93 60"
+    ]
+  ],
+  "licence": "MIT"
+}

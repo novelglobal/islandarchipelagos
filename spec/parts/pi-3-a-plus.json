@@ -1,0 +1,68 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "pi-3-a-plus",
+  "name": "Pi 3 A+",
+  "kind": "pi",
+  "about": "Raspberry Pi 3 Model A+ (2018). One USB, Wi-Fi, 512 MB. The one in the solar build.",
+  "watts": {
+    "avg": 1.2,
+    "peak": 3
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-a",
+      "role": "host",
+      "volts": 5
+    },
+    {
+      "id": "pwr",
+      "label": "5 V",
+      "plug": "micro-usb",
+      "role": "in",
+      "volts": 5
+    },
+    {
+      "id": "sd",
+      "label": "SD",
+      "plug": "micro-sd",
+      "role": "slot"
+    },
+    {
+      "id": "dsi",
+      "label": "DSI",
+      "plug": "dsi",
+      "role": "host"
+    }
+  ],
+  "draw": [
+    [
+      "M26 24 h66 v56 h-66 Z"
+    ],
+    [
+      "M29 29 A2 2 0 1 0 33 29 A2 2 0 1 0 29 29"
+    ],
+    [
+      "M85 29 A2 2 0 1 0 89 29 A2 2 0 1 0 85 29"
+    ],
+    [
+      "M29 75 A2 2 0 1 0 33 75 A2 2 0 1 0 29 75"
+    ],
+    [
+      "M85 75 A2 2 0 1 0 89 75 A2 2 0 1 0 85 75"
+    ],
+    [
+      "M48 44 h16 v16 h-16 Z",
+      1
+    ],
+    [
+      "M84 48 h18 v13 h-18 Z"
+    ],
+    [
+      "M34 27 L84 27"
+    ]
+  ],
+  "licence": "MIT"
+}

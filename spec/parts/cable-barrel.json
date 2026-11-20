@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "cable-barrel",
+  "name": "Barrel",
+  "kind": "cable",
+  "about": "Screw terminals to a 5.5 mm barrel plug: 12 V for a 58 mm printer.",
+  "ends": [
+    "screw",
+    "barrel"
+  ],
+  "draw": [
+    [
+      "M14 44 A4 4 0 1 0 22 44 A4 4 0 1 0 14 44"
+    ],
+    [
+      "M22 44 C50 40 58 68 90 64"
+    ],
+    [
+      "M90 60 h14 v8 h-14 Z"
+    ],
+    [
+      "M104 64 h6",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

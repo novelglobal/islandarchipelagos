@@ -1,0 +1,50 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "boost-24v",
+  "name": "Boost",
+  "kind": "converter",
+  "about": "12 V to 24 V DC boost converter, 5 A, with a lead to the printer’s round plug.",
+  "watts": {
+    "avg": 0.3,
+    "peak": 4
+  },
+  "ports": [
+    {
+      "id": "in",
+      "label": "12 V",
+      "plug": "screw",
+      "role": "in",
+      "volts": [
+        10,
+        15
+      ]
+    },
+    {
+      "id": "out",
+      "label": "24 V",
+      "plug": "power-din",
+      "role": "out",
+      "volts": 24
+    }
+  ],
+  "draw": [
+    [
+      "M24 30 h72 v34 h-72 Z"
+    ],
+    [
+      "M37 47 A9 9 0 1 0 55 47 A9 9 0 1 0 37 47"
+    ],
+    [
+      "M66 37 h12 v20 h-12 Z"
+    ],
+    [
+      "M22 76 h76 l-7 -5 M98 76 l-7 5",
+      1
+    ],
+    [
+      "M30 36 h6 M30 58 h6"
+    ]
+  ],
+  "licence": "MIT"
+}

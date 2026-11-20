@@ -502,9 +502,17 @@ try {
         && hmF.json.home.label.film.file === 'harbour.mp4' && hmBad.status === 400 && hm2.json.home.nines.join() === 'dev' && hm2.json.home.label.film.file === 'harbour.mp4' && hmP.home && hmP.home.main.join() === 'zine,radio' && hmP.home.label.title === 'Harbour',
         JSON.stringify({ h1: hm1.json.home, f: hmF.json, bad: hmBad.status, h2: hm2.json.home, p: hmP.home }));
       check('MIRROR: an island shows another island\'s cards, and says so', jM.json.joins.mirror === B && jM.json.joins.to.length === 0 && pt1.json.partners.some(p => p.id === A && p.mirror === B), JSON.stringify(jM.json.joins));
+      /* the bench: a ghost's parts (only those in spec/parts) and its cables between its own parts, kept with it */
+      const bnS = (k, bench) => call('/api/twin', { method: 'POST', token: k, body: { bench } }), bn0 = await tw(KB);
+      const bnOk = await bnS(KB, { p: [['p1', 'pi-3-a-plus'], ['p2', 'tm-t88v'], ['p3', 'sd-32']], j: [['p1.usb', 'p2.usb'], ['p1.sd', 'p3.sd']] });
+      const bnB1 = await bnS(KB, { p: [['p1', 'pi-9']], j: [] }), bnB2 = await bnS(KB, { p: [['p1', 'pi-3-b']], j: [['p1.usb', 'p9.usb']] }), bnB3 = await bnS(KB, { p: [['p1', 'pi-3-b']], j: [['p1.usb', 'p1.pwr']] }), bnB4 = await bnS(KB, { p: Array.from({ length: 13 }, (x, i) => ['p' + (i + 1), 'sd-8']), j: [] }), bn1 = await tw(KB);
+      check('a ghost\'s bench keeps its parts (only those in spec/parts, twelve at most) and the cables between two of them, and comes back with its twin',
+        JSON.stringify(bn0.json.bench) === '{"p":[],"j":[]}' && bnOk.status === 200 && [bnB1, bnB2, bnB3, bnB4].every(r => r.status === 400) && bn1.json.bench.p.length === 3 && bn1.json.bench.j[0].join() === 'p1.usb,p2.usb',
+        JSON.stringify({ b0: bn0.json.bench, ok: bnOk.status, bad: [bnB1, bnB2, bnB3, bnB4].map(r => r.status), b1: bn1.json.bench }));
       const pr = await call('/api/pair', { method: 'POST', body: { name: 'Pi Aa', paper: '80' }, ip: '10.66.0.3' }), ad0 = await call('/api/twin', { method: 'POST', token: KA, body: { pair: 'ZZZZZZZZ' } });
       const ad = await call('/api/twin', { method: 'POST', token: KA, body: { pair: pr.json.code } }), pp = await call('/api/pair/poll', { method: 'POST', body: { device: pr.json.device }, ip: '10.66.0.3' });
       const kA = await call('/api/island', { token: KA }), tA4 = await tw(KA);
+      const bnReal = await bnS(KA, { p: [], j: [] }); check('a real island\'s twin keeps no bench (a ghost\'s only)', bnReal.status === 400 && !('bench' in tA4.json), JSON.stringify({ s: bnReal.status, t: Object.keys(tA4.json) }));
       await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: false } }); const gC = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Cc' }, ip: '10.66.0.4' });
       await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: true, freePrint: false } });
       check('a ghost given a Pi by its pair code becomes that printer and keeps its key and joins; ghosts can be closed on the approval page',

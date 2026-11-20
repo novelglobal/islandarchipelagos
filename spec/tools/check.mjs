@@ -215,6 +215,18 @@ for (const f of fs.readdirSync(path.join(root, 'profiles'))) {
   if (p.darkness && (p.darkness.default < p.darkness.min || p.darkness.default > p.darkness.max)) fail(where, 'its darkness starts outside its range');
   profiles.set(p.id, p);
 }
+/* the parts the bench joins: each in shape, its ports its own, its profile there; every plug some cable or socket can take */
+{ const parts = fs.readdirSync(path.join(root, 'parts')).map(f => ({ f, p: read(path.join(root, 'parts', f)) })), STRAIGHT = ['micro-sd', 'dsi', 'power-din'];
+  const ends = parts.filter(x => x.p.kind === 'cable').flatMap(x => x.p.ends || []);
+  for (const { f, p } of parts) { const where = `parts/${f}`; check(where, 'urn:island:0.1:part', p);
+    if (p.id + '.json' !== f) fail(where, `its id is ${p.id}`);
+    const pi = (p.ports || []).map(x => x.id); if (new Set(pi).size !== pi.length) fail(where, 'two ports share an id');
+    if (p.profile && !profiles.has(p.profile)) fail(where, `no profile ${p.profile}`);
+    if (p.kind === 'cable' ? (p.ports || []).length || !p.ends : !(p.ports || []).length) fail(where, p.kind === 'cable' ? 'a cable has two ends and no ports' : 'it has no ports');
+    for (const o of p.ports || []) if (!STRAIGHT.includes(o.plug) && !ends.includes(o.plug)) fail(where, `no cable takes its ${o.plug} port`);
+    if (p.source === 'sun' && !p.make) fail(where, 'a panel says what it makes');
+    if (p.source === 'store' && !p.store) fail(where, 'a battery says what it keeps'); }
+  console.log(`parts: ${parts.length}`); }
 
 const dirs = process.argv.slice(2).length ? process.argv.slice(2) : fs.readdirSync(path.join(root, 'islands')).map(d => path.join(root, 'islands', d));
 const all = new Map();

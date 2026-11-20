@@ -1,0 +1,25 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "cable-mc4",
+  "name": "MC4",
+  "kind": "cable",
+  "about": "Solar cable, 2.5 mm², MC4 at both ends.",
+  "ends": [
+    "mc4",
+    "mc4"
+  ],
+  "draw": [
+    [
+      "M14 44 h14 l4 -3 v6 l-4 -3"
+    ],
+    [
+      "M32 44 C60 44 56 64 88 62"
+    ],
+    [
+      "M88 62 l4 -3 v6 l-4 -3 M92 62 h14",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

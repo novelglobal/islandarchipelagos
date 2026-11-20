@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "tm-t70",
+  "name": "TM-T70",
+  "kind": "printer",
+  "about": "Epson TM-T70, 80 mm, USB. Paper in from the front.",
+  "paper": 80,
+  "profile": "generic-80",
+  "watts": {
+    "avg": 3,
+    "peak": 43
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-b",
+      "role": "device"
+    },
+    {
+      "id": "pwr",
+      "label": "24 V",
+      "plug": "power-din",
+      "role": "in",
+      "volts": 24
+    }
+  ],
+  "draw": [
+    [
+      "M18 18 h84 v64 h-84 Z"
+    ],
+    [
+      "M18 30 L102 30"
+    ],
+    [
+      "M34 42 L86 42"
+    ],
+    [
+      "M38 42 L38 64 Q60 69 82 64 L82 42",
+      1
+    ],
+    [
+      "M89.5 74 A2.5 2.5 0 1 0 94.5 74 A2.5 2.5 0 1 0 89.5 74"
+    ]
+  ],
+  "licence": "MIT"
+}

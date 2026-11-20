@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:island:0.1:part",
+  "title": "A part",
+  "description": "One part of an island as data: its ports, its power and its drawing, so the bench can show it and join it. A new part is a new file in parts/",
+  "type": "object",
+  "required": [
+    "part",
+    "id",
+    "name",
+    "kind",
+    "draw",
+    "licence"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "part": {
+      "const": "kit"
+    },
+    "id": {
+      "$ref": "urn:island:0.1:common#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 16
+    },
+    "kind": {
+      "enum": [
+        "pi",
+        "sd",
+        "printer",
+        "power",
+        "solar",
+        "battery",
+        "charger",
+        "converter",
+        "radio",
+        "screen",
+        "cable"
+      ]
+    },
+    "about": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "licence": {
+      "type": "string",
+      "description": "An SPDX licence id for this file and its drawing"
+    },
+    "photo": {
+      "type": "string",
+      "description": "A photo of the real part, by the site's own path"
+    },
+    "paper": {
+      "enum": [
+        58,
+        80
+      ]
+    },
+    "profile": {
+      "$ref": "urn:island:0.1:common#/$defs/id",
+      "description": "Its printer profile in profiles/"
+    },
+    "watts": {
+      "type": "object",
+      "required": [
+        "avg"
+      ],
+      "additionalProperties": false,
+      "description": "What it draws: on average over a day, and at most",
+      "properties": {
+        "avg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "peak": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 500
+        }
+      }
+    },
+    "source": {
+      "enum": [
+        "wall",
+        "sun",
+        "store"
+      ],
+      "description": "It gives power of its own: from the wall, the sun, or what it keeps"
+    },
+    "make": {
+      "type": "object",
+      "required": [
+        "watts",
+        "sun"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "watts": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sun": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "Hours of full sun a day"
+        }
+      }
+    },
+    "store": {
+      "type": "object",
+      "required": [
+        "wh"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "wh": {
+          "type": "number",
+          "minimum": 0
+        },
+        "use": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The share safe to use"
+        }
+      }
+    },
+    "ends": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/plug"
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "A cable: the two plugs it joins"
+    },
+    "ports": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "plug",
+          "role"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]{1,8}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 6,
+            "description": "What the port is called on the bench, one short word"
+          },
+          "plug": {
+            "description": "The socket's shape. Two ports join when a cable has these two ends, or the same socket fits straight in (micro-sd, dsi, power-din)",
+            "enum": [
+              "usb-a",
+              "usb-b",
+              "micro-usb",
+              "micro-sd",
+              "dsi",
+              "power-din",
+              "barrel",
+              "mc4",
+              "screw"
+            ]
+          },
+          "role": {
+            "description": "host takes a device; out feeds an in (and a host feeds an in); slot takes a card; store joins a store (a battery and its charger)",
+            "enum": [
+              "host",
+              "device",
+              "in",
+              "out",
+              "slot",
+              "card",
+              "store"
+            ]
+          },
+          "volts": {
+            "description": "What it gives (out, host, store), or takes (in, device): one figure or the lowest and highest",
+            "oneOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 60
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 60
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "draw": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "description": "Its drawing in a 120 by 90 box: strokes as SVG paths, 1 after a path marks the accent",
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 2,
+        "prefixItems": [
+          {
+            "type": "string",
+            "maxLength": 600
+          },
+          {
+            "const": 1
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "plug": {
+      "description": "The socket's shape. Two ports join when a cable has these two ends, or the same socket fits straight in (micro-sd, dsi, power-din)",
+      "enum": [
+        "usb-a",
+        "usb-b",
+        "micro-usb",
+        "micro-sd",
+        "dsi",
+        "power-din",
+        "barrel",
+        "mc4",
+        "screw"
+      ]
+    }
+  }
+}

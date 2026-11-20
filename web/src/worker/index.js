@@ -8,7 +8,7 @@
    Kept to a minimum: no accounts, no addresses kept. A sender's network address is only ever counted, hashed with a
    salt that changes each day, and forgotten within the hour. A story not approved within 30 days is deleted; a print
    job waits a day at most, and once printed only its status is kept, for a week. A preview build has its own database. */
-import { BUILD, PREVIEW, PARTNERS } from './stamp.js';
+import { BUILD, PREVIEW, PARTNERS, PART_IDS } from './stamp.js';
 import { FIRST_PLAY } from './first-play.js';
 import { LABEL, WELCOME, NOTES, BASE_TEXTS } from './label.js';
 
@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 19;
+const SCHEMA_V = 20;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -93,6 +93,8 @@ async function upgrade(db) {
     try { await db.prepare('ALTER TABLE jobs ADD COLUMN thumb TEXT').run(); } catch (e) { /* already there */ }
     /* note: a test slip's record for the approval page's test log (its number, every setting, what each letter was, a small picture), kept after its bytes go */
     try { await db.prepare('ALTER TABLE jobs ADD COLUMN note TEXT').run(); } catch (e) { /* already there */ }
+    /* version 20. bench: a ghost's parts and the cables between them, as its bench left them (spec/parts) */
+    try { await db.prepare('ALTER TABLE printers ADD COLUMN bench TEXT').run(); } catch (e) { /* already there */ }
     /* origin: where a story came from, for the approval page only: the page, the city and country Cloudflare saw (never the address), phone or computer, the stage, its mesh line */
     try { await db.prepare('ALTER TABLE stories ADD COLUMN origin TEXT').run(); } catch (e) { /* already there */ }
     /* full: its full-size photograph is kept in Cloudflare's storage (R2, bound as MEDIA), for the approval page only */
@@ -907,10 +909,12 @@ async function ghostNew(db, env, req) {
 async function twin(db, env, req, url) {
   if (await tooMany(db, env, req, 'twin', 300, 10 * 60e3)) return fail(429, 'too many');
   const k = bearer(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
-  const p = await db.prepare('SELECT id, name, number, paper, ghost, mesh, links, joins, seen, token IS NOT NULL AS paired FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal') return fail(401, 'key');
+  const p = await db.prepare('SELECT id, name, number, paper, ghost, mesh, links, joins, seen, bench, token IS NOT NULL AS paired FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal') return fail(401, 'key');
   const t = now();
-  if (req.method === 'POST') { const b = await body(req, 2048);
+  if (req.method === 'POST') { const b = await body(req, 8192);
     if (typeof b.pair === 'string') return ghostAdopt(db, p, b.pair);
+    if (b.bench && typeof b.bench === 'object') { if (!p.ghost) return fail(400, 'not a ghost'); const v = benchIn(b.bench); if (!v) return fail(400, 'bench');
+      await db.prepare('UPDATE printers SET bench = ? WHERE id = ?').bind(JSON.stringify(v), p.id).run(); return json({ ok: true, bench: v }); }
     if (typeof b.job === 'string' && p.ghost) { const ok = b.ok !== false; await db.prepare("UPDATE jobs SET status = ?, error = ?, done = ?, escpos = NULL, mesh = NULL WHERE id = ? AND printer = ? AND status = 'printing'").bind(ok ? 'printed' : 'failed', ok ? null : String(b.error || '').slice(0, 60), t, b.job, p.id).run(); return json({ ok: true }); }
     return fail(400, 'action'); }
   let took = [];
@@ -922,9 +926,17 @@ async function twin(db, env, req, url) {
   const { results: roll } = await db.prepare("SELECT j.id, j.code, j.status, j.created, j.done, j.thumb, j.mesh IS NOT NULL AS radio, CASE WHEN j.status IN ('held', 'queued') THEN j.escpos END AS escpos FROM jobs j WHERE j.printer = ? ORDER BY j.created DESC LIMIT 24").bind(p.id).all();
   const J = joinsOf(p), ids = [...J.to, ...(J.mirror ? [J.mirror] : [])], nm = ids.length ? (await db.prepare(`SELECT id, name, number, seen, ghost FROM printers WHERE id IN (${ids.map(() => '?').join(', ')})`).bind(...ids).all()).results : [];
   const isleOf = id => { const r = nm.find(x => x.id === id) || { id }; return { id, name: r.name || id, number: r.number || null, ready: !!r.seen && t - r.seen < 120e3, ghost: !!r.ghost }; };
-  return json({ id: p.id, name: p.name || p.id, number: p.number || null, paper: p.paper || '80', ghost: !!p.ghost, paired: !!p.paired, mesh: !!p.mesh, ready: !!p.seen && t - p.seen < 120e3,
+  return json({ id: p.id, name: p.name || p.id, number: p.number || null, paper: p.paper || '80', ghost: !!p.ghost, paired: !!p.paired, mesh: !!p.mesh, ready: !!p.seen && t - p.seen < 120e3, ...(p.ghost ? { bench: benchOf(p.bench) } : {}),
     joins: { to: J.to.map(isleOf), only: J.only, mirror: J.mirror ? isleOf(J.mirror) : null }, took: took.map(j => ({ id: j.id, code: j.code, escpos: j.escpos, mesh: j.mesh, at: j.created })), roll });
 }
+/* a ghost's bench: up to 12 parts (p: [its own id, the part's id]) and 24 cables (j: ["p1.usb", "p2.usb"]), every part one in spec/parts,
+   every cable between two of its parts. The joins are checked again on the bench; here only the shape */
+function benchIn(b) { const P = Array.isArray(b.p) ? b.p : [], J = Array.isArray(b.j) ? b.j : []; if (P.length > 12 || J.length > 24) return null;
+  const p = [], own = new Set(); for (const x of P) { if (!Array.isArray(x) || !/^p\d{1,3}$/.test(x[0]) || own.has(x[0]) || !PART_IDS.includes(x[1])) return null; own.add(x[0]); p.push([x[0], x[1]]); }
+  const end = e => typeof e === 'string' && /^p\d{1,3}\.[a-z0-9]{1,8}$/.test(e) && own.has(e.split('.')[0]), j = [];
+  for (const x of J) { if (!Array.isArray(x) || !end(x[0]) || !end(x[1]) || x[0].split('.')[0] === x[1].split('.')[0]) return null; j.push([x[0], x[1]]); }
+  return { p, j }; }
+function benchOf(s) { let b = null; try { b = JSON.parse(s || 'null'); } catch (e) { b = null; } return b && Array.isArray(b.p) ? b : { p: [], j: [] }; }
 async function ghostAdopt(db, p, code) {
   if (!p.ghost) return fail(400, 'not a ghost');
   await pairs(db); code = pairCode(code);

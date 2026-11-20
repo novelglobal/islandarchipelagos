@@ -62,7 +62,10 @@ if (preview) fs.appendFileSync(path.join(out, '_headers'), '\n/*\n  X-Robots-Tag
 const win = {}; vm.runInNewContext(read(path.join(src, 'config.js')) + '\n' + read(path.join(src, 'places.js')), { window: win });
 const partners = (win.DA_PARTNERS || []).map(p => { const pl = (win.DA_PLACES || []).find(x => x.partner === p.id) || {}; return { id: p.id, n: pl.n || p.id, sub: pl.sub || '', paper: String(p.paper || 58), printer: !!p.printer }; });
 if (win.DA_MASTER) partners.unshift({ id: win.DA_MASTER.id, n: win.DA_MASTER.n, sub: '', paper: String(win.DA_MASTER.paper || 80), printer: true });
-fs.writeFileSync(path.join(src, 'worker', 'stamp.js'), `/* written by build.mjs: never edited by hand, never committed */\nexport const BUILD = ${JSON.stringify(sha)};\nexport const PREVIEW = ${preview};\nexport const PARTNERS = ${JSON.stringify(partners)};\n`);
+/* the parts a ghost's bench joins, as data in spec/parts: to the twin as parts.js, their ids to the worker */
+const partsDir = path.join(root, '..', 'spec', 'parts'), PARTS = fs.existsSync(partsDir) ? fs.readdirSync(partsDir).filter(f => f.endsWith('.json')).sort().map(f => { const { $schema, part, ...p } = JSON.parse(read(path.join(partsDir, f))); return p; }) : [];
+fs.writeFileSync(path.join(out, 'parts.js'), '/* the parts, from spec/parts (MIT) */\nwindow.PARTS = ' + JSON.stringify(PARTS) + ';\n');
+fs.writeFileSync(path.join(src, 'worker', 'stamp.js'), `/* written by build.mjs: never edited by hand, never committed */\nexport const BUILD = ${JSON.stringify(sha)};\nexport const PREVIEW = ${preview};\nexport const PARTNERS = ${JSON.stringify(partners)};\nexport const PART_IDS = ${JSON.stringify(PARTS.map(p => p.id))};\n`);
 /* the studio: the whole radio, W.I.S.H. and PRINT, as it was built through the pilot, at /studio */
 const body = read(path.join(src, 'body.html'));
 fs.writeFileSync(path.join(out, 'studio.html'), `<!doctype html>

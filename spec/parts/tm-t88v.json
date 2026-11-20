@@ -1,0 +1,52 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "tm-t88v",
+  "name": "TM-T88V",
+  "kind": "printer",
+  "about": "Epson TM-T88V, 80 mm, USB. Tested with every slip.",
+  "paper": 80,
+  "profile": "tm-t88v",
+  "watts": {
+    "avg": 3,
+    "peak": 43
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-b",
+      "role": "device"
+    },
+    {
+      "id": "pwr",
+      "label": "24 V",
+      "plug": "power-din",
+      "role": "in",
+      "volts": 24
+    }
+  ],
+  "draw": [
+    [
+      "M14 80 L14 38 Q14 22 30 20 L92 18 Q106 18 106 34 L106 80 Z"
+    ],
+    [
+      "M14 48 L106 46"
+    ],
+    [
+      "M30 30 L90 29"
+    ],
+    [
+      "M38 29 C42 12 76 10 82 29",
+      1
+    ],
+    [
+      "M92 64 A3 3 0 1 0 98 64 A3 3 0 1 0 92 64"
+    ],
+    [
+      "M22 64 h4 M30 64 h4"
+    ]
+  ],
+  "photo": "printer-top.jpg",
+  "licence": "MIT"
+}

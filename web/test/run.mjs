@@ -2170,6 +2170,35 @@ if (run('base')) try {
   await pc.close();
 } catch (e) { results.push(`FAIL  section base: ${e.message.split('\n')[0]} — after: ${(results[results.length - 1] || '').slice(6, 90)} @${((e.stack || '').match(/run\.mjs:(\d+)/) || [])[1]}`); }
 
+// ───────── bench: a ghost's parts, from the tray, joined by taps; a wrong join dull and dashed with its reason; power as ENOUGH or SHORT (ONLY=bench) ─────────
+if (run('bench')) try {
+  const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await wire(ctx, { plain: true }); await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('bn')) { sessionStorage.setItem('bn', '1'); localStorage.setItem('da.ghost.build', JSON.stringify({ pi: 'Pi 3 A+', printers: 'TM-T88V', power: ['Solar'] })); localStorage.removeItem('da.ghost.seeded'); } } catch (e) { /* private */ } });
+  const page = await ctx.newPage(); watch(page, 'bench'); await page.goto('https://oan.test/archipelagos.html');
+  const made = await page.evaluate(async () => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bench Bb' }) }), j = await r.json(); if (j.key) localStorage.setItem('da.hm.key', JSON.stringify(j.key)); return { s: r.status, id: j.id }; });
+  await page.goto('https://oan.test/twin#bench'); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(900);
+  const b0 = await page.evaluate(() => ({ open: document.querySelector('#bnd').open, parts: [...document.querySelectorAll('.bench .pt text:not(.pl)')].map(t => t.textContent), word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title }));
+  check('bench: a ghost opened from START lands on its BENCH with the tray\'s Pi, printer and solar, and an SD for the Pi; SHORT says which parts have no power',
+    made.s === 201 && b0.open && b0.parts.join() === 'SOLAR,PI 3 A+,SD 32 GB,TM-T88V' && b0.word === 'SHORT' && /Pi 3 A\+.*TM-T88V.*no power in/.test(b0.why), JSON.stringify({ made, b0 }));
+  /* real taps: the kind, the parts, then each cable port to port */
+  const tap = async sel => { await page.locator(sel).first().scrollIntoViewIfNeeded(); await page.locator(sel).first().click(); await sleep(60); };
+  const port = lab => `.bench [data-port][aria-label="${lab}"]`;
+  await tap('[data-kind="POWER"]'); for (const id of ['mppt-10a', 'lifepo4-50ah', 'boost-24v', 'buck-5v']) await tap(`[data-part="${id}"]`);
+  await tap(port('Solar PV')); await tap(port('TM-T88V 24 V'));
+  const bad = await page.evaluate(() => ({ say: document.querySelector('#bnsay').textContent, why: document.querySelector('#bnsay').title, dash: document.querySelectorAll('.bench .cb.bad').length, hover: [...document.querySelectorAll('.bench .hit title')].map(t => t.textContent).join('|') }));
+  check('bench: a wrong join stays, dull and dashed, says WRONG, and why in its hover', bad.say === 'WRONG' && bad.dash === 1 && /No cable from MC4 to round power plug/.test(bad.why) && /No cable from MC4/.test(bad.hover), JSON.stringify(bad));
+  await page.evaluate(() => document.querySelector('.bench .hit').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await sleep(60);
+  for (const [a, b] of [['Solar PV', 'Charger PV'], ['LiFePO4 12 V', 'Charger BAT'], ['Charger 12 V', 'Boost 12 V'], ['Charger 12 V', 'Buck 12 V'], ['Boost 24 V', 'TM-T88V 24 V'], ['Buck 5 V', 'Pi 3 A+ 5 V'], ['Pi 3 A+ USB', 'TM-T88V USB'], ['Pi 3 A+ SD', 'SD 32 GB SD']]) { await tap(port(a)); await tap(port(b)); }
+  await sleep(900);
+  const b1 = await page.evaluate(() => ({ cables: document.querySelectorAll('.bench .cb').length, bad: document.querySelectorAll('.bench .cb.bad').length, word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title, sum: document.querySelector('#bns').textContent, off: document.querySelectorAll('.bench .pt.off').length, wide: document.documentElement.scrollWidth <= innerWidth }));
+  await page.reload(); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(600);
+  const b2 = await page.evaluate(() => ({ cables: document.querySelectorAll('.bench .cb').length, word: document.querySelector('#bnp').textContent, n: document.querySelectorAll('.bench .pt').length }));
+  check('bench: a Pi, an SD, a TM-T88V and solar (charger, battery, boost, buck) joined by taps read ENOUGH, the sums in its hover; kept with the ghost through a reload; nothing runs off the phone',
+    b1.cables === 8 && !b1.bad && !b1.off && b1.word === 'ENOUGH' && /Uses 113 Wh a day · the sun gives 338 Wh \(4\.5 h\) · the battery holds 576 Wh, 123 h with no sun/.test(b1.why) && b1.sum === '8 PARTS · ENOUGH' && b1.wide && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
+    JSON.stringify({ b1, b2 }));
+  await ctx.close();
+} catch (e) { check('bench ran', false, String(e && e.stack || e)); }
+
 // ───────── home: the switchboard (ONLY=home) ─────────
 for (const HD of [false, true]) if (run('home')) try {
   const tag = HD ? 'desk' : 'phone';

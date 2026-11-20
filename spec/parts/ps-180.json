@@ -1,0 +1,31 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "ps-180",
+  "name": "PS-180",
+  "kind": "power",
+  "about": "Epson PS-180: 24 V, 2 A, from the wall. Its cord ends in the printer’s round plug.",
+  "source": "wall",
+  "ports": [
+    {
+      "id": "out",
+      "label": "24 V",
+      "plug": "power-din",
+      "role": "out",
+      "volts": 24
+    }
+  ],
+  "draw": [
+    [
+      "M24 40 Q24 34 30 34 L90 34 Q96 34 96 40 L96 70 Q96 76 90 76 L30 76 Q24 76 24 70 Z"
+    ],
+    [
+      "M34 48 L70 48 M34 56 L60 56"
+    ],
+    [
+      "M96 55 C112 55 106 28 116 24",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

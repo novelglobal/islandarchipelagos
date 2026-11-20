@@ -243,12 +243,12 @@
       else GB[t] = GB[t] === n ? null : n;
       gs.set('da.ghost.build', GB); p.classList.toggle('took', took(t, n)); p.setAttribute('aria-pressed', String(took(t, n))); tray(); return; }
     if (e.target.closest('[data-gup]')) { scrollTo({ top: 0, behavior: 'smooth' }); var i0 = $('[data-gkey] input'); if (i0) i0.focus({ preventScroll: true }); return; }
-    if (e.target.closest('[data-gopen]')) { top('/twin'); return; }
+    if (e.target.closest('[data-gopen]')) { top('/twin#bench'); return; }
     var st = e.target.closest('[data-gstart]'); if (st) { var box = st.closest('[data-gkey]'), nm = ($('input', box).value || '').trim(), sy = $('[data-gsay]', box);
       st.disabled = true; sy.textContent = '· · ·';
       fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: /58/.test(GB.printers ? (PLATES.printers.filter(function (x) { return x[0] === GB.printers; })[0] || [])[1] || '' : '') ? '58' : '80' }) })
         .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
-        .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); top('/twin'); return; }
+        .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); top('/twin#bench'); return; }
           sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; st.disabled = false; },
           function () { sy.textContent = 'OFFLINE'; st.disabled = false; }); } });
   D.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.plate[data-take]')) { e.preventDefault(); e.target.click(); }

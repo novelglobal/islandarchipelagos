@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "cable-wire",
+  "name": "Wire",
+  "kind": "cable",
+  "about": "2.5 mm² wire with an inline blade fuse, screw terminals both ends.",
+  "ends": [
+    "screw",
+    "screw"
+  ],
+  "draw": [
+    [
+      "M14 44 A4 4 0 1 0 22 44 A4 4 0 1 0 14 44"
+    ],
+    [
+      "M22 44 C50 40 60 70 98 64"
+    ],
+    [
+      "M98 64 A4 4 0 1 0 106 64 A4 4 0 1 0 98 64"
+    ],
+    [
+      "M54 50 h12 v8 h-12 Z",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

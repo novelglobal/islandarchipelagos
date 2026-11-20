@@ -1,0 +1,50 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "buck-5v",
+  "name": "Buck",
+  "kind": "converter",
+  "about": "12 V to 5 V USB buck converter, 3 A: power for the Pi.",
+  "watts": {
+    "avg": 0.1,
+    "peak": 1
+  },
+  "ports": [
+    {
+      "id": "in",
+      "label": "12 V",
+      "plug": "screw",
+      "role": "in",
+      "volts": [
+        9,
+        24
+      ]
+    },
+    {
+      "id": "out",
+      "label": "5 V",
+      "plug": "usb-a",
+      "role": "out",
+      "volts": 5
+    }
+  ],
+  "draw": [
+    [
+      "M26 34 h62 v28 h-62 Z"
+    ],
+    [
+      "M37 48 A7 7 0 1 0 51 48 A7 7 0 1 0 37 48"
+    ],
+    [
+      "M84 41 h12 v13 h-12 Z",
+      1
+    ],
+    [
+      "M60 40 h16 M60 46 h12"
+    ],
+    [
+      "M98 76 h-76 l7 -5 M22 76 l7 5"
+    ]
+  ],
+  "licence": "MIT"
+}

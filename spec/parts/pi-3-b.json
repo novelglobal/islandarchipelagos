@@ -1,0 +1,81 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "pi-3-b",
+  "name": "Pi 3 B",
+  "kind": "pi",
+  "about": "Raspberry Pi 3 Model B (2016). Four USB, Wi-Fi, Ethernet, 1 GB.",
+  "watts": {
+    "avg": 1.9,
+    "peak": 4
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-a",
+      "role": "host",
+      "volts": 5
+    },
+    {
+      "id": "usb2",
+      "label": "USB",
+      "plug": "usb-a",
+      "role": "host",
+      "volts": 5
+    },
+    {
+      "id": "pwr",
+      "label": "5 V",
+      "plug": "micro-usb",
+      "role": "in",
+      "volts": 5
+    },
+    {
+      "id": "sd",
+      "label": "SD",
+      "plug": "micro-sd",
+      "role": "slot"
+    },
+    {
+      "id": "dsi",
+      "label": "DSI",
+      "plug": "dsi",
+      "role": "host"
+    }
+  ],
+  "draw": [
+    [
+      "M12 24 h92 v56 h-92 Z"
+    ],
+    [
+      "M15 29 A2 2 0 1 0 19 29 A2 2 0 1 0 15 29"
+    ],
+    [
+      "M63 29 A2 2 0 1 0 67 29 A2 2 0 1 0 63 29"
+    ],
+    [
+      "M15 75 A2 2 0 1 0 19 75 A2 2 0 1 0 15 75"
+    ],
+    [
+      "M63 75 A2 2 0 1 0 67 75 A2 2 0 1 0 63 75"
+    ],
+    [
+      "M40 42 h16 v16 h-16 Z",
+      1
+    ],
+    [
+      "M96 30 h16 v12 h-16 Z"
+    ],
+    [
+      "M96 46 h16 v12 h-16 Z"
+    ],
+    [
+      "M98 62 h14 v14 h-14 Z"
+    ],
+    [
+      "M20 27 L84 27"
+    ]
+  ],
+  "licence": "MIT"
+}

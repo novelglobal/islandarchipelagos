@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "printer-58",
+  "name": "58 MM",
+  "kind": "printer",
+  "about": "Any 58 mm ESC/POS printer with USB and a barrel socket.",
+  "paper": 58,
+  "profile": "generic-58",
+  "watts": {
+    "avg": 0.8,
+    "peak": 24
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "usb-b",
+      "role": "device"
+    },
+    {
+      "id": "pwr",
+      "label": "12 V",
+      "plug": "barrel",
+      "role": "in",
+      "volts": [
+        5,
+        12
+      ]
+    }
+  ],
+  "draw": [
+    [
+      "M36 80 L36 40 Q36 32 44 32 L76 32 Q84 32 84 40 L84 80 Z"
+    ],
+    [
+      "M45 39 L75 39"
+    ],
+    [
+      "M48 39 C50 24 70 24 72 39",
+      1
+    ],
+    [
+      "M54 64 A6 6 0 1 0 66 64 A6 6 0 1 0 54 64"
+    ]
+  ],
+  "licence": "MIT"
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "pi-zero-2-w",
+  "name": "Zero 2 W",
+  "kind": "pi",
+  "about": "Raspberry Pi Zero 2 W (2021). One micro-USB for things, Wi-Fi, 512 MB. Needs an OTG cable for a printer.",
+  "watts": {
+    "avg": 0.7,
+    "peak": 2.5
+  },
+  "ports": [
+    {
+      "id": "usb",
+      "label": "USB",
+      "plug": "micro-usb",
+      "role": "host",
+      "volts": 5
+    },
+    {
+      "id": "pwr",
+      "label": "5 V",
+      "plug": "micro-usb",
+      "role": "in",
+      "volts": 5
+    },
+    {
+      "id": "sd",
+      "label": "SD",
+      "plug": "micro-sd",
+      "role": "slot"
+    }
+  ],
+  "draw": [
+    [
+      "M14 36 h92 v30 h-92 Z"
+    ],
+    [
+      "M17 41 A2 2 0 1 0 21 41 A2 2 0 1 0 17 41"
+    ],
+    [
+      "M99 41 A2 2 0 1 0 103 41 A2 2 0 1 0 99 41"
+    ],
+    [
+      "M17 61 A2 2 0 1 0 21 61 A2 2 0 1 0 17 61"
+    ],
+    [
+      "M99 61 A2 2 0 1 0 103 61 A2 2 0 1 0 99 61"
+    ],
+    [
+      "M50 45 h14 v14 h-14 Z",
+      1
+    ],
+    [
+      "M30 63 h9 v5 h-9 Z"
+    ],
+    [
+      "M74 63 h9 v5 h-9 Z"
+    ],
+    [
+      "M26 39 L94 39"
+    ]
+  ],
+  "licence": "MIT"
+}

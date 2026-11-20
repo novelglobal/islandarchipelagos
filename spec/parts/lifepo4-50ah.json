@@ -1,0 +1,44 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "lifepo4-50ah",
+  "name": "LiFePO4",
+  "kind": "battery",
+  "about": "12.8 V, 50 Ah lithium iron phosphate: 640 Wh, about 576 Wh to use.",
+  "source": "store",
+  "store": {
+    "wh": 640,
+    "use": 0.9
+  },
+  "ports": [
+    {
+      "id": "bat",
+      "label": "12 V",
+      "plug": "screw",
+      "role": "store",
+      "volts": 12.8
+    }
+  ],
+  "draw": [
+    [
+      "M22 30 h76 v50 h-76 Z"
+    ],
+    [
+      "M32 24 h10 v6 h-10 Z"
+    ],
+    [
+      "M78 24 h10 v6 h-10 Z"
+    ],
+    [
+      "M33 44 h8 M37 40 v8",
+      1
+    ],
+    [
+      "M79 44 h8"
+    ],
+    [
+      "M32 62 L88 62"
+    ]
+  ],
+  "licence": "MIT"
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "solar-100w",
+  "name": "Solar",
+  "kind": "solar",
+  "about": "100 W, 12 V solar panel, MC4 leads. 4.5 hours of full sun a day is a fair year-round figure.",
+  "source": "sun",
+  "make": {
+    "watts": 100,
+    "sun": 4.5
+  },
+  "ports": [
+    {
+      "id": "out",
+      "label": "PV",
+      "plug": "mc4",
+      "role": "out",
+      "volts": 18
+    }
+  ],
+  "draw": [
+    [
+      "M14 66 L30 20 L108 20 L98 66 Z"
+    ],
+    [
+      "M49.5 20 L35.0 66"
+    ],
+    [
+      "M69.0 20 L56.0 66"
+    ],
+    [
+      "M88.5 20 L77.0 66"
+    ],
+    [
+      "M24.7 35.3 L104.7 35.3"
+    ],
+    [
+      "M19.3 50.7 L101.3 50.7"
+    ],
+    [
+      "M40 66 L36 84 M84 66 L88 84"
+    ],
+    [
+      "M60 4 l0 8 M48 8 l4 6 M72 8 l-4 6",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

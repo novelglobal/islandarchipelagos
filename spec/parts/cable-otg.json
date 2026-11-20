@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "cable-otg",
+  "name": "OTG",
+  "kind": "cable",
+  "about": "Micro-USB OTG to USB-B: a printer on a Zero 2 W.",
+  "ends": [
+    "micro-usb",
+    "usb-b"
+  ],
+  "draw": [
+    [
+      "M16 41 h10 v6 h-10 Z"
+    ],
+    [
+      "M26 44 C56 44 50 70 84 66"
+    ],
+    [
+      "M84 60 h14 v12 h-14 Z"
+    ],
+    [
+      "M90 63 v6",
+      1
+    ]
+  ],
+  "licence": "MIT"
+}

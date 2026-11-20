@@ -1,0 +1,69 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "mppt-10a",
+  "name": "Charger",
+  "kind": "charger",
+  "about": "10 A MPPT solar charge controller: the panel in, the battery kept, 12 V out to the load.",
+  "watts": {
+    "avg": 0.1,
+    "peak": 0.2
+  },
+  "ports": [
+    {
+      "id": "pv",
+      "label": "PV",
+      "plug": "mc4",
+      "role": "in",
+      "volts": [
+        12,
+        30
+      ]
+    },
+    {
+      "id": "bat",
+      "label": "BAT",
+      "plug": "screw",
+      "role": "store",
+      "volts": [
+        12,
+        14.6
+      ]
+    },
+    {
+      "id": "load",
+      "label": "12 V",
+      "plug": "screw",
+      "role": "out",
+      "volts": 12
+    }
+  ],
+  "draw": [
+    [
+      "M20 20 h80 v52 h-80 Z"
+    ],
+    [
+      "M30 28 h30 v14 h-30 Z",
+      1
+    ],
+    [
+      "M29 62 A3 3 0 1 0 35 62 A3 3 0 1 0 29 62"
+    ],
+    [
+      "M43 62 A3 3 0 1 0 49 62 A3 3 0 1 0 43 62"
+    ],
+    [
+      "M71 62 A3 3 0 1 0 77 62 A3 3 0 1 0 71 62"
+    ],
+    [
+      "M85 62 A3 3 0 1 0 91 62 A3 3 0 1 0 85 62"
+    ],
+    [
+      "M70 30 h20 M70 36 h14"
+    ],
+    [
+      "M28 72 v8 M44 72 v8 M60 72 v8 M76 72 v8 M92 72 v8"
+    ]
+  ],
+  "licence": "MIT"
+}
