@@ -2104,7 +2104,7 @@ if (run('base')) try {
   const qrTo = qf ? await (async () => { const { data, info } = await sharp(await qf.path()).flatten({ background: '#ffffff' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); const q = jsQR(new Uint8ClampedArray(data), info.width, info.height); return q ? q.data : null; })() : null;
   check('SHOP keeps the booth\'s QR sticker with the other downloads, and it reads as the booth\'s page', qrTo === 'https://oan.test/#booth', String(qrTo));
   await page.evaluate(() => { window.__said = []; const f = CanvasRenderingContext2D.prototype.fillText; CanvasRenderingContext2D.prototype.fillText = function (t) { window.__said.push(String(t)); return f.apply(this, arguments); }; });
-  await fresh(page); await page.click('#s-poster'); await page.waitForFunction(() => /●/.test(document.querySelector('#s-pst').textContent) && !document.querySelector('#s-pst .wait'), null, { timeout: 10000 });
+  await fresh(page); await page.evaluate(() => localStorage.setItem('da.base.printer', JSON.stringify('novelglobal'))); await page.click('#s-poster'); await page.waitForFunction(() => /●/.test(document.querySelector('#s-pst').textContent) && !document.querySelector('#s-pst .wait'), null, { timeout: 10000 });
   const pw = (((await admin('stories?status=waiting')).stories) || []).find(x => x.kind === 'record' && /"poster"/.test(x.body));
   const pc0 = await page.evaluate(async () => { const c = await window.__base.poster('novelglobal', 512); return { url: c.toDataURL('image/png'), w: c.width, said: [...new Set(window.__said)] }; });
   const onPoster = await qrIn(pc0.url);

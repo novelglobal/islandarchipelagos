@@ -1833,3 +1833,17 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 /* an island's PICKS: its own shelf in the showcase */
 .hm-pk { margin: 0 0 4px; } .hm-pkq { flex: 1; min-width: 0; min-height: 36px; padding: 6px 12px; border: 1px solid var(--hm-line); border-radius: 18px; background: none; color: var(--hm-ink); font: 500 16px/1.2 'IBM Plex Mono', ui-monospace, monospace; }
 .hm-pkl li { padding: 6px 4px; cursor: default; } .hm-pkl li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hm-pkl li.on i { background: var(--hm-ink); } .hm-pkl .hm-btn { min-width: 32px; min-height: 30px; padding: 2px 8px; }
+
+/* the small label leaves the first page with it */
+#lbm { transition: opacity .26s ease, transform .26s ease; } #lbm.lbm-away { opacity: 0; transform: translateY(12px); pointer-events: none; }
+/* an island's home, in its keeper's panel: the big cards, the nines drawn as nines, and the label */
+.hm-mains .hm-btn, .hm-n9 .hm-btn { min-height: 34px; padding: 0 10px; font-size: 10.5px; letter-spacing: .1em; }
+.hm-first { width: 7px; height: 7px; border-radius: 50%; background: #E25C40; flex: none; }
+.hm-nine { min-width: 52px; padding: 0 10px; } .hm-nine svg { width: 22px; height: 22px; fill: currentColor; } .hm-nine b { font: 600 10px/1 'IBM Plex Mono', ui-monospace, monospace; }
+.hm-nine:not(.on) { opacity: .5; } .hm-nine.open { outline: 2px solid #E25C40; outline-offset: 2px; }
+.hm-lbf { display: grid; gap: 6px; margin-bottom: 6px; }
+.hm-lbf input:not([type=checkbox]), .hm-lbf textarea { width: 100%; min-width: 0; min-height: 36px; padding: 7px 11px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: var(--hm-ink); font: 500 16px/1.35 'IBM Plex Mono', ui-monospace, monospace; }
+.hm-lbf textarea { resize: vertical; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.hm-lbl { display: grid !important; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 6px; }
+.hm-lbf label.hm-say { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+.hm-lnf { display: flex; gap: 6px; align-items: center; margin: 8px 0 4px; } .hm-lnf input { flex: 1; min-width: 0; min-height: 36px; padding: 7px 11px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: var(--hm-ink); font: 500 16px/1.35 'IBM Plex Mono', ui-monospace, monospace; }

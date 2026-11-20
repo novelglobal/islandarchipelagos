@@ -47,6 +47,20 @@
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
 
+# an island's twin: never indexed; the one page that may reach a printer beside the screen (USB, serial)
+/twin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+  Referrer-Policy: no-referrer
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(self), serial=(self), bluetooth=()
+/twin.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+  Referrer-Policy: no-referrer
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(self), serial=(self), bluetooth=()
+
 # an island keeper's key page: never kept, never indexed
 /island
   X-Robots-Tag: noindex, nofollow

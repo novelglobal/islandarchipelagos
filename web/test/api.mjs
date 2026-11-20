@@ -463,9 +463,48 @@ try {
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: JSON.stringify({ isles: { [id]: ['name', 'picks'] } }) } }); const bdC = await call('/api/island', { token: K }), bdCP = await call('/api/island', { method: 'POST', token: K, body: { gap: 120 } });
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: bd0 } }); const bdF = await call('/api/island', { token: K });
     check('a build sets what an island\'s keeper can change: SIMPLE tells only its parts and refuses picks and connections, a custom list holds only its own, and no visitor sees the builds',
-      bdG.json.build.join() === 'name,pics,gap,passes' && bdP.status === 403 && bdL.json.gap === 60 && JSON.stringify(bdL.json.links) === JSON.stringify(bdG.json.links) && !('builds' in bdPub) && bdC.json.build.join() === 'name,picks' && bdCP.json.gap === 60 && bdF.json.build.length === 9,
+      bdG.json.build.join() === 'name,pics,gap,passes,home' && bdP.status === 403 && bdL.json.gap === 60 && JSON.stringify(bdL.json.links) === JSON.stringify(bdG.json.links) && !('builds' in bdPub) && bdC.json.build.join() === 'name,picks' && bdCP.json.gap === 60 && bdF.json.build.length === 11,
       JSON.stringify({ g: bdG.json.build, p: bdP.status, l: [bdL.json.links, bdG.json.links, bdL.json.gap], pub: 'builds' in bdPub, c: bdC.json.build, cp: bdCP.json.gap, f: bdF.json.build }));
     await call('/api/island', { method: 'POST', token: K, body: { gap: null } });
+    /* ghosts and joins: two islands with no printer, each printed by its twin. A echoes to B, then sends only to B (the receipt follows the
+       print there); B turning W.I.S.H. off stops it; A mirrors B; A is given a Pi by its pair code and stays the same island */
+    { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { freePrint: true } });
+      const gA = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Aa' }, ip: '10.66.0.1' }), gB = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Bb' }, ip: '10.66.0.2' });
+      const KA = gA.json.key, KB = gB.json.key, A = gA.json.id, B = gB.json.id, tw = (k, q = '') => call('/api/twin' + q, { token: k }), esc = Buffer.from([0x1B, 0x40, 72, 73, 10, 0x1D, 0x56, 0x42, 0]).toString('base64');
+      const t0 = await tw(KA), map0 = await call('/api/isles'), pt0 = await call('/api/partners');
+      const jBad = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: ['no-such-isle'] } } });
+      const jA = await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B] } } });
+      const e1 = await call('/api/stories', { method: 'POST', body: story('DA-9GHK', { dest: A, escpos: esc, thumb: '8,1,AA==' }) }), tA1 = await tw(KA), tB1 = await tw(KB);
+      await call('/api/island', { method: 'POST', token: KA, body: { joins: { to: [B], only: true } } });
+      const e2 = await call('/api/stories', { method: 'POST', body: story('DA-9GHM', { dest: A, escpos: esc }) }), tA2 = await tw(KA), tB2 = await tw(KB), rc2 = await call(`/api/receipts/${e2.json.id}`);
+      await call('/api/island', { method: 'POST', token: KB, body: { links: ['radio'] } });
+      const e3 = await call('/api/stories', { method: 'POST', body: story('DA-9GHN', { dest: A, escpos: esc }) }), tA3 = await tw(KA);
+      await call('/api/island', { method: 'POST', token: KB, body: { links: ['wish', 'cards', 'art'] } });
+      const jM = await call('/api/island', { method: 'POST', token: KA, body: { joins: { mirror: B } } }), pt1 = await call('/api/partners');
+      check('a ghost island has its key once and a twin, is kept off the map, and its joins go only to islands that are there',
+        gA.status === 201 && !!KA && t0.status === 200 && t0.json.ghost === true && !t0.json.paired && !map0.json.isles.some(i => i.id === A) && pt0.json.partners.some(p => p.id === A && p.ghost) && jBad.status === 400 && jA.json.joins.to.join() === B && jA.json.build.includes('joins'),
+        JSON.stringify({ gA: gA.status, t0: t0.json, bad: jBad.status, jA: jA.json.joins }));
+      check('ECHO prints at both islands, ONLY THERE prints only at the other (the receipt follows it), and nothing is relayed to an island with W.I.S.H. off',
+        e1.json.relay && e1.json.relay[0].id === B && e1.json.only === false && tA1.json.took.length === 1 && tB1.json.took.length === 1 && tB1.json.took[0].escpos === esc
+        && e2.json.only === true && tA2.json.took.length === 0 && tB2.json.took.length === 1 && rc2.json.job.at === B && !e3.json.relay && tA3.json.took.length === 1,
+        JSON.stringify({ e1: e1.json.relay, a1: tA1.json.took.length, b1: tB1.json.took.length, e2: [e2.json.only, tA2.json.took.length, tB2.json.took.length, rc2.json.job], e3: [e3.json.relay, tA3.json.took.length] }));
+      /* an island's home: its big cards in order, its nines, a card left out, its label (a link that is not https is dropped); the film is the approval page's */
+      const hm1 = await call('/api/island', { method: 'POST', token: KB, body: { home: { line: '  Harbour   wall, by the sea  ' + 'x'.repeat(80), main: ['zine', 'radio', 'nope'], nines: ['soon', 'utils'], off: ['tarot'], label: { title: 'Harbour', body: 'One.\n\nTwo.', links: [{ t: 'Map', u: 'https://example.org/m' }, { t: 'Bad', u: 'http://example.org' }], film: { file: 'sneak.mp4' } } } } });
+      const hmF = await call(`/api/admin/printers/${B}`, { method: 'POST', key: KEY, body: { action: 'home', film: 'harbour.mp4' } }), hmBad = await call(`/api/admin/printers/${B}`, { method: 'POST', key: KEY, body: { action: 'home', film: '../x' } });
+      const hm2 = await call('/api/island', { method: 'POST', token: KB, body: { home: { nines: ['dev'] } } }), ptH = await call('/api/partners'), hmP = ptH.json.partners.find(p => p.id === B) || {};
+      check('an island\'s home: its keeper sets its big cards in order, its nines and its label; a film comes only from the approval page and stays through the keeper\'s changes',
+        JSON.stringify(hm1.json.home.main) === '["zine","radio"]' && hm1.json.home.line.startsWith('Harbour wall, by the sea x') && hm1.json.home.line.length <= 60 && hmP.home.line === hm1.json.home.line && hm1.json.home.nines.join() === 'soon,utils' && hm1.json.home.off.join() === 'tarot' && hm1.json.home.label.links.length === 1 && !hm1.json.home.label.film
+        && hmF.json.home.label.film.file === 'harbour.mp4' && hmBad.status === 400 && hm2.json.home.nines.join() === 'dev' && hm2.json.home.label.film.file === 'harbour.mp4' && hmP.home && hmP.home.main.join() === 'zine,radio' && hmP.home.label.title === 'Harbour',
+        JSON.stringify({ h1: hm1.json.home, f: hmF.json, bad: hmBad.status, h2: hm2.json.home, p: hmP.home }));
+      check('MIRROR: an island shows another island\'s cards, and says so', jM.json.joins.mirror === B && jM.json.joins.to.length === 0 && pt1.json.partners.some(p => p.id === A && p.mirror === B), JSON.stringify(jM.json.joins));
+      const pr = await call('/api/pair', { method: 'POST', body: { name: 'Pi Aa', paper: '80' }, ip: '10.66.0.3' }), ad0 = await call('/api/twin', { method: 'POST', token: KA, body: { pair: 'ZZZZZZZZ' } });
+      const ad = await call('/api/twin', { method: 'POST', token: KA, body: { pair: pr.json.code } }), pp = await call('/api/pair/poll', { method: 'POST', body: { device: pr.json.device }, ip: '10.66.0.3' });
+      const kA = await call('/api/island', { token: KA }), tA4 = await tw(KA);
+      await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: false } }); const gC = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Cc' }, ip: '10.66.0.4' });
+      await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: true, freePrint: false } });
+      check('a ghost given a Pi by its pair code becomes that printer and keeps its key and joins; ghosts can be closed on the approval page',
+        ad0.status === 404 && ad.status === 200 && pp.json.printer === A && !!pp.json.token && pp.json.adopted === true && !('key' in pp.json) && kA.status === 200 && !kA.json.ghost && kA.json.joins.mirror === B && tA4.json.paired && !tA4.json.ghost && gC.status === 403,
+        JSON.stringify({ ad0: ad0.status, ad: ad.json, pp: pp.json, k: kA.status, gC: gC.status })); }
     /* v0.7 D: a post from a code stamped at an island that day is marked HERE, a person who was there; never which island */
     const ms0 = (await call('/api/admin/settings', { key: KEY })).json.madeShow; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true } });
     const hr1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR1A', { who: 'QZ7' }) }), hr2 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR2A', { who: 'QW3' }) });
@@ -558,12 +597,12 @@ try {
     check('the private page is linked from the site only while novel.global says so', p2.json.noteK === 'notekeynotekeynotekey22' && p3.json.noteK === undefined && p2.json.note === undefined, JSON.stringify([p2.json.noteK, p3.json.noteK])); }
   /* RESTART: asked for on the approval page, handed once to a receiver that says it can; one that cannot is never sent it; a printer
      that says it is not answering is shown as off on the islands list */
-  { await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'restart' } });
+  { await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'home', home: { line: 'Tea and toast' } } }); await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'restart' } });
     const r0 = await call('/api/printers/milkbar/next?can=off', { token: T }); await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'restart' } });
     const r1 = await call('/api/printers/milkbar/next?can=off%20restart&net=Home&prn=0', { token: T }), r2 = await call('/api/printers/milkbar/next?can=off%20restart&net=Home&prn=0', { token: T });
     const il = await call('/api/isles'), mine = (il.json.isles || []).find(i => i.id === 'milkbar'), pl = await call('/api/admin/printers', { key: KEY }), pr = (pl.json.printers || []).find(x => x.id === 'milkbar');
     await call('/api/printers/milkbar/next?net=Home&prn=1', { token: T });
-    check('RESTART reaches a receiver that can, once; one that cannot is never sent it; a printer not answering shows as off', !(r0.json && r0.json.restart) && r1.json && r1.json.restart === true && !(r2.json && r2.json.restart) && mine && mine.on === false && pr && /"p":0/.test(pr.net || ''), JSON.stringify([r0.status, r1.json, r2.status, mine, pr && pr.net])); }
+    check('RESTART reaches a receiver that can, once; one that cannot is never sent it; a printer not answering shows as off', !(r0.json && r0.json.restart) && r1.json && r1.json.restart === true && !(r2.json && r2.json.restart) && mine && mine.on === false && mine.line === 'Tea and toast' && pr && /"p":0/.test(pr.net || ''), JSON.stringify([r0.status, r1.json, r2.status, mine, pr && pr.net])); }
   /* a receiver that still asks under an id its printer no longer goes by is known by its token */
   { const o = await call('/api/printers/an-older-name/next', { token: T }), x = await call('/api/printers/an-older-name/next', { token: 'nope' });
     check('a receiver asking under an older id is known by its token, and by nothing else', (o.status === 200 || o.status === 204) && x.status === 401, JSON.stringify([o.status, x.status])); }

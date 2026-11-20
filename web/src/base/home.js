@@ -92,6 +92,15 @@
   /* or the island someone made their home on the islands page (pick): that one stays until they change it */
   var PLACE = store.get('da.pop.home', null); if (PLACE && !PLACE.pick && !(PLACE.at && Date.now() - PLACE.at < 30 * 864e5)) PLACE = null;
   var PH = (PLACE && PLACE.home) || {};
+  /* the home island's own home, as its keeper set it: its big cards in order (the first its main), which nines stand and which of their
+     cards, and its label. Kept with the pick, and fresh from the islands each visit */
+  var IH = PLACE && PLACE.isle && PLACE.isle !== 'novelglobal' ? PLACE.ihome || null : null;
+  var NINE_G = { utils: ['week', 'read', 'deck'], soon: ['soon'], dev: ['dev'] }, MAINS = ['radio', 'wish', 'research', 'zine', 'kit', 'space', 'portfolio'];
+  function nineOf(c) { for (var k in NINE_G) if (NINE_G[k].indexOf(c.g) >= 0) return k; return null; }
+  function isleOff(c, h) { h = h || IH; if (!h || c.id === 'intro') return false; if (h.main && MAINS.indexOf(c.id) >= 0 && h.main.indexOf(c.id) < 0) return true; var n = nineOf(c); if (h.nines && n && h.nines.indexOf(n) < 0) return true; return (h.off || []).indexOf(c.id) >= 0; }
+  function isleSort() { var h = IH; if (!h || (!h.main && !h.nines)) return; var at = {}; CARDS.forEach(function (c, i) { at[c.id] = i; });
+    var rank = function (c) { if (c.id === 'intro') return -1; var m = h.main ? h.main.indexOf(c.id) : -1; if (m >= 0) return m; var n = nineOf(c), q = n && h.nines ? h.nines.indexOf(n) : -1; return q >= 0 ? 20 + q : 10; };
+    CARDS.sort(function (a, b) { return rank(a) - rank(b) || at[a.id] - at[b.id]; }); }
   if (PLACE && PLACE.card) (function () { var at = CARDS.findIndex(function (c) { return c.id === 'portfolio'; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: 'pop-' + PLACE.id, pop: PLACE.id, size: 'small', title: String(PLACE.name || PLACE.id).toUpperCase().slice(0, 24), opens: 'pop', skin: 'play', art: 'slot', pal: 5, motion: 'shadow', where: [-37.8136, 144.9631] }); })();
   function lay(k) { var m = MINE && MINE[k]; return m != null && !(Array.isArray(m) && !m.length && k === 'order') ? m : PH[k]; }
   /* a set (the week ahead, the books, the decks) stands at one size: a size given to any of them is the size of all */
@@ -104,7 +113,7 @@
   /* an island's pack: with today's pass from an island that has chosen its cards, the home shows those (its own cards and pop-ups stay) */
   function atPack() { var ps = store.get('da.pass', null); if (!ps || !ps.island || ps.day !== new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' })) return null; var p = (PRN || []).filter(function (x) { return x.id === ps.island; })[0]; return p && Array.isArray(p.cards) ? p.cards : null; }
   function packOk(c, P) { return !P || P.indexOf(c.id) >= 0 || c.isle || c.pop || /^(pop-|isle|pl-)/.test(c.id); }
-  function view() { var P = atPack(), l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return x[0].id === 'intro' || (!x[0].off && packOk(x[0], P) && !(OPT.one && x[0].id === 'kit') && !((lay('hide') || []).indexOf(x[0].id) >= 0)); }), o = lay('order');
+  function view() { var P = atPack(), l = CARDS.map(function (c, i) { return [c, i]; }).filter(function (x) { return x[0].id === 'intro' || (!x[0].off && packOk(x[0], P) && !(OPT.one && x[0].id === 'kit') && !isleOff(x[0]) && !((lay('hide') || []).indexOf(x[0].id) >= 0)); }), o = lay('order');
     if (o && o.length) { var at = function (x) { var k = o.indexOf(x[0].id); return k < 0 ? 1000 + x[1] : k; }; l.sort(function (a, b) { return at(a) - at(b); }); }
     /* the opener stands first, always */
     l.sort(function (a, b) { return (b[0].id === 'intro') - (a[0].id === 'intro'); }); return l; }
@@ -606,7 +615,7 @@
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
-    col.innerHTML = colHTML(); devBar(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
+    isleSort(); col.innerHTML = colHTML(); devBar(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
   /* cart cards: today on each */
@@ -651,7 +660,7 @@
   function idleWatch() { if (!('IntersectionObserver' in window)) { $$('.hm-pics img[data-src]', col).forEach(function (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }); return; } if (IDLE) IDLE.disconnect(); if (WAKE) WAKE.disconnect();
     WAKE = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) return; var bx = e.target.querySelector('.hm-pics'); if (bx && bx._wake) { bx._wake.splice(0).forEach(function (f) { f(); }); } }); }, { threshold: 0.2 }); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); WAKE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (j.label) labelShow(j.label); if (j.notes) noteSet(j.notes); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (IH && IH.label && IH.label.on !== false) labelShow(JSON.stringify(isleLabel())); else if (j.label) labelShow(j.label); if (j.notes) noteSet(j.notes); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
     var o2 = { talk: j.smallTalk === true, find: j.smallFind === true, one: j.oneIsland !== false, stamp: j.jellyStamp === true, carts: j.cartridges === true }, re = o2.talk !== OPT.talk || o2.find !== OPT.find || o2.one !== OPT.one || o2.carts !== OPT.carts; OPT = o2; if (re) applyCards(null); }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -754,9 +763,10 @@
       v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
       tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
+  function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = PLACE.name || PLACE.isle; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + PLACE.isle; L.fk = 'i-' + PLACE.isle; return L; }
   function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
-    if (!force && (mem(localStorage, 'da.label.never') === '1' || mem(sessionStorage, 'da.label.seen') === '1')) return;
+    if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
     labelBuild(L, mem, null); }
   /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
@@ -770,14 +780,18 @@
     var go = mk('span', 'lbm-g', null, op); go.innerHTML = film ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5M10 5h9v9"/></svg>'; go.appendChild(D.createTextNode(film ? 'PLAY' : 'OPEN'));
     x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     op.addEventListener('click', function () { var r = m.getBoundingClientRect(); m.remove(); labelBuild(L, mem, r); });
-    x.addEventListener('click', function () { mem(sessionStorage, 'da.label.seen', '1'); m.classList.add('lbm-out'); setTimeout(function () { m.remove(); }, 260); });
-    D.body.appendChild(m); }
+    x.addEventListener('click', function () { mem(sessionStorage, 'da.label.seen' + (L.key || ''), '1'); m.classList.add('lbm-out'); setTimeout(function () { m.remove(); }, 260); });
+    D.body.appendChild(m); LBM.el = m; LBM.n = 0; }
+  /* the small label stands on the first page only: it goes as the cards move on, and comes back with the first page */
+  var LBM = { el: null, n: 0 };
+  function lbmAt(n) { var m = LBM.el; if (!m || !m.isConnected) { LBM.el = null; return; } if (n === LBM.n) return; LBM.n = n; m.classList.toggle('lbm-away', n > 0); m.inert = n > 0; }
+  D.addEventListener('scroll', function (e) { var t = e.target; if (LBM.el && t && t !== col && t.scrollLeft > 40) lbmAt(1); }, true);
   function labelBuild(L, mem, from) { var full = !!from;
     var mk = function (tag, cls, t, to) { var e = D.createElement(tag); if (cls) e.className = cls; if (t != null) e.textContent = t; if (to) to.appendChild(e); return e; };
     var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null, fv = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid') + (full ? ' lb-full' : '');
     if (full) { lb.style.setProperty('--ox', Math.round(from.left + from.width / 2) + 'px'); lb.style.setProperty('--oy', Math.round(from.top + from.height / 2) + 'px'); var cx = mk('button', 'lb-cl', null, lb); cx.type = 'button'; cx.setAttribute('aria-label', 'Close'); cx.title = 'Close'; cx.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; cx.addEventListener('click', function () { shutLb(); }); } lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
     var fit = function () { var px = full ? 15 : 13.5; c.style.fontSize = px + 'px'; while (px > (full ? 11.5 : 8) && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
-    var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen', '1'); if (nv.checked) mem(localStorage, 'da.label.never', '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
+    var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen' + (L.key || ''), '1'); if (nv.checked) mem(localStorage, 'da.label.never' + (L.key || ''), '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
         lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (full && !nv.checked) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
@@ -807,7 +821,11 @@
     c.addEventListener('pointercancel', drop); c.addEventListener('pointerleave', drop); c.addEventListener('contextmenu', function (e) { if (!own(e)) e.preventDefault(); });
     c.tabIndex = 0; c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === c) shutLb(); });
     /* the film: asked for when play is first pressed, then played here by its own few keys. No more of it today, or none there: no player */
-    var F = L.film; if (F && F.on && F.file) { fv = filmEl(F, '', fit); vid = fv.vid; if (F.side === 'above' || full) w.insertBefore(fv, c); else w.appendChild(fv); }
+    var F = L.film; if (F && F.on && F.file) { fv = filmEl(F, L.fk || '', fit); vid = fv.vid; if (F.side === 'above' || full) w.insertBefore(fv, c); else w.appendChild(fv); }
+    var sw0 = null; lb.addEventListener('wheel', function (e) { if (Math.abs(e.deltaY) + Math.abs(e.deltaX) > 24) shutLb(); }, { passive: true });
+    lb.addEventListener('touchstart', function (e) { var t = e.touches[0]; sw0 = t && e.touches.length === 1 ? [t.clientX, t.clientY] : null; }, { passive: true });
+    lb.addEventListener('touchend', function (e) { var t = e.changedTouches[0]; if (!sw0 || !t) return; var dx = t.clientX - sw0[0], dy = t.clientY - sw0[1]; sw0 = null; if (Math.max(Math.abs(dx), Math.abs(dy)) < 60) return; shutLb(); if (dy < 0 && -dy > Math.abs(dx)) col.scrollBy({ top: innerHeight, behavior: 'smooth' }); }, { passive: true });
+    var esc3 = function (e) { if (/^(ArrowDown|ArrowUp|PageDown|PageUp|ArrowLeft|ArrowRight)$/.test(e.key) && D.getElementById('lb') === lb) shutLb(); }; D.addEventListener('keydown', esc3);
     D.addEventListener('keydown', esc2); D.body.appendChild(lb);
     /* opened from the small card: the film starts as it opens */
     if (full && fv) { var pb = fv.querySelector('.lb-vp'); if (pb) pb.click(); } if (full) setTimeout(function () { try { (fv ? fv.querySelector('.lb-vp') : c).focus({ preventScroll: true }); } catch (e) { /* no focus */ } }, 60);
@@ -1119,7 +1137,7 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
-    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); }
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); } lbmAt(n);
     if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || nr.bottom < vh * 0.4 || nr.top > vh * 0.6) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
@@ -1523,17 +1541,47 @@
   /* a picture made small enough to send: at most 1600 on its long side, as a JPEG (which also drops where it was taken) */
   function shrinkPic(file) { return new Promise(function (ok, no) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { var k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), c = D.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(function (b) { if (b) ok(b); else no(new Error('shrink')); }, 'image/jpeg', 0.84); }; im.onerror = no; im.src = u; }); }
   /* an island keeper's own controls: their key (from the welcome slip) opens their one island, nothing else */
+  /* an island's home, as its keeper sets it: the big cards in the order tapped (the first is the main); each nine on or off, and with one
+     open, its cards each on or off; the label a first visit meets there. Each change saves by itself, the label with SAVE */
+  var HK = { open: null };
+  var cardName = function (c) { var t = SMALL_T[c.id] || c.title || c.id; return String(t).toUpperCase(); };
+  function homeKeep(p) { var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); }), on = h.main || mains, ns = h.nines || ['utils', 'soon', 'dev'];
+    var grid = function (k) { var cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<svg viewBox="0 0 24 24" aria-hidden="true">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var c = cs[i], off = !c || (h.off || []).indexOf(c.id) >= 0; return '<rect x="' + (3 + (i % 3) * 6.5) + '" y="' + (3 + Math.floor(i / 3) * 6.5) + '" width="5" height="5" rx=".8"' + (off ? ' fill="none" stroke="currentColor" stroke-width="1"' : '') + '/>'; }).join('') + '</svg>'; };
+    var L = h.label || {}, ln = L.links || [], o9 = HK.open && ns.indexOf(HK.open) >= 0 && HK.open !== 'dev' ? HK.open : null;
+    return '<p class="hm-h" title="The big cards here, in the order tapped: the first is the main. Below, each nine on or off; an open nine shows its cards to leave out">HOME</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k === 0 ? '<i class="hm-first" aria-label="Main"></i>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
+      '<div class="hm-row hm-nines">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<button class="hm-btn hm-nine' + (i >= 0 ? ' on' : '') + (o9 === k ? ' open' : '') + '" data-hnine="' + k + '" aria-pressed="' + (i >= 0) + '" title="' + esc(cs.slice(0, 9).map(cardName).join(' · ')) + '">' + grid(k) + (i >= 0 ? '<b>' + (i + 1) + '</b>' : '') + '</button>'; }).join('') +
+      (h.main || h.nines || (h.off || []).length ? '<button class="hm-btn" data-hreset title="The site’s own order">RESET</button>' : '') + '</div>' +
+      (o9 ? '<div class="hm-row hm-n9">' + CARDS.filter(function (c) { return nineOf(c) === o9; }).map(function (c) { var off = (h.off || []).indexOf(c.id) >= 0; return '<button class="hm-btn' + (off ? '' : ' on') + '" data-hoff="' + c.id + '" aria-pressed="' + !off + '">' + esc(cardName(c)) + '</button>'; }).join('') + '</div>' : '') +
+      '<form class="hm-lnf" title="A short line under its name in the islands list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
+      '<p class="hm-h" title="What a first visit meets here. A blank line between paragraphs; past the first, they wait under More">LABEL</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
+      [0, 1, 2].map(function (i) { var k = ln[i] || {}; return '<div class="hm-row hm-lbl"><input name="lt' + i + '" maxlength="60" autocomplete="off" placeholder="LINK" aria-label="A link’s words" value="' + esc(k.t || '') + '"><input name="lu' + i + '" type="url" maxlength="300" autocomplete="off" placeholder="https://" aria-label="Where it goes" value="' + esc(k.u || '') + '"></div>'; }).join('') +
+      '<div class="hm-row"><button class="hm-btn">SAVE</button>' + (L.title || L.body ? '<label class="hm-say" title="Shown to a first visit here"><input type="checkbox" name="on"' + (L.on !== false ? ' checked' : '') + '> ON</label>' : '') + (L.film ? '<span class="hm-say" title="A film, given by novel.global">FILM</span>' : '') + '<span class="hm-say" data-lbs></span></div></form>'; }
+  function homeWire(box, p, post) { if (p.home === undefined) return; var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); });
+    var set = function (o) { beep(550, 0.05); post({ home: o }); };
+    $$('[data-hmain]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.main || mains).slice(), i = l.indexOf(b.dataset.hmain); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hmain); set({ main: l }); }); });
+    $$('[data-hnine]', box).forEach(function (b) { b.addEventListener('click', function () { var k = b.dataset.hnine, l = (h.nines || ['utils', 'soon', 'dev']).slice(), i = l.indexOf(k);
+      if (i < 0) { l.push(k); HK.open = k; return set({ nines: l }); } if (HK.open !== k && k !== 'dev') { HK.open = k; return post({}); } l.splice(i, 1); HK.open = null; set({ nines: l }); }); });
+    $$('[data-hoff]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.off || []).slice(), i = l.indexOf(b.dataset.hoff); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hoff); set({ off: l }); }); });
+    var rs = $('[data-hreset]', box); if (rs) rs.addEventListener('click', function () { HK.open = null; set({ main: null, nines: null, off: [] }); });
+    var lf = $('.hm-lnf', box); if (lf) lf.addEventListener('submit', function (e) { e.preventDefault(); set({ line: lf.l.value.replace(/\s+/g, ' ').trim() }); });
+    var f = $('.hm-lbf', box); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); var links = [0, 1, 2].map(function (i) { return { t: f['lt' + i].value.trim(), u: f['lu' + i].value.trim() }; }).filter(function (k) { return k.t && /^https:\/\//.test(k.u); });
+      $('[data-lbs]', f).textContent = '· · ·'; post({ home: { label: { on: f.on ? f.on.checked : true, title: f.t.value.trim(), body: f.b.value.trim(), links: links } } }); }); }
+  /* an island's joins in a line: where its prints go, and whose cards it shows */
+  function joinSay(j) { var nm = function (id) { var a = (j.isles || []).filter(function (x) { return x.id === id; })[0]; return String(a ? a.name : id).toUpperCase(); };
+    return (j.to.length ? (j.only ? 'ONLY → ' : '→ ') + j.to.map(nm).join(' · ') : '') + (j.mirror ? (j.to.length ? ' · ' : '') + '⟲ ' + nm(j.mirror) : '') || 'NONE'; }
   function keeperIn(box, key, isle) {
     key = key || store.get('da.hm.key', ''); if (!key || !box) return; var own = key.indexOf('.') < 0;
     var call = function (o) { return fetch('/api/island' + (isle ? '?id=' + encodeURIComponent(isle) : ''), Object.assign({ headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' } }, o || {})).then(function (r) { if (r.status === 401) { if (own) store.set('da.hm.key', ''); throw new Error('key'); } return r.json(); }); };
     var post = function (o) { return call({ method: 'POST', body: JSON.stringify(o) }).then(fill); };
     var GAPN = { '': 'SITE', 0: 'OFF', 30: '30 S', 60: '1 M', 120: '2 M', 300: '5 M', 600: '10 M' };
-    var fill = function (p) { box.innerHTML = '<p class="hm-h">ISLAND' + (p.number ? ' · ' + p.number : '') + '</p><ol class="hm-list hm-isles"><li class="' + (p.ready ? 'on' : '') + '"><i></i><span>' + esc(p.name) + ' · ' + p.queued + ' WAITING · ' + p.printed + ' PRINTED</span></li></ol>' +
+    var fill = function (p) { box.innerHTML = '<p class="hm-h">ISLAND' + (p.number ? ' · ' + p.number : '') + '</p><ol class="hm-list hm-isles"><li class="' + (p.ready ? 'on' : '') + '"><i></i><span>' + esc(p.name) + (p.ghost ? ' · GHOST' : '') + ' · ' + p.queued + ' WAITING · ' + p.printed + ' PRINTED</span></li></ol>' +
       '<p class="hm-h">CONNECTIONS</p><div class="hm-row">' + (p.all || []).map(function (k) { return '<button class="hm-btn' + ((p.links || []).indexOf(k) >= 0 ? ' on' : '') + '" data-ln="' + k + '" aria-pressed="' + ((p.links || []).indexOf(k) >= 0) + '">' + ({ wish: 'W.I.S.H.', radio: 'RADIO', art: 'ART', words: 'WORDS', cards: 'CARDS', codes: 'CODES' }[k] || k.toUpperCase()) + '</button>'; }).join('') + '</div>' +
+      (p.joins ? '<p class="hm-h" title="Its prints echoed to other islands, or sent only there; another island’s cards mirrored here">JOINS</p><div class="hm-row"><span class="hm-say" style="margin:0">' + esc(joinSay(p.joins)) + '</span>' + (own ? '<button class="hm-btn" data-twin title="This island’s paper, its joins and its printer">TWIN</button>' : '') + '</div>' : '') +
       '<p class="hm-h" title="Up to ten pictures on its card">PICTURES</p><div class="hm-pgrid">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { var q = (p.pics || []).filter(function (x) { return x.slot === n; })[0]; return '<button class="hm-pslot' + (q ? ' on' : '') + '" data-ps="' + n + '" aria-label="' + (q ? 'Take this picture away' : 'Add a picture') + '">' + (q ? '<img alt="" src="' + esc(q.url) + '">' : '+') + '</button>'; }).join('') + '</div>' +
       '<div class="hm-row">' + [2, 3, 5, 8].map(function (n) { return '<button class="hm-btn' + ((p.speed || 2) === n ? ' on' : '') + '" data-sp="' + n + '">' + n + ' S</button>'; }).join('') + '</div>' +
       '<p class="hm-h" title="Plays picked for this island: they stand together in the showcase under its name">PICKS</p><form class="hm-row hm-pk"><input class="hm-pkq" maxlength="24" autocomplete="off" enterkeyhint="search" placeholder="name or PL-code" aria-label="Find a play to pick"></form><ol class="hm-list hm-pkl"></ol>' +
       '<p class="hm-h" title="The cards a phone sees here, with a pass from this island">CARDS</p><div class="hm-row">' + (p.packs || []).map(function (k) { return '<button class="hm-btn' + (p.pack === k ? ' on' : '') + '" data-pack="' + k + '" aria-pressed="' + (p.pack === k) + '">' + k.toUpperCase() + '</button>'; }).join('') + '</div>' +
+      (p.home !== undefined ? homeKeep(p) : '') +
       '<p class="hm-h" title="How passes are given here: on the touch screen, printed, for finishing an intro, at random with a print">GIVE PASSES</p><div class="hm-row">' + (p.allWays || []).map(function (w) { var on = (p.ways || ['touch', 'print']).indexOf(w) >= 0; return '<button class="hm-btn' + (on ? ' on' : '') + '" data-way="' + w + '" aria-pressed="' + on + '">' + w.toUpperCase() + '</button>'; }).join('') + '</div>' +
       '<p class="hm-h" title="What stamps here are for: a class roll, or a shop card">USE</p><div class="hm-row">' + [''].concat(p.uses || []).map(function (k) { var on = (p.use ? p.use.kind : '') === k; return '<button class="hm-btn' + (on ? ' on' : '') + '" data-use="' + k + '" aria-pressed="' + on + '">' + (k ? k.toUpperCase() : 'NONE') + '</button>'; }).join('') + '</div>' +
       (p.use ? '<p class="hm-h" title="Stamps to a full card, or to count as there">EVERY</p><div class="hm-row">' + (p.everys || []).map(function (n) { var on = p.use.every === n; return '<button class="hm-btn' + (on ? ' on' : '') + '" data-every="' + n + '" aria-pressed="' + on + '">' + n + '</button>'; }).join('') + '</div>' : '') +
@@ -1543,7 +1591,7 @@
       '<p class="hm-h">PASSES</p><div class="hm-row"><button class="hm-btn" data-pass title="Passes for today' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'PRINT</button></div>' +
       '<div class="hm-row"><button class="hm-btn" data-rn>RENAME</button>' + (own ? '<button class="hm-btn" data-out title="Forget this island’s key on this phone">FORGET</button>' : '') + '</div>';
       /* only what this island's build holds: the rest is not shown at all (the site refuses it too) */
-      var can = p.build || null; if (can) { var PART = { CONNECTIONS: 'links', PICTURES: 'pics', PICKS: 'picks', CARDS: 'cards', 'GIVE PASSES': 'passes', USE: 'use', EVERY: 'use', ROLL: 'use', GAP: 'gap', GANG: 'gang', PASSES: 'passes' }, cur = null;
+      var can = p.build || null; if (can) { var PART = { HOME: 'home', LABEL: 'home', JOINS: 'joins', CONNECTIONS: 'links', PICTURES: 'pics', PICKS: 'picks', CARDS: 'cards', 'GIVE PASSES': 'passes', USE: 'use', EVERY: 'use', ROLL: 'use', GAP: 'gap', GANG: 'gang', PASSES: 'passes' }, cur = null;
         [].slice.call(box.children).forEach(function (n) { if (n.classList.contains('hm-h')) cur = PART[n.textContent.trim()] || null; if (n.querySelector('[data-rn]')) cur = null; if (cur && can.indexOf(cur) < 0) n.remove(); });
         if (can.indexOf('name') < 0) { var rn0 = $('[data-rn]', box); if (rn0) rn0.remove(); } }
       $$('[data-pack]', box).forEach(function (b) { b.addEventListener('click', function () { post({ pack: b.dataset.pack }); beep(550, 0.05); }); });
@@ -1558,6 +1606,8 @@
         if (b.classList.contains('on')) { if (confirm('Take this picture off your card?')) fetch('/api/island/pics/' + n, { method: 'DELETE', headers: { authorization: 'Bearer ' + key } }).then(function () { return call(); }).then(fill); return; }
         filePick(false, function (file) { b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n, { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); }); });
       $$('[data-sp]', box).forEach(function (b) { b.addEventListener('click', function () { call({ method: 'POST', body: JSON.stringify({ speed: +b.dataset.sp }) }).then(fill); beep(550, 0.05); }); });
+      homeWire(box, p, post);
+      var tw = $('[data-twin]', box); if (tw) tw.addEventListener('click', function () { location.href = '/twin'; });
       var pb = $('[data-pass]', box); if (pb) pb.addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       /* PICKS: what this island holds up, and a search through everything made to add to it */
       var pkl = $('.hm-pkl', box), mine = [], found = [];
@@ -1589,7 +1639,9 @@
 
   /* ───────── the printers: who is listening, for the radar keys ───────── */
   var PRN = [], PRN_AT = 0;
-  function partners(force) { if (!force && Date.now() - PRN_AT < 60e3) return Promise.resolve(PRN); return fetch('/api/partners').then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) { var pk0 = JSON.stringify(atPack()); PRN = j.partners || []; PRN_AT = Date.now(); radars(); if (JSON.stringify(atPack()) !== pk0) applyCards(null); return PRN; }).catch(function () { return PRN; }); }
+  function partners(force) { if (!force && Date.now() - PRN_AT < 60e3) return Promise.resolve(PRN); return fetch('/api/partners').then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) { var pk0 = JSON.stringify(atPack()); PRN = j.partners || []; PRN_AT = Date.now(); radars(); isleFresh(); if (JSON.stringify(atPack()) !== pk0) applyCards(null); return PRN; }).catch(function () { return PRN; }); }
+  function isleFresh() { if (!PLACE || !PLACE.isle || PLACE.isle === 'novelglobal') return; var p = PRN.filter(function (x) { return x.id === PLACE.isle; })[0]; if (!p) return; var h = p.home || null;
+    if (JSON.stringify(h) === JSON.stringify(IH)) return; IH = h; PLACE.ihome = h; store.set('da.pop.home', PLACE); applyCards(null); }
   function turn(el, dir, mid) { if (RM.matches || !el.animate) { mid(); return; } var p = 'perspective(1400px) rotateY(';
     var a = el.animate([{ transform: p + '0deg)' }, { transform: p + (dir * -90) + 'deg)' }], { duration: 170, easing: 'cubic-bezier(.5,0,.9,.6)' });
     var done = false, half = function () { if (done) return; done = true; mid(); el.animate([{ transform: p + (dir * 90) + 'deg)' }, { transform: p + '0deg)' }], { duration: 210, easing: 'cubic-bezier(.1,.4,.4,1)' }); }; a.onfinish = half; setTimeout(half, 220); }
@@ -1827,6 +1879,7 @@
         mods.map(function (m) { return '<button type="button" class="mn-isl" data-isle="' + esc(m.id) + '" aria-pressed="' + (ISLE === m.id) + '" title="In this island\'s gang: you help run it">GANG · ' + esc(String(m.name || m.id).toUpperCase()) + (m.number ? ' · ' + (+m.number) : '') + '</button>'; }).join('') +
         (!ikey && !mods.length ? '<p class="mn-say" title="The keeper\'s key comes on an island\'s welcome slip; a keeper adds your code to their gang">NO KEEPER · NO GANG</p>' : '') +
         '<div class="mn-keeper"></div>' +
+        (ikey ? '' : '<button type="button" class="mn-isl" data-ghost title="An island with no printer yet: learn, play and build on its twin, then add a printer">GHOST</button>') +
         (ikey ? '' : '<details class="mn-sub"><summary title="The key from an island\'s welcome slip">KEY</summary><form class="mn-row" data-f="key"><input name="k" maxlength="64" autocomplete="off" spellcheck="false" placeholder="KEY" aria-label="Island key"><button>OPEN</button></form></details>'); };
     var draw = function () { load();
       var isN = (ikey ? 1 : 0) + mods.length;
@@ -1845,6 +1898,7 @@
       if (b.dataset.a === 'show') { SHOWA = !SHOWA; return draw(); }
       if (b.dataset.a === 'rand') { if (an != null && !confirm('Give this code a new animal?')) return; beep(660, 0.05); NG.animalSet(crypto.getRandomValues(new Uint8Array(1))[0] % A.length).then(function () { SHOWA = true; draw(); }, function () { draw(); }); return; }
       if (b.dataset.isle) { ISLE = ISLE === b.dataset.isle ? null : b.dataset.isle; beep(520, 0.05); return draw(); }
+      if (b.hasAttribute('data-ghost')) { location.href = '/twin'; return; }
       if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
       if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
       if (b.dataset.main) { MINE = MINE || {}; MINE.main = +b.dataset.main; return keep(null); }
