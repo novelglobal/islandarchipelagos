@@ -2242,12 +2242,40 @@ if (run('bench')) try {
   check('bench: FLASH walks DEVICE, OS (the latest release), STORAGE, SETTINGS, WRITE, VERIFY; the SD fills as it is written, each step done keeps a dot; the SD reads its version, the settings print on the twin, and the Wi-Fi is never sent',
     /^DEVICE,OS,STORAGE,SETTINGS,WRITE$/.test(fl.steps.replace(/-/g, '')) && fl.os === 'ISLAND OS v1.1.1' && fl.sd === 'SD 32 GB' && /^WRITING \d+% · .* · 20 MB\/S$/.test(fl.mid) && /^FLASHED · v1\.1\.1/.test(fl.end) && fl.fill > 0 && fl.dots === 5 && fl.fv === 'v1.1.1' && fl.tag === 'FLASH' && / · FLASHED$/.test(fl.sum)
     && fl0 && fl.open && JSON.stringify(bk.f) === '[["p4","v1.1.1","bench-bb"]]' && posts.length > 0 && !posts.some(p => /reefnet|secret12/.test(p)), JSON.stringify({ fl, f: bk.f, posts: posts.length }));
-  /* written, the printer glows: a touch is its first print, and the roll is shorter by what came out */
+  /* written, the Pi waits to start: a touch powers it on, its log runs (a tap skips), its test strip and setup slip print; then its Wi-Fi, then its pair code. The rite lights as it goes */
+  const rite = () => page.evaluate(() => [...document.querySelectorAll('#rite .st')].map(g => g.classList.contains('lit') ? 'L' : g.classList.contains('now') ? 'N' : '-').join(''));
+  const nxt = () => page.evaluate(() => [...document.querySelectorAll('.bench .pt.want')].map(g => g.getAttribute('class')).join());
+  const rt0 = await rite(), n0 = await nxt();
+  await tap('.bench .pt.want.boot .bk'); await sleep(350);
+  const bt0 = await page.evaluate(() => ({ log: !document.querySelector('#bnlog').hidden, beat: !!document.querySelector('#rite .ik.beat'), run: document.querySelectorAll('.bench .la.run').length, red: document.querySelectorAll('.bench .leds .lp').length, want: document.querySelectorAll('.bench .pt.want').length }));
+  const skip = async () => { await page.locator('#bnlog').click(); await sleep(1800); };
+  await skip();
+  const logOf = () => page.evaluate(() => ({ lines: [...document.querySelectorAll('#bnlog li')].map(l => l.textContent), tags: [...document.querySelectorAll('#roll .slip')].map(t => t.getAttribute('aria-label')).join('|'), top: Math.round(document.querySelector('.stage').getBoundingClientRect().top), wide: document.documentElement.scrollWidth <= innerWidth }));
+  const bt1 = await logOf(), n1 = await nxt();
+  await tap('.bench .pt.want.wifi .bk'); await sleep(300); await skip();
+  const bt2 = await logOf(), n2 = await nxt(); await sleep(4500); const back = await page.evaluate(() => { const r = document.querySelector('.bench .pt.want').getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), innerHeight]; });
+  await tap('.bench .pt.want.pair .bk'); await sleep(400); const pc = await page.evaluate(() => ({ v: document.querySelector('#pc').value, open: document.querySelector('#bd').open, add: document.querySelector('#pf button').classList.contains('want') }));
+  await tap('#pf button'); await sleep(300); await skip(); await sleep(700);
+  const bt3 = await logOf(), n3 = await nxt(), rt3 = await rite(), o3 = await page.evaluate(async () => (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench.o);
+  check('boot: written, the Pi is what it wants; a touch powers it on (red light, the other flickering, the muse beating), its log runs as the kit logs it, a tap skips; its test strip and setup slip print, then on Wi-Fi its pair code, which the Pi hands to ADD; ADD pairs it here only; kept with the ghost; the rite lit to BOOT, HOME next',
+    rt0 === 'LLN--' && n0 === 'pt want boot' && bt0.log && bt0.beat && bt0.run === 1 && bt0.red === 1 && !bt0.want
+    && /^the setup Wi-Fi is open: .+ SETUP$/.test(bt1.lines[bt1.lines.length - 1]) && bt1.lines.includes('island v1.1.1: bench-bb, not set up yet') && /^Setup Wi-Fi BENCH BB SETUP, slip key [a-z0-9]{10}\|Test strip\|/.test(bt1.tags) && n1 === 'pt want wifi' && bt1.wide
+    && bt2.lines.some(l => /^pairing code [a-z0-9]{4}-[a-z0-9]{4} for https:\/\/novel\.global$/i.test(l)) && /^Pair code [A-Z0-9]{4}-[A-Z0-9]{4}\|On Wi-Fi /.test(bt2.tags) && n2 === 'pt want pair'
+    && pc.open && pc.add && bt2.tags.indexOf('Pair code ' + pc.v) === 0
+    && /^Paired, ready to print\|/.test(bt3.tags) && n3 === '' && JSON.stringify(o3) === '["p4","v1.1.1",3]' && rt3 === 'LLLN-', JSON.stringify({ rt0, n0, bt0, bt1, n1, bt2, n2, pc, bt3, n3, o3, rt3 }));
+  /* while a slip feeds the page shows the printer; after, it comes back */
+  check('boot: each slip is seen as it comes out: the page goes to the printer, then back to the Pi that waits; the page never wider than the phone', bt3.wide && bt2.wide && Math.abs(bt2.top) < 40 && back[0] >= 0 && back[1] <= back[2], JSON.stringify({ t1: bt1.top, t2: bt2.top, t3: bt3.top, back }));
+  /* on, nothing glows on the bench (the rite's HOME is next); a touch on the printer is a print, and the roll is shorter by what came out */
   const r0 = await page.evaluate(() => ({ next: [...document.querySelectorAll('.bench .pt.want')].map(g => g.getAttribute('class')).join(), roll: document.querySelector('.bench .roll title').textContent, r: +document.querySelector('.bench .roll .rl').getAttribute('r') }));
-  await tap('.bench .pt.want.done .bk'); await sleep(1400);
+  await page.evaluate(() => [...document.querySelectorAll('.bench .pt')].find(g => /^TM-T88V/.test(g.querySelector('title').textContent)).querySelector('.bk').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await sleep(1400);
   const r1 = await page.evaluate(async () => ({ tags: [...document.querySelectorAll('#roll .slip .tag')].map(t => t.textContent).join(), r: +document.querySelector('.bench .roll .rl').getAttribute('r'), m: (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench.m }));
-  check('bench: written, the printer is what it wants: a touch makes its first print; its 80 m roll is drawn on it and gets smaller with each print, kept with the ghost',
-    r0.next === 'pt want done' && /^80 m of paper left · about 500 receipts$/.test(r0.roll) && r0.r < 12 && /TEST/.test(r1.tags) && r1.m > 20 && r1.m < 400, JSON.stringify({ r0, r1 }));
+  check('bench: on, a touch on the printer makes a print; its 80 m roll is drawn on it and gets smaller with each print, kept with the ghost',
+    r0.next === '' && /^\d\d m of paper left · about \d+ receipts$/.test(r0.roll) && r0.r < 12 && /^TEST/.test(r1.tags) && r1.m > 100 && r1.m < 1500, JSON.stringify({ r0, r1 }));
+  /* OFFLINE: the twin stops asking the site; back, it asks again */
+  let asks = 0; page.on('request', q => { if (/\/api\/twin$/.test(q.url()) && q.method() === 'GET') asks++; });
+  await tap('#body'); const off = await page.evaluate(() => ({ p: document.querySelector('#body').getAttribute('aria-pressed'), w: document.querySelector('#bodyw').textContent })); asks = 0; await sleep(6000); const offAsks = asks;
+  await tap('#body'); await sleep(1500);
+  check('offline: the light opens up, OFFLINE, and the twin asks the site nothing; tapped again it asks', off.p === 'true' && off.w === 'OFFLINE' && offAsks === 0 && asks > 0, JSON.stringify({ off, offAsks, asks }));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }
 

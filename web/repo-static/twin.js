@@ -7,10 +7,12 @@
   var store = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   /* a key in the address (#k=...) is kept on this screen and taken out of the address */
-  var hk = /(?:^#|&)k=([A-Za-z0-9_-]{16,64})/.exec(location.hash); if (hk) { store.set('da.hm.key', hk[1]); history.replaceState(null, '', location.pathname); }
-  var KEY = store.get('da.hm.key', ''), T = null, ISLE = null, ROLL = store.get('da.twin.roll', []) || [], SEEN = {}, RADIO = store.get('da.twin.radio', []) || [], OUT = null, timer = 0;
-  var api = function (path, o) { o = o || {}; o.headers = Object.assign({ authorization: 'Bearer ' + KEY, 'content-type': 'application/json' }, o.headers || {});
-    return fetch(path, o).then(function (r) { if (r.status === 401) { KEY = ''; store.set('da.hm.key', ''); gate('LOCKED'); throw new Error('key'); } return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; throw e; } return j; }); }); };
+  var hk = /(?:^#|&)k=([A-Za-z0-9_-]{16,64})/.exec(location.hash); if (hk) { store.set('da.hm.key', hk[1]); history.replaceState(null, '', location.pathname + location.search); }
+  /* a real island's TEST opens on the twin by the real key, with ?isle=test (it never opens the real one); its paper kept apart */
+  var TESTQ = /[?&]isle=test/.test(location.search), TS = TESTQ ? '.test' : '';
+  var KEY = store.get('da.hm.key', ''), T = null, ISLE = null, ROLL = store.get('da.twin.roll' + TS, []) || [], SEEN = {}, RADIO = store.get('da.twin.radio' + TS, []) || [], OUT = null, timer = 0;
+  var api = function (path, o) { o = o || {}; if (TESTQ && /^\/api\/(twin|island)/.test(path)) path += (path.indexOf('?') < 0 ? '?' : '&') + 'isle=test'; o.headers = Object.assign({ authorization: 'Bearer ' + KEY, 'content-type': 'application/json' }, o.headers || {});
+    return fetch(path, o).then(function (r) { if (r.status === 401) { if (!TESTQ) { KEY = ''; store.set('da.hm.key', ''); } gate('LOCKED'); throw new Error('key'); } return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || r.status); e.status = r.status; throw e; } return j; }); }); };
 
   /* ───────── ESC/POS to dots: what a TM-T88V would put on paper ───────── */
   var b64 = function (s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
@@ -81,16 +83,20 @@
     put(lines[0]); o.push(0x1B, 0x45, 0x00); lines.slice(1).forEach(put); o.push(0x1B, 0x61, 0x00, 0x1B, 0x64, 0x04, 0x1D, 0x56, 0x42, 0x00); return new Uint8Array(o); }
 
   /* ───────── the roll: the newest slip under the printer, fed out at the printer's pace ───────── */
-  var lamp = function (on) { var l = $('#lamp'); if (l) l.setAttribute('fill', on ? '#E2552E' : '#4A4843'); };
+  var LAMP = false, RM = matchMedia('(prefers-reduced-motion: reduce)');
+  var lamp = function (on) { LAMP = on; var l = $('#lamp'); if (l) l.setAttribute('fill', on ? '#E2552E' : '#4A4843'); $$('.bench .la').forEach(function (a) { a.classList.toggle('rd', on); }); };
+  var look = function (e, at) { if (e) e.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: at || 'nearest' }); };
   function slipEl(cv, tag, feed) { var s = D.createElement('div'); s.className = 'slip'; s.appendChild(cv); if (tag) { var t = D.createElement('span'); t.className = 'tag'; t.textContent = tag; s.appendChild(t); }
     var roll = $('#roll'); roll.insertBefore(s, roll.firstChild); $('#none').hidden = true;
     if (feed && !matchMedia('(prefers-reduced-motion: reduce)').matches) { var h = s.getBoundingClientRect().height, ms = Math.max(500, Math.min(4000, cv.height / 0.6)); s.style.transitionDuration = ms + 'ms'; s.style.height = '0px'; lamp(true);
       requestAnimationFrame(function () { requestAnimationFrame(function () { s.style.height = h + 'px'; }); }); setTimeout(function () { s.style.height = ''; lamp(false); }, ms + 60); }
     while (roll.children.length > 24) roll.removeChild(roll.lastChild); return s; }
   function keep(id, cv, tag) { var u = ''; try { u = cv.toDataURL('image/png'); } catch (e) { u = ''; } if (!u) return; ROLL.unshift({ id: id, u: u, tag: tag || '' }); ROLL = ROLL.slice(0, 12);
-    while (!store.set('da.twin.roll', ROLL) && ROLL.length > 1) ROLL.pop(); }
-  function shown(id, cv, tag, feed, kept) { if (SEEN[id]) return; SEEN[id] = 1; slipEl(cv, tag, feed); if (kept) keep(id, cv, tag); }
-  function radio(line, from) { RADIO.unshift({ t: String(line).slice(0, 240), f: from || '' }); RADIO = RADIO.slice(0, 40); store.set('da.twin.radio', RADIO); radioDraw(); }
+    while (!store.set('da.twin.roll' + TS, ROLL) && ROLL.length > 1) ROLL.pop(); }
+  function shown(id, cv, tag, feed, kept, label) { if (SEEN[id]) return; SEEN[id] = 1; var e = slipEl(cv, tag, feed); e.setAttribute('role', 'img'); e.setAttribute('aria-label', label || tag || 'A slip'); if (kept) keep(id, cv, tag); }
+  var BACK = 0;
+  function seen(cv) { look($('.stage'), 'start'); clearTimeout(BACK); BACK = setTimeout(function () { if (BT.run) return; look($('.bench .pt.want') || (WANT && WANT.k === 'done' ? $('#rite') : null) || $('#bnlog'), 'center'); }, (RM.matches ? 300 : Math.max(500, Math.min(4000, cv.height / 0.6))) + 900); }
+  function radio(line, from) { RADIO.unshift({ t: String(line).slice(0, 240), f: from || '' }); RADIO = RADIO.slice(0, 40); store.set('da.twin.radio' + TS, RADIO); radioDraw(); }
   function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
     $('#rs').textContent = T && T.mesh ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; }
   /* what this screen kept, first, so the roll is there with no signal */
@@ -113,13 +119,13 @@
   function bodyDraw() { if (!T) return; var w = T.paired ? 'PI' : OUT ? OUT.name : 'GHOST', on = T.paired ? T.ready : true;
     $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + T.paper + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
-    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#pf').hidden = !T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
+    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
   function take(j) { var cv = j.escpos ? draw(j.escpos, T.paper) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), T.paper) : null;
     if (j.mesh) radio(j.mesh, 'out');
     if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
     if (OUT && j.escpos) return OUT.write(b64(j.escpos)).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
     return Promise.resolve(); }
-  function tick() { clearTimeout(timer); if (!KEY) return;
+  function tick() { clearTimeout(timer); if (!KEY || (OFF && T)) return;
     api('/api/twin' + (OUT ? '?usb=1' : '')).then(function (j) { var first = !T; T = j; $('#nm').textContent = j.name; D.title = j.name + ' · Twin'; bodyDraw(); joinsDraw(); benchLoad(j);
       var p = Promise.resolve(); (j.took || []).forEach(function (x) { p = p.then(function () { return take(x); }); });
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
@@ -127,11 +133,11 @@
         var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv) return; shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : '', !first, false); });
       if (!$('#roll').children.length) $('#none').hidden = false;
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
-      .then(function () { timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); }); }
+      .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
   D.addEventListener('visibilitychange', function () { if (!D.hidden && T) tick(); });
 
   /* ───────── joins: echo, only there, mirror ───────── */
-  function island() { return api('/api/island').then(function (p) { ISLE = p; joinsDraw(); }, function () { ISLE = { build: [] }; joinsDraw(); }); }
+  function island() { return api('/api/island').then(function (p) { ISLE = p; joinsDraw(); riteDraw(); }, function () { ISLE = { build: [] }; joinsDraw(); riteDraw(); }); }
   function joinsSave(j) { $('#jsay').textContent = '· · ·'; return api('/api/island', { method: 'POST', body: JSON.stringify({ joins: j }) }).then(function (p) { ISLE = p; $('#jsay').textContent = 'SAVED'; tick(); joinsDraw(); }, function (e) { $('#jsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }
   function joinsDraw() { if (!T) return; var J = (ISLE && ISLE.joins) || null, can = !!J;
     var to = J ? J.to : (T.joins.to || []).map(function (x) { return x.id; }), only = J ? J.only : T.joins.only, mir = J ? J.mirror : T.joins.mirror && T.joins.mirror.id;
@@ -254,8 +260,10 @@
     var ch = ofKind('charger')[0]; if (ch) { var bt = portIds(ch, 'store').filter(function (s) { return !inUse(s); })[0];
       if (bt && P.need && P.kept < P.need * (24 - P.sunH)) { var have = BN.p.filter(function (y) { return PART[y[1]].kind === 'battery' && !portIds(y, 'store').some(inUse); })[0];
         return have ? { k: 'join', a: portIds(have, 'store')[0], b: bt } : { k: 'part', ids: idsOf('battery'), near: ch[0], port: bt }; } }
-    var sd2 = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0]; if (sd2 && !flashedOf(sd2[0])) return { k: 'flash', iid: sd2[0] };
+    var sd2 = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f2 = sd2 && flashedOf(sd2[0]); if (sd2 && !f2) return { k: 'flash', iid: sd2[0] };
     if ((+BN.m || 0) >= ROLLMM) return { k: 'paper', iid: pr[0] };
+    /* the first start, on the Pi: power on, its setup Wi-Fi, its pair code */
+    var O = BN.o, st = f2 && O && O[0] === sd2[0] && O[1] === f2[1] ? O[2] : 0; if (sd2 && st < 3) return { k: ['boot', 'wifi', 'pair'][st], iid: pi[0] };
     return { k: 'done', iid: pr[0] }; }
   /* a small sketch of a part, for the tray */
   function mini(p) { return '<svg viewBox="0 0 120 90" aria-hidden="true">' + (p.draw || []).map(function (st) { return '<path d="' + st[0] + '"' + (st[1] ? ' class="ac"' : '') + '/>'; }).join('') + '</svg>'; }
@@ -286,8 +294,8 @@
       var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + String(gp.kind) }, [tt('Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 6 }), sketch(gp, gx, gy, 3)]);
       var plus = el('text', { 'class': 'gp', x: gx + cw / 2, y: gy + 98, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
-      var wk = (W0.k === 'flash' || W0.k === 'paper' || W0.k === 'done') && W0.iid === x[0];
-      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wk && W0.k === 'flash' ? ' · tap to write Island OS onto it' : wk && W0.k === 'done' ? ' · tap: its first print' : wk && W0.k === 'paper' ? ' · out of paper: tap for a new roll' : ' · tap to swap or take off')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
+      var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
+      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
       var sk = sketch(p, X, Y, 7 + x[1].length);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
@@ -295,6 +303,12 @@
       /* the printer's roll: 80 mm × 80 m, smaller with every print */
       if (p.kind === 'printer') { var left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rr = 3 + 9 * Math.sqrt(left);
         g.appendChild(el('g', { 'class': 'roll' }, [tt(Math.round(left * ROLLMM / 1000) + ' m of paper left · about ' + Math.round(left * ROLLMM / 160) + ' receipts'), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 12.5, 'class': 'rl0' }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: rr, 'class': 'rl' + (left < .1 ? ' low' : '') }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 2.2, 'class': 'rc' })])); }
+      /* the Pi's two lights: red while it has power, the other flickering as it reads its SD; and what it waits for, drawn above it */
+      if (p.kind === 'pi' && P.on[x[0]]) { var bo = W0.k === 'done' || W0.k === 'paper'; g.appendChild(el('g', { 'class': 'leds' }, [tt(BT.run ? 'Starting' : bo ? 'On' : 'Power: red light on'), el('circle', { 'class': 'lp', cx: X + 11, cy: Y + 30, r: 2.4 }), el('circle', { 'class': 'la' + (BT.run ? ' run' : bo ? ' idle' : '') + (LAMP ? ' rd' : ''), cx: X + 11, cy: Y + 38, r: 2.4 })])); }
+      if (wk && /^(boot|wifi|pair)$/.test(W0.k)) { var cx0 = X + cw - 14, cy0 = Y + 18, CUE = { boot: 'M' + (cx0 - 4.6) + ' ' + (cy0 - 3.4) + ' A6 6 0 1 0 ' + (cx0 + 4.6) + ' ' + (cy0 - 3.4) + ' M' + cx0 + ' ' + (cy0 - 7) + ' V' + (cy0 - 0.5),
+          wifi: 'M' + (cx0 - 8) + ' ' + (cy0 - 1) + ' Q' + cx0 + ' ' + (cy0 - 9) + ' ' + (cx0 + 8) + ' ' + (cy0 - 1) + ' M' + (cx0 - 4.6) + ' ' + (cy0 + 2.4) + ' Q' + cx0 + ' ' + (cy0 - 2.6) + ' ' + (cx0 + 4.6) + ' ' + (cy0 + 2.4) + ' M' + cx0 + ' ' + (cy0 + 5.6) + ' v.1',
+          pair: 'M' + (cx0 - 7) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 + 2) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 - 7) + ' ' + (cy0 + 2) + ' h5 v5 h-5 Z M' + (cx0 + 3) + ' ' + (cy0 + 3) + ' h3 v3' };
+        g.appendChild(el('path', { 'class': 'cue', d: CUE[W0.k] })); }
       var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = String(p.name).toUpperCase(); g.appendChild(nm);
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
@@ -314,21 +328,21 @@
     if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
     $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY';
-    $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); }
+    $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); riteDraw(); }
   function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
   $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
-  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say ? say : 'SAVED'; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
+  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function () { if (!SEL) $('#bnsay').textContent = say || ''; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
   function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); return 'p' + n; }
-  function partOff(iid) { BN.p = BN.p.filter(function (q) { return q[0] !== iid; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== iid && j[1].split('.')[0] !== iid; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== iid; }); if (SEL && SEL.split('.')[0] === iid) SEL = null; }
+  function partOff(iid) { var ko0 = (PART[(BN.p.filter(function (q) { return q[0] === iid; })[0] || [])[1]] || {}).kind; if (BN.o && (BN.o[0] === iid || ko0 === 'pi' || ko0 === 'printer')) BN.o = null; BN.p = BN.p.filter(function (q) { return q[0] !== iid; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== iid && j[1].split('.')[0] !== iid; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== iid; }); if (SEL && SEL.split('.')[0] === iid) SEL = null; }
   /* paper: each print on a ghost's twin takes its length off the roll */
   function paperUse(cv) { if (!BN || !T || !T.ghost || !cv) return; BN.m = Math.min(ROLLMM, (+BN.m || 0) + Math.round(cv.height / MMDOT)); benchDraw(); benchSave(); }
   /* the first time a ghost opens, its bench starts with the parts picked on ISLAND ARCHIPELAGOS; the SD is left for the build to ask for */
-  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice(), m: +j.bench.m || 0 } : { p: [], j: [], f: [], m: 0 };
+  function benchLoad(j) { var gb = $('#bnd'); gb.hidden = !j.ghost; if (!j.ghost || BN) return; BN = j.bench && Array.isArray(j.bench.p) ? { p: j.bench.p.slice(), j: (j.bench.j || []).slice(), f: (j.bench.f || []).slice(), m: +j.bench.m || 0, o: Array.isArray(j.bench.o) ? j.bench.o.slice() : null } : { p: [], j: [], f: [], m: 0, o: null };
     var tray = store.get('da.ghost.build', null), done = store.get('da.ghost.seeded', '');
     if (!BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
       [tray.printers, tray.pi].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
-    benchDraw(); if (!(BN.f || []).length) gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
+    benchDraw(); if (WANT && WANT.k !== 'done') gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
   /* a join made: by two taps, or by dragging from one port to another */
   function joinTo(a, pid) { var there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
@@ -338,19 +352,24 @@
     if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids }; trayDraw(); return; }
     if (t.dataset.off) { partOff(t.dataset.off); TRAY = null; benchDraw(); benchSave(); return; }
     if (t.dataset.part) { var id = t.dataset.part;
-      if (TRAY && TRAY.iid) { var here = BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0]; if (here && here[1] !== id) { here[1] = id; BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== here[0] && j[1].split('.')[0] !== here[0]; }); } }
+      if (TRAY && TRAY.iid) { var here = BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0]; if (here && here[1] !== id) { if (/^(pi|printer|sd)$/.test(PART[here[1]].kind)) BN.o = null; here[1] = id; BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== here[0] && j[1].split('.')[0] !== here[0]; }); } }
       else if (BN.p.length < 12) partAdd(id);
       TRAY = null; benchDraw(); benchSave(String(PART[id].name).toUpperCase()); return; }
     if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
     if (t.dataset.body) { var x = BN.p.filter(function (q) { return q[0] === t.dataset.body; })[0], p = x && PART[x[1]]; if (!p) return;
       if (WANT.k === 'paper' && WANT.iid === x[0]) { BN.m = 0; benchDraw(); benchSave('NEW ROLL'); return; }
       if (WANT.k === 'done' && WANT.iid === x[0]) { $('#test').click(); return; }
-      if (p.kind === 'sd') { FLOPEN = !FLOPEN; TRAY = null; benchDraw(); if (FLOPEN) setTimeout(function () { $('#fl').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50); return; }
+      if (WANT.k === 'pair' && WANT.iid === x[0]) { $('#pc').value = showCode(pairCode()); $('#bd').open = true; $('#pf button').classList.add('want'); look($('#bd'), 'center'); return; }
+      if (/^(boot|wifi)$/.test(WANT.k) && WANT.iid === x[0]) { bootStep(WANT.k); return; }
+      if (BT.run) return;
+      if (p.kind === 'sd') { if (WANT.k === 'flash' && WANT.iid === x[0]) { FLOPEN = true; FL.sd = x[0]; } else FLOPEN = !FLOPEN; TRAY = null; benchDraw(); if (FLOPEN) setTimeout(function () { look($('#fl')); }, 50); return; }
       TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; trayDraw(); return; }
     var pid = t.dataset.port;
     if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = ''; return; }
     joinTo(SEL, pid); });
-  $('#bnd').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut],[data-want],[data-body]')) { e.preventDefault(); e.target.closest('[data-port],[data-cut],[data-want],[data-body]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+  $('#bnd').addEventListener('keydown', function (e) { var t = (e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut],[data-want],[data-body]'); if (!t) return; e.preventDefault();
+    var k = ['port', 'body', 'want'].filter(function (a) { return t.dataset[a]; })[0], v = k && t.dataset[k]; t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    if (k && !D.activeElement.closest('#bnd .bench')) { var n = D.querySelector('#bnv [data-' + k + '="' + v + '"]') || D.querySelector('#bnv .gh') || D.querySelector('#bnv .pt.want'); if (n) n.focus(); } });
   /* a cable drawn by hand: press on a port, pull to another, let go */
   var DRAG = null;
   $('#bnv').addEventListener('pointerdown', function (e) { var t = e.target.closest('[data-port]'); if (!t || !BN) return; var svg = $('#bnv'), m = svg.getScreenCTM(); if (!m) return; var c = t.querySelector('circle:not(.ph)');
@@ -379,7 +398,7 @@
     var can = [true, !!FL.dev, !!FL.dev && !!OS, !!FL.dev && !!OS && !!FL.sd, !!FL.dev && !!OS && !!FL.sd && !!FL.name], nm = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? String(PART[x[1]].name).toUpperCase() : '—'; };
     var said = [nm(FL.dev), OS ? 'ISLAND OS ' + OS.version : OS === false ? 'OFFLINE' : '· · ·', nm(FL.sd), FL.name || '—', FL.done ? 'FLASHED' : ''];
     var dn = [!!FL.dev, !!OS && FL.step > 1, !!FL.sd && FL.step > 2, !!FL.name && FL.step > 3, !!FL.done];
-    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (dn[i] ? ' class="dn"' : '') + (can[i] && !FL.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
+    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (dn[i] ? ' class="dn"' : '') + (can[i] && !FL.run && !BT.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
     var P = '', sdP = function (x) { var p = PART[x[1]], g = +(/(\d+)/.exec(p.id) || [])[1] || 0, small = OS && g * 1e9 * 0.93 < OS.size, f = flashedOf(x[0]); return '<button type="button" data-sd="' + x[0] + '" aria-pressed="' + (FL.sd === x[0]) + '"' + (small ? ' disabled title="Too small for ' + gb(OS.size) + '"' : ' title="' + (f ? 'Has Island OS ' + esc(f[1]) + ': writing again erases it' : 'Empty') + '"') + '>' + esc(String(p.name).toUpperCase()) + (f ? ' · ' + esc(f[1]) : '') + '</button>'; };
     if (!pis.length || !sds.length) P = '<p class="say">NEEDS ' + (!pis.length ? 'A PI' : '') + (!pis.length && !sds.length ? ' + ' : '') + (!sds.length ? 'AN SD' : '') + '</p>';
     else if (FL.step === 0) P = '<div class="opts">' + pis.map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (FL.dev === x[0]) + '" title="' + esc(PART[x[1]].about || '') + '">' + esc(String(PART[x[1]].name).toUpperCase()) + '</button>'; }).join('') + '</div>';
@@ -387,7 +406,7 @@
     else if (FL.step === 2) P = '<div class="opts">' + sds.map(sdP).join('') + '</div>';
     else if (FL.step === 3) P = '<form class="flf" id="flf"><label><span class="lbl">NAME</span><input name="name" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.name || slug(T && T.name)) + '" title="Its name on the network"></label>' +
       '<label><span class="lbl" title="The network it joins on first start. Kept on this screen only, never sent">WI-FI</span><input name="ssid" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.ssid) + '"></label>' +
-      '<label><span class="lbl" title="Never sent or kept: a ghost joins no network">PASSWORD</span><input name="pw" type="password" maxlength="63" autocomplete="off" value="' + esc(FL.pw) + '"></label>' +
+      '<label><span class="lbl" title="Never sent or kept: a ghost joins no network">PASSWORD</span><input name="pw" type="text" class="dots" maxlength="63" autocomplete="off" spellcheck="false" value="' + esc(FL.pw) + '"></label>' +
       '<label><span class="lbl">COUNTRY</span><input name="cc" maxlength="2" autocomplete="off" autocapitalize="characters" value="' + esc(FL.cc) + '"></label><button class="on">NEXT</button></form>';
     else if (FL.step === 4) P = FL.run ? '<div class="bar"><i style="width:' + Math.round(FL.run.pc) + '%"></i></div><div class="row"><p class="say" id="flsay">' + FL.run.say + '</p><button type="button" data-skip="1" title="Straight to the end">SKIP</button></div>'
       : FL.done ? '<div class="row"><p class="say">FLASHED · ' + esc(FL.done) + '</p><button type="button" data-eject="1" title="Take the SD out: it goes in the Pi">EJECT</button></div>'
@@ -399,14 +418,14 @@
     var tick = function () { if (!FL.run) return; var t = performance.now() - t0 + FL.run.skip;
       if (t < w) { FL.run.pc = t / w * 100; FL.run.say = 'WRITING ' + Math.floor(FL.run.pc) + '% · ' + gb(size * t / w) + ' · 20 MB/S'; }
       else if (t < w + v) { FL.run.pc = (t - w) / v * 100; FL.run.say = 'VERIFYING ' + Math.floor(FL.run.pc) + '%'; }
-      else { FL.run = null; FL.done = ver; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); benchDraw(); benchSave('FLASHED'); flSlip(sd, ver); return; }
+      else { FL.run = null; FL.done = ver; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); if (BN.o && BN.o[0] === sd) BN.o = null; benchDraw(); benchSave('FLASHED'); flSlip(sd, ver); return; }
       var sf = $('#sdf'); if (sf) { var wr = t < w, h = 54 * FL.run.pc / 100; sf.setAttribute('class', 'sdf' + (wr ? '' : ' v')); sf.setAttribute('y', wr ? 74 - h : 20 + h); sf.setAttribute('height', wr ? h : 1.6); }
       var b = $('#flp .bar i'), s = $('#flsay'); if (b && s) { b.style.width = FL.run.pc.toFixed(1) + '%'; s.textContent = FL.run.say; } else flDraw(); setTimeout(tick, 100); };
     FL.run.skip = 0; FL.run.end = w + v; tick(); }
   /* the settings, printed on the twin as the island will print them on its first start */
   function flSlip(sd, ver) { var x = BN.p.filter(function (q) { return q[0] === sd; })[0], d = BN.p.filter(function (q) { return q[0] === FL.dev; })[0];
     var L = ['ISLAND OS ' + ver, 'NAME ' + FL.name, 'WI-FI ' + (FL.ssid || '-'), 'PASSWORD ' + (FL.pw ? '********' : '-'), 'COUNTRY ' + FL.cc, (x ? PART[x[1]].name : 'SD') + ' VERIFIED', 'FOR ' + (d ? PART[d[1]].name : 'PI'), 'SHA ' + (OS.sha || '')];
-    var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })), cv = draw(u, T ? T.paper : '80'); shown('f' + Date.now(), cv, 'FLASH', true, true); paperUse(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
+    var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })), cv = draw(u, paperOf()); shown('f' + Date.now(), cv, 'FLASH', true, true, 'Island OS ' + ver + ' written'); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   $('#fl').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.disabled || !BN) return; var d = b.dataset;
     if (d.step != null) { FL.step = +d.step; if (FL.step === 1) osGet(); }
     else if (d.dev) { FL.dev = d.dev; FL.step = 1; osGet(); }
@@ -414,14 +433,111 @@
     else if (d.sd) { FL.sd = d.sd; FL.step = 3; }
     else if (d.write) { if (!confirm('Everything on the SD is erased. Write Island OS ' + OS.version + '?')) return; FL.done = ''; flWrite(); return; }
     else if (d.skip) { if (FL.run) FL.run.skip = FL.run.end; return; }
-    else if (d.eject) { FL.done = ''; FL.step = 0; $('#bnsay').textContent = 'EJECTED'; }
+    else if (d.eject) { FL.done = ''; FL.step = 0; FLOPEN = false; benchDraw(); $('#bnsay').textContent = 'EJECTED'; return; }
     else return; flDraw(); });
   $('#fl').addEventListener('submit', function (e) { e.preventDefault(); var f = e.target; var v = function (n) { return String(f.elements.namedItem(n).value || ''); }; FL.name = slug(v('name')); FL.ssid = v('ssid').slice(0, 32); FL.pw = v('pw'); FL.cc = (v('cc') || 'AU').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'AU'; FL.step = 4; flDraw(); });
 
+  /* ───────── BOOT: the first start, as a real island makes it (kit/island). The red light, the green one reading the SD, the lines it
+     logs, the slips it prints: its test strip, the setup Wi-Fi with its QR, then on Wi-Fi its pair code. A ghost's code pairs nothing ───────── */
+  var BT = { run: null, lines: [] }, ABC = 'abcdefghijkmnpqrstuvwxyz23456789';
+  function seeded(n, salt) { var h = 2166136261, s = String(T ? T.id : 'ghost') + salt, o = '', i; for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    for (i = 0; i < n; i++) { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; o += ABC[h % ABC.length]; } return o; }
+  var showCode = function (c) { return c.slice(0, 4) + '-' + c.slice(4); }, isleNm = function () { return String(T ? T.name : 'island').toUpperCase(); };
+  var setupSSID = function () { return isleNm().slice(0, 26) + ' SETUP'; }, setupPass = function () { return seeded(10, 'setup'); }, pairCode = function () { return seeded(8, 'pair').toUpperCase(); };
+  /* a slip set as the island sets it: centred, bold name, big lines, QR codes and the test strip's dots */
+  function paperOf() { var pr = BN && T && T.ghost ? ofKind('printer')[0] : null, p = pr && PART[pr[1]]; return p && p.paper ? String(p.paper) : T ? String(T.paper || '80') : '80'; }
+  function Slip() { var o = [0x1B, 0x40], W = paperOf() === '58' ? 384 : 512, S = {
+    t: function (s) { s = String(s); for (var i = 0; i < s.length; i++) o.push(s.charCodeAt(i) & 0x7F); o.push(0x0A); return S; },
+    c: function () { o.push(0x1B, 0x61, 1); return S; }, l: function () { o.push(0x1B, 0x61, 0); return S; },
+    b: function (on) { o.push(0x1B, 0x45, on ? 1 : 0); return S; }, big: function (on) { o.push(0x1D, 0x21, on ? 0x11 : 0); return S; }, feed: function (n) { o.push(0x1B, 0x64, n); return S; },
+    head: function (name) { return S.c().b(true).t(name).b(false).feed(1); },
+    qr: function (d, m) { var L = d.length + 3; o.push(0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x43, m, 0x1D, 0x28, 0x6B, L & 255, L >> 8, 0x31, 0x50, 0x30); for (var i = 0; i < d.length; i++) o.push(d.charCodeAt(i) & 0x7F); o.push(0x1D, 0x28, 0x6B, 3, 0, 0x31, 0x51, 0x30); return S; },
+    img: function (h, black) { var bw = W >> 3; o.push(0x1D, 0x76, 0x30, 0, bw & 255, bw >> 8, h & 255, h >> 8); for (var y = 0; y < h; y++) for (var xb = 0; xb < bw; xb++) { var v = 0; for (var k = 0; k < 8; k++) if (black(xb * 8 + k, y, W)) v |= 0x80 >> k; o.push(v); } return S; },
+    rule: function (h) { return S.img(h, function () { return true; }); },
+    cut: function () { o.push(0x1B, 0x64, 4, 0x1D, 0x56, 0x42, 0); return new Uint8Array(o); } }; return S; }
+  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  function stripDots(x, y, w) { if (y < 40) return x < w / 4 || (x < w / 2 && x % 2 === 0) || (x < 3 * w / 4 && x % 4 < 2) || (x >= 3 * w / 4 && x % 8 < 4); if (y < 44) return false;
+    if (y < 84) { var band = Math.floor(x * 8 / w); return (x + y) % (8 - band) === 0; } if (y < 88) return false; return BAYER[(y % 4) * 4 + x % 4] * 16 + 8 < x * 255 / w; }
+  var SLIPS = {
+    strip: function () { return Slip().head(isleNm()).t('TEST STRIP').img(160, stripDots).feed(1).l().t('A  abcdefghijklmnopqrstuvwxyz 0123456789').b(true).t('BOLD  ABCDEFGHIJ').b(false).big(true).t('BIG  ABC').big(false).c().qr('https://novel.global', 6).t("A CRISP CODE SCANS FROM ARM'S LENGTH").cut(); },
+    welcome: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).b(false).rule(6).feed(2).b(true).big(true).t(setupPass()).big(false).b(false).feed(1).t('IP: 10.42.0.1').qr('GHOST ' + setupSSID(), 7).rule(2).feed(1).cut(); },
+    wifi: function (net) { return Slip().head(isleNm()).t('ON WI-FI').t(net).cut(); },
+    pair: function () { return Slip().head(isleNm()).big(true).t(showCode(pairCode())).big(false).feed(1).t('SCAN TO APPROVE ON NOVEL.GLOBAL').feed(1).qr('GHOST ' + showCode(pairCode()), 6).cut(); },
+    paired: function () { return Slip().head(isleNm()).t('PAIRED').t(String(T.id).toUpperCase() + ' ON NOVEL.GLOBAL').t('READY TO PRINT').cut(); } };
+  var SAY = { strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print' };
+  function bootSlip(name) { var a = [].slice.call(arguments, 1), u = SLIPS[name].apply(null, a), cv = draw(u, paperOf()), say = typeof SAY[name] === 'function' ? SAY[name].apply(null, a) : SAY[name];
+    shown('b' + name + Date.now(), cv, '', true, true, say); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
+  /* the log: the last five lines, like the island's own journal */
+  var stamp = function (s) { return s; };
+  function bootLog(s) { BT.lines.push(s); BT.lines = BT.lines.slice(-40); var l = $('#bnlog'); l.hidden = false; l.innerHTML = BT.lines.slice(-5).map(function (x, i, a) { return '<li' + (i === a.length - 1 ? ' class="nw"' : '') + (/^×/.test(x) ? ' data-err="1"' : '') + '>' + esc(x.replace(/^× /, '')) + '</li>'; }).join(''); }
+  /* the steps play at their own pace (a real Pi 3 A+ takes about 25 s to its island; here a fifth of that), a tap on the log skips */
+  function bootRun(steps, done) { var i = 0; BT.run = {}; benchDraw(); riteDraw(); var lg = $('#bnlog'); lg.hidden = false; setTimeout(function () { look(lg); }, 60);
+    var next = function () { if (i >= steps.length) { BT.run = null; benchDraw(); riteDraw(); if (!LAMP) look($('.bench .pt.want'), 'center'); if (done) done(); return; } var s = steps[i++];
+      BT.run.go = function () { BT.run.go = null; var bad = bootBad(); if (bad) { bootLog('× ' + bad); BT.run = null; benchDraw(); riteDraw(); return; } if (s[1] === false) { BT.run = null; benchDraw(); riteDraw(); return; } if (typeof s[1] === 'string') bootLog(/^K:/.test(s[1]) ? stamp(s[1].slice(2)) : s[1]); else s[1](); next(); };
+      BT.run.t = setTimeout(BT.run.go, BT.run.skip ? 40 : s[0]); };
+    next(); }
+  /* what stops a start: the Pi without power, its SD out of the slot or not written */
+  function bootBad() { var P = power(), pi = ofKind('pi')[0], sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0];
+    return !pi || !P.on[pi[0]] ? 'power lost' : !sd || !flashedOf(sd[0]) ? 'no SD in the slot' : ''; }
+  function bootStep(k) { if (BT.run || !BN) return; FLOPEN = false; var P = power(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f = sd && flashedOf(sd[0]), nm = f ? f[2] : slug(T && T.name), ver = f ? f[1] : '';
+    var keep = function (n) { BN.o = [sd[0], ver, n]; benchSave(n === 3 ? 'ON' : ''); };
+    if (k === 'boot') { BT.lines = []; BT.t0 = 0; var bad = P.J.filter(function (r, i) { return !r.ok && [BN.j[i][0], BN.j[i][1]].some(function (e) { var q = portOf(e); return q && /^(pi|printer)$/.test(q.part.kind); }); })[0];
+      var S = [[200, 'K:Booting Linux on physical CPU 0x0'], [700, 'K:mmc0: new high speed SDHC card at address aaaa'], [600, 'K:EXT4-fs (mmcblk0p2): mounted filesystem']];
+      /* what is wrong on the bench stops it here, as it would stop the real one */
+      if (bad) S.push([500, '[  OK  ] Started island.service'], [400, 'island ' + ver + ': ' + nm + ', not set up yet'], [300, '× no slip: ' + bad.why.toLowerCase()], [0, false]);
+      else S.push([500, '[  OK  ] Started island.service'], [400, 'island ' + ver + ': ' + nm + ', not set up yet'], [300, 'paper ' + (T.paper || '80') + ' mm'],
+        [500, function () { bootSlip('strip'); }], [1600, 'the setup Wi-Fi is open: ' + setupSSID()], [400, function () { bootSlip('welcome'); keep(1); }]);
+      bootRun(S); }
+    if (k === 'wifi') { var net = FL.ssid || nm + ' home';
+      bootRun([[300, 'chosen: ' + nm + ', online, Wi-Fi "' + net + '"'], [1400, function () { bootSlip('wifi', net); }], [900, 'pairing code ' + showCode(pairCode()) + ' for https://novel.global'], [500, function () { bootSlip('pair'); keep(2); }]]); }
+    if (k === 'pair') bootRun([[300, 'paired as ' + T.id + ' on https://novel.global'], [700, function () { bootSlip('paired'); keep(3); }]]); }
+  $('#bnlog').addEventListener('click', function () { if (BT.run && BT.run.go) { BT.run.skip = true; clearTimeout(BT.run.t); BT.run.go(); } });
+  $('#bnlog').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
+
+  /* ───────── the rite: five stations on the sun's path, lit as the island is made. Its one Irukandji wakes as they light ───────── */
+  var RITE = [['BENCH', 'Every part on the bench, and enough power'], ['FLASH', 'Island OS on its SD'], ['BOOT', 'Started, on Wi-Fi, its code printed'], ['HOME', 'Its home made'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['REAL', 'A real printer, by its pair code']];
+  var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8'],
+    TENT = ['M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
+  var RLIT = null;
+  function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN) return [true, true, true, !!(ISLE && ISLE.home), !!T.paired];
+    var P = power(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f = sd && flashedOf(sd[0]);
+    return [P.w === 'ENOUGH' && !!ofKind('printer').length && !!ofKind('pi').length, !!f, !!(f && BN.o && BN.o[0] === sd[0] && BN.o[1] === f[1] && BN.o[2] === 3), !!(ISLE && ISLE.home), !!T.paired]; }
+  var at = function (i, k) { var a = Math.PI * (0.9 - (k == null ? i * 10 : k) * 0.02); return [160 + Math.cos(a) * 132, 66 - Math.sin(a) * 50]; }, f1 = function (n) { return n.toFixed(1); };
+  function riteBuild(s) { var pts = []; for (var k = 0; k <= 40; k++) { var p = at(0, k); pts.push(f1(p[0]) + ' ' + f1(p[1])); } s.dataset.pts = JSON.stringify(pts);
+    var out = '<path class="rp" d="M' + pts.join(' L') + '"/><path class="rp on" d=""/>';
+    out += '<g class="ik" style="opacity:.1" transform="translate(141 26) scale(.6)">' + IRUK.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + TENT.map(function (d) { return '<path class="tn" d="' + d + '"/>'; }).join('') + '</g>';
+    RITE.forEach(function (r, i) { var p = at(i), dots = ''; for (var d = 0; d < 8; d++) { var b = d * Math.PI / 4; dots += '<circle cx="' + f1(p[0] + Math.cos(b) * 8) + '" cy="' + f1(p[1] + Math.sin(b) * 8) + '" r="1.35"/>'; }
+      out += '<g class="st" data-rite="' + i + '" role="button" tabindex="0"><title>' + r[0] + ' · ' + r[1] + '</title><circle class="hb" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="15"/>' + dots + '<circle class="c" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="2.2"/></g>'; });
+    s.innerHTML = out + '<text class="rw" x="160" y="81" text-anchor="middle"></text>'; s.dataset.built = '1'; }
+  function riteDraw() { var s = $('#rite'); if (!s || !T) return; if (!T.ghost) { s.setAttribute('hidden', ''); return; } s.removeAttribute('hidden'); if (!s.dataset.built) riteBuild(s);
+    var lit = riteLit(), cur = lit.indexOf(false), n = lit.filter(Boolean).length, was = RLIT || store.get('da.twin.rite.' + T.id + TS, null), pts = JSON.parse(s.dataset.pts);
+    var last = cur < 0 ? 4 : cur - 1; s.querySelector('.rp.on').setAttribute('d', last > 0 ? 'M' + pts.slice(0, last * 10 + 1).join(' L') : '');
+    var ik = s.querySelector('.ik'); ik.style.opacity = (0.1 + n * 0.16).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n === 5 ? ' all' : ''));
+    $$('#rite .st').forEach(function (g, i) { var seal = lit[i] && was && !was[i]; g.setAttribute('class', 'st' + (lit[i] ? ' lit' : '') + (i === cur ? ' now' : '') + (seal ? ' seal' : '') + (g.classList.contains('seal') && lit[i] ? ' seal' : ''));
+      g.setAttribute('aria-label', RITE[i][0] + (lit[i] ? ', done' : i === cur ? ', next' : '')); g.querySelector('.c').setAttribute('r', lit[i] ? 3.4 : 2.2);
+      if (seal) setTimeout(function () { g.classList.remove('seal'); }, 900); });
+    s.querySelector('.rw').textContent = cur >= 0 ? RITE[cur][0] : ''; RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
+  $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite, bd = $('#bnd');
+    if (i === 3) { location.href = '/#home'; return; }
+    if (i === 4 && TESTQ) { location.href = '/#home'; return; }
+    if (i === 4) { $('#bd').open = true; look($('#bd'), 'center'); return; }
+    if (!BN) return; bd.open = true; if (i === 1 && !FLOPEN) { FLOPEN = true; benchDraw(); }
+    var pi = ofKind('pi')[0]; look(i === 1 ? $('#fl') : i === 2 && pi ? D.querySelector('#bnv [data-body="' + pi[0] + '"]') : $('#bnv'), i ? 'center' : 'start'); });
+  $('#rite').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-rite]')) { e.preventDefault(); e.target.closest('[data-rite]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+
+  /* ───────── OFFLINE: the island with no internet, as a real one goes when its Wi-Fi drops. The twin stops asking; what is sent waits
+     on the site, and comes out once each when it is back ───────── */
+  var OFF = false;
+  function offDraw() { var b = $('#body'); b.setAttribute('aria-pressed', String(OFF)); b.classList.toggle('off', OFF); if (OFF) { $('#bodyw').textContent = 'OFFLINE'; $('#led').className = 'led'; } else bodyDraw(); }
+  $('#body').addEventListener('click', function () { if (!T || !T.ghost) return; OFF = !OFF; clearTimeout(timer); offDraw(); if (!OFF) tick(); });
+
   /* ───────── a printer added: the pair code a Pi prints ───────── */
-  $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; } $('#bsay').textContent = '· · ·';
+  $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; }
+    /* a ghost's own code, the one its Pi printed: paired here, and nowhere else */
+    if (T && T.ghost && BN && c === pairCode()) { $('#pf button').classList.remove('want'); $('#pc').value = ''; if (WANT && WANT.k === 'pair') { $('#bsay').textContent = 'PAIRED'; bootStep('pair'); } else $('#bsay').textContent = BN.o && BN.o[2] === 3 ? 'PAIRED' : '× NOT YET'; return; }
+    $('#bsay').textContent = '· · ·';
     api('/api/twin', { method: 'POST', body: JSON.stringify({ pair: c }) }).then(function (j) { $('#bsay').textContent = j.waiting ? 'WAIT LIST' : 'PAIRED · THE PI TAKES OVER'; $('#pc').value = ''; setTimeout(tick, 6e3); }, function (er) { $('#bsay').textContent = er.status === 404 ? '× NO SUCH CODE' : er.status === 409 ? '× TAKEN' : '× ' + String(er.message || '').toUpperCase(); }); });
-  $('#test').addEventListener('click', function () { var id = 't' + Date.now(), cv = draw(textSlip(['DIRECT ACTION', T ? String(T.name).toUpperCase() : 'TWIN', 'TEST', T && T.number ? 'ISLAND ' + T.number : 'GHOST']), T ? T.paper : '80'); shown(id, cv, 'TEST', true, false); paperUse(cv);
+  $('#test').addEventListener('click', function () { var id = 't' + Date.now(), cv = draw(textSlip(['DIRECT ACTION', T ? String(T.name).toUpperCase() : 'TWIN', 'TEST', T && T.number ? 'ISLAND ' + T.number : 'GHOST']), paperOf()); shown(id, cv, 'TEST', true, false, 'Test slip'); paperUse(cv);
     if (OUT) OUT.write(textSlip(['DIRECT ACTION', 'TEST'])).catch(function () { $('#bsay').textContent = '× ' + OUT.name; }); });
   $('#kcopy').addEventListener('click', function () { var b = this; if (navigator.clipboard) navigator.clipboard.writeText(KEY).then(function () { b.textContent = 'COPIED'; }); });
   $('#kout').addEventListener('click', function () { if (!confirm('Forget this island’s key on this screen?')) return; store.set('da.hm.key', ''); store.set('da.twin.roll', []); store.set('da.twin.radio', []); location.reload(); });
@@ -432,6 +548,6 @@
     fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: n }) }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); }).then(function (x) {
       if (x.s === 201 && x.j.key) { KEY = x.j.key; store.set('da.hm.key', KEY); open(); } else $('#gsay').textContent = x.s === 202 ? 'WAIT LIST' : x.s === 429 ? 'LATER' : x.s === 403 ? 'CLOSED' : '×'; }, function () { $('#gsay').textContent = 'OFFLINE'; }); });
   $('#kf').addEventListener('submit', function (e) { e.preventDefault(); var k = $('#kk').value.trim(); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return; KEY = k; store.set('da.hm.key', k); open(); });
-  function open() { $('#gate').hidden = true; $('#twin').hidden = false; radioDraw(); tick(); }
+  function open() { $('#gate').hidden = true; $('#twin').hidden = false; $('#kd').hidden = TESTQ; radioDraw(); tick(); }
   if (KEY) open(); else gate('');
 })();

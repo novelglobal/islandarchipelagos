@@ -518,6 +518,50 @@ try {
       const ad = await call('/api/twin', { method: 'POST', token: KA, body: { pair: pr.json.code } }), pp = await call('/api/pair/poll', { method: 'POST', body: { device: pr.json.device }, ip: '10.66.0.3' });
       const kA = await call('/api/island', { token: KA }), tA4 = await tw(KA);
       const bnReal = await bnS(KA, { p: [], j: [] }); check('a real island\'s twin keeps no bench (a ghost\'s only)', bnReal.status === 400 && !('bench' in tA4.json), JSON.stringify({ s: bnReal.status, t: Object.keys(tA4.json) }));
+      /* stage F: A (real now) keeps a TEST beside it, opened by A's own key with ?isle=test; what works there MOVEs to A, and UNDO puts it back */
+      { const isl = (q, o) => call(q, { ip: '10.66.1.1', ...o }), TQ = '?isle=test', put = (q, b, k) => server.fetch(new URL('/api/island/pics/' + q, O), { method: 'PUT', headers: { origin: O, 'cf-connecting-ip': '10.66.1.1', authorization: `Bearer ${k}` }, body: b });
+        await isl('/api/island', { method: 'POST', token: KA, body: { home: { line: 'real line', label: { title: 'Real Reef', body: 'Here.' } } } });
+        await call(`/api/admin/printers/${A}`, { method: 'POST', key: KEY, body: { action: 'home', film: 'reef.mp4' } });
+        const tN = await isl('/api/island', { method: 'POST', token: KA, body: { action: 'test' }, ip: '10.66.0.7' }), T = tN.json && tN.json.test && tN.json.test.id;
+        const tN2 = await isl('/api/island', { method: 'POST', token: KA, body: { action: 'test' }, ip: '10.66.0.7' }), tNg = await isl('/api/island', { method: 'POST', token: KB, body: { action: 'test' }, ip: '10.66.0.7' });
+        const tK = await isl('/api/island' + TQ, { token: KA }), tT = await tw(KA, TQ), tA = await tw(KA);
+        check('TEST: a real island makes one TEST, a ghost tied to it and opened by the same key with ?isle=test; a second, or one for a ghost, is refused',
+          tN.status === 200 && !!T && T !== A && tN.json.moves.length === 0 && tN2.status === 409 && tNg.status === 400 && tK.json.id === T && tK.json.ghost === true && tK.json.testOf === A && !('test' in tK.json) && tT.json.id === T && tT.json.ghost === true && tA.json.id === A,
+          JSON.stringify({ n: [tN.status, tN.json && tN.json.test], n2: tN2.status, ng: tNg.status, k: [tK.json.id, tK.json.ghost, tK.json.testOf], t: tT.json.id }));
+        await isl('/api/island' + TQ, { method: 'POST', token: KA, body: { home: { line: 'test line', main: ['zine'], label: { title: 'Test Reef', body: 'Tried here.' } } } });
+        const tPic = (await put('0' + TQ, JPEG_B, KA)).status, gPic = (await put('0', JPEG_B, KB)).status; await isl('/api/island' + TQ, { method: 'POST', token: KA, body: { speed: 5 } });
+        const pt = [await call('/api/partners'), await call('/api/partners', { token: KA })], map = await call('/api/isles'), cl = await call('/api/cards');
+        const jT = await isl('/api/island' + TQ, { method: 'POST', token: KA, body: { joins: { to: [A] } } }), jB = await isl('/api/island', { method: 'POST', token: KB, body: { joins: { to: [T] } } });
+        const jA = await isl('/api/island', { method: 'POST', token: KA, body: { joins: { to: [T] } } }), ptJ = await call('/api/partners');
+        const eA = await call('/api/stories', { method: 'POST', body: story('DA-9GTA', { dest: A, escpos: esc }) }), eT = await call('/api/stories', { method: 'POST', body: story('DA-9GTB', { dest: T, escpos: esc }) }), tT1 = await tw(KA, TQ);
+        await isl('/api/island', { method: 'POST', token: KA, body: { joins: { mirror: B } } });
+        const tSeen = await isl('/api/island' + TQ, { token: KA }), sUrl = ((tSeen.json.pics || [])[0] || {}).url || '', bare = await call('/api/cards/' + T + '/0'), signed = sUrl ? await call(sUrl) : {}, forged = await call('/api/cards/' + T + '/0?v=1&s=0000');
+        check('a ghost\'s picture answers only the signed link its keeper is given: never by its name alone, never a forged one', bare.status === 404 && forged.status === 404 && /&s=[0-9a-f]{24}$/.test(sUrl) && signed.status === 200, JSON.stringify({ bare: bare.status, forged: forged.status, sUrl, signed: signed.status }));
+        check('a TEST is in no public list (partners, the map, the cards, its real island\'s joins), nor is any ghost\'s card; it joins no real island and only its own real island joins it',
+          tPic === 200 && gPic === 200 && !(B in cl.json.cards) && pt.every(r => !r.json.partners.some(x => x.id === T)) && !map.json.isles.some(i => i.id === T) && !(T in cl.json.cards) && jT.status === 400 && jT.json.error === 'ghost' && jB.status === 400 && jB.json.error === 'test'
+          && jA.status === 200 && jA.json.joins.to.join() === T && jA.json.joins.isles.some(x => x.id === T && x.test) && !JSON.stringify(ptJ.json).includes(T),
+          JSON.stringify({ pic: [tPic, gPic], cards: Object.keys(cl.json.cards), jT: [jT.status, jT.json.error], jB: [jB.status, jB.json.error], jA: jA.json.joins && jA.json.joins.to }));
+        check('JOIN echo goes from the real island to its TEST for trials; a TEST relays to no real printer and its stories stay ghost',
+          eA.json.relay && eA.json.relay.length === 1 && eA.json.relay[0].id === T && !eT.json.relay && eT.json.status === 'ghost' && tT1.json.took.length === 2,
+          JSON.stringify({ eA: eA.json.relay, eT: [eT.json.relay, eT.json.status], took: tT1.json.took.length }));
+        const mv = (k, what, q = '') => isl('/api/island' + q, { method: 'POST', token: k, body: what ? { action: 'move', what } : { action: 'undo' } });
+        const m1 = await mv(KA, 'label'), pm1 = (await call('/api/partners')).json.partners.find(x => x.id === A) || {}, m2 = await mv(KA, 'home'), u1 = await mv(KA), u2 = await mv(KA), u3 = await mv(KA);
+        check('MOVE label: the TEST\'s label shows on the real island (its film stays), the rest of its home as it was; MOVE home brings the big cards and line; UNDO puts each back exactly, last first',
+          m1.status === 200 && m1.json.home.label.title === 'Test Reef' && m1.json.home.label.film.file === 'reef.mp4' && m1.json.home.line === 'real line' && pm1.home.label.title === 'Test Reef' && m1.json.moves.join() === 'label'
+          && m2.json.home.line === 'test line' && m2.json.home.main.join() === 'zine' && m2.json.home.label.title === 'Test Reef' && m2.json.moves.join() === 'label,home'
+          && u1.json.home.line === 'real line' && !u1.json.home.main && u1.json.home.label.title === 'Test Reef' && u2.json.home.label.title === 'Real Reef' && u2.json.home.label.film.file === 'reef.mp4' && u2.json.moves.length === 0 && u3.status === 404,
+          JSON.stringify({ m1: m1.json.home, m2: m2.json.home, u1: u1.json.home, u2: u2.json.home, u3: u3.status }));
+        await put('2', JPEG_B, KA); const aPic = await isl('/api/island', { token: KA });
+        const mc = await mv(KA, 'card'), clM = await call('/api/cards'), uc = await mv(KA), back = uc.json.pics && uc.json.pics[0] ? await call(uc.json.pics[0].url) : {};
+        await call('/api/twin' + TQ, { method: 'POST', token: KA, body: { bench: { p: [['p1', 'tm-t88v'], ['p2', 'sd-32']], j: [] } } }); const mb = await mv(KA, 'build'), ub = await mv(KA);
+        check('MOVE card carries the TEST\'s pictures and speed onto the real card, and UNDO brings its own back; MOVE build carries the bench, UNDO clears it',
+          aPic.json.pics.map(x => x.slot).join() === '2' && mc.json.pics.map(x => x.slot).join() === '0' && mc.json.speed === 5 && (clM.json.cards[A] || {}).pics.length === 1 && !(T in clM.json.cards)
+          && uc.json.pics.map(x => x.slot).join() === '2' && uc.json.speed === null && back.status === 200 && back.bin && back.bin.equals(JPEG_B) && mb.json.bench.p.length === 2 && ub.json.bench.p.length === 0,
+          JSON.stringify({ a: aPic.json.pics, mc: [mc.status, mc.json], uc: [uc.status, uc.json, back.status], mb: mb.json.bench, ub: ub.json.bench }));
+        const no = [await mv(KA, 'label', TQ), await mv(KB, 'label'), await mv('x'.repeat(32), 'label'), await mv(KA, 'nope')];
+        for (let i = 0; i < 6; i++) await mv(KA, 'label'); const m6 = await isl('/api/island', { token: KA });
+        check('only the real island\'s keeper can MOVE (not from the TEST, another island or a wrong key); the last five moves are kept',
+          no[0].status === 400 && no[1].status === 400 && no[2].status === 401 && no[3].status === 400 && m6.json.moves.length === 5, JSON.stringify({ no: no.map(r => r.status), m: m6.json.moves })); }
       await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: false } }); const gC = await call('/api/ghost', { method: 'POST', body: { name: 'Ghost Cc' }, ip: '10.66.0.4' });
       await call('/api/admin/settings', { method: 'POST', key: KEY, body: { ghostOn: true, freePrint: false } });
       check('a ghost given a Pi by its pair code becomes that printer and keeps its key and joins; ghosts can be closed on the approval page',
