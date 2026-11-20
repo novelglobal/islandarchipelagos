@@ -437,13 +437,16 @@ if (run('portfolio')) try {
   check('a post written and published by hand on the approval page is listed for everyone, and the page says it is live', /LIVE AT/.test(byHand.note) && byHand.list.includes('Published by hand'), JSON.stringify(byHand));
   for (const x of (await admin('posts')).posts) await admin(`posts/${x.id}`, { action: 'delete' });
   /* 1.0 C on the approval page: the calibration strip drawn from PRINT QUALITY, and STYLES · MOD PACKS with the house listed */
-  await page.click('#tabs [data-tab="site"]'); await sleep(900); await page.click('button:has-text("SEE THE STRIP")'); await sleep(400);
-  const cal = await page.evaluate(() => ({ strip: (document.querySelector('section.ed .big canvas') || {}).width || 0, styles: [...document.querySelectorAll('section.ed h3')].map(h => h.textContent).includes('STYLES · MOD PACKS'), house: /HOUSE · PRESS · QUIET · LOUD/.test(document.body.innerText) }));
+  await page.click('#tabs [data-tab="quality"]'); await sleep(900); await page.click('button:has-text("SEE THE STRIP")'); await sleep(400);
+  const cal0 = await page.evaluate(() => ({ strip: (document.querySelector('section.ed .big canvas') || {}).width || 0, opts: [...document.querySelectorAll('select option')].filter(o => /PHOTO TEST/.test(o.textContent)).length }));
+  await page.click('#tabs [data-tab="styles"]'); await sleep(900);
+  const cal = await page.evaluate(s => ({ strip: s, styles: [...document.querySelectorAll('section.ed h3')].map(h => h.textContent).includes('STYLES · MOD PACKS'), house: /HOUSE · PRESS · QUIET · LOUD/.test(document.body.innerText) }), cal0.strip);
+  await page.click('#tabs [data-tab="tune"]'); await sleep(900);
   check('the approval page draws the calibration strip at the printer\'s width and lists the house styles beside the mod packs', cal.strip === 512 && cal.styles && cal.house, JSON.stringify(cal));
   /* the photo test: the test photograph laid five ways on one slip, each way told apart, all of it pure black and white at the printer's width */
   const t0 = Date.now(); await page.click('button:has-text("SEE ALL 5")'); await page.waitForFunction(() => /DOT FOR DOT/.test(document.body.innerText), null, { timeout: 30000 }); const ms = Date.now() - t0;
   const pt = await page.evaluate(() => { const cs = [...document.querySelectorAll('section.ed .big canvas')], c = cs[cs.length - 1], d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let grey = 0; for (let i = 0; i < d.length; i += 4) if (d[i] !== 0 && d[i] !== 255) grey++;
-    return { w: c.width, h: c.height, grey, opts: [...document.querySelectorAll('select option')].filter(o => /PHOTO TEST/.test(o.textContent)).length }; });
+    return { w: c.width, h: c.height, grey }; }); pt.opts = cal0.opts;
   const pc = await page.evaluate(() => { const cs = [...document.querySelectorAll('section.ed .big canvas')]; return cs[cs.length - 1].toDataURL('image/png'); }); fs.writeFileSync(path.join(SHOTS, 'photo-test-slip.png'), Buffer.from(pc.split(',')[1], 'base64'));
   check('the photo test lays the test photograph five ways on one slip at the printer\'s width, pure black and white, and the five can be chosen for the site', pt.w === 512 && pt.h > 1500 && pt.h < 4000 && pt.grey === 0 && pt.opts === 5, JSON.stringify({ ...pt, ms }));
   /* TUNE: the saved settings reach the paper. The owner's tweak beats the set and the style, a way from the photo test brings its own
@@ -457,6 +460,22 @@ if (run('portfolio')) try {
     return { own: T.settle({ preset: 'soft', gamma: 1.1 }, { gamma: 0.7 }).gamma, way: T.settle({ dither: 'fs' }).gamma, lo: +lo.toFixed(3), hi: +hi.toFixed(3), dens, w: t.c.width, h: t.c.height, grey }; });
   check('TUNE proves the saved settings print: the owner\'s tweak wins, a test way brings its tones, a step changes the dots, each heat band is sent', tu.own === 1.1 && tu.way === 0.78 && tu.hi - tu.lo > 0.04 && tu.dens >= 4 && tu.w === 512 && tu.h > 1500 && tu.grey === 0, JSON.stringify(tu));
   const tc = await page.evaluate(() => { let e = [...document.querySelectorAll('section.ed h3')].find(h => h.textContent === 'TUNE'); while (e && !(e.classList && e.classList.contains('big'))) e = e.nextElementSibling; return e.querySelector('canvas').toDataURL('image/png'); }); fs.writeFileSync(path.join(SHOTS, 'tune-slip.png'), Buffer.from(tc.split(',')[1], 'base64'));
+  /* the desk in six groups: every page draws with its own heading and nothing is lost from the old long pages; FIND finds by any word;
+     a section typed in is marked unsaved with one key to save it; on a phone the groups sit along the foot */
+  const desk = await page.evaluate(async () => { const ids = [...document.querySelectorAll('#tabs [data-tab]')].map(b => b.dataset.tab), seen = {}, bad = [];
+    for (const id of ids) { location.hash = id; for (let i = 0; i < 40 && !(document.querySelector('main h2') && !/LOADING/.test(document.querySelector('main').innerText.slice(0, 40)) && (location.hash === '#' + id)); i++) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 250));
+      const m = document.querySelector('main'); if (/NO ANSWER/.test(m.innerText) || !m.querySelector('h2')) bad.push(id); m.querySelectorAll('h3').forEach(h => { seen[h.textContent.trim()] = 1; }); if (/(^|\s)null(\s|$)/.test(m.innerText)) bad.push(id + ':null'); }
+    const want = ['PRINT QUALITY', 'TUNE', 'STYLES · MOD PACKS', 'SENT WITHOUT A PRINT', 'PRINTING', 'MAKING', 'DEVICES', 'MOTION AND PHREAK', 'START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES', 'BLOG · THE TWELVE CURATIONS', 'PORTFOLIO · SOURCES', 'BACK TO THE BASE VERSION', 'LIVING', 'PHOTOGRAPHS', 'THE MOON', 'THE BUOY', 'THE EXAMPLE · ITS POSTER AND BOARD 00', 'BOARD 01 · THE TEMPLATE', 'INTENTION AND W.I.S.H. · THE WORDS', 'CITIES AND DATA PACKS', 'CARDS', 'PHOTOS', 'CARD PICTURES', 'THE LABEL', 'THE FILM', 'CARD NOTES', 'THE ISLANDS', 'BUILDS', 'PAIR AN ISLAND'];
+    const lost = want.filter(h => !seen[h]);
+    const f = document.querySelector('#find'); f.value = 'booth'; f.dispatchEvent(new Event('input')); const hit = (document.querySelector('#found [data-to]') || {}).dataset?.to; f.value = ''; document.querySelector('#found').hidden = true;
+    location.hash = 'words'; await new Promise(r => setTimeout(r, 1500)); const inp = document.querySelector('main section.ed input[type=text], main section.ed textarea'); inp.value += ' '; inp.dispatchEvent(new Event('input', { bubbles: true }));
+    const dirty = !!inp.closest('.dirty') && !document.querySelector('#pend').hidden; inp.closest('.dirty').classList.remove('dirty'); document.querySelector('#pend').hidden = true;
+    return { pages: ids.length, bad, lost, hit, dirty }; });
+  await page.setViewportSize({ width: 390, height: 844 }); await sleep(300);
+  const deskM = await page.evaluate(() => { const b = document.querySelector('#bar'), s = document.querySelector('#subs'); return { bar: getComputedStyle(b).display, groups: b.querySelectorAll('[data-grp]').length, subs: getComputedStyle(s).display, rail: getComputedStyle(document.querySelector('#tabs')).display, wide: document.documentElement.scrollWidth <= 392 }; });
+  await shot(page, '04-admin-phone.png'); await page.setViewportSize({ width: 1440, height: 900 });
+  check('the approval page in six groups: every page draws, no section is lost, FIND finds by any word, unsaved is shown, and on a phone the groups sit along the foot',
+    desk.pages >= 25 && !desk.bad.length && !desk.lost.length && desk.hit === 'words' && desk.dirty && deskM.bar === 'grid' && deskM.groups === 6 && deskM.subs === 'flex' && deskM.rail === 'none' && deskM.wide, JSON.stringify({ desk, deskM }));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section portfolio: ${e.message.split('\n')[0]}`); }
 

@@ -455,6 +455,17 @@ try {
       && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && usA.roll.some(x => x.who === 'QZ7') && usMod.status === 200 && !usMod.json.roll && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
       JSON.stringify({ us0: us0.json.use, us1: us1.json.use, ust, roll: usR.json.roll, usM: usM.json.stamps, usS: usS.json.use, r2: !!usR2.json.roll }));
     await call('/api/island', { method: 'POST', token: K, body: { use: null } });
+    /* builds: the approval page gives this island SIMPLE; its keeper is told only those parts, and the rest is refused or left as it was */
+    const bd0 = (await call('/api/admin/settings', { key: KEY })).json.builds || '';
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: JSON.stringify({ isles: { [id]: 'simple' } }) } });
+    const bdG = await call('/api/island', { token: K }), bdP = await call('/api/island', { method: 'POST', token: K, body: { action: 'picks', play: SCN[10] } }), bdL = await call('/api/island', { method: 'POST', token: K, body: { links: ['wish'], gap: 60 } });
+    const bdPub = (await call('/api/settings')).json;
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: JSON.stringify({ isles: { [id]: ['name', 'picks'] } }) } }); const bdC = await call('/api/island', { token: K }), bdCP = await call('/api/island', { method: 'POST', token: K, body: { gap: 120 } });
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: bd0 } }); const bdF = await call('/api/island', { token: K });
+    check('a build sets what an island\'s keeper can change: SIMPLE tells only its parts and refuses picks and connections, a custom list holds only its own, and no visitor sees the builds',
+      bdG.json.build.join() === 'name,pics,gap,passes' && bdP.status === 403 && bdL.json.gap === 60 && JSON.stringify(bdL.json.links) === JSON.stringify(bdG.json.links) && !('builds' in bdPub) && bdC.json.build.join() === 'name,picks' && bdCP.json.gap === 60 && bdF.json.build.length === 9,
+      JSON.stringify({ g: bdG.json.build, p: bdP.status, l: [bdL.json.links, bdG.json.links, bdL.json.gap], pub: 'builds' in bdPub, c: bdC.json.build, cp: bdCP.json.gap, f: bdF.json.build }));
+    await call('/api/island', { method: 'POST', token: K, body: { gap: null } });
     /* v0.7 D: a post from a code stamped at an island that day is marked HERE, a person who was there; never which island */
     const ms0 = (await call('/api/admin/settings', { key: KEY })).json.madeShow; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true } });
     const hr1 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR1A', { who: 'QZ7' }) }), hr2 = await call('/api/stories', { method: 'POST', ip: '10.0.0.90', body: story('DA-HR2A', { who: 'QW3' }) });

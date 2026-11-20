@@ -536,6 +536,11 @@ function isleSetup(b, withMods) { const o = {};
   if (withMods && Array.isArray(b.mods)) o.mods = JSON.stringify([...new Set(b.mods.map(x => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '')).filter(x => WHO.test(x)))].slice(0, 8));
   return o; }
 async function isleSet(db, id, o) { const ks = Object.keys(o); if (!ks.length) return; await db.prepare(`UPDATE printers SET ${ks.map(k => k + ' = ?').join(', ')} WHERE id = ?`).bind(...ks.map(k => o[k]), id).run(); }
+/* builds: what each island's keeper may change. The approval page gives each island one build (FULL, SIMPLE, or its own list);
+   a keeper is never shown what is not in theirs, and what is not in it is refused here too */
+const BUILD_PARTS = ['name', 'pics', 'links', 'cards', 'picks', 'passes', 'use', 'gap', 'gang'];
+const BUILDS = { full: BUILD_PARTS, simple: ['name', 'pics', 'gap', 'passes'] };
+const buildOf = (st, id) => { const d = jsonOf(st && st.builds) || {}, v = (d.isles || {})[id] ?? d.def ?? 'full'; return Array.isArray(v) ? v.filter(x => BUILD_PARTS.includes(x)) : (BUILDS[v] || BUILDS.full); };
 const isleOut = p => ({ gap: p.gap == null ? null : p.gap, pack: p.pack || 'full', ways: waysOf(p), use: useOf(p), packs: Object.keys(PACKS), allWays: WAYS, gaps: CHOICES.printGap, uses: USES, everys: EVERY });
 /* a class's roll: the codes stamped here this moon and how often; no days, no places */
 async function rollOf(db, id) { await stampTable(db);
@@ -554,9 +559,9 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000 };
+const TEXTS = { builds: 4000, template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000 };
 /* texts the public settings never show: the pop-up's private link */
-const HIDDEN_TEXTS = ['popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
+const HIDDEN_TEXTS = ['builds', 'popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
@@ -796,6 +801,7 @@ async function keeperPic(db, env, req, slot) {
   if (await tooMany(db, env, req, 'keeper', 60, 10 * 60e3)) return fail(429, 'too many');
   const k = bearer(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
   const p = await db.prepare('SELECT id FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal' || !CARD_ID.test(p.id)) return fail(401, 'key');
+  if (!buildOf(await settingsOf(db), p.id).includes('pics')) return fail(403, 'not in this island\'s build');
   return cardPut(db, env, req, p.id, slot);
 }
 /* the island keeper's own door: their key opens their one printer's row, never novel.global's, another island's, or any story */
@@ -807,13 +813,17 @@ async function keeper(db, env, req) {
     const want = new URL(req.url).searchParams.get('id') || ''; p = (await db.prepare(`SELECT ${cols} WHERE mods LIKE ? ORDER BY number`).bind('%"' + w + '"%').all()).results.find(x => !want || x.id === want) || null;
   } else { if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key'); p = await db.prepare(`SELECT ${cols} WHERE owner = ?`).bind(await sha256(k)).first(); }
   if (!p || p.id === 'novelglobal') return fail(401, 'key');
-  if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096); if (b.action === 'picks') return islePick(db, p, b); if (b.action) return passDo(db, env, p, b); const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
+  const can = buildOf(await settingsOf(db), p.id), has = x => can.includes(x);
+  if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096); if (b.action === 'picks') { if (!has('picks')) return fail(403, 'build'); return islePick(db, p, b); } if (b.action) { if (!has('passes')) return fail(403, 'build'); return passDo(db, env, p, b); }
+    /* only what this island's build holds */
+    if (!has('name')) delete b.name; if (!has('pics')) delete b.speed; if (!has('links')) delete b.links; if (!has('cards')) delete b.pack; if (!has('passes')) delete b.ways; if (!has('use')) delete b.use; if (!has('gap')) delete b.gap; if (!has('gang')) delete b.mods;
+    const name = String(b.name || '').replace(/[^\w .·'&-]/g, '').trim().slice(0, 40); if (name) { await db.prepare('UPDATE printers SET name = ? WHERE id = ?').bind(name, p.id).run(); p.name = name; }
     if (b.speed != null) await cardSet(db, p.id, { speed: b.speed });
     if (Array.isArray(b.links)) { p.links = linksIn(b.links.map(String)); await db.prepare('UPDATE printers SET links = ? WHERE id = ?').bind(p.links, p.id).run(); }
     const su = isleSetup(b, !mod); await isleSet(db, p.id, su); Object.assign(p, su); }
   const cps = (await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all()).results, cst = (await db.prepare('SELECT speed FROM cardset WHERE card = ?').bind(p.id).first()) || {};
-  const u = useOf(p), roll = u && u.kind === 'class' && !mod ? await rollOf(db, p.id) : null;   // the roll: the island's keeper and the approval page only
-  return json({ id: p.id, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
+  const u = useOf(p), roll = u && u.kind === 'class' && !mod && has('use') ? await rollOf(db, p.id) : null;   // the roll: the island's keeper and the approval page only
+  return json({ id: p.id, build: can, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: cps.map(r => ({ slot: r.slot, url: `/api/cards/${p.id}/${r.slot}?v=${r.at}` })), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
 }
 /* passes made for one island, and its own slips sent straight to it */
 async function passDo(db, env, p, b) {

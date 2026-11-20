@@ -19,14 +19,15 @@
   /* a story as it travels: base64url JSON, the same format as a slip's link */
   const unpack = b => { try { return JSON.parse(decodeURIComponent(escape(atob(b.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b.length + 3) % 4))))); } catch (e) { return null; } };
 
-  function lock(note) { KEY = ''; sessionStorage.removeItem('da.admin'); $('#tabs').hidden = true; main.replaceChildren(gate()); if (note) $('#gate-note').textContent = note; }
+  function lock(note) { KEY = ''; sessionStorage.removeItem('da.admin'); $('#tabs').hidden = true; $('#bar').hidden = true; $('#subs').hidden = true; document.body.classList.remove('in'); main.replaceChildren(gate()); if (note) $('#gate-note').textContent = note; }
   function gate() {
     const f = el('form', { class: 'gate', id: 'gate', onsubmit: e => { e.preventDefault(); KEY = $('#key').value.trim(); if (!KEY) return; sessionStorage.setItem('da.admin', KEY); open(); } },
       el('b', { text: 'Approval' }), el('input', { id: 'key', type: 'password', autocomplete: 'current-password', 'aria-label': 'Password', placeholder: 'Password', required: true }),
       el('button', { type: 'submit', text: 'OPEN' }), el('p', { class: 'note', id: 'gate-note' }));
     return f;
   }
-  async function open() { $('#tabs').hidden = false; if (/pair=/.test(location.hash)) tab = 'printers'; await show(tab); badges(); quick(); }
+  async function open() { $('#tabs').hidden = false; $('#bar').hidden = false; $('#subs').hidden = false; document.body.classList.add('in'); findUI();
+    const h = location.hash.slice(1); if (/pair=/.test(location.hash)) tab = 'printers'; else if (pageOf(h)) tab = h; else if (FN_OF[h]) tab = pagesOf(FN_OF[h])[0].id; tab = tab || 'overview'; const t = tab; tab = ''; await show(t, true); badges(); quick(); }
   /* two switches always at the top: every pop-up off at once (and back on, the same ones), and the label */
   async function quick() {
     const bar = $('#quick'); if (!bar) return; bar.hidden = false;
@@ -41,13 +42,30 @@
     lk.onclick = async () => { L.on = !L.on; await api('settings', { method: 'POST', body: JSON.stringify({ label: JSON.stringify(L) }) }); quick(); if (tab === 'label') show('label'); };
     bar.replaceChildren(pk, lk); }
   /* how many wait, beside their names in the rail */
-  async function badges() { try { const o = await (await api('overview')).json(); $('#n-waiting').textContent = o.stories.waiting || ''; $('#n-places').textContent = o.places.waiting || ''; } catch (e) { /* later */ } }
+  let NS = {};
+  function paintBadges() { const g = { inbox: (NS.waiting || 0) + (NS.places || 0) }; document.querySelectorAll('.n[data-n]').forEach(n => { const k = n.dataset.n, v = k.startsWith('g-') ? g[k.slice(2)] : NS[k]; n.textContent = v || ''; }); }
+  async function badges() { try { const o = await (await api('overview')).json(); NS = { waiting: o.stories.waiting || 0, places: o.places.waiting || 0 }; paintBadges(); } catch (e) { /* later */ } }
   /* a page's own heading, and a line on what it is for */
   const head = t => [el('h2', { text: t })];
-  async function show(t) {
-    tab = t; document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-    main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
-    try { if (t === 'overview') await overview(); else if (t === 'printers') await printers(); else if (t === 'popups') await popups(); else if (t === 'home') await home(); else if (t === 'label') await label(); else if (t === 'stations') await stations(); else if (t === 'places') await places(); else if (t === 'posts') await posts(); else if (t === 'site') await site(); else if (t === 'data') await data(); else if (t === 'guide') guide(); else if (t === 'makers') await makers(); else if (t === 'use') await use(); else if (t === 'talk') await talk(); else if (t === 'species') await species(); else await stories(t); } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
+  /* a page drawn: each of its parts rendered in turn, a part's sections kept by their heading; its own heading on top */
+  let DRAWING = 0;
+  async function show(t, nav) {
+    if (!nav && FN_OF[t]) { const fn = FN_OF[t], ps = pagesOf(fn); t = ps.some(p => p.id === tab) ? tab : ps[0].id; }
+    const gp = pageOf(t) || pageOf('overview'), pg = gp[1], same = pg.id === tab;
+    if (!same && !leaveOk()) { if (location.hash !== '#' + tab && !/pair=/.test(location.hash)) history.replaceState(null, '', '#' + tab); return; }
+    tab = pg.id; navDraw(); const me = ++DRAWING, y = same ? scrollY : 0;
+    if (!same) main.replaceChildren(el('p', { class: 'empty', text: 'LOADING' }));
+    try { const out = []; let whole = pg.parts.length === 1 && !Array.isArray(pg.parts[0]);
+      for (const part of pg.parts) { const [fn, keep] = Array.isArray(part) ? part : [part, null];
+        await fn(); if (me !== DRAWING) return; const kids = [...main.children];
+        if (!keep) { out.push(...kids.filter(n => !(out.length && n.matches('h2')))); continue; }
+        const all = claimed.get(fn), first = pagesOf(fn)[0] === pg;
+        out.push(...kids.filter(n => { const h = headOf(n); return h && (keep.includes(h) || (first && !all.has(h))); })); }
+      if (me !== DRAWING) return;
+      if (!whole) { out.forEach((n, i) => { if (i && n.matches && n.matches('h2')) n.remove(); }); const h2 = out.find(n => n.matches && n.matches('h2')); const name = pg.name.charAt(0) + pg.name.slice(1).toLowerCase();
+        if (h2) h2.textContent = name; else out.unshift(el('h2', { text: name })); }
+      main.replaceChildren(...out); unNull(main); main.querySelectorAll('textarea').forEach(grow); pend(); learn(pg.id); if (same) scrollTo(0, y); else scrollTo(0, 0); findMark();
+    } catch (e) { if (e.message !== 'locked') main.replaceChildren(el('p', { class: 'empty', text: 'NO ANSWER · TRY AGAIN' })); }
   }
 
   /* ───────── species: every kind of life the devices have met, learned from their pulls. In the field list, a kind has its months,
@@ -57,17 +75,18 @@
     const F = new Set((pack.field || []).map(f => String(f.n || '').toLowerCase())), G = new Set([...F].map(n => n.split(' ')[0]));
     const where = n => { n = String(n || '').toLowerCase(); return F.has(n) || F.has(n.split(/\s+/).slice(0, 2).join(' ')) ? 'FIELD LIST' : G.has(n.split(/\s+/)[0]) ? 'BY ITS GENUS' : ''; };
     const all = j.species || [], wk = Date.now() - 7 * 864e5, mark = all.filter(s => !where(s.n)), fresh = all.filter(s => s.first > wk);
-    const list = only === 'new' ? fresh : only === 'mark' ? mark : all;
+    const SQ = species.q || '', list0 = only === 'new' ? fresh : only === 'mark' ? mark : all, list = SQ ? list0.filter(s => (s.cn + ' ' + s.n + ' ' + (s.ic || '')).toLowerCase().includes(SQ.toLowerCase())) : list0, many = species.more ? 1e9 : 120;
     const pick = (k, text) => el('button', { type: 'button', class: (only || '') === k ? 'on' : '', text, onclick: () => species(k).catch(() => {}) });
-    const row = s => el('tr', {}, el('td', {}, s.ph ? el('img', { src: s.ph, alt: '', loading: 'lazy', style: 'width:40px;height:40px;object-fit:cover;display:block' }) : el('span', { class: 'soft', text: '·' })),
+    const row = s => el('tr', {}, el('td', {}, s.ph ? el('img', { src: '/api/img?u=' + encodeURIComponent(s.ph), alt: '', loading: 'lazy', style: 'width:40px;height:40px;object-fit:cover;display:block' }) : el('span', { class: 'soft', text: '·' })),
       el('td', { text: s.cn || '—' }), el('td', { class: 'soft', text: s.n }), el('td', { text: (s.ic || '').toUpperCase() }), el('td', { class: 'soft', text: s.g || '' }), el('td', { text: where(s.n) || 'MARK ONLY' }), el('td', { class: 'soft', text: when(s.first) }),
       el('td', {}, el('a', { href: 'https://www.inaturalist.org/taxa/' + s.id, target: '_blank', rel: 'noopener', class: 'note', text: 'INATURALIST ↗' }), el('button', { type: 'button', class: 'no', text: 'REMOVE', onclick: async () => { if (!confirm('Remove this from the kinds met? A device that meets it again does not tell it again.')) return; await api('species/' + s.id, { method: 'POST', body: '{}' }); species(only).catch(() => {}); } })));
     main.replaceChildren(...head('Species'),
       el('p', { class: 'note', text: `${all.length} KINDS MET · ${fresh.length} NEW THIS WEEK · ${mark.length} WITH A MARK ONLY. EVERY PULL OF SIGHTINGS ADDS THE KINDS NO DEVICE HAD MET; THE FIRST DEVICE TO MEET ONE TELLS IT HERE ONCE. A KIND IN THE FIELD LIST HAS ITS MONTHS, NEEDS AND WHO TO CALL; ONE WITH A MARK ONLY IS DRAWN BY ITS GROUP UNTIL IT IS ADDED TO src/field.js (THE SHEET BELOW HAS WHAT TO ADD).` }),
       el('p', { class: 'note', text: 'OFFLINE, EACH DEVICE KEEPS WHAT IT HAS MET: THE SIGHTINGS, EVERY PHOTOGRAPH AND MAP TILE ONCE SEEN (UP TO 3,000), THE FIELD LIST AND THE APP ITSELF. NOTHING IS ASKED WHILE A PAGE IS HIDDEN OR LEFT UNTOUCHED FOR A QUARTER OF AN HOUR.' }),
+      el('div', { class: 'tools' }, (() => { const q = el('input', { class: 'q', type: 'search', placeholder: 'FIND A KIND', 'aria-label': 'Find a kind', value: SQ }); let tm = 0; q.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => { species.q = q.value; species.more = false; species(only).then(() => { const n = main.querySelector('.tools .q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); }, 250); }); return q; })(), el('span', { class: 'cnt', text: `${list.length} SHOWN` })),
       el('div', { class: 'acts' }, pick('', 'ALL'), pick('new', 'NEW THIS WEEK'), pick('mark', 'MARK ONLY'),
         el('button', { type: 'button', text: 'MARK ONLY (.CSV)', onclick: () => save('novel-global-species-to-add.csv', csv(mark, ['id', 'n', 'cn', 'ic', 'g', 'ph']), 'text/csv') })),
-      list.length ? el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['', 'NAME', 'SCIENTIFIC', 'GROUP', 'MARK', 'IN THE ENGINE', 'FIRST MET', ''].map(h => el('th', { text: h })))), el('tbody', {}, ...list.map(row))) : el('p', { class: 'empty', text: 'NONE YET: THEY ARRIVE AS DEVICES PULL SIGHTINGS' }));
+      list.length ? el('table', { class: 'makers' }, el('thead', {}, el('tr', {}, ...['', 'NAME', 'SCIENTIFIC', 'GROUP', 'MARK', 'IN THE ENGINE', 'FIRST MET', ''].map(h => el('th', { text: h })))), el('tbody', {}, ...list.slice(0, many).map(row))) : el('p', { class: 'empty', text: 'NONE YET: THEY ARRIVE AS DEVICES PULL SIGHTINGS' }));
   }
 
   /* ───────── talk: the board, every post with its maker's code and kin; hidden ones stay here ───────── */
@@ -265,7 +284,7 @@
   async function madeSwitch() {
     const s0 = await (await api('settings')).json(), on = !!s0.madeShow;
     return el('section', { class: 'printer made' + (on ? ' on' : '') }, el('h3', { text: on ? 'ON NOVEL.GLOBAL: WHAT IS SHOWN HERE IS PUBLIC' : 'DRAFTS: NOTHING MADE IS ON NOVEL.GLOBAL' }),
-      el('div', { class: 'note', text: on ? 'EVERY STORY, POSTER, PACK AND PHOTOGRAPH SHOWN HERE IS ON THE MAP AND THE WALL FOR EVERY VISITOR.' : 'SHOW STILL APPROVES AND PRINTS, BUT VISITORS SEE NONE OF IT: NOT ON THE MAP, THE WALL OR IN ITS TALK. NOTHING IS DELETED. THE EXAMPLE IS SET APART, UNDER WORDS AND BOARDS.' }),
+      el('div', { class: 'note', text: on ? 'EVERY STORY, POSTER, PACK AND PHOTOGRAPH SHOWN HERE IS ON THE MAP AND THE WALL FOR EVERY VISITOR.' : 'SHOW STILL APPROVES AND PRINTS, BUT VISITORS SEE NONE OF IT: NOT ON THE MAP, THE WALL OR IN ITS TALK. NOTHING IS DELETED. THE EXAMPLE IS SET APART, UNDER SITE → BOARDS.' }),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: on ? 'on' : '', text: on ? 'SHOWN ON NOVEL.GLOBAL' : 'DRAFTS · HIDDEN', onclick: async () => { if (!on && !confirm('Show everything approved here on novel.global, to every visitor?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ madeShow: !on }) }); show(tab); } })));
   }
   async function stories(st) {
@@ -360,6 +379,7 @@
         canOff && !listening ? el('button', { type: 'button', disabled: true, text: 'OFF OR OUT OF WI-FI' }) : null,
         canOff && listening ? el('button', { type: 'button', class: 'no', text: fresh(p.off) ? 'TURNING OFF' : 'TURN OFF', onclick: async () => { if (!confirm('Turn this printer off? It prints a slip, then shuts down. Unplug it once its green light stops.')) return; await setP(p.id, { action: 'off' }); show('printers'); } }) : null),
       tok);
+    if (p.id !== 'novelglobal') card.append(buildRow(p.id));
     return card;
   }
   /* ───────── tracks: LIVING, the lives, stays on the map for every visitor, unless unlocked here ───────── */
@@ -611,7 +631,7 @@
     main.replaceChildren(...head('Pop-ups'), make, ...doc.pops.map(card), tcards);
   }
 
-  /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the WORDS AND BOARDS
+  /* ───────── the home: which cards stand on novel.global, in what order, big or small. It writes the same cards text the SITE → CARDS
      page shows (a "# id" block for each card, with size and hide lines), so anything typed there is kept ───────── */
   const HOME_CARDS = [['intro', 'OPENER', 'small'], ['radio', 'DIRECT ACTION RADIO', 'small'], ['wish', 'BLUEPAPER', 'small'], ['research', 'RESEARCH BOARD', 'small'], ['zine', 'DESIGN PRINT', 'small'], ['kit', 'ISLAND', 'small'], ['space', 'ISLAND ARCHIPELAGOS', 'small'],
     ['weather', 'WEATHER', 'nine'], ['news', 'NEWS', 'nine'], ['events', 'LAN PARTIES', 'nine'], ['fiction', 'FICTION', 'nine'], ['nonfiction', 'NON-FICTION', 'nine'], ['survival', 'SURVIVAL', 'nine'],
@@ -766,7 +786,26 @@
     main.replaceChildren(...head('Home'), opener, bizEd, spEd, scEd, cardsEd, look, note);
   }
 
-  async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), ...list.map(printerCard)); }
+  async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); try { const st0 = await (await api('settings')).json(); BUILD = st0.builds ? JSON.parse(st0.builds) : {}; } catch (e) { BUILD = {}; }
+    main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), buildsCard(), ...list.map(printerCard)); }
+  /* ───────── builds: what an island's keeper can change from their home. One choice an island (and one for islands with none of their
+     own); CUSTOM opens the parts. A keeper only ever sees what is in theirs, and the site refuses the rest ───────── */
+  const BPARTS = [['name', 'NAME'], ['pics', 'PICTURES'], ['links', 'CONNECTIONS'], ['cards', 'CARDS'], ['picks', 'PICKS'], ['passes', 'PASSES'], ['use', 'STAMPS'], ['gap', 'GAP'], ['gang', 'GANG']];
+  const BPRE = { full: BPARTS.map(x => x[0]), simple: ['name', 'pics', 'gap', 'passes'] };
+  let BUILD = {};
+  const buildList = id => { const v = id ? ((BUILD.isles || {})[id] ?? BUILD.def ?? 'full') : (BUILD.def ?? 'full'); return Array.isArray(v) ? v : (BPRE[v] || BPRE.full); };
+  function buildRow(id) {
+    const cur = id ? (BUILD.isles || {})[id] : BUILD.def, kind = Array.isArray(cur) ? 'custom' : (cur || (id ? 'same' : 'full'));
+    const sel = el('select', { 'aria-label': 'Build', 'data-auto': '' }, ...[...(id ? [['same', 'AS NEW ISLANDS']] : []), ['full', 'FULL: EVERYTHING'], ['simple', 'SIMPLE: NAME, PICTURES, GAP, PASSES'], ['custom', 'CUSTOM']].map(([v, t]) => el('option', { value: v, text: t }))); sel.value = kind;
+    const say = el('span', { class: 'note' }), parts = el('div', { class: 'bparts', 'data-auto': '', hidden: kind !== 'custom' }, ...BPARTS.map(([k, t]) => { const c = el('input', { type: 'checkbox' }); c.dataset.k = k; c.checked = buildList(id).includes(k); return el('label', { class: 'check' }, c, t); }));
+    const put = async () => { const v = sel.value === 'custom' ? [...parts.querySelectorAll('input')].filter(c => c.checked).map(c => c.dataset.k) : sel.value; BUILD.isles = BUILD.isles || {};
+      if (id) { if (v === 'same') delete BUILD.isles[id]; else BUILD.isles[id] = v; } else BUILD.def = v; parts.hidden = sel.value !== 'custom';
+      say.textContent = '…'; const r = await api('settings', { method: 'POST', body: JSON.stringify({ builds: JSON.stringify(BUILD) }) }).catch(() => null); say.textContent = r && r.ok ? 'SAVED' : 'NOT SAVED'; setTimeout(() => { say.textContent = ''; }, 1600); };
+    sel.addEventListener('change', () => { if (sel.value === 'custom') { const base = buildList(id); parts.querySelectorAll('input').forEach(c => { c.checked = base.includes(c.dataset.k); }); } put(); });
+    parts.addEventListener('change', put);
+    return el('div', { class: 'build' }, el('label', { title: id ? 'What this island’s keeper can change from their home. They only ever see what is in it.' : 'For every island with no build of its own' }, 'BUILD', sel), say, parts); }
+  function buildsCard() { return el('section', { class: 'printer' }, el('h3', { text: 'BUILDS' }),
+    el('small', { class: 'hint', text: 'A build is what an island’s keeper can change from their own home: its name, pictures, connections, cards, picks, passes, stamps, the gap between prints and its gang. FULL is all of it; SIMPLE is name, pictures, gap and passes; CUSTOM ticks each part. A keeper only ever sees what is in their build, and the site refuses the rest. This one is for new islands and any left AS NEW ISLANDS; each island below has its own.' }), buildRow(null)); }
   /* the slip every printer prints once it joins a Wi-Fi: its words, one line each, and the link its code opens. Each printer asks for them
      as it joins, so a change here reaches every printer the next time one joins; with none to be had it prints the last it had */
   /* the note each card brings up once, as it is first reached: a blank line between paragraphs; a short first line is its heading */
@@ -896,7 +935,7 @@
   async function curationsOf() { try { const st = await (await api('settings')).json(); const c = st.curations ? JSON.parse(st.curations) : []; return Array.from({ length: 12 }, (_, i) => c[i] || { name: '', about: '' }); } catch (e) { return Array.from({ length: 12 }, () => ({ name: '', about: '' })); } }
   async function site() {
     const st = await (await api('settings')).json(); let g = {}; try { g = st.gates ? JSON.parse(st.gates) : {}; } catch (e) { g = {}; }
-    const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('site'); };
+    const save = async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show(tab); };
     /* each setting says, in plain words, what it changes, what to type, and what a visitor then sees */
     const hint = t => el('small', { class: 'hint', text: t });
     /* the devices, like a game: earned one a poster (as set), all open, or all closed */
@@ -1008,7 +1047,7 @@
       stripSay, stripBox,
       el('label', { class: 'check' }, calOn, 'USE THE CURVE'), el('div', { class: 'three' }, ...cals.map(c => c.row)),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = pqForm(); save({ printq: JSON.stringify(o) }); savedQ = JSON.stringify(o); } })),
-      el('h3', { text: 'TUNE' }),
+      ), tuneSec = el('section', { class: 'ed' }, el('h3', { text: 'TUNE' }),
       hint('Shows that what you saved reaches the paper, and what one step either way would do. The slip prints your saved settings at the top, the photograph as the site prints it now, then a close-up three times each for MID-TONES, CONTRAST and EDGES (one step under, as saved, one step over; SAVED marks yours), then three bands at three heats. 1. SAVE above. 2. Choose the printer and press PRINT TUNE. 3. Where a neighbour looks better, set that number above, SAVE, and print TUNE again. If the three heat bands look the same, this printer ignores heat sent by the site: set its darkness on the printer itself.'),
       el('div', { class: 'acts' }, pps2, ownPick, el('button', { type: 'button', text: 'SEE TUNE', onclick: () => tuneDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT TUNE', onclick: () => tuneDo(true) })),
       tuneSay, tuneBox,
@@ -1089,7 +1128,7 @@
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
     /* grouped by what they change, each group under its own word; the keys at the top jump to a group */
     const grp = (id, t, why) => el('h3', { id: 'set-' + id, class: 'set-g', title: why, text: t });
-    const G = [['print', 'PRINTING', 'How prints look and when they go out', [printq, sends, gates]], ['words', 'WORDS', 'What the site says first, and where it is', [start, notice, country, events]],
+    const G = [['print', 'PRINTING', 'How prints look and when they go out', [printq, tuneSec, sends, gates]], ['words', 'WORDS', 'What the site says first, and where it is', [start, notice, country, events]],
       ['look', 'LOOK', 'How the site moves and its style packs', [motion, styles]], ['making', 'MAKING', 'What people may put up, and how prints go out', [printing, making]], ['folio', 'PORTFOLIO', 'The blog, its curations and its sources', [blog, cur, sources]], ['reset', 'RESET', 'Back to the start, and what this browser keeps', [reset]]];
     const jump = el('div', { class: 'acts', style: 'margin:0 0 14px' }, ...G.map(g => el('button', { type: 'button', text: g[1], title: g[2], onclick: () => { const h = document.getElementById('set-' + g[0]); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); } })),
       el('button', { type: 'button', text: 'HOME →', title: 'The cards on the home: order, size and look', onclick: () => show('home') }), el('button', { type: 'button', text: 'POP-UPS →', title: 'Pop-up cards, their links and QR codes', onclick: () => show('popups') }));
@@ -1153,16 +1192,17 @@
 
   /* ───────── the guide: how each part works, the stack, and where things are ───────── */
   const G = [
-    ['Every day', ['Open OVERVIEW: the numbers in coral want a look. WAITING holds what was sent: SHOW puts it on the map and the board, and sends it to its printer; REFUSE keeps it here, never shown; ARCHIVE puts it away (ARCHIVE can bring it back for a year).', 'PLACES SUGGESTED by visitors wait the same way under PLACES.']],
-    ['Printers', ['PAIR AN ISLAND: an island (the island kit on a Raspberry Pi) prints a code; scan it and APPROVE, and it takes its token by itself. PAIR A PRINTER shows a token once: it goes on the Raspberry Pi in /etc/da-pull.env. PRINTS AFTER APPROVAL holds each slip here (or on its touch screen, if one is paired) until shown; PRINTS WITHOUT APPROVAL prints at once.', 'MESH ON sends a line to the T-Beam only for slips sent to the mesh. Paper always prints before any mesh line.', 'ONE-WAY: novel.global prints on this island, never the other way. TWO-WAY: the island’s own experiences may print on novel.global’s printer too.', 'ISLAND N: each printer’s island number (novel.global 1, the others 2 and up in the order they pair); press it to set one by hand.', 'TEST PRINT, TURN OFF and the state of each part (Pi, screen, mesh, the last slip) are on each printer.']],
-    ['Places', ['Add one under PLACES, or many under DATA → BRING IN PLACES from a sheet. A sheet has a first row of column names: n, cat, role, what, addr, sub, url, lat, lng. Right-click a spot in a map app to copy its latitude and longitude.', 'Places written into the site itself (places.js) are always there too.']],
-    ['Words, boards and cities', ['WORDS AND BOARDS rewrites the words on INTENTION and W.I.S.H., the first board every visitor gets, and BOARD 00 (open it to editing, change it in the studio, send it, then show it under WAITING).', 'Cities: a line # Name begins a city, "centre, lat, lng" places it, and each other line is "name, lat, lng".']],
+    ['Finding things', ['Six groups: TODAY, INBOX, ISLANDS, PRINT, SITE and KEEP, along the foot on a phone and down the side on a wide screen; each has a few pages of one word. FIND (the magnifier at the top) finds any setting by a word and takes you to it. A grey line under a setting is its help: tap it to read all of it. A section with changes not yet saved is marked in coral, with NOT SAVED · SAVE at the foot; leaving asks first.']],
+    ['Every day', ['Open TODAY: the numbers in coral want a look. WAITING holds what was sent: SHOW puts it on the map and the board, and sends it to its printer; REFUSE keeps it here, never shown; ARCHIVE puts it away (ARCHIVE can bring it back for a year).', 'PLACES SUGGESTED by visitors wait the same way under INBOX → PLACES.']],
+    ['Printers', ['BUILDS (ISLANDS → PRINTERS): each island has one build, what its keeper can change from their own home. FULL is all of it, SIMPLE is name, pictures, gap and passes, CUSTOM ticks each part. A keeper only ever sees what is in their build, and the site refuses the rest. Each change saves by itself.', 'PAIR AN ISLAND: an island (the island kit on a Raspberry Pi) prints a code; scan it and APPROVE, and it takes its token by itself. PAIR A PRINTER shows a token once: it goes on the Raspberry Pi in /etc/da-pull.env. PRINTS AFTER APPROVAL holds each slip here (or on its touch screen, if one is paired) until shown; PRINTS WITHOUT APPROVAL prints at once.', 'MESH ON sends a line to the T-Beam only for slips sent to the mesh. Paper always prints before any mesh line.', 'ONE-WAY: novel.global prints on this island, never the other way. TWO-WAY: the island’s own experiences may print on novel.global’s printer too.', 'ISLAND N: each printer’s island number (novel.global 1, the others 2 and up in the order they pair); press it to set one by hand.', 'TEST PRINT, TURN OFF and the state of each part (Pi, screen, mesh, the last slip) are on each printer.']],
+    ['Places', ['Add one under INBOX → PLACES, or many under KEEP → DATA → BRING IN PLACES from a sheet. A sheet has a first row of column names: n, cat, role, what, addr, sub, url, lat, lng. Right-click a spot in a map app to copy its latitude and longitude.', 'Places written into the site itself (places.js) are always there too.']],
+    ['Words, boards and cities', ['SITE → WORDS rewrites the words on INTENTION and W.I.S.H.; SITE → BOARDS holds the first board every visitor gets and BOARD 00 (open it to editing, change it in the studio, send it, then show it under WAITING). Cities are under SITE → MAP.', 'Cities: a line # Name begins a city, "centre, lat, lng" places it, and each other line is "name, lat, lng".']],
     ['Species and offline', ['SPECIES lists every kind of life the devices have met, the newest first, learned from their pulls of sightings: no device is asked for anything extra. MARK ONLY are the kinds not yet in the field list (src/field.js); download them as a sheet and add the ones that matter, with their months, needs and who to call. Offline, each device keeps what it has met: sightings, photographs and map tiles once seen, the field list and the app. Nothing is asked of the site while a page is hidden or left untouched for a quarter of an hour, and nothing runs on the site while no one is using it.']],
     ['Signing in', ['The password is the ADMIN_KEY secret set in Cloudflare (Workers & Pages → front → Settings → Variables and Secrets). It is kept only in this browser tab until it is closed or LOCK is pressed.']],
-    ['Devices and motion', ['SETTINGS → DEVICES: seven devices, each earned on its own after the number of posters set beside it (0: open from the start). The simple ones are the music, INTENTION with W.I.S.H., and art and print; the complex ones are the radio, the research board, design and the four-track desk. One never opens another. OPEN makes all open; CLOSED leaves only those set to 0.', 'MOTION: calm, as built or chaos; PHREAK lays faint lines of base64 under the stars. A visitor who asks their device for less motion always gets stillness.']],
-    ['Blog', ['Name up to twelve curations under SETTINGS; each named one is a tab on novel.global/blog.html. Write posts under BLOG and give each its curation. Drafts are seen only here (PREVIEW).']],
-    ['Going back to base', ['SETTINGS → BACK TO THE BASE VERSION: tick what goes back, then type RESET. Stories and places go to the ARCHIVE (they can come back); the printers, their tokens and the password are never touched.', 'CLEAR THIS BROWSER empties what was made in this browser (posters on its wall, songs, boards), for testing as a new visitor.']],
-    ['Data and privacy', ['Counts are of things, never of people: no addresses, no visitors told apart. Everything sent is kept for a year (archived ones too), then goes. Photographs are seen only here unless shown.', 'DATA downloads everything as one file, or places, stories and counts as sheets.']],
+    ['Devices and motion', ['SITE → LOOK → DEVICES: seven devices, each earned on its own after the number of posters set beside it (0: open from the start). The simple ones are the music, INTENTION with W.I.S.H., and art and print; the complex ones are the radio, the research board, design and the four-track desk. One never opens another. OPEN makes all open; CLOSED leaves only those set to 0.', 'MOTION: calm, as built or chaos; PHREAK lays faint lines of base64 under the stars. A visitor who asks their device for less motion always gets stillness.']],
+    ['Blog', ['Name up to twelve curations under SITE → BLOG; each named one is a tab on novel.global/blog.html. Write posts on the same page and give each its curation. Drafts are seen only here (PREVIEW).']],
+    ['Going back to base', ['KEEP → RESET: tick what goes back, then type RESET. Stories and places go to the ARCHIVE (they can come back); the printers, their tokens and the password are never touched.', 'CLEAR THIS BROWSER empties what was made in this browser (posters on its wall, songs, boards), for testing as a new visitor.']],
+    ['Data and privacy', ['Counts are of things, never of people: no addresses, no visitors told apart. Everything sent is kept for a year (archived ones too), then goes. Photographs are seen only here unless shown.', 'KEEP → DATA downloads everything as one file, or places, stories and counts as sheets.']],
     ['The stack', ['novel.global is one Cloudflare Worker (src/worker/index.js) serving the site from dist/ with a D1 database (stories, jobs, printers, places, posts, settings, counts). It asks iNaturalist and OpenStreetMap for everyone, and the browser asks them itself when they turn the Worker away.', 'The receipts print on an Epson TM-T88V through a Raspberry Pi (receiver/pull.py asks for jobs every 3 seconds), with a Meshtastic T-Beam for the mesh and an optional touch screen.', 'The site: plain JavaScript, MapLibre for the studio map, Fabric for the boards and print shop, Web Audio for every sound (nothing recorded). The staging branch is the preview; main is live.']],
     ['Links', [['Cloudflare dashboard', 'https://dash.cloudflare.com/'], ['The code on GitHub', 'https://github.com/novelglobal/islandarchipelagos'], ['iNaturalist API', 'https://api.inaturalist.org/v1/docs/'], ['OpenStreetMap Overpass', 'https://wiki.openstreetmap.org/wiki/Overpass_API'], ['Meshtastic', 'https://meshtastic.org/docs/'], ['Epson ESC/POS', 'https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/index.html']]],
   ];
@@ -1171,10 +1211,92 @@
       ...ps.map(p => Array.isArray(p) ? el('p', {}, el('a', { href: p[1], target: '_blank', rel: 'noopener', text: p[0] + ' ↗' })) : el('p', { text: p })))));
   }
 
-  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+
+  /* ───────── where everything is: six groups, each a few pages of one word. On a phone the groups sit along the foot and the group's
+     pages along the top; on a wide screen all of it down the side. A page is a whole render, or the sections of one by their heading
+     (a section no page names still shows, on the first page of its render, so nothing is ever lost) ───────── */
+  const P = (id, name, parts, n, more) => ({ id, name, parts: Array.isArray(parts) ? parts : [parts], n, more: more || '' });
+  const NAV = [
+    ['today', 'TODAY', 'What wants a look, and how it is going', [P('overview', 'STATUS', overview, null, 'overview free allowance visits snapshot units activity'), P('use', 'USE', use, null, 'journey counted insights')]],
+    ['inbox', 'INBOX', 'What was sent, said and suggested', [P('waiting', 'WAITING', () => stories('waiting'), 'waiting', 'approve show refuse drafts posters'), P('shown', 'SHOWN', () => stories('shown')), P('refused', 'REFUSED', () => stories('refused')), P('deleted', 'ARCHIVE', () => stories('deleted'), null, 'bring back deleted'),
+      P('places', 'PLACES', places, 'places', 'suggested add a place'), P('talk', 'TALK', talk), P('makers', 'MAKERS', makers, null, 'codes kin')]],
+    ['islands', 'ISLANDS', 'Printers, pop-ups and the finder', [P('printers', 'PRINTERS', printers, null, 'pair an island open joining joined slip token test print photo test passes turn off build keeper gang'), P('popups', 'POP-UPS', popups, null, 'new pop-up qr desk link logo templates'),
+      P('finder', 'FINDER', [[label, ['THE ISLANDS']]], null, 'islands place map link how to find it')]],
+    ['print', 'PRINT', 'How prints look, tested on paper', [P('quality', 'QUALITY', [[site, ['PRINT QUALITY']]], null, 'set dots photographs mid-tones contrast sharpen stretch words lines bolden heat darkness curve calibration strip'),
+      P('tune', 'TUNE', [[site, ['TUNE']]], null, 'tune photo test five ways own photo'), P('styles', 'STYLES', [[site, ['STYLES · MOD PACKS']]], null, 'mod packs house press quiet loud'),
+      P('rules', 'RULES', [[site, ['PRINTING', 'SENT WITHOUT A PRINT', 'MAKING']]], null, 'codes gap touch maker free print approval')]],
+    ['site', 'SITE', 'What the site shows and says', [P('home', 'HOME', home, null, 'opener business card species list showcase cards order size look private page'), P('label', 'LABEL', [[label, ['THE LABEL', 'THE FILM', 'CARD NOTES']]], null, 'label film card notes'),
+      P('words', 'WORDS', [[site, ['START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES']], [stations, ['INTENTION AND W.I.S.H. · THE WORDS']]], null, 'start booth notice country lan parties intention wish'),
+      P('boards', 'BOARDS', [[stations, ['THE EXAMPLE · ITS POSTER AND BOARD 00', 'BOARD 01 · THE TEMPLATE']]], null, 'example board 00 board 01 template'),
+      P('map', 'MAP', [[stations, ['LIVING', 'THE MOON', 'THE BUOY', 'CITIES AND DATA PACKS']]], null, 'living moon buoy cities data packs'),
+      P('cards', 'CARDS', [[stations, ['CARDS', 'PHOTOS', 'CARD PICTURES']]], null, 'card words photos card pictures bluepaper direct action radio'),
+      P('look', 'LOOK', [[site, ['DEVICES', 'MOTION AND PHREAK']]], null, 'devices earned open closed motion calm chaos phreak'), P('species', 'SPECIES', species, null, 'species kinds field list mark only'),
+      P('posts', 'BLOG', [posts, [site, ['BLOG', 'BLOG · THE TWELVE CURATIONS', 'PORTFOLIO · SOURCES']]], null, 'blog portfolio new post curations sources')]],
+    ['keep', 'KEEP', 'Backups, resets and the guide', [P('data', 'DATA', [data, [stations, ['PHOTOGRAPHS']]], null, 'backup rebuild download zip bring in places low res photographs'), P('reset', 'RESET', [[site, ['BACK TO THE BASE VERSION']]], null, 'reset fresh start base version clear drafts this browser'), P('guide', 'GUIDE', guide)]]
+  ];
+  const ICON = { today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>', inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+    islands: '<rect x="3" y="8" width="8" height="8"/><circle cx="17" cy="12" r="4"/>', print: '<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    site: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>', keep: '<path d="M3 7h18v4H3z"/><path d="M5 11v9h14v-9M10 15h4"/>' };
+  const pageOf = id => { for (const g of NAV) for (const p of g[3]) if (p.id === id) return [g, p]; return null; };
+  /* the old names, from a render saving and showing itself again: the page it is on, else the first that holds it */
+  const FN_OF = { site, stations, label };
+  const pagesOf = fn => NAV.flatMap(g => g[3]).filter(p => p.parts.some(x => (Array.isArray(x) ? x[0] : x) === fn));
+  const claimed = new Map(); NAV.forEach(g => g[3].forEach(p => p.parts.forEach(x => { if (Array.isArray(x)) { const s = claimed.get(x[0]) || new Set(); x[1].forEach(h => s.add(h)); claimed.set(x[0], s); } })));
+  const headOf = n => { if (!n || !n.matches || n.matches('h2, h3.set-g')) return ''; const h = n.matches('h3') ? n : n.querySelector('h3'); return h ? h.textContent.trim() : ''; };
+  function navDraw() {
+    const [g0] = pageOf(tab) || NAV[0], badge = k => k ? el('i', { class: 'n', 'data-n': k }) : null;
+    $('#tabs').replaceChildren(...NAV.flatMap(g => [el('span', { class: 'grp', title: g[2], text: g[1] }), ...g[3].map(p => el('button', { type: 'button', 'data-tab': p.id, class: p.id === tab ? 'on' : '', text: p.name }, badge(p.n)))]));
+    $('#bar').replaceChildren(...NAV.map(g => { const b = el('button', { type: 'button', 'data-grp': g[0], class: g === g0 ? 'on' : '', title: g[2], 'aria-label': g[1] }); b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[g[0]] + '</svg>'; b.append(el('span', { text: g[1] })); const bn = badge(g[3].some(p => p.n) ? 'g-' + g[0] : null); if (bn) b.append(bn); return b; }));
+    $('#subs').replaceChildren(...g0[3].map(p => el('button', { type: 'button', 'data-sub': p.id, class: p.id === tab ? 'on' : '', text: p.name }, badge(p.n))));
+    const on = $('#subs .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); paintBadges(); }
+  /* the page asked for: the hash changes (so back and forward work, and a link can name a page), and the change draws it */
+  const go = t => { if (location.hash === '#' + t) show(t, true); else location.hash = t; };
+  /* ───────── unsaved: a section typed in shows it, a key at the foot saves it, and leaving asks first. A switch that saves by itself
+     (data-auto) is never unsaved ───────── */
+  const dirty = () => main.querySelector('section.dirty, form.dirty');
+  function pend() { const d = dirty(), b = $('#pend'); if (!b) return; b.hidden = !d; }
+  const saveKey = s => [...s.querySelectorAll('button')].find(b => /^SAVE\b/.test(b.textContent.trim()) && !b.disabled) || s.querySelector('button.on:not([disabled])');
+  const leaveOk = () => !dirty() || confirm('Some changes on this page are not saved. Leave without saving them?');
+  main.addEventListener('input', e => { if (e.target.closest('[data-auto]') || e.target.closest('.tools') || e.target.type === 'file') return; const s = e.target.closest('section.ed, section.printer, form.ed'); if (s) { s.classList.add('dirty'); pend(); } if (e.target.tagName === 'TEXTAREA') grow(e.target); });
+  main.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const s = b.closest('.dirty'); if (s && (b.classList.contains('on') || b === saveKey(s) || /^(SAVE|PUBLISH|MAKE|ADD|APPROVE|SEND|PRINT)\b/.test(b.textContent.trim()))) { s.classList.remove('dirty'); pend(); } }, true);
+  addEventListener('beforeunload', e => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+  /* words to read: a hint is one line until tapped, so the page reads as its controls; tapping it again folds it */
+  main.addEventListener('click', e => { const h = e.target.closest('.hint, section > p.note, section > .note'); if (!h || e.target.closest('a, button, input, select, textarea')) return; if (h.scrollHeight > h.clientHeight + 2 || h.classList.contains('open')) { e.preventDefault(); h.classList.toggle('open'); } });
+  /* a part left out of a row (null) once printed the word: gone */
+  const unNull = r => { const w = document.createTreeWalker(r, NodeFilter.SHOW_TEXT), dead = []; while (w.nextNode()) if (/^(?:null|undefined)+$/.test(w.currentNode.textContent)) dead.push(w.currentNode); dead.forEach(n => n.remove()); };
+  /* a text box as tall as its words, on a phone and a desk alike */
+  const grow = t => { t.style.height = 'auto'; t.style.height = Math.min(window.innerHeight * 0.7, t.scrollHeight + 2) + 'px'; };
+  /* ───────── FIND: every page, every heading and every label seen, by any word; a page learns its own words each time it is drawn ───────── */
+  let IDX = {}; try { IDX = JSON.parse(localStorage.getItem('da.admin.idx') || '{}') || {}; } catch (e) { IDX = {}; }
+  function learn(id) { const w = new Set(); main.querySelectorAll('h3, label, .check, button, th, summary').forEach(n => { const t = (n.firstChild && n.firstChild.nodeType === 3 ? n.firstChild.textContent : n.textContent || '').trim(); if (t && t.length < 60 && !/^\d+$/.test(t)) w.add(t.toUpperCase()); });
+    IDX[id] = [...w].slice(0, 300); try { localStorage.setItem('da.admin.idx', JSON.stringify(IDX)); } catch (e) { /* this visit */ } }
+  function findIn(q) { q = q.trim().toUpperCase(); if (q.length < 2) return [];
+    /* the best word on each page: its name first, then its own headings and words, then what it was seen to hold; whole words before parts */
+    const rank = t => (t === q ? 0 : t.startsWith(q) ? 1 : new RegExp('(^|[^A-Z])' + q.replace(/[^A-Z0-9]/g, '.')).test(t) ? 2 : 3);
+    const out = []; NAV.forEach(g => g[3].forEach(p => { const own = [p.name, ...p.parts.filter(Array.isArray).flatMap(x => x[1]), ...(p.more ? p.more.toUpperCase().split(' ') : [])], seen = IDX[p.id] || [];
+      let best = null; own.concat(seen).forEach((t, i) => { const T = t.toUpperCase(); if (!T.includes(q)) return; const sc = rank(T) + (i < own.length ? 0 : 1.5) - (t === p.name ? 2 : 0); if (!best || sc < best.sc) best = { t, sc }; });
+      if (best) out.push({ p, g, hit: best.t === p.name ? '' : best.t, score: best.sc }); }));
+    return out.sort((a, b) => a.score - b.score).slice(0, 8); }
+  let FIND_T = '';
+  function findUI() { const f = $('#find'), list = $('#found'); if (!f || f.dataset.on) return; f.dataset.on = '1';
+    const draw = () => { const r = findIn(f.value); list.hidden = !r.length && !f.value.trim(); list.replaceChildren(...(r.length ? r.map(x => el('button', { type: 'button', 'data-to': x.p.id, 'data-hit': x.hit }, el('b', { text: x.p.name }), el('span', { text: x.g[1] + (x.hit ? ' · ' + x.hit : '') }))) : [el('p', { class: 'note', text: f.value.trim().length > 1 ? 'NOTHING BY THAT WORD' : '' })])); };
+    f.addEventListener('input', draw); f.addEventListener('focus', draw);
+    f.addEventListener('keydown', e => { if (e.key === 'Enter') { const b = list.querySelector('button'); if (b) b.click(); } if (e.key === 'Escape') { f.value = ''; list.hidden = true; f.blur(); } });
+    list.addEventListener('click', e => { const b = e.target.closest('[data-to]'); if (!b) return; FIND_T = b.dataset.hit || f.value.trim(); f.value = ''; list.hidden = true; f.blur(); document.body.classList.remove('finding'); go(b.dataset.to); });
+    document.addEventListener('click', e => { if (!e.target.closest('#found, #find, #findk')) { list.hidden = true; document.body.classList.remove('finding'); } });
+    $('#findk').addEventListener('click', () => { document.body.classList.toggle('finding'); if (document.body.classList.contains('finding')) setTimeout(() => f.focus(), 30); }); }
+  /* after FIND: the place on the page with that word, brought into view for a moment */
+  function findMark() { const q = FIND_T.toUpperCase(); FIND_T = ''; if (!q) return; const n = [...main.querySelectorAll('h3, label, .check, button, th, summary, .hint')].find(x => x.textContent.toUpperCase().includes(q)); if (!n) return;
+    n.scrollIntoView({ block: 'center' }); const s = n.closest('section, form, .card') || n; s.classList.add('found'); setTimeout(() => s.classList.remove('found'), 2200); }
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) go(b.dataset.tab); });
+  $('#subs').addEventListener('click', e => { const b = e.target.closest('[data-sub]'); if (b) go(b.dataset.sub); });
+  $('#bar').addEventListener('click', e => { const b = e.target.closest('[data-grp]'); if (!b) return; const g = NAV.find(x => x[0] === b.dataset.grp), cur = pageOf(tab); go(cur && cur[0] === g ? g[3][0].id : (g[3].find(p => p.id === LAST[g[0]]) || g[3][0]).id); });
+  /* each group opens on the page last seen in it */
+  const LAST = {}; addEventListener('hashchange', () => { const c = pageOf(tab); if (c) LAST[c[0][0]] = tab; });
+  $('#pend').addEventListener('click', () => { const s = dirty(); if (!s) return; const k = saveKey(s); s.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (k) k.click(); });
   $('#out').addEventListener('click', () => lock('LOCKED'));
   /* a second island's code scanned while this page is open */
-  addEventListener('hashchange', () => { if (KEY && /pair=/.test(location.hash)) show('printers'); });
+  addEventListener('hashchange', () => { if (!KEY) return; if (/pair=/.test(location.hash)) { show('printers'); return; } const h = location.hash.slice(1); if (pageOf(h) && h !== tab) show(h, true); });
   $('#gate').addEventListener('submit', e => { e.preventDefault(); KEY = $('#key').value.trim(); if (!KEY) return; sessionStorage.setItem('da.admin', KEY); open(); });
   if (KEY) open();
 })();

@@ -1542,6 +1542,10 @@
       (p.mod ? '' : '<p class="hm-h" title="This island’s gang: codes that help run it, from their own home. Not the keeper’s key, not admin">GANG</p><ol class="hm-list hm-mods">' + ((p.mods || []).map(function (m) { return '<li class="on"><i></i><span>' + esc(m) + '</span><button class="hm-btn" data-unmod="' + esc(m) + '" aria-label="Take ' + esc(m) + ' off">×</button></li>'; }).join('') || '<li>—</li>') + '</ol><form class="hm-row hm-modf"><input maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="A code to join this island’s gang"><button class="hm-btn">ADD</button></form>') +
       '<p class="hm-h">PASSES</p><div class="hm-row"><button class="hm-btn" data-pass title="Passes for today' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'PRINT</button></div>' +
       '<div class="hm-row"><button class="hm-btn" data-rn>RENAME</button>' + (own ? '<button class="hm-btn" data-out title="Forget this island’s key on this phone">FORGET</button>' : '') + '</div>';
+      /* only what this island's build holds: the rest is not shown at all (the site refuses it too) */
+      var can = p.build || null; if (can) { var PART = { CONNECTIONS: 'links', PICTURES: 'pics', PICKS: 'picks', CARDS: 'cards', 'GIVE PASSES': 'passes', USE: 'use', EVERY: 'use', ROLL: 'use', GAP: 'gap', GANG: 'gang', PASSES: 'passes' }, cur = null;
+        [].slice.call(box.children).forEach(function (n) { if (n.classList.contains('hm-h')) cur = PART[n.textContent.trim()] || null; if (n.querySelector('[data-rn]')) cur = null; if (cur && can.indexOf(cur) < 0) n.remove(); });
+        if (can.indexOf('name') < 0) { var rn0 = $('[data-rn]', box); if (rn0) rn0.remove(); } }
       $$('[data-pack]', box).forEach(function (b) { b.addEventListener('click', function () { post({ pack: b.dataset.pack }); beep(550, 0.05); }); });
       $$('[data-way]', box).forEach(function (b) { b.addEventListener('click', function () { var w = (p.ways || ['touch', 'print']).slice(), k = w.indexOf(b.dataset.way); if (k >= 0) w.splice(k, 1); else w.push(b.dataset.way); post({ ways: w }); beep(k >= 0 ? 330 : 660, 0.05); }); });
       $$('[data-use]', box).forEach(function (b) { b.addEventListener('click', function () { post({ use: b.dataset.use ? { kind: b.dataset.use, every: p.use ? p.use.every : 5 } : null }); beep(550, 0.05); }); });
@@ -1554,17 +1558,17 @@
         if (b.classList.contains('on')) { if (confirm('Take this picture off your card?')) fetch('/api/island/pics/' + n, { method: 'DELETE', headers: { authorization: 'Bearer ' + key } }).then(function () { return call(); }).then(fill); return; }
         filePick(false, function (file) { b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n, { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); }); });
       $$('[data-sp]', box).forEach(function (b) { b.addEventListener('click', function () { call({ method: 'POST', body: JSON.stringify({ speed: +b.dataset.sp }) }).then(fill); beep(550, 0.05); }); });
-      $('[data-pass]', box).addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
+      var pb = $('[data-pass]', box); if (pb) pb.addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       /* PICKS: what this island holds up, and a search through everything made to add to it */
       var pkl = $('.hm-pkl', box), mine = [], found = [];
       var pkDraw = function () { var on = {}; mine.forEach(function (x) { on[x.c] = 1; });
         pkl.innerHTML = mine.map(function (x) { return '<li class="on"><i></i><span>' + esc(x.n || x.c) + '</span><button class="hm-btn" data-pk="' + esc(x.c) + '" data-on="0" aria-label="Take ' + esc(x.n || x.c) + ' off">×</button></li>'; }).join('') +
           found.filter(function (x) { return !on[x.c]; }).map(function (x) { return '<li><i></i><span>' + esc(x.n || x.c) + '</span><button class="hm-btn" data-pk="' + esc(x.c) + '" data-on="1" aria-label="Pick ' + esc(x.n || x.c) + '">+</button></li>'; }).join('') || '<li>—</li>'; };
       var pick = function (o) { return call({ method: 'POST', body: JSON.stringify(Object.assign({ action: 'picks' }, o || {})) }).then(function (j) { mine = (j && j.picks) || []; pkDraw(); }); };
-      pick(); pkl.addEventListener('click', function (e) { var b = e.target.closest('[data-pk]'); if (!b) return; beep(b.dataset.on === '1' ? 660 : 330, 0.05); pick({ play: b.dataset.pk, on: b.dataset.on === '1' }).then(function () { DEV.isles = []; devLoad(); }); });
-      $('.hm-pk', box).addEventListener('submit', function (e) { e.preventDefault(); var q = $('.hm-pkq', box).value.trim(); if (!q) { found = []; pkDraw(); return; }
+      if (pkl) { pick(); pkl.addEventListener('click', function (e) { var b = e.target.closest('[data-pk]'); if (!b) return; beep(b.dataset.on === '1' ? 660 : 330, 0.05); pick({ play: b.dataset.pk, on: b.dataset.on === '1' }).then(function () { DEV.isles = []; devLoad(); }); }); }
+      if (pkl) $('.hm-pk', box).addEventListener('submit', function (e) { e.preventDefault(); var q = $('.hm-pkq', box).value.trim(); if (!q) { found = []; pkDraw(); return; }
         fetch('/api/plays?n=9&off=0&q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) { found = (j.plays || []).filter(function (x) { return !x.first; }); pkDraw(); }); });
-      $('[data-rn]', box).addEventListener('click', function () { var n = prompt('Its name', p.name); if (n && n.trim()) call({ method: 'POST', body: JSON.stringify({ name: n.trim() }) }).then(fill); });
+      var rnb = $('[data-rn]', box); if (rnb) rnb.addEventListener('click', function () { var n = prompt('Its name', p.name); if (n && n.trim()) call({ method: 'POST', body: JSON.stringify({ name: n.trim() }) }).then(fill); });
       if (own) $('[data-out]', box).addEventListener('click', function () { if (confirm('Forget this island’s key on this phone? The slip still has it.')) { store.set('da.hm.key', ''); box.innerHTML = ''; } }); };
     box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say">· · ·</p>'; call().then(fill, function () { box.innerHTML = '<p class="hm-h">ISLAND</p><p class="hm-say" title="The key did not open it">LOCKED</p>'; });
   }

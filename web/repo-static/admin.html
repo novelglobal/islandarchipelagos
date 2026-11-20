@@ -207,17 +207,103 @@
   .pslot { width: 72px; height: 72px; border: 1px dashed currentColor; border-radius: 4px; display: grid; place-items: center; overflow: hidden; background: none; color: inherit; font-size: 20px; cursor: pointer; padding: 0; }
   .pslot.on { border-style: solid; }
   .pslot img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); }
+
+  /* ───────── the desk, rebuilt: six groups, one-word pages, FIND, hints folded to a line, unsaved shown. Phones first ───────── */
+  .shell { grid-template-columns: 210px minmax(0, 1fr); }
+  .col { min-width: 0; display: flex; flex-direction: column; }
+  nav#tabs { gap: 1px; }
+  nav#tabs .grp { margin: 14px 10px 4px; }
+  nav#tabs .grp:first-child { margin-top: 2px; }
+  nav#tabs button { padding: 7px 10px; }
+  nav#subs, nav#bar { display: none; }
+  nav#subs[hidden], nav#bar[hidden] { display: none !important; }
+  main { max-width: 980px; }
+  main > h2 { font-size: 22px; letter-spacing: -.01em; margin-bottom: 12px; }
+  /* FIND: at the top of every page */
+  .findw { position: relative; margin-left: auto; display: flex; align-items: center; }
+  #findk { display: none; width: 34px; height: 34px; padding: 0; border-radius: 50%; }
+  #findk svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; display: block; margin: auto; }
+  #find { width: 220px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; background: rgba(255,255,255,.08); color: #fff; font: 500 11px var(--mono); letter-spacing: .1em; outline: none; }
+  #find::placeholder { color: rgba(255,255,255,.55); } #find:focus { background: #fff; color: var(--ink); border-color: #fff; }
+  #found { position: absolute; top: calc(100% + 6px); right: 0; width: min(340px, 92vw); max-height: 60vh; overflow-y: auto; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 40px rgba(11,37,69,.25); padding: 6px; z-index: 30; }
+  #found button { display: grid; width: 100%; text-align: left; gap: 1px; border: 0; border-radius: 6px; padding: 8px 10px; background: none; color: var(--ink); }
+  #found button:hover, #found button:focus { background: var(--teal-wash); }
+  #found b { font: 600 12px var(--mono); letter-spacing: .1em; color: var(--navy); } #found span { font: 500 10px var(--mono); letter-spacing: .06em; color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #found .note { margin: 8px; }
+  #quick { margin-left: 8px; }
+  header .findw + #quick { margin-left: 8px; }
+  /* hints: one line until tapped, so a page reads as its controls */
+  .ed .hint, .printer .hint, section > p.note, section > div.note, .ed > .note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; cursor: pointer; }
+  section > p.note, section > div.note, .ed > .note { -webkit-line-clamp: 2; }
+  .ed .hint.open, .printer .hint.open, section > .note.open { -webkit-line-clamp: unset; display: block; cursor: default; }
+  .ed .hint:not(.open):hover, section > .note:not(.open):hover { color: var(--navy); }
+  /* sections: a little more air, their headings clearer */
+  .ed, .printer { padding: 16px 18px; border-radius: 12px; }
+  .ed h3, .printer h3 { font: 600 12px var(--mono); letter-spacing: .14em; color: var(--navy); margin: 0 0 2px; }
+  .ed h3 ~ h3 { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .ed textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .ed input:focus, .ed textarea:focus, .ed select:focus { outline: 2px solid var(--teal); outline-offset: 1px; border-color: var(--navy); }
+  /* unsaved: the section marked, its SAVE alive, and one key at the foot */
+  section.dirty, form.dirty { box-shadow: inset 4px 0 0 var(--coral), 0 0 0 1px rgba(226,92,64,.25); }
+  .dirty .acts button.on { animation: pend-on 1.6s ease-in-out infinite; }
+  @keyframes pend-on { 50% { box-shadow: 0 0 0 4px rgba(226,92,64,.25); } }
+  #pend { position: fixed; z-index: 25; left: 50%; bottom: 20px; transform: translateX(-50%); padding: 11px 18px; border: 0; border-radius: 999px; background: var(--coral); color: #fff; font: 600 11px var(--mono); letter-spacing: .14em; box-shadow: 0 10px 30px rgba(11,37,69,.3); }
+  #pend[hidden] { display: none; }
+  /* a place FIND brought you to, lit for a moment */
+  .found { animation: found 2.2s ease; } @keyframes found { 0%, 60% { box-shadow: 0 0 0 3px var(--teal); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  /* builds: one choice an island */
+  .build { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .build > label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; font: 600 10px var(--mono); letter-spacing: .14em; color: var(--navy); }
+  .build select { font: 500 12px var(--mono); padding: 7px 8px; border: 1px solid #A7B1BF; border-radius: 5px; background: #fff; max-width: 360px; }
+  .bparts { display: flex; flex-wrap: wrap; gap: 6px; } .bparts[hidden] { display: none; }
+  .bparts .check { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; font: 500 10.5px var(--mono); letter-spacing: .08em; background: #fff; cursor: pointer; }
+  .bparts .check:has(input:checked) { border-color: var(--navy); background: var(--teal-wash); }
+  .bparts input { width: auto; margin: 0; accent-color: var(--navy); }
+
+  /* ───────── phones and narrow windows: the groups along the foot, the group's pages along the top ───────── */
+  @media (max-width: 899px) {
+    .shell { grid-template-columns: minmax(0, 1fr) !important; }
+    nav#tabs { display: none !important; }
+    body.in nav#subs { display: flex; position: sticky; top: 52px; z-index: 4; gap: 6px; padding: 8px 10px; background: var(--paper); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    nav#subs::-webkit-scrollbar { display: none; }
+    nav#subs button { flex: none; border-radius: 999px; padding: 8px 13px; border-color: var(--line); color: var(--navy); background: #fff; display: inline-flex; gap: 6px; align-items: center; }
+    nav#subs button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    body.in nav#bar { display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); background: var(--navy); box-shadow: 0 -1px 0 rgba(0,0,0,.2); }
+    nav#bar button { position: relative; display: grid; justify-items: center; gap: 3px; border: 0; background: none; color: rgba(255,255,255,.62); padding: 6px 0 4px; border-radius: 8px; font: 600 9px var(--mono); letter-spacing: .1em; }
+    nav#bar button svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+    nav#bar button.on { color: #fff; background: rgba(255,255,255,.1); }
+    nav#bar .n { position: absolute; top: 2px; left: calc(50% + 6px); font: 600 9px var(--mono); min-width: 16px; padding: 1px 4px; border-radius: 8px; background: var(--coral); color: #fff; }
+    nav#bar .n:empty, nav#subs .n:empty { display: none; }
+    nav#subs .n { font: 600 9px var(--mono); min-width: 16px; padding: 1px 5px; border-radius: 8px; background: var(--coral); color: #fff; font-style: normal; }
+    body.in main { padding-bottom: 96px !important; }
+    #pend { bottom: calc(76px + env(safe-area-inset-bottom)); }
+    header { flex-wrap: nowrap !important; min-height: 52px; }
+    header small { display: none; }
+    #findk { display: block; border-color: rgba(255,255,255,.45); background: transparent; color: #fff; }
+    #find { display: none; }
+    body.finding #find { display: block; position: fixed; left: 10px; right: 10px; top: 8px; width: auto; z-index: 31; padding: 10px 12px; font-size: 16px !important; background: #fff; color: var(--ink); }
+    body.finding #found { position: fixed; left: 10px; right: 10px; top: 56px; width: auto; }
+    #quick { gap: 4px !important; } #quick button { padding: 6px 8px; font-size: 9.5px; }
+    #out { padding: 6px 8px; font-size: 9.5px; }
+    header .brand b { display: none; }
+    .ed, .printer { padding: 14px; }
+    .build > label { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) { .dirty .acts button.on, .found { animation: none; } }
+  /* a number beside its name, on a phone too: the tweak rows read as a list */
+  @media (max-width: 760px) {
+    .ed .two:has(> label > input[type=number]) { grid-template-columns: minmax(0, 1fr) 96px !important; align-items: center; column-gap: 10px; row-gap: 2px; }
+    .ed .two:has(> label > input[type=number]) > .hint { grid-column: 1 / -1; }
+    .ed .three:has(> label > input[type=number]) { grid-template-columns: 1fr 1fr 1fr !important; }
+  }
 </style>
 </head>
 <body>
-<header><a class="brand" href="/" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#fff"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg><b>NOVEL.GLOBAL</b></a><small>APPROVAL</small><span id="quick" hidden></span><button type="button" id="out">LOCK</button></header>
+<header><a class="brand" href="/" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#fff"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E25C40"/></svg><b>NOVEL.GLOBAL</b></a><small>APPROVAL</small><div class="findw"><button type="button" id="findk" aria-label="Find a setting"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button><input id="find" type="search" placeholder="FIND" aria-label="Find any setting" autocomplete="off" enterkeyhint="go"><div id="found" hidden></div></div><span id="quick" hidden></span><button type="button" id="out">LOCK</button></header>
 <div class="shell">
-<nav id="tabs" hidden aria-label="Sections">
-  <span class="grp">AT A GLANCE</span><button type="button" data-tab="overview">OVERVIEW</button>
-  <span class="grp">WHAT WAS SENT</span><button type="button" data-tab="waiting">WAITING <i class="n" id="n-waiting"></i></button><button type="button" data-tab="shown">SHOWN</button><button type="button" data-tab="refused">REFUSED</button><button type="button" data-tab="makers">MAKERS</button><button type="button" data-tab="use">USE</button><button type="button" data-tab="talk">TALK</button><button type="button" data-tab="deleted">ARCHIVE</button>
-  <span class="grp">THE SITE</span><button type="button" data-tab="home">HOME</button><button type="button" data-tab="label">LABEL</button><button type="button" data-tab="places">PLACES <i class="n" id="n-places"></i></button><button type="button" data-tab="printers">PRINTERS</button><button type="button" data-tab="popups">POP-UPS</button><button type="button" data-tab="species">SPECIES</button><button type="button" data-tab="stations">WORDS AND BOARDS</button><button type="button" data-tab="posts">PORTFOLIO</button><button type="button" data-tab="site">SETTINGS</button>
-  <span class="grp">KEEPING IT</span><button type="button" data-tab="data">DATA</button><button type="button" data-tab="guide">GUIDE</button>
-</nav>
+<nav id="tabs" hidden aria-label="Sections"></nav>
+<div class="col">
+<nav id="subs" hidden aria-label="Pages"></nav>
 <main id="main">
   <form class="gate" id="gate">
     <b>Approval</b>
@@ -227,6 +313,9 @@
   </form>
 </main>
 </div>
+</div>
+<nav id="bar" hidden aria-label="Groups"></nav>
+<button type="button" id="pend" hidden>NOT SAVED · SAVE</button>
 <script src="config.js"></script>
 <script src="admin.js"></script>
 </body>
