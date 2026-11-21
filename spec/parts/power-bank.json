@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "power-bank",
+  "name": "Power bank",
+  "sub": "99 Wh · 5 V · 12 V",
+  "kind": "battery",
+  "about": "A 99 Wh power bank: USB (5 V) for the Pi, 12 V by its DC plug. Runs an island for a while, then wants charging.",
+  "source": "store",
+  "store": { "wh": 99, "use": 0.85 },
+  "ports": [
+    { "id": "usb", "label": "5 V", "plug": "usb-a", "role": "out", "volts": 5 },
+    { "id": "dc", "label": "12 V", "plug": "barrel", "role": "out", "volts": 12 }
+  ],
+  "draw": [
+    ["M24 26 Q24 22 28 22 L92 22 Q96 22 96 26 L96 78 Q96 82 92 82 L28 82 Q24 82 24 78 Z"],
+    ["M36 34 h6 M48 34 h6 M60 34 h6", 1],
+    ["M72 34 h6"],
+    ["M40 56 L54 48 L52 56 L66 50"]
+  ],
+  "licence": "MIT"
+}

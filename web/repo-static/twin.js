@@ -213,13 +213,17 @@
     /* a battery and its charger join either way round: whichever end the cable was started from */
     J.forEach(function (r) { if (!r.ok) return; var ch = r.take.part.kind === 'charger' ? r.take : r.give.part.kind === 'charger' && r.take.part.store ? r.give : null; if (!ch) return; var p = (ch === r.take ? r.give : r.take).part;
       if (p.make && ch.port.role === 'in') { sun += p.make.watts * p.make.sun * 0.75; sunH = Math.max(sunH, p.make.sun); } if (p.store) kept += p.store.wh * (p.store.use || 1); });
+    var bank = 0; BN.p.forEach(function (x) { var p = PART[x[1]]; if (p && p.store && on[x[0]] && (p.ports || []).some(function (o) { return o.role === 'out' && inUse(x[0] + '.' + o.id); })) bank += p.store.wh * (p.store.use || 1); });
     var day = need * 24, r0 = function (v) { return Math.round(v); }, say = 'Uses ' + r0(day) + ' Wh a day · the sun gives ' + r0(sun) + ' Wh (' + sunH + ' h) · the battery holds ' + r0(kept) + ' Wh';
     var res = !used ? { w: '—', t: 'Nothing here draws power yet' } : cold.length ? { w: 'SHORT', t: cold.join(', ') + (cold.length > 1 ? ' have' : ' has') + ' no power in' }
-      : !need ? { w: 'ENOUGH', t: wall ? 'From the wall' : '' } : sun < day ? { w: 'SHORT', t: sun ? say : 'Uses ' + r0(day) + ' Wh a day, and no sun comes in' }
+      : !need ? { w: 'ENOUGH', t: wall ? 'From the wall' : '' } : !sun && bank ? { w: bank >= day ? 'ENOUGH' : 'CHARGED', t: 'Uses ' + r0(day) + ' Wh a day · the bank holds ' + r0(bank) + ' Wh: about ' + r0(bank / need) + ' h, then it wants charging' } : sun < day ? { w: 'SHORT', t: sun ? say : 'Uses ' + r0(day) + ' Wh a day, and no sun comes in' }
       : kept < need * (24 - sunH) ? { w: 'SHORT', t: kept ? say + ': not enough for a night' : 'Nothing kept for the night: a battery on the charger' } : { w: 'ENOUGH', t: say + ', ' + r0(kept / need) + ' h with no sun' + (wall ? ' · the rest from the wall' : '') };
     res.on = on; res.J = J; res.need = need; res.sun = sun; res.sunH = sunH; res.kept = kept; res.wall = wall; return res; }
   function el(n, a, kids) { var e = D.createElementNS(NS, n); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
+  /* what a part is for, in one word: its plaque */
+  var JOBW = { printer: 'PRINTER', pi: 'BRAIN', sd: 'MEMORY', power: 'PLUG', solar: 'SUN', battery: 'BATTERY', charger: 'CHARGER', radio: 'RADIO', screen: 'SCREEN' }, POWERS = ['wall-strip', 'solar-100w', 'power-bank'];
+  function job(p) { if (!p) return ''; if (p.id === 'power-bank') return 'BANK'; if (p.kind === 'converter') { var o = (p.ports || []).filter(function (r) { return r.role === 'out'; })[0]; return o && o.volts != null ? vs(o.volts) + ' V' : 'ADAPTER'; } return JOBW[p.kind] || String(p.name).toUpperCase(); }
   function nameN(x) { if (!BN) return PART[x[1]].name; var same = BN.p.filter(function (q) { return q[1] === x[1]; }), i = same.indexOf(x); return PART[x[1]].name + (i > 0 ? ' #' + (i + 1) : ''); }
   /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
      what it drives (the printer, the SD, the radio, the screen). Each row ordered under what it is joined to, so cables cross least.
@@ -270,8 +274,8 @@
       var gv = []; for (k = 0; k < BN.p.length; k++) { var y = BN.p[k]; if (y === x) continue; ((PART[y[1]] || {}).ports || []).forEach(function (g) { if (GIVE[g.role] && g.role !== 'store' && (g.role !== 'host' || !BRAIN[p.kind]) && (g.plug === 'screw' || !inUse(y[0] + '.' + g.id))) gv.push([y[0] + '.' + g.id, g.role === 'host' ? 0 : 1]); }); }
       gv.sort(function (a, b) { return a[1] - b[1]; }); for (k = 0; k < gv.length; k++) if (joinOf(gv[k][0], to).ok) return { k: 'join', a: gv[k][0], b: to };
       /* the parts that could feed it, the island's own (sun, battery, converters) before the wall */
-      var c = PARTS.filter(function (q) { return FEEDS[q.kind] && q.id !== x[1] && canGive(q, o); }).sort(function (a, b) { return (a.source === 'wall') - (b.source === 'wall'); }).map(function (q) { return q.id; });
-      if (c.length) return { k: 'part', ids: c, near: x[0], port: to }; }
+      var c = PARTS.filter(function (q) { return FEEDS[q.kind] && q.id !== x[1] && canGive(q, o); }).sort(function (a, b) { var w = function (q) { return q.source === 'wall' ? 2 : q.source ? 1 : 0; }; return w(a) - w(b); }).map(function (q) { return q.id; });
+      if (c.length) return BN.p.some(function (y) { return PART[y[1]] && PART[y[1]].source; }) ? { k: 'part', ids: c, near: x[0], port: to } : { k: 'part', ids: POWERS.filter(function (id) { return PART[id]; }), near: x[0], port: to, power: true }; }
     /* the night: a charger with nothing kept asks for a battery */
     var ch = ofKind('charger')[0]; if (ch) { var bt = portIds(ch, 'store').filter(function (s) { return !inUse(s); })[0];
       if (bt && P.need && P.kept < P.need * (24 - P.sunH)) { var have = BN.p.filter(function (y) { return PART[y[1]].kind === 'battery' && !portIds(y, 'store').some(inUse); })[0];
@@ -285,7 +289,9 @@
   function mini(p) { return '<svg viewBox="0 0 120 90" aria-hidden="true">' + (p.draw || []).map(function (st) { return '<path d="' + st[0] + '"' + (st[1] ? ' class="ac"' : '') + '/>'; }).join('') + '</svg>'; }
   function trayDraw() { var t = $('#bnl'); if (!TRAY) { t.innerHTML = ''; t.hidden = true; return; } t.hidden = false;
     var here = TRAY.iid ? BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0] : null;
-    t.innerHTML = TRAY.ids.map(function (id) { var p = PART[id]; return '<button type="button" class="tile' + (here && here[1] === id ? ' on' : '') + '" data-part="' + esc(id) + '" title="' + esc(p.about || p.name) + '">' + mini(p) + '<b>' + esc(String(p.name).toUpperCase()) + '</b>' + (p.tested ? '<i>TESTED</i>' : '') + '</button>'; }).join('') +
+    var ids = TRAY.all || TRAY.ids.length <= 4 ? TRAY.ids : TRAY.ids.slice(0, 3), head = TRAY.power ? 'POWER' : job(PART[here ? here[1] : TRAY.ids[0]]);
+    t.innerHTML = '<p class="th">' + esc(head) + '</p>' + ids.map(function (id) { var p = PART[id]; return '<button type="button" class="tile' + (here && here[1] === id ? ' on' : '') + '" data-part="' + esc(id) + '" title="' + esc(p.about || p.name) + '">' + mini(p) + '<b>' + esc(TRAY.power ? job(p) : String(p.name).toUpperCase()) + '</b><span>' + esc(String(TRAY.power ? p.name : p.sub || '').toUpperCase()) + '</span>' + (p.tested ? '<i>TESTED</i>' : '') + '</button>'; }).join('') +
+      (ids.length < TRAY.ids.length ? '<button type="button" class="tile x" data-more="1" title="Every part that fits">+' + (TRAY.ids.length - ids.length) + '</button>' : '') +
       (here ? '<button type="button" class="tile x" data-off="' + esc(here[0]) + '" title="Take it off the bench">×</button>' : ''); }
   /* power through a day: the sun's arc, what the battery holds hour by hour, and the hours the island sleeps. No clock, just the day */
   function dayDraw(P) { var s = $('#bnday'); if (!s) return; var W = 320, H = 46, h, out = '';
@@ -307,8 +313,9 @@
     var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; }); var want = {}; if (W0.k === 'join') want[W0.a] = want[W0.b] = 1;
     var sketch = function (p, X, Y, seed) { var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
     if (gid && L.pos[gid]) { var gp = PART[W0.ids[0]], gx = L.pos[gid][0], gy = L.pos[gid][1];
-      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + String(gp.kind) }, [tt('Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 6 }), sketch(gp, gx, gy, 3)]);
-      var plus = el('text', { 'class': 'gp', x: gx + cw / 2, y: gy + 98, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
+      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 6 }), sketch(gp, gx, gy, 3)]);
+      var gj = el('text', { 'class': 'jb', x: gx + cw / 2, y: gy + 84, 'text-anchor': 'middle' }); gj.textContent = W0.power ? 'POWER' : job(gp); gh.appendChild(gj);
+      var plus = el('text', { 'class': 'gp', x: gx + cw / 2, y: gy + 99, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
       var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
       var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
@@ -326,7 +333,9 @@
           wifi: 'M' + (cx0 - 8) + ' ' + (cy0 - 1) + ' Q' + cx0 + ' ' + (cy0 - 9) + ' ' + (cx0 + 8) + ' ' + (cy0 - 1) + ' M' + (cx0 - 4.6) + ' ' + (cy0 + 2.4) + ' Q' + cx0 + ' ' + (cy0 - 2.6) + ' ' + (cx0 + 4.6) + ' ' + (cy0 + 2.4) + ' M' + cx0 + ' ' + (cy0 + 5.6) + ' v.1',
           pair: 'M' + (cx0 - 7) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 + 2) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 - 7) + ' ' + (cy0 + 2) + ' h5 v5 h-5 Z M' + (cx0 + 3) + ' ' + (cy0 + 3) + ' h3 v3' };
         g.appendChild(el('path', { 'class': 'cue', d: CUE[W0.k] })); }
-      var nm = el('text', { x: X + cw / 2, y: Y + 94, 'text-anchor': 'middle' }); nm.textContent = nameN(x).toUpperCase(); g.appendChild(nm);
+      var nm = el('text', { 'class': 'jb', x: X + cw / 2, y: Y + 84, 'text-anchor': 'middle' }), md = el('text', { 'class': 'md', x: X + cw / 2, y: Y + 93, 'text-anchor': 'middle' }); nm.textContent = job(p); md.textContent = nameN(x).toUpperCase() === nm.textContent ? String(p.sub || '').toUpperCase() : nameN(x).toUpperCase(); g.appendChild(nm); g.appendChild(md);
+      /* a bolt in the corner: filled with power in, hollow and hot with none */
+      if (p.watts && !p.source) { var bx = X + 8, by = Y + 8; g.appendChild(el('path', { 'class': 'bolt' + (cold ? ' no' : ''), d: 'M' + (bx + 5) + ' ' + by + ' L' + bx + ' ' + (by + 8) + ' H' + (bx + 4) + ' L' + (bx + 3) + ' ' + (by + 14) + ' L' + (bx + 8) + ' ' + (by + 6) + ' H' + (bx + 4) + ' Z' })); }
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
       [[tops, Y, -1], [bots, Y + 104, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
@@ -344,7 +353,7 @@
     /* the cable wanted, dotted where it will go */
     if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
-    $('#bns').textContent = BN.p.length ? BN.p.length + ' PARTS · ' + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY';
+    $('#bns').textContent = BN.p.length ? BN.p.length + (BN.p.length === 1 ? ' PART · ' : ' PARTS · ') + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY';
     $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); riteDraw(); }
   function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
   $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
@@ -365,12 +374,12 @@
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
     if (BN.j.length >= 24) { benchDraw(); $('#bnsay').textContent = 'FULL'; return; }
     BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); $('#bnsay').title = r.ok ? '' : r.why; benchSave(r.ok ? (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : 'WRONG'); }
-  $('#bnd').addEventListener('click', function (e) { if (!BN) return; if (DRAG && DRAG.moved) return; var t = e.target.closest('[data-port],[data-cut],[data-part],[data-off],[data-want],[data-body]'); if (!t) return;
-    if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids }; trayDraw(); return; }
+  $('#bnd').addEventListener('click', function (e) { if (!BN) return; if (DRAG && DRAG.moved) return; var t = e.target.closest('[data-port],[data-cut],[data-part],[data-off],[data-want],[data-body],[data-more]'); if (!t) return; if (t.dataset.more) { TRAY.all = true; trayDraw(); return; }
+    if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids, power: !!WANT.power }; trayDraw(); $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; return; }
     if (t.dataset.off) { partOff(t.dataset.off); TRAY = null; benchDraw(); benchSave(); return; }
     if (t.dataset.part) { var id = t.dataset.part;
       if (TRAY && TRAY.iid) { var here = BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0]; if (here && here[1] !== id) { if (/^(pi|printer|sd)$/.test(PART[here[1]].kind)) BN.o = null; here[1] = id; BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== here[0] && j[1].split('.')[0] !== here[0]; }); } }
-      else if (BN.p.length < 12) partAdd(id);
+      else if (BN.p.length < 12) { partAdd(id); if (id === 'wall-strip' && ofKind('printer').some(function (y) { return (PART[y[1]].ports || []).some(function (o) { return o.role === 'in' && o.volts === 24; }); }) && !BN.p.some(function (y) { return y[1] === 'ps-180'; })) partAdd('ps-180'); }
       TRAY = null; benchDraw(); benchSave(String(PART[id].name).toUpperCase()); return; }
     if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
     if (t.dataset.body) { var x = BN.p.filter(function (q) { return q[0] === t.dataset.body; })[0], p = x && PART[x[1]]; if (!p) return;
@@ -380,7 +389,7 @@
       if (/^(boot|wifi)$/.test(WANT.k) && WANT.iid === x[0]) { bootStep(WANT.k); return; }
       if (BT.run) return;
       if (p.kind === 'sd') { if (WANT.k === 'flash' && WANT.iid === x[0]) { FLOPEN = true; FL.sd = x[0]; } else FLOPEN = !FLOPEN; TRAY = null; benchDraw(); if (FLOPEN) setTimeout(function () { look($('#fl')); }, 50); return; }
-      TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; trayDraw(); return; }
+      TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; trayDraw(); var bw = $('#bnw'); bw.textContent = TRAY ? job(p) + ' · ' + (p.about || p.name) : ''; bw.dataset.of = TRAY ? 'part' : ''; return; }
     var pid = t.dataset.port;
     if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = ''; return; }
     joinTo(SEL, pid); });
@@ -518,7 +527,7 @@
   var RLIT = null;
   function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN) return [true, true, true, !!(ISLE && ISLE.home), !!T.paired];
     var P = power(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f = sd && flashedOf(sd[0]);
-    return [P.w === 'ENOUGH' && !!ofKind('printer').length && !!ofKind('pi').length, !!f, !!(f && BN.o && BN.o[0] === sd[0] && BN.o[1] === f[1] && BN.o[2] === 3), !!(ISLE && ISLE.home), !!T.paired]; }
+    return [(P.w === 'ENOUGH' || P.w === 'CHARGED') && !!ofKind('printer').length && !!ofKind('pi').length, !!f, !!(f && BN.o && BN.o[0] === sd[0] && BN.o[1] === f[1] && BN.o[2] === 3), !!(ISLE && ISLE.home), !!T.paired]; }
   var at = function (i, k) { var a = Math.PI * (0.9 - (k == null ? i * 10 : k) * 0.02); return [160 + Math.cos(a) * 132, 66 - Math.sin(a) * 50]; }, f1 = function (n) { return n.toFixed(1); };
   function riteBuild(s) { var pts = []; for (var k = 0; k <= 40; k++) { var p = at(0, k); pts.push(f1(p[0]) + ' ' + f1(p[1])); } s.dataset.pts = JSON.stringify(pts);
     var out = '<path class="rp" d="M' + pts.join(' L') + '"/><path class="rp on" d=""/>';

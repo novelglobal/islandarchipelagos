@@ -1560,6 +1560,11 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 /* GHOST ISLAND: the third key, dashed like a part not yet found; lit while the switch is on */
 #hm .sm-prn .sm-inst.sm-ghost, #hm .sk-space .sp-prn .sp-inst.sp-ghost { top: auto; bottom: 9%; right: 64%; border-style: dashed; }
 #hm .sk-space .sp-prn .sp-inst.sp-ghost.on { border-style: solid; }
+/* the three keys on the photograph: one edge, even steps; GHOST ISLAND half seen */
+#hm .sk-space .sp-prn .sp-inst, #hm .sk-space .sp-prn .sp-inst.sp-parts, #hm .sk-space .sp-prn .sp-inst.sp-ghost { right: 64%; bottom: auto; transform: translateY(-50%); }
+#hm .sm-prn .sm-inst, #hm .sm-prn .sm-inst.sm-parts, #hm .sm-prn .sm-inst.sm-ghost { right: 64%; bottom: auto; transform: translateY(-50%); } #hm .sm-prn .sm-inst { top: 32%; } #hm .sm-prn .sm-inst.sm-parts { top: 57%; } #hm .sm-prn .sm-inst.sm-ghost { top: 82%; }
+#hm .sk-space .sp-prn .sp-inst { top: 32%; } #hm .sk-space .sp-prn .sp-inst.sp-parts { top: 57%; } #hm .sk-space .sp-prn .sp-inst.sp-ghost { top: 82%; }
+#hm .sk-space .sp-prn .sp-inst.sp-ghost, #hm .sm-prn .sm-inst.sm-ghost { opacity: .5; }
 
 /* THE WALL: past the logo at the foot, one artwork to a screen, whole and in colour on black; nothing else on it until it is tapped */
 .hm-wall { position: relative; flex: none; height: 92vh; margin: 0; background: #050505; scroll-snap-align: start; overflow: hidden; }
@@ -1666,6 +1671,8 @@ html.hm-night .sn-ask { background: rgba(18, 16, 14, .9); }
 #hm.night .hm-card.sk-intro:not(.small) .in-front { background: radial-gradient(70% 60% at 50% 46%, #2A2A28 0%, #191918 60%, #0E0E0D 100%); }
 /* at night the card under its dark front is dark too, so no pale edge shows round the corners */
 #hm.night .hm-card.sk-intro:not(.small):not(.flip) { background: #0E0E0D; }
+/* night: Safari's unclipped corners */
+#hm.night .hm-card.sk-intro:not(.small):not(.flip) { --c-bg: #0E0E0D; -webkit-clip-path: inset(0 round 8px); clip-path: inset(0 round 8px); } #hm.night .hm-card.sk-intro:not(.small):not(.flip) .hm-art { visibility: hidden; }
 #hm .hm-card.sk-intro:not(.small) { --in-t: 104px; --in-b: 108px; --in-h: min(84cqw * 4 / 3, 100cqh - var(--in-t) - var(--in-b)); --in-c: calc(var(--in-t) + (100cqh - var(--in-t) - var(--in-b)) / 2); }
 #hm .hm-card.sk-intro:not(.small) .in-prn { top: var(--in-c); left: 50%; width: auto; height: var(--in-h); aspect-ratio: 900 / 1200; transform: translate(-50%, -50%); }
 #hm .hm-card.sk-intro:not(.small) .in-prn .ph { box-shadow: 0 0 0 5px #FFFFFF, 0 18px 34px -16px rgba(0, 0, 0, .45); border-radius: 1px; }
@@ -1722,7 +1729,7 @@ html.ng-low #hm *, html.ng-low #hm *::before, html.ng-low #hm *::after { -webkit
 /* the handwritten line writes itself in from the left five seconds after the page opens, then stays; not shown at night */
 
 /* THE LABEL: a first visit meets it. A card on the wall beside the work: small plain type, a title, a credit line with its number, the words, the links, the counts; a film under it */
-#lb { position: fixed; inset: 0; z-index: 2147483000; display: grid; justify-items: center; align-items: center; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: rgba(16, 16, 16, .62); animation: lb-in .35s ease both; transition: opacity .26s ease; }
+#lb { position: fixed; inset: 0; z-index: 2147483000; display: grid; justify-items: center; align-items: center; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: rgba(16, 16, 16, .62); animation: lb-in .35s ease both; transition: opacity .26s ease; overscroll-behavior: contain; touch-action: none; }
 #lb.lb-top { align-items: start; } #lb.lb-low { align-items: end; } #lb.lb-out { opacity: 0; pointer-events: none; }
 @keyframes lb-in { from { opacity: 0; } }
 #lb .lb-w { display: flex; flex-direction: column; gap: 10px; width: min(100%, 430px); max-height: 100%; min-height: 0; }

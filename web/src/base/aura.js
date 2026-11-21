@@ -1713,7 +1713,7 @@
     el.classList.add('au-play'); el.querySelector('header b').textContent = a.textContent; [].forEach.call(el.children, function (c) { if (c.tagName !== 'HEADER') c.remove(); });
     var bk = document.createElement('button'); bk.className = 'au-wx au-wback'; bk.setAttribute('aria-label', 'The network'); bk.textContent = '‹'; el.querySelector('header').insertBefore(bk, el.querySelector('header b'));
     bk.addEventListener('click', function () { el.remove(); $('#au-netk').click(); });
-    var fr = document.createElement('iframe'); fr.className = 'au-xf'; fr.title = a.textContent; fr.src = 'x.html?in=1#' + id.replace(/[^a-z0-9-]/g, ''); el.appendChild(fr); bell(4, 0.1); });
+    var fr = document.createElement('iframe'); fr.className = 'au-xf'; fr.title = a.textContent; fr.allow = 'geolocation; accelerometer; gyroscope; magnetometer'; fr.src = 'x.html?in=1#' + id.replace(/[^a-z0-9-]/g, ''); el.appendChild(fr); bell(4, 0.1); });
   root.addEventListener('pointerdown', function (e) { if (S.mode !== 'seed' || e.target !== cv) return; var r = root.getBoundingClientRect(), dx = e.clientX - r.left - L.cx, dy = e.clientY - r.top - L.cy, k = Math.max(72, L.R0 * 0.9); if (dx * dx + dy * dy <= k * k) bang(); });
   orbs.forEach(function (o) { o.addEventListener('click', function () { if (S.mode === 'bang') setMode('globe'); var go = o.dataset.go;
     beat('disc-' + o.dataset.s); toIruk(+o.dataset.s); }); });

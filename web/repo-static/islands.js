@@ -100,16 +100,19 @@
     [].forEach.call(D.querySelectorAll('.row .d svg'), function (s) { s.style.transform = 'rotate(' + (+s.dataset.b - (HEAD || 0)).toFixed(0) + 'deg)'; }); }
 
   /* the phone's heading turns the dial so up is the way you face; and where you stand, watched while the finder is open */
-  function compass() { var on = function (e) { var h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null); if (h == null) return; HEAD = h; rose(); };
-    try { var DO = window.DeviceOrientationEvent; if (DO && typeof DO.requestPermission === 'function') DO.requestPermission().then(function (r) { if (r === 'granted') addEventListener('deviceorientation', on); }, function () { /* north stays up */ }); else { addEventListener('deviceorientationabsolute', on); addEventListener('deviceorientation', on); } } catch (e) { /* north stays up */ } }
+  /* an iPhone gives its heading only when asked from a tap: asked again on the next tap until it answers */
+  var CMP = 0;
+  function compass() { if (CMP) return; var on = function (e) { var h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null); if (h == null) return; HEAD = h; rose(); };
+    try { var DO = window.DeviceOrientationEvent; if (DO && typeof DO.requestPermission === 'function') DO.requestPermission().then(function (r) { if (r === 'granted' && !CMP) { CMP = 1; addEventListener('deviceorientation', on); } else if (r === 'denied') CMP = 2; }, function () { /* no tap yet */ }); else { CMP = 1; addEventListener('deviceorientationabsolute', on); addEventListener('deviceorientation', on); } } catch (e) { /* north stays up */ } }
+  D.addEventListener('click', function () { if (!CMP) compass(); }, true);
   var LOC = '';
-  function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; return first; }
+  function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; $('#read').title = ''; return first; }
   function locate(asked) { if (!navigator.geolocation || WATCH != null) return; if (asked) compass(); $('#loc').textContent = '· · ·';
     /* a quick rough place first (a phone can take a while to find a close one), then the close one as it comes */
     navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function () { /* the watch goes on */ }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
     WATCH = navigator.geolocation.watchPosition(function (p) { var first = fix(p); if (first) { var b = sorted().filter(function (q) { return q.open && has(q); })[0]; if (b && !Q.get('i') && !LIST.some(function (q) { return q.id === homeId() && q.open; })) PICK = b.id; draw(); } else { scope(); [].forEach.call(D.querySelectorAll('li[data-id]'), function (li) { var q = LIST.filter(function (x) { return x.id === li.dataset.id; })[0], d = li.querySelector('.d'), m = q && dist(q); if (m != null && d) d.lastChild.textContent = m < HERE_M ? 'HERE' : metres(m); }); } },
       function (e) { if (ME) return; if (e && e.code === 1) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; LOC = 'NOT ALLOWED'; $('#loc').textContent = 'LOCATE'; }
-        else LOC = 'FINDING'; $('#read').className = 'read dim'; $('#read').textContent = LOC; }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
+        else LOC = 'FINDING'; $('#read').className = 'read dim'; $('#read').textContent = LOC; $('#read').title = LOC === 'NOT ALLOWED' ? 'Location is off for novel.global: on an iPhone, Settings › Privacy › Location Services › Safari Websites, or the aA menu › Website Settings' : ''; }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
   $('#loc').onclick = function () { locate(true); };
   $('#all').onclick = function () { ALL = true; draw(); };
   try { navigator.permissions.query({ name: 'geolocation' }).then(function (s) { if (s.state === 'granted') { locate(false); compass(); } }, function () { /* ask on LOCATE */ }); } catch (e) { /* ask on LOCATE */ }

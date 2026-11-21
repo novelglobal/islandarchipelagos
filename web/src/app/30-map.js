@@ -36,6 +36,15 @@ const buildWord = (BUILD.sha ? ` · <span class="da-build" title="The version of
 /* the tiny NOVEL.GLOBAL in it, pressed twice, opens everything on a first visit (43-journey.js) */
 map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: `<a href="#sources" class="da-about">${CONFIG.NAME}</a> · <b class="da-egg" role="button" tabindex="0" aria-label="${esc(CONFIG.BY.toUpperCase())}">${esc(CONFIG.BY.toUpperCase())}</b> · iNaturalist · © OpenStreetMap · Open-Meteo${buildWord}` }), 'bottom-left');
 document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('a.da-about'); if (a) { e.preventDefault(); if (!simple()) setView(3, false, 'sources'); } });
+/* beside the information corner: where am I. The map comes in close on the phone's own place, and the radar goes there */
+map.addControl({ onAdd() { const d = document.createElement('div'), b = document.createElement('button'); d.className = 'maplibregl-ctrl da-me'; b.type = 'button'; b.title = 'Where I am'; b.setAttribute('aria-label', 'Where I am');
+  b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2" class="f"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'; d.appendChild(b);
+  b.addEventListener('click', e => { e.stopPropagation(); if (!navigator.geolocation) { toast('NO LOCATION'); return; } b.classList.add('wait');
+    navigator.geolocation.getCurrentPosition(pos => { b.classList.remove('wait'); const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (!inBox(lat, lng)) { toast('TOO FAR'); return; } b.classList.add('on'); placeRadar(+lat.toFixed(3), +lng.toFixed(3));
+      map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16.5), offset: sheetOffset(), duration: reduced() ? 0 : 1200 }); },
+    () => { b.classList.remove('wait'); toast('NO LOCATION'); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 6e4 }); });
+  return d; }, onRemove() {} }, 'bottom-right');
 /* the information corner stays folded, the ⓘ alone, until it is pressed: MapLibre opens it as the map loads and folds it only
    at the first drag */
 (() => {

@@ -68,6 +68,10 @@ button:active:not(:disabled),a:active{transform:scale(.96)}
 html.night .maplibregl-ctrl-attrib.maplibregl-compact,html.night .maplibregl-ctrl-attrib a{color:#0B2545}
 html.night .maplibregl-ctrl-attrib.maplibregl-compact{background:rgba(252,251,247,.95)}
 .maplibregl-ctrl-attrib a.da-about{font-weight:500}
+.da-me button{display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:var(--navy);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.da-me svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}.da-me .f{fill:currentColor;stroke:none;opacity:0}
+.da-me .on .f{opacity:1}.da-me .wait svg{animation:spin 1.4s linear infinite}
+@media (prefers-reduced-motion:reduce){.da-me .wait svg{animation:none;opacity:.5}}
 
 /* the radar's two handles: the centre moves it, the rim sets its reach */
 .knob{position:fixed;z-index:3;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;display:grid;place-items:center;cursor:move;touch-action:none}
@@ -2678,8 +2682,10 @@ body.gl-full .gallery.full{visibility:visible!important}
 .band.dev.radio.mod .b-emerg .cd.stp{display:inline-flex!important;align-items:center;justify-content:center;place-items:normal!important}
 
 /* a life's receipt: its two keys side by side, W.I.S.H. (the board) and PRINT */
-#record:has(#r-alt:not([hidden])) #r-act{left:calc(50% + 4px)}
-#record #r-alt:not([hidden]){right:calc(50% + 4px);bottom:calc(var(--bot) + 16px);height:56px}
+#record:has(#r-alt:not([hidden])) #r-act,#record #r-alt:not([hidden]){bottom:calc(var(--bot) + 16px);height:56px;box-sizing:border-box;margin:0;border-width:1.5px;border-style:solid}
+#record:has(#r-alt:not([hidden])) #r-act{left:calc(50% + 4px);right:var(--gut);border-color:transparent}
+#record #r-alt:not([hidden]){left:var(--gut);right:calc(50% + 4px)}
+@media (max-width:759px){#record:has(#r-alt:not([hidden])) #r-act,#record #r-alt:not([hidden]){height:46px;bottom:calc(var(--bot) + 12px);padding:0 14px}#record:has(#r-alt:not([hidden])) #r-act{right:12px;left:calc(50% + 4px)}#record #r-alt:not([hidden]){left:12px;right:calc(50% + 4px)}}
 /* the photograph's looks on PRINT's studio side: tall enough for their words */
 .dev.tepra.mod .photo-k .key,.dev.tepra.mod .photo-k .cap-k{height:auto!important;min-height:46px!important;padding:5px 2px!important;display:grid!important;justify-items:center;align-content:center;gap:2px;overflow:hidden}
 .dev.tepra.mod .photo-k .cap,.dev.tepra.mod .photo-k small{display:block;font-size:7px!important;line-height:1.1!important;white-space:normal;text-align:center}

@@ -822,9 +822,10 @@
     c.tabIndex = 0; c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === c) shutLb(); });
     /* the film: asked for when play is first pressed, then played here by its own few keys. No more of it today, or none there: no player */
     var F = L.film; if (F && F.on && F.file) { fv = filmEl(F, L.fk || '', fit); vid = fv.vid; if (F.side === 'above' || full) w.insertBefore(fv, c); else w.appendChild(fv); }
-    var sw0 = null; lb.addEventListener('wheel', function (e) { if (Math.abs(e.deltaY) + Math.abs(e.deltaX) > 24) shutLb(); }, { passive: true });
+    /* while a label is open the cards under it stay still: a swipe or wheel never turns them; a full label stays until closed */
+    var sw0 = null; lb.addEventListener('wheel', function (e) { e.preventDefault(); if (!full && Math.abs(e.deltaY) + Math.abs(e.deltaX) > 24) shutLb(); }, { passive: false });
     lb.addEventListener('touchstart', function (e) { var t = e.touches[0]; sw0 = t && e.touches.length === 1 ? [t.clientX, t.clientY] : null; }, { passive: true });
-    lb.addEventListener('touchend', function (e) { var t = e.changedTouches[0]; if (!sw0 || !t) return; var dx = t.clientX - sw0[0], dy = t.clientY - sw0[1]; sw0 = null; if (Math.max(Math.abs(dx), Math.abs(dy)) < 60) return; shutLb(); if (dy < 0 && -dy > Math.abs(dx)) col.scrollBy({ top: innerHeight, behavior: 'smooth' }); }, { passive: true });
+    lb.addEventListener('touchend', function (e) { var t = e.changedTouches[0]; if (!sw0 || !t) return; var dx = t.clientX - sw0[0], dy = t.clientY - sw0[1]; sw0 = null; if (full || Math.max(Math.abs(dx), Math.abs(dy)) < 60) return; shutLb(); }, { passive: true });
     var esc3 = function (e) { if (/^(ArrowDown|ArrowUp|PageDown|PageUp|ArrowLeft|ArrowRight)$/.test(e.key) && D.getElementById('lb') === lb) shutLb(); }; D.addEventListener('keydown', esc3);
     D.addEventListener('keydown', esc2); D.body.appendChild(lb);
     /* opened from the small card: the film starts as it opens */
@@ -1219,7 +1220,7 @@
   function inFrame(src) { return function (b) { b.hidden = true; var url = src.replace('#', '&night=' + (NIGHT ? 1 : 0) + '#'), w = WARM.filter(function (f) { return f.dataset.src === url && f.isConnected; })[0];
     if (w) { WARM = WARM.filter(function (f) { return f !== w; }); w.classList.remove('hm-warm'); w.title = xv.getAttribute('aria-label');
       if (/^archipelagos/.test(src)) { try { var cw = w.contentWindow; if (/\/archipelagos$/.test(cw.location.pathname)) cw.location.hash = 'a'; else w.src = url; } catch (e) { w.src = url; } } return; }
-    var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.src = url; fr.dataset.src = url; fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
+    var fr = D.createElement('iframe'); fr.title = xv.getAttribute('aria-label'); fr.allow = 'geolocation; accelerometer; gyroscope; magnetometer'; fr.src = url; fr.dataset.src = url; fr.addEventListener('load', function () { fr.dataset.ld = 1; }); if (/only=radio/.test(src)) { AIR.fr = fr; AIR.on = false; } xv.appendChild(fr); }; }
   /* the radio on air: once playing, it keeps playing under the home and every other card until stopped, and waits under any other sound */
   var AIR = { fr: null, on: false, kept: false, held: {} };
   function airTell() { if (!AIR.fr || !AIR.fr.contentWindow) return; var h = Object.keys(AIR.held).some(function (k) { return AIR.held[k]; }); try { AIR.fr.contentWindow.postMessage({ ng: 'hush', on: h }, location.origin); } catch (e) { /* gone */ } }
@@ -1414,7 +1415,7 @@
   }
   /* an island's experience (a stack) played in the sheet; wired to W.I.S.H., it starts from W.I.S.H.'s photograph and intention */
   function stackIn(body, id, opt, c) {
-    body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.src = 'x.html?in=1' + (c && c.tp ? '&t=' + encodeURIComponent(c.tp) : '') + '#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
+    body.hidden = true; var fr = D.createElement('iframe'); fr.title = id; fr.allow = 'geolocation; accelerometer; gyroscope; magnetometer'; fr.src = 'x.html?in=1' + (c && c.tp ? '&t=' + encodeURIComponent(c.tp) : '') + '#' + id.replace(/[^a-z0-9-]/g, ''); xv.appendChild(fr);
     if (opt && opt.fill || (wired('wish', 'zine') && carry('wish', 'zine').length)) fr.addEventListener('load', function () { var a = AU(), p = a && a.piece ? a.piece() : null; if (p && (p.photo || p.say)) fr.contentWindow.postMessage({ hm: 'fill', img: p.photo || '', words: (p.say || '').toUpperCase().slice(0, 22) }, location.origin); });
   }
   /* the island kit: the checklist, kept with the aura's, and printed as a slip */

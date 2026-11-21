@@ -2184,12 +2184,12 @@ if (run('bench')) try {
     const pr = [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), tested = [...document.querySelectorAll('.plate .t')].map(t => t.closest('.plate').dataset.pn);
     q('[data-tab="power"]').click(); await z(100); return { pr, tested, power: [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), drawn: document.querySelectorAll('.plate .pic svg').length }; });
   check('ISLAND ARCHIPELAGOS plates are the bench\'s parts (spec/parts): printers with the tested TM-T88V first and marked, the power tab the whole solar kit, each drawn',
-    pl.pr[0] === 'tm-t88v' && pl.pr.includes('printer-58') && pl.tested.join() === 'tm-t88v' && pl.power.join() === 'ps-180,solar-100w,lifepo4-50ah,mppt-10a,boost-24v,buck-5v' && pl.drawn === 6, JSON.stringify(pl));
+    pl.pr[0] === 'tm-t88v' && pl.pr.includes('printer-58') && pl.tested.join() === 'tm-t88v' && pl.power.join() === 'ps-180,wall-strip,solar-100w,lifepo4-50ah,power-bank,mppt-10a,boost-24v,buck-5v' && pl.drawn === 8, JSON.stringify(pl));
   await page.goto('https://oan.test/twin#bench'); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(900);
-  const b0 = await page.evaluate(() => ({ open: document.querySelector('#bnd').open, parts: [...document.querySelectorAll('.bench .pt text:not(.pl)')].map(t => t.textContent), word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title,
+  const b0 = await page.evaluate(() => ({ open: document.querySelector('#bnd').open, parts: [...document.querySelectorAll('.bench .pt text.md')].map(t => t.textContent), jobs: [...document.querySelectorAll('.bench .pt text.jb')].map(t => t.textContent).sort().join(), word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title,
     ghost: (document.querySelector('.bench .gh') || { getAttribute: () => '' }).getAttribute('aria-label'), menus: document.querySelectorAll('#bnk, [data-kind]').length, tray: document.querySelector('#bnl').hidden, fl: document.querySelector('#fl').hidden }));
   check('bench: a ghost opened from START lands on its BENCH with the tray\'s printer, Pi and solar and no menus; what it wants first (an SD for the Pi) waits as a ghost where it goes; SHORT says which parts have no power',
-    made.s === 201 && b0.open && b0.parts.slice().sort().join() === 'PI 3 A+,SOLAR,TM-T88V' && b0.ghost === 'Wanted here: sd' && !b0.menus && b0.tray && b0.fl && b0.word === 'SHORT' && b0.why === 'TM-T88V, Pi 3 A+ have no power in', JSON.stringify({ made, b0 }));
+    made.s === 201 && b0.open && b0.parts.slice().sort().join() === 'PI 3 A+,SOLAR,TM-T88V' && b0.jobs === 'BRAIN,PRINTER,SUN' && b0.ghost === 'Wanted here: sd' && !b0.menus && b0.tray && b0.fl && b0.word === 'SHORT' && b0.why === 'TM-T88V, Pi 3 A+ have no power in', JSON.stringify({ made, b0 }));
   /* on a phone nothing hovers: the word that says more is tapped; a port chosen marks the ports a cable would fit */
   const u0 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s);
     q('.bench [data-port][aria-label="Pi 3 A+ USB"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); await z(50);
@@ -2306,6 +2306,27 @@ if (run('bench')) try {
   await tap('#mu'); await sleep(300); const mu2 = await page.evaluate(() => document.querySelector('#mu').getAttribute('aria-pressed'));
   check('mesh: a Meshtastic radio on USB: woken, asked for its config, then a line goes out as a text packet to every node; a line from a node shows by its short name, its log passed over; tapped again it lets go',
     mu0.wake && mu0.hello && mu0.to && mu0.port === 1 && mu0.text === 'heard you' && mu0.on === 'true' && mu1.top === '←REEF hello island' && mu1.inn && mu1.rx && mu2 === 'false', JSON.stringify({ mu0, mu1, mu2 }));
+  /* POWER: a bench with no power asks for it as a choice, the wall, the sun or a bank; the wall brings the printer's own supply too */
+  const pw = {};
+  for (const pick of ['wall-strip', 'power-bank']) {
+    await page.evaluate(async () => { localStorage.setItem('da.ghost.build', JSON.stringify({ pi: 'Pi 3 A+', printers: 'TM-T88V', power: [] })); localStorage.removeItem('da.ghost.seeded');
+      await fetch('/api/twin', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) }, body: JSON.stringify({ bench: { p: [], j: [], f: [], m: 0, o: null } }) }); });
+    await page.reload(); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(700); fl = null; const o = pw[pick] = { w: [] };
+    for (let i = 0; i < 16; i++) {
+      if (!fl && await page.evaluate(() => !!document.querySelector('.bench .pt.want.flash'))) { await doFlash(); await sleep(300); continue; }
+      const w = await page.evaluate(() => { const g = document.querySelector('.bench .gh'); if (g) return { g: g.getAttribute('aria-label').replace('Wanted here: ', ''), jb: (g.querySelector('text.jb') || {}).textContent }; const p = [...document.querySelectorAll('.bench .po.want')].map(e => e.dataset.port); return p.length === 2 ? { p } : null; });
+      if (!w) break;
+      if (w.g) { o.w.push(w.g); await tap('.bench .gh'); const t = await page.evaluate(() => ({ ids: [...document.querySelectorAll('#bnl [data-part]')].map(b => b.dataset.part), head: (document.querySelector('#bnl .th') || {}).textContent, jobs: [...document.querySelectorAll('#bnl [data-part] b')].map(b => b.textContent).join() }));
+        if (w.g === 'power') { o.ghost = w.jb; o.tray = t; if (pick === 'wall-strip') { await shot(page, 'bench-power.png'); const e = await page.$('#bnl'); if (e) await e.screenshot({ path: 'test/shots/bench-power-tray.png' }).catch(() => {}); } }
+        await tap(`#bnl [data-part="${w.g === 'power' ? pick : t.ids.includes('sd-32') ? 'sd-32' : t.ids[0]}"]`); continue; }
+      await tap(`.bench [data-port="${w.p[0]}"]`); await tap(`.bench [data-port="${w.p[1]}"]`); }
+    await sleep(500); Object.assign(o, await page.evaluate(() => ({ word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title, parts: [...document.querySelectorAll('.bench .pt text.md')].map(t => t.textContent).sort().join(), cold: document.querySelectorAll('.bench .bolt.no').length, bolts: document.querySelectorAll('.bench .bolt').length })));
+  }
+  await shot(page, 'bench-bank.png');
+  const W = pw['wall-strip'], B = pw['power-bank'];
+  check('bench: with no power it asks for POWER, a choice of PLUG, SUN or BANK; the wall brings the printer its own 24 V supply and reads ENOUGH; a bank reads CHARGED, what it holds and how long it lasts; every part that draws power wears a bolt, hollow when cold',
+    W.w.includes('power') && W.ghost === 'POWER' && W.tray.head === 'POWER' && W.tray.jobs === 'PLUG,SUN,BANK' && /PS-180/.test(W.parts) && /POWER STRIP/.test(W.parts) && W.word === 'ENOUGH' && W.why === 'From the wall' && !W.cold && W.bolts >= 2
+    && B.w.includes('power') && /POWER BANK/.test(B.parts) && B.word === 'CHARGED' && /the bank holds 84 Wh: about \d+ h/.test(B.why) && !B.cold, JSON.stringify(pw));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }
 

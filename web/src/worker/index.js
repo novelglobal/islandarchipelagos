@@ -990,7 +990,7 @@ async function twin(db, env, req, url) {
     if (typeof b.pair === 'string') return ghostAdopt(db, p, b.pair);
     if (b.bench && typeof b.bench === 'object') { if (!p.ghost) return fail(400, 'not a ghost'); const v = benchIn(b.bench); if (!v) return fail(400, 'bench');
       /* a radio on the bench joined to a Pi or a supply is the ghost's MESH: what is sent to it carries its mesh line */
-      const kindOf = iid => PART_KIND[(v.p.find(x => x[0] === iid) || [])[1]], feeds = { pi: 1, power: 1, converter: 1 };
+      const kindOf = iid => PART_KIND[(v.p.find(x => x[0] === iid) || [])[1]], feeds = { pi: 1, power: 1, converter: 1, battery: 1 };
       const mesh = v.p.some(x => PART_KIND[x[1]] === 'radio' && v.j.some(j => { const a = j[0].split('.')[0], b = j[1].split('.')[0]; return (a === x[0] && feeds[kindOf(b)]) || (b === x[0] && feeds[kindOf(a)]); })) ? 1 : 0;
       await db.prepare('UPDATE printers SET bench = ?, mesh = ? WHERE id = ?').bind(JSON.stringify(v), mesh, p.id).run(); return json({ ok: true, bench: v, mesh: !!mesh }); }
     if (typeof b.job === 'string' && p.ghost) { const ok = b.ok !== false; await db.prepare("UPDATE jobs SET status = ?, error = ?, done = ?, escpos = NULL, mesh = NULL WHERE id = ? AND printer = ? AND status = 'printing'").bind(ok ? 'printed' : 'failed', ok ? null : String(b.error || '').slice(0, 60), t, b.job, p.id).run(); return json({ ok: true }); }
@@ -1274,10 +1274,10 @@ async function ceDay(d) {
 }
 async function moreNews(day, news) {
   const a = day.split('-').map(Number), d0 = Date.UTC(a[0], a[1] - 1, a[2]), seen = new Set(news.map(s => s.slice(0, 40)));
-  let pool = []; for (let i = 0; i < 3 && pool.length < 12; i++) pool = pool.concat(await ceDay(new Date(d0 - i * 864e5)));
+  let pool = []; for (let i = 0; i < 3 && (i < 2 || pool.length < 10); i++) pool = pool.concat(await ceDay(new Date(d0 - i * 864e5)));
   pool = pool.filter(s => { const k = s.slice(0, 40); if (seen.has(k)) return false; seen.add(k); return true; });
-  const more = pool.slice(0, 5);
-  if (![...news, ...more].some(s => ECO.test(s))) { let eco = pool.find(s => ECO.test(s)); for (let i = 2; !eco && i < 5; i++) eco = (await ceDay(new Date(d0 - i * 864e5))).find(s => ECO.test(s)); if (eco) more.splice(Math.min(4, more.length), 1, eco); }
+  const more = pool.slice(0, 10);
+  if (![...news, ...more].some(s => ECO.test(s))) { let eco = pool.find(s => ECO.test(s)); for (let i = 2; !eco && i < 5; i++) eco = (await ceDay(new Date(d0 - i * 864e5))).find(s => ECO.test(s)); if (eco) more.splice(Math.min(4, more.length), more.length > 4 ? 1 : 0, eco); }
   return more.map(s => s.slice(0, 320));
 }
 async function newsThrough() {
@@ -1285,9 +1285,9 @@ async function newsThrough() {
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date());
   let j = null; try { const r = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/en/featured/${day.replace(/-/g, '/')}`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 3600, '300-599': 0 } } }); if (r.ok) j = await r.json(); } catch (e) { /* none */ }
   if (!j) return NEWS.s ? new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'no-store' } }) : fail(502, 'news');
-  /* the day's own events lead (In the news keeps its stories for a week or more); In the news follows */
+  /* the last day or two of events, nothing older; In the news (the same for a week or more) only when there are none */
   const itn = (j.news || []).slice(0, 5).map(n => plain(n.story).slice(0, 320)).filter(Boolean), fresh = await moreNews(day, []);
-  const fk = new Set(fresh.map(s => s.slice(0, 40))), news = fresh.length ? fresh : itn, more = fresh.length ? itn.filter(s => !fk.has(s.slice(0, 40))) : [];
+  const news = fresh.length ? fresh.slice(0, 5) : itn, more = fresh.length ? fresh.slice(5, 10) : [];
   NEWS.s = JSON.stringify({ day, news, more,
     otd: (j.onthisday || []).slice(0, 3).map(o => ({ y: +o.year || 0, t: plain(o.text).slice(0, 240) })).filter(o => o.t) }); NEWS.t = Date.now();
   return new Response(NEWS.s, { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } });
@@ -1327,9 +1327,19 @@ BOOKS.push(
 const SHELF = { fic: [3261, 32, 18247, 21970, 1906, 10002, 8492, 201, 11438], how: [34607, 29558, 28255, 44215, 54138, 48929] };
 const shelfOf = s => s === 'fic' || s === 'how' ? BOOKS.filter(b => SHELF[s].includes(b[0])) : s === 'non' ? BOOKS.filter(b => !SHELF.fic.includes(b[0]) && !SHELF.how.includes(b[0])) : BOOKS;
 const BOOKP = new Map();
-async function bookPages(bk) {
+/* Gutenberg, then its mirror (the id's digits as folders, all but the last), then the copy kept when either last answered */
+const gutDir = id => { const d = String(id); return d.length < 2 ? '0/' + d : d.slice(0, -1).split('').join('/') + '/' + d; };
+async function gutText(id) {
+  const urls = [`https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`, `https://gutenberg.pglaf.org/${gutDir(id)}/${id}-0.txt`, `https://gutenberg.pglaf.org/${gutDir(id)}/${id}.txt`];
+  for (const u of urls) { try { const r = await fetch(u, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 30 * 86400, '300-599': 0 } } }); if (!r.ok) continue;
+    const by = new Uint8Array(await r.arrayBuffer()); let t; try { t = new TextDecoder('utf-8', { fatal: true }).decode(by); } catch { t = new TextDecoder('windows-1252').decode(by); }
+    if (t.includes('*** START') && t.includes('*** END')) return t; } catch {} }
+  return '';
+}
+async function bookPages(bk, env) {
   if (BOOKP.has(bk[0])) return BOOKP.get(bk[0]);
-  let t = ''; try { const r = await fetch(`https://www.gutenberg.org/cache/epub/${bk[0]}/pg${bk[0]}.txt`, { headers: UA, cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 30 * 86400, '300-599': 0 } } }); if (r.ok) t = await r.text(); } catch {}
+  const kept = 'books/' + bk[0] + '.json', t = await gutText(bk[0]);
+  if (!t) { try { const o = env && env.MEDIA ? await env.MEDIA.get(kept) : null; const pg = o ? await o.json() : null; if (Array.isArray(pg) && pg.length) { BOOKP.set(bk[0], pg); return pg; } } catch {} return null; }
   const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return null;
   const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
   const paras = body.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').replace(/_/g, '').replace(/--/g, '\u2014').trim()).filter(p => p && !/^\[Illustration/.test(p));
@@ -1339,11 +1349,11 @@ async function bookPages(bk) {
   const pages = []; let cur = '';
   const add = x => { if (cur && cur.length + x.length > 4800) { pages.push(cur); cur = ''; } cur = cur ? cur + '\n\n' + x : x; };
   paras.forEach(p => { if (p.length <= 4800) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > 4000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
-  if (cur) pages.push(cur); if (pages.length) BOOKP.set(bk[0], pages); return pages;
+  if (cur) pages.push(cur); if (pages.length) { BOOKP.set(bk[0], pages); try { if (env && env.MEDIA && !(await env.MEDIA.head(kept))) { const js = JSON.stringify(pages); if (js.length < 4e6) await env.MEDIA.put(kept, js, { httpMetadata: { contentType: 'application/json' } }); } } catch {} } return pages;
 }
-async function bookThrough(url) {
+async function bookThrough(url, env) {
   const q = url.searchParams, L = shelfOf(q.get('s')), bi = Math.max(1, Math.min(L.length, Math.round(+q.get('b') || 1))), bk = L[bi - 1];
-  const pages = await bookPages(bk); if (!pages || !pages.length) return fail(502, 'book');
+  const pages = await bookPages(bk, env); if (!pages || !pages.length) return fail(502, 'book');
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
   return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
@@ -1894,7 +1904,7 @@ async function api(req, env, url, ctx) {
   if (url.pathname.startsWith('/api/inat/') && req.method === 'GET') return inatThrough(url);
   if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
   if (url.pathname === '/api/news' && req.method === 'GET') return newsThrough();
-  if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url);
+  if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url, env);
   if (url.pathname === '/api/c' && req.method === 'GET') return cartFor(env, url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);

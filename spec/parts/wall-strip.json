@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/part.schema.json",
+  "part": "kit",
+  "id": "wall-strip",
+  "name": "Power strip",
+  "sub": "wall · 5 V · 12 V",
+  "kind": "power",
+  "about": "A power strip in the wall: two USB sockets (5 V) for the Pi or a radio, and a 12 V plug for a small printer.",
+  "source": "wall",
+  "ports": [
+    { "id": "usb", "label": "5 V", "plug": "usb-a", "role": "out", "volts": 5 },
+    { "id": "usb2", "label": "5 V", "plug": "usb-a", "role": "out", "volts": 5 },
+    { "id": "dc", "label": "12 V", "plug": "barrel", "role": "out", "volts": 12 }
+  ],
+  "draw": [
+    ["M16 40 h88 v26 h-88 Z"],
+    ["M28 49 h6 v8 h-6 Z M44 49 h6 v8 h-6 Z"],
+    ["M66 50 h10 v6 h-10 Z M84 53 A3 3 0 1 0 90 53 A3 3 0 1 0 84 53"],
+    ["M60 40 C60 24 70 20 84 18 M84 14 v8 M88 14 v8", 1]
+  ],
+  "licence": "MIT"
+}
