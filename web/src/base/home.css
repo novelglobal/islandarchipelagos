@@ -1873,24 +1873,8 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 .hm-mvb i { width: 8px; height: 8px; border: 1px solid var(--hm-ink); border-radius: 1px; }
 .hm-lnf { display: flex; gap: 6px; align-items: center; margin: 8px 0 4px; } .hm-lnf input { flex: 1; min-width: 0; min-height: 36px; padding: 7px 11px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: var(--hm-ink); font: 500 16px/1.35 'IBM Plex Mono', ui-monospace, monospace; }
 
-/* the first card's front as a case file, in three quiet layers: the folder board (its tab, two punched holes); a ruled sheet a little
-   askew (blue rules, a margin, crop marks, the sun in dots under it all); the print clipped on top. No words added */
-#hm .hm-card.sk-intro:not(.small) .in-front { background: #D6D2C6; }
-#hm.night .hm-card.sk-intro:not(.small) .in-front { background: #121211; }
-#hm .sk-intro .in-l1, #hm .sk-intro .in-l2 { position: absolute; z-index: 0; pointer-events: none; display: block; }
-#hm .sk-intro .in-l1 { inset: 26px 12px 12px; background: #E3DFD4; border-radius: 2px 8px 8px 8px; box-shadow: 0 1px 0 rgba(0, 0, 0, .07), 0 10px 24px rgba(0, 0, 0, .06); }
-#hm .sk-intro .in-l1::before { content: ''; position: absolute; left: 0; top: -13px; width: 36%; height: 14px; background: inherit; border-radius: 6px 14px 0 0; }
-#hm .sk-intro .in-l1::after { content: ''; position: absolute; left: 9px; top: 38%; width: 9px; height: 9px; border-radius: 50%; background: #D6D2C6; box-shadow: inset 0 1px 1px rgba(0, 0, 0, .25), 0 64px 0 #D6D2C6; }
-#hm .sk-intro .in-l2 { inset: 44px 26px 30px 34px; transform: rotate(-1deg); background-color: #F6F4EE;
-  background-image: linear-gradient(90deg, transparent 26px, rgba(226, 85, 46, .3) 26px, rgba(226, 85, 46, .3) 27px, transparent 27px), repeating-linear-gradient(180deg, transparent 0 25px, rgba(23, 69, 127, .08) 25px 26px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 14px 26px rgba(0, 0, 0, .07); overflow: hidden; }
-#hm .sk-intro .in-l2::before { content: ''; position: absolute; top: 10px; right: 10px; width: 11px; height: 11px; border-top: 1px solid rgba(20, 20, 20, .32); border-right: 1px solid rgba(20, 20, 20, .32); box-shadow: -1px 1px 0 -0.5px transparent; }
-#hm .sk-intro .in-l2::after { content: ''; position: absolute; right: -16%; bottom: -22%; width: 60%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(226, 85, 46, .3) 1.1px, transparent 1.7px) 0 0 / 7px 7px; -webkit-mask: radial-gradient(circle, #000 69%, transparent 70%); mask: radial-gradient(circle, #000 69%, transparent 70%); }
-#hm.night .sk-intro .in-l1 { background: #1C1C1A; box-shadow: 0 1px 0 rgba(255, 255, 255, .04), 0 10px 24px rgba(0, 0, 0, .3); }
-#hm.night .sk-intro .in-l1::after { background: #121211; box-shadow: inset 0 1px 1px rgba(0, 0, 0, .6), 0 64px 0 #121211; }
-#hm.night .sk-intro .in-l2 { background-color: #232321; background-image: linear-gradient(90deg, transparent 26px, rgba(226, 85, 46, .35) 26px, rgba(226, 85, 46, .35) 27px, transparent 27px), repeating-linear-gradient(180deg, transparent 0 25px, rgba(244, 241, 232, .06) 25px 26px); }
-#hm.night .sk-intro .in-l2::before { border-color: rgba(244, 241, 232, .3); }
-#hm .sk-intro .in-top, #hm .sk-intro .in-pp { z-index: 2; } #hm .sk-intro .in-prn { z-index: 2; }
-#hm .sk-intro .in-clip { position: absolute; z-index: 3; right: 16%; top: -13px; width: 11px; height: 38px; border: 2px solid #7E7B74; border-radius: 7px; transform: rotate(9deg); pointer-events: none; }
-#hm .sk-intro .in-clip::after { content: ''; position: absolute; left: 1.5px; right: 1.5px; top: 5px; bottom: 9px; border: 2px solid #7E7B74; border-top: 0; border-radius: 0 0 5px 5px; }
-#hm .hm-card.small.sk-intro .in-l1, #hm .hm-card.small.sk-intro .in-l2, #hm .hm-card.small.sk-intro .in-clip { display: none; }
+/* the first card's front on thermal paper: off-white, a faint grain, the print head's rows barely there, the roll's edges a shade darker */
+#hm .hm-card.sk-intro:not(.small) .in-front { background-color: #F4F2EC;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), repeating-linear-gradient(180deg, transparent 0 3px, rgba(0, 0, 0, .014) 3px 4px), linear-gradient(90deg, rgba(0, 0, 0, .035), transparent 6%, transparent 94%, rgba(0, 0, 0, .035)); }
+#hm.night .hm-card.sk-intro:not(.small) .in-front { background-color: #1A1A19;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), repeating-linear-gradient(180deg, transparent 0 3px, rgba(255, 255, 255, .012) 3px 4px), linear-gradient(90deg, rgba(0, 0, 0, .25), transparent 6%, transparent 94%, rgba(0, 0, 0, .25)); }

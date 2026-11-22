@@ -679,7 +679,7 @@
   function introHTML(c, i, g1) {
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-front"><i class="in-l1" aria-hidden="true"></i><i class="in-l2" aria-hidden="true"></i><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="in-clip"></i><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
+      '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
       '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead('A new local area network (LAN)\nfrom e-waste') + '</h2>' +
       '<p class="in-l">independent web2print publishing. Open source. What can you do with a thermal printer network?</p>' +
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><a class="in-go" href="/islands" data-find="" title="Find a thermal printer near you"><span>Island Archipelagos</span><i>: Find a thermal printer</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div>' +
@@ -1334,7 +1334,10 @@
   setInterval(function () { var b = $('#hm-snd'); if (b) b.classList.toggle('on', sndOn() || AIR.on || !!RS.nino); if (SND.el && !SND.el.hidden) sndDraw(); }, 1500);
   addEventListener('storage', function (e) { if (/^da\.(loops|tapes)\.v1$|^da\.aura\.songs$|^da\.snd\.alb$/.test(e.key || '')) sndDraw(); });
   addEventListener('message', function (e) { var d = e.data; if (e.origin !== location.origin || !d || d.hm !== 'go' || !/^(research|zine|portfolio)$/.test(d.id) || !byId(d.id)) return; if (xv.classList.contains('on')) { shut(false); setTimeout(function () { open(d.id); }, 480); } else open(d.id); });
-  xv.querySelector('.hm-back').addEventListener('click', function () { shut(false); beep(330, 0.05); });
+  xv.querySelector('.hm-back').addEventListener('click', function () { beep(330, 0.05);
+    /* inside the archipelagos card, the ghost's twin steps back to the card, not out to the home */
+    var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)'); try { var cw = fr && fr.contentWindow; if (cw && /^archipelagos/.test(fr.dataset.src || '') && /^\/twin/.test(cw.location.pathname)) { cw.location.replace(fr.dataset.src.replace(/#.*$/, '') + '#a'); return; } } catch (e) { /* not ours */ }
+    shut(false); });
   root.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.hm-open')) e.preventDefault(); });
   root.addEventListener('click', function (e) {
     var o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); open(o.dataset.open); return; }
@@ -1650,7 +1653,7 @@
       $$('[data-mvw]', box).forEach(function (b) { b.addEventListener('click', function () { HK.mv = HK.mv === b.dataset.mvw ? null : b.dataset.mvw; beep(550, 0.05); fill(p); }); });
       var mb = $('[data-move]', box); if (mb) mb.addEventListener('click', function () { tdo(mb, { action: 'move', what: HK.mv }); });
       var ub = $('[data-undo]', box); if (ub) ub.addEventListener('click', function () { tdo(ub, { action: 'undo' }); });
-      var tw = $('[data-twin]', box); if (tw) tw.addEventListener('click', function () { location.href = p.testOf ? '/twin?isle=test' : '/twin'; });
+      var tw = $('[data-twin]', box); if (tw) tw.addEventListener('click', function () { if (p.ghost && !p.testOf) sheet('GHOST', inFrame('twin?in=1#bench')); else location.href = p.testOf ? '/twin?isle=test' : '/twin'; });
       var pb = $('[data-pass]', box); if (pb) pb.addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       /* PICKS: what this island holds up, and a search through everything made to add to it */
       var pkl = $('.hm-pkl', box), mine = [], found = [];

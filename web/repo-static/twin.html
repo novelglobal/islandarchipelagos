@@ -41,8 +41,7 @@
   .slip canvas, .slip img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
   .slip + .slip { margin-top: 10px; }
   /* the roll as a pile: the newest whole, the ones before it as their top edges; a tap spreads them */
-  #roll { cursor: pointer; } #roll .slip:not(:first-child) { max-height: 26px; margin-top: 5px; opacity: .8; transition: max-height .5s, opacity .5s; } #roll .slip:not(:first-child)::after { display: none; } #roll .slip:nth-child(n+6) { display: none; }
-  #roll.all .slip { max-height: none; opacity: 1; margin-top: 10px; } #roll.all .slip:first-child { margin-top: 0; } #roll.all .slip:nth-child(n+6) { display: block; } #roll.all .slip:not(:first-child)::after { display: block; }
+  #roll { cursor: pointer; } #roll .slip { transition: max-height .5s, opacity .5s, height .9s linear; }
   .slip::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--bg) 50%) 0 0 / 8px 6px repeat-x, linear-gradient(225deg, transparent 50%, var(--bg) 50%) 4px 0 / 8px 6px repeat-x; }
   .slip .tag { position: absolute; right: 6px; top: 6px; font: 600 9px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; color: #fff; background: rgba(15,15,14,.78); padding: 4px 6px; border-radius: 3px; }
   .slip.radio { background: transparent; box-shadow: none; border: 1px dashed var(--line); padding: 10px 12px; color: var(--ink); font-size: 12px; }
@@ -263,16 +262,22 @@
   .slip { box-shadow: 0 1px 0 var(--shade), 0 10px 22px var(--shade); }
   #roll { margin: 0 auto; }
   /* live: the ledger. Built, gained, open: line and dot */
-  .ledger { display: block; width: 100%; height: auto; margin: 18px 0 4px; color: var(--ink); overflow: visible; } .ledger[hidden] { display: none; }
-  .ledger text { font: 600 7.5px 'IBM Plex Mono', monospace; letter-spacing: .14em; fill: var(--ink); } .ledger .hd { fill: var(--grey); font-size: 6.5px; letter-spacing: .26em; }
-  .ledger .bt { fill: var(--grey); } .ledger .dt { fill: var(--ink); } .ledger .dt.o { fill: var(--bg); stroke: var(--ink); stroke-width: 1; }
-  .ledger .ll path { stroke: var(--ink); opacity: .5; fill: none; stroke-dasharray: 1.6 2.6; stroke-dashoffset: calc(var(--sc, 0) * -.08px); stroke-linecap: round; }
-  .ledger .lg path { stroke: var(--ink); opacity: .7; fill: none; } .ledger .rl path { stroke: var(--line); fill: none; }
-  .ledger .rg { fill: none; stroke: var(--ink); stroke-width: 1.1; } .ledger .rn { font: 400 12px Hand, cursive; letter-spacing: 0; text-anchor: middle; }
-  .ledger .stp rect { fill: none; stroke: var(--hot); stroke-width: 1.4; } .ledger .stp text { fill: var(--hot); font: 700 8px Poppins, sans-serif; letter-spacing: .2em; }
-  .ledger .go { cursor: pointer; outline: none; } .ledger .go .hot { fill: transparent; } .ledger .go text { font: 400 13px Hand, cursive; letter-spacing: .01em; fill: var(--ink); }
-  .ledger .go rect.bx { fill: var(--bg); stroke: var(--ink); stroke-width: 1.1; } .ledger .go:hover rect.bx, .ledger .go:focus-visible rect.bx { fill: var(--hot); stroke: var(--hot); } .ledger .go:hover text, .ledger .go:focus-visible text { fill: var(--hot); }
-  .ledger .go:focus-visible .hot { stroke: var(--hot); stroke-width: .8; stroke-dasharray: 2 2; }
+  .dev { position: relative; width: min(100%, 300px); margin: 22px auto 0; padding: 10px 12px 18px; border-radius: 16px; color: #A8A59C; background-color: #282723; background-image: linear-gradient(180deg, #3A3934 0%, #282723 55%, #1C1C1A 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -2px 0 rgba(0, 0, 0, .35), 0 12px 26px var(--shade); transition: padding .3s; } .dev[hidden] { display: none; }
+  .dev .dtop { display: flex; align-items: center; gap: 6px; } .dev .lmp { width: 7px; height: 7px; border-radius: 50%; background: #8FB98A; box-shadow: 0 0 6px rgba(143, 185, 138, .7); margin-right: auto; } .dev.on .lmp { background: #E2552E; box-shadow: 0 0 8px rgba(226, 85, 46, .9); }
+  .dev .dk { appearance: none; min-width: 26px; height: 22px; padding: 0 6px; border: 1px solid #4A4843; border-radius: 11px; background: #1E1E1C; color: #CFCBC0; font: 600 12px/1 'IBM Plex Mono', monospace; cursor: pointer; } .dev .dk[hidden] { display: none; }
+  .dev .dkeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 12px; }
+  .dev .ky { appearance: none; border: 0; background: none; padding: 2px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: inherit; }
+  .dev .ky i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3E3D38, #191918 70%); box-shadow: inset 0 0 0 1px #4A4843, 0 2px 0 #0B0B0A; transition: background .15s, transform .1s; }
+  .dev .ky b { font: 600 8px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: #A8A59C; }
+  .dev .ky:hover i, .dev .ky:focus-visible i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); } .dev .ky:active i { transform: translateY(1px); box-shadow: inset 0 0 0 1px #4A4843; } .dev .ky:focus-visible { outline: none; } .dev .ky:focus-visible b, .dev .dk:focus-visible { color: #F06A40; outline: none; }
+  .dev .slot { position: absolute; left: 12%; right: 12%; bottom: 7px; height: 4px; border-radius: 2px; background: #0B0B0A; box-shadow: 0 1px 0 rgba(255, 255, 255, .06); }
+  .dev.back .dkeys, .dev.shut .dkeys, .dev.back .slot, .dev.shut .slot { display: none; } .dev.back, .dev.shut { padding-bottom: 10px; } .dev.back [data-go=bench] { color: #F06A40; border-color: #F06A40; }
+  #twin.shut .stage { display: none; } #twin.live .dev + .build:not(.folded) { margin-top: 12px; } #twin.live .dev:not(.back):not(.shut) ~ .stage { margin-top: 0; } #twin.live .dev:not(.back):not(.shut) ~ .stage #roll { width: 84%; margin: -2px auto 0; }
+  .dev.turn { animation: dturn .5s cubic-bezier(.3, .7, .2, 1); } @keyframes dturn { 0% { transform: perspective(700px) rotateY(0); } 45% { transform: perspective(700px) rotateY(88deg); } 55% { transform: perspective(700px) rotateY(-88deg); } 100% { transform: perspective(700px) rotateY(0); } }
+  #roll .slip:not(.open) { max-height: 26px; margin-top: 5px; opacity: .8; } #roll .slip:not(.open)::after { display: none; } #roll .slip.open { max-height: none; opacity: 1; } #roll .slip.open:not(:first-child) { margin-top: 10px; } #roll .slip:nth-child(n+4) { display: none; } #roll.all .slip:nth-child(n+4) { display: block; }
+  .rall { display: block; appearance: none; margin: 10px auto 0; min-width: 44px; height: 24px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: none; color: var(--grey); font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; cursor: pointer; } .rall[hidden] { display: none; }
+  html.in .sea { display: none; } html.in main { padding-top: 6px; }
+  @media (prefers-reduced-motion: reduce) { .dev.turn { animation: none; } }
   .so, #bnsay:not(.err) { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .pw { font-size: 0; gap: 0; padding: 0 9px; min-width: 30px; justify-content: center; } .pw::before { width: 8px; height: 13px; } .tray .th { display: none !important; }
   #twin.live .rite { display: none; } #nm { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } .top { min-height: 0; } .top .chip.gh:not(.off) #bodyw { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } .build.folded { display: none; } .build.folded + .stage { margin-top: 28px; }
@@ -294,7 +299,7 @@
   <div class="top"><div class="id"><h1 id="nm"></h1><button type="button" class="chip" id="body" aria-pressed="false" title="What prints this island's paper"><i class="led" id="led"></i><span id="bodyw"></span></button></div>
     <div class="row"><button type="button" id="test" hidden title="A test slip, drawn here only">TEST</button></div></div>
   <ol class="rite" id="rite" aria-label="The build, stage by stage" hidden></ol>
-  <svg class="ledger" id="ledger" viewBox="0 0 320 150" role="group" aria-label="What it is now: built, gained, open" hidden></svg>
+  <div class="dev" id="dev" role="group" aria-label="The island" hidden></div>
   <section class="build" id="bnd" hidden>
     <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
     <div class="dock" id="dock" aria-live="polite">
@@ -324,7 +329,7 @@
       <circle cx="340" cy="99" r="6" fill="#1E1E1C" stroke="#3A3935"/>
       <text id="pnm" x="40" y="92" fill="#6A6862" style="font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .3em">TWIN</text>
     </svg>
-    <div class="fold"><div id="roll" aria-live="polite" title="Every print · tap to spread"></div></div>
+    <div class="fold"><div id="roll" aria-live="polite" title="Tap a print to fold or open it"></div><button type="button" class="rall" id="rall" hidden aria-expanded="false"></button></div>
     <p class="empty" id="none" hidden title="Prints sent to this island come out here">READY</p>
   </div>
   <details class="more" id="xd"><summary><b>MORE</b><span id="xs"></span></summary>

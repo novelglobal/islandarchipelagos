@@ -162,7 +162,7 @@ const HUMAN = 'https://challenges.cloudflare.com';   // Cloudflare Turnstile, th
 const CSP = [`default-src 'self'`, `script-src 'self' ${HUMAN} ${[...new Set(inline)].join(' ')}`, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob: ${[...DATA, ...INAT_MEDIA].join(' ')}`,
   `media-src 'self' data: blob: ${INAT_MEDIA.join(' ')}`, `connect-src 'self' data: blob: ${HUMAN} ${[...DATA, ...INAT_MEDIA].join(' ')}`, `font-src 'self' data:`, `worker-src 'self' blob:`, `frame-src 'self' ${HUMAN}`,
   `frame-ancestors 'self'`, `base-uri 'self'`, `form-action 'self'`, `object-src 'none'`].join('; ');
-const TWIN_CSP = `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`;
+const TWIN_CSP = `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'`;
 fs.appendFileSync(path.join(out, '_headers'), `
 # every page: the security policy, written by build.mjs
 /*

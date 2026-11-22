@@ -106,15 +106,20 @@
     try { var DO = window.DeviceOrientationEvent; if (DO && typeof DO.requestPermission === 'function') DO.requestPermission().then(function (r) { if (r === 'granted') { CMP = 1; addEventListener('deviceorientation', on); } else CMP = r === 'denied' ? 2 : 0; }, function () { CMP = 0; /* no tap yet */ }); else { CMP = 1; addEventListener('deviceorientationabsolute', on); addEventListener('deviceorientation', on); } } catch (e) { /* north stays up */ } }
   D.addEventListener('click', function (e) { if (!CMP && !(e.target.closest && e.target.closest('#loc'))) compass(); }, true);
   var LOC = '';
-  function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; $('#read').title = ''; return first; }
-  function locate(asked) { if (!navigator.geolocation || WATCH != null) return; $('#loc').textContent = '· · ·';
+  function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; $('#read').title = ''; var y = $('#why'); if (y) y.hidden = true; return first; }
+  /* LOCATE asks the phone; found, the button goes; otherwise it says why in a word, and the fix under it. A tap tries again */
+  var WHY = { 1: ['OFF', 'Location is off for this site. iPhone: Settings › Privacy › Location Services › Safari Websites, or aA › Website Settings. Android: the lock by the address › Permissions'],
+    2: ['NO FIX', 'The phone cannot find where it is. Turn on Location (GPS), or step outside'], 3: ['SLOW', 'No answer yet. Tap to try again'],
+    0: ['NO GPS', 'This browser cannot share a location'] };
+  function why(c) { var w = WHY[c] || WHY[2], b = $('#loc'), y = $('#why'); b.textContent = w[0]; b.classList.add('err'); b.title = w[1]; if (y) { y.textContent = w[1]; y.hidden = false; } LOC = w[0]; }
+  function stop() { if (WATCH != null) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; } }
+  function locate(asked) { if (ME) return; if (!navigator.geolocation) { why(0); return; } stop(); var b = $('#loc'), y = $('#why'); b.textContent = '· · ·'; b.classList.remove('err'); if (y) y.hidden = true;
     /* a quick rough place first (a phone can take a while to find a close one), then the close one as it comes */
-    navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function (e) { if (!ME && e && e.code === 1) no(); }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+    navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function (e) { if (!ME) { if (e && e.code === 1) no(); else if (asked) why(e && e.code); } }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     WATCH = navigator.geolocation.watchPosition(function (p) { var first = fix(p); if (first) { var b = sorted().filter(function (q) { return q.open && has(q); })[0]; if (b && !Q.get('i') && !LIST.some(function (q) { return q.id === homeId() && q.open; })) PICK = b.id; draw(); } else { scope(); [].forEach.call(D.querySelectorAll('li[data-id]'), function (li) { var q = LIST.filter(function (x) { return x.id === li.dataset.id; })[0], d = li.querySelector('.d'), m = q && dist(q); if (m != null && d) d.lastChild.textContent = m < HERE_M ? 'HERE' : metres(m); }); } },
-      function (e) { if (ME) return; if (e && e.code === 1) no(); else { LOC = 'FINDING'; draw(); } }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
+      function (e) { if (ME) return; if (e && e.code === 1) no(); else { stop(); why(e && e.code); draw(); } }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
   /* refused: the watch stops so the next tap asks again; the dial keeps a rough way from the network meanwhile */
-  function no() { if (WATCH != null) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; }
-    LOC = 'NOT ALLOWED'; $('#loc').textContent = 'LOCATE'; $('#read').title = 'Location is off for novel.global: on an iPhone, Settings › Privacy › Location Services › Safari Websites, or the aA menu › Website Settings'; draw(); }
+  function no() { stop(); why(1); draw(); }
   $('#loc').onclick = function () { locate(true); };
   $('#all').onclick = function () { ALL = true; draw(); };
   try { navigator.permissions.query({ name: 'geolocation' }).then(function (s) { if (s.state === 'granted') { locate(false); compass(); } }, function () { /* ask on LOCATE */ }); } catch (e) { /* ask on LOCATE */ }
