@@ -279,6 +279,8 @@
   .dev .ky { appearance: none; border: 0; background: none; padding: 2px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: inherit; }
   .dev .ky i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3E3D38, #191918 70%); box-shadow: inset 0 0 0 1px #4A4843, 0 2px 0 #0B0B0A; transition: background .15s, transform .1s; }
   .dev .ky b { font: 600 8px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: #CFCBC0; } .dev .ky small { min-height: 8px; margin-top: -2px; font: 500 8px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: #8A877E; }
+  .dev .ky.lit i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); animation: kylit 2s ease-in-out infinite; } .dev .ky.lit b { color: #F06A40; }
+  @keyframes kylit { 50% { box-shadow: inset 0 0 0 1px #4A4843, 0 2px 0 #0B0B0A, 0 0 0 6px rgba(240, 106, 64, .18); } } @media (prefers-reduced-motion: reduce) { .dev .ky.lit i { animation: none; } }
   .dev .ky[aria-expanded=true] i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); } .dev .ky[aria-expanded=true] b { color: #F06A40; }
   .dev .ky:hover i, .dev .ky:focus-visible i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); } .dev .ky:active i { transform: translateY(1px); box-shadow: inset 0 0 0 1px #4A4843; } .dev .ky:focus-visible { outline: none; } .dev .ky:focus-visible b, .dev .dk:focus-visible { color: #F06A40; outline: none; }
   .dev .slot { position: absolute; left: 12%; right: 12%; bottom: 7px; height: 4px; border-radius: 2px; background: #0B0B0A; box-shadow: 0 1px 0 rgba(255, 255, 255, .06); }

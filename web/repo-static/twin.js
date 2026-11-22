@@ -408,7 +408,7 @@
     else if (W.k === 'boot') acts = [['on', 'ON', 'Power it on']];
     else if (W.k === 'wifi') acts = [['wifi', 'JOIN', 'Join the setup Wi-Fi its slip shows, from a phone']];
     else if (W.k === 'pair') acts = [['pair', 'APPROVE', 'Approve the code it printed, as on novel.global']];
-    else if (W.k === 'done') acts = TESTQ ? [['home', 'MOVE', 'What works here, moved to its real island']] : [];
+    else if (W.k === 'done') acts = TESTQ ? [['home', 'MOVE', 'What works here, moved to its real island']] : [['home', 'HOME', 'Its home: everything it can do']];
     var nw = $('#nw'); nw.textContent = BT.run ? 'STARTING' : bad >= 0 ? 'WRONG CABLE' : wantSay(W); nw.classList.toggle('bad', bad >= 0 && !BT.run);
     /* the words go quiet when the thing says it: a button with the verb, the scrap on the bench, the writer, the log running */
     nw.classList.toggle('so', bad < 0 && (BT.run || W.k === 'part' || W.k === 'flash' || W.k === 'done' || (acts.length > 0 && W.k !== 'pair')));
@@ -633,6 +633,7 @@
     d.querySelector('.dnm').textContent = T.name; BOPEN = false;
     d.hidden = false; tw.classList.add('dv'); d.dataset.parts = BN.p.filter(function (x) { return PART[x[1]] && L.pos[x[0]]; }).length; d.classList.remove('back');
     KEYS.forEach(function (k) { var g = d.querySelector('[data-go=' + k[0] + ']'); g.title = k[2] + (gain[k[0]] ? ' · ' + gain[k[0]] : ''); });
+    d.querySelector('[data-go=home]').classList.toggle('lit', !store.get('da.twin.home.' + T.id, 0));
     var jk = d.querySelector('[data-go=joins]'); jk.hidden = $('#jd').hidden; d.querySelector('.dkeys').style.gridTemplateColumns = 'repeat(' + (jk.hidden ? 3 : 4) + ', 1fr)';
     if (DRW === 'joins' && jk.hidden) DRW = null; drawerDraw(); }
   /* RADIO or JOINS, the thing itself, moved in under the device */
@@ -641,7 +642,7 @@
     $$('#dev .ky[aria-expanded]').forEach(function (g) { g.setAttribute('aria-expanded', String(DRW === g.dataset.go)); });
     var e = DRW && $(DRW === 'radio' ? '#rd' : '#jd'); r.hidden = !e || e.hidden; if (r.hidden) return; e.open = true; r.appendChild(e); }
   /* home: the island's own keeper section; inside the home's sheet, the home itself turns to it */
-  function homeGo() { if (IN) { try { window.top.location.hash = 'keeper'; return; } catch (e) { /* not ours */ } } location.href = '/#keeper'; }
+  function homeGo() { if (T) store.set('da.twin.home.' + T.id, 1); if (IN) { try { window.top.location.hash = 'keeper'; return; } catch (e) { /* not ours */ } } location.href = '/#keeper'; }
   function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
   function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : TESTQ ? !!T.paired : c >= 4; }); }
   /* the one Irukandji in the dock: faint at the start, waking stage by stage, beating while it starts, lit when it lives */

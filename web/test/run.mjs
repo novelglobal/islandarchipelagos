@@ -2283,7 +2283,7 @@ if (run('bench')) try {
     && /^the setup Wi-Fi is open: .+ SETUP$/.test(bt1.lines[bt1.lines.length - 1]) && bt1.lines.includes('island v1.1.1: bench-bb, not set up yet') && /^Setup Wi-Fi BENCH BB SETUP, slip key [a-z0-9]{10}\|Test strip\|/.test(bt1.tags) && n1 === 'pt l2 want wifi' && bt1.wide
     && bt2.lines.some(l => /^pairing code [a-z0-9]{4}-[a-z0-9]{4} for https:\/\/novel\.global$/i.test(l)) && /^Pair code [A-Z0-9]{4}-[A-Z0-9]{4}\|On Wi-Fi /.test(bt2.tags) && n2 === 'pt l2 want pair'
     && pc.act === 'pair' && bt2.tags.indexOf('Pair code ' + pc.v) === 0
-    && /^Paired, ready to print\|/.test(bt3.tags) && n3 === '' && JSON.stringify(o3) === '["p4","v1.1.1",3]' && rt3 === 'LLLLL' && live.nw === 'LIVE' && live.act === '' && live.all && live.fold && live.places === 'print,radio,joins,home' && live.built === 8 && /receipts$/.test(live.pr), JSON.stringify({ rt0, n0, bt0, bt1, n1, bt2, n2, pc, bt3, n3, o3, rt3, live }));
+    && /^Paired, ready to print\|/.test(bt3.tags) && n3 === '' && JSON.stringify(o3) === '["p4","v1.1.1",3]' && rt3 === 'LLLLL' && live.nw === 'LIVE' && live.act === 'home' && live.all && live.fold && live.places === 'print,radio,joins,home' && live.built === 8 && /receipts$/.test(live.pr), JSON.stringify({ rt0, n0, bt0, bt1, n1, bt2, n2, pc, bt3, n3, o3, rt3, live }));
   /* while a slip feeds the page shows the printer; after, it comes back */
   check('boot: each slip is seen as it comes out: the page goes down to the printer, then back to the Pi that waits; the page never wider than the phone', bt3.wide && bt2.wide && bt2.top > -40 && bt2.top < 600 && back[0] >= 0 && back[1] <= back[2], JSON.stringify({ t1: bt1.top, t2: bt2.top, t3: bt3.top, back }));
   /* on, nothing glows on the bench (the rite's HOME is next); a touch on the printer is a print, and the roll is shorter by what came out */
@@ -2405,6 +2405,32 @@ for (const HD of [false, true]) if (run('home')) try {
   await page.screenshot({ path: path.join(SHOTS, `home-${tag}.png`) });
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }
+
+// ───────── keeper: an island's own home as a chart of it. Its coast from its id, a landmark for each thing it can do, the guide once,
+// one landmark opened at a time (ONLY=keeper) ─────────
+let KKEY = null;
+for (const [tag, vp, dark] of [['phone', { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, false], ['phone-night', { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, true], ['desk', { width: 1280, height: 900 }, false], ['desk-night', { width: 1280, height: 900 }, true]]) if (run('keeper')) try {
+  const ctx = await newCtx({ viewport: { width: vp.width, height: vp.height }, ...vp }); await wire(ctx, { dark }); const page = await ctx.newPage(); watch(page, 'keeper');
+  await page.goto('https://oan.test/archipelagos.html');
+  const made = KKEY ? { s: 201 } : await page.evaluate(async n => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: n }) }), j = await r.json(); return { s: r.status, key: j.key }; }, 'Keep Island');
+  if (!KKEY) KKEY = made.key; await page.evaluate(k => localStorage.setItem('da.hm.key', JSON.stringify(k)), KKEY);
+  await page.evaluate(n => localStorage.setItem('da.hm.night', JSON.stringify(n)), dark);   /* the home's own night */
+  await page.goto('https://oan.test/#keeper'); await page.waitForSelector('.ik-map', { timeout: 20000 }); await sleep(900);
+  const k0 = await page.evaluate(() => { const q = s => document.querySelector(s); return { marks: [...document.querySelectorAll('.ik-m')].map(m => m.dataset.ik + (m.disabled ? '-' : '')).join(), tour: (q('.ik-tour b') || {}).textContent, lit: (q('.ik-m.tour') || { dataset: {} }).dataset.ik, coast: !!q('.ik-land'), name: (q('.ik-nm') || {}).textContent,
+    over: [...document.querySelectorAll('.ik-m')].some(m => { const r = m.getBoundingClientRect(), b = q('.ik-map').getBoundingClientRect(); return r.left < b.left - 1 || r.right > b.right + 1; }) }; });
+  await page.locator('.ik').scrollIntoViewIfNeeded(); await shot(page, `keeper-${tag}-guide.png`);
+  for (let i = 0; i < 12 && await page.$('[data-ikn]'); i++) await page.click('[data-ikn]');
+  const k1 = await page.evaluate(() => ({ tour: !!document.querySelector('.ik-tour'), pane: (document.querySelector('.ik-pane') || { dataset: {} }).dataset.pane, seen: localStorage.getItem('da.ik.tour') }));
+  await page.click('.ik-m[data-ik="gap"]'); await sleep(200); await page.click('.ik-gauge [data-gap="60"]'); await sleep(900);
+  const k2 = await page.evaluate(() => ({ pane: (document.querySelector('.ik-pane') || { dataset: {} }).dataset.pane, on: (document.querySelector('.ik-gauge .on') || { dataset: {} }).dataset.gap, set: document.querySelector('.ik-m[data-ik="gap"]').classList.contains('set') }));
+  await page.click('.ik-m[data-ik="links"]'); await sleep(300); await page.locator('.ik').scrollIntoViewIfNeeded(); await shot(page, `keeper-${tag}-open.png`);
+  const k3 = await page.evaluate(() => ({ pane: (document.querySelector('.ik-pane') || { dataset: {} }).dataset.pane, plugs: document.querySelectorAll('.ik-pane .ik-plug').length, panes: document.querySelectorAll('.ik-pane').length }));
+  for (const k of ['printer', 'home', 'passes']) { await page.click(`.ik-m[data-ik="${k}"]`); await sleep(300); await page.locator('.ik').screenshot({ path: `${SHOTS}/keeper-${tag}-${k}.png`, animations: 'disabled' }).catch(() => {}); }
+  check(`keeper (${tag}): an island's home is a chart of it, its coast its own; the guide walks each landmark once, then opens the next good thing; one landmark opens at a time and a change shows on the chart`,
+    made.s === 201 && /printer,home,pics/.test(k0.marks) && k0.coast && k0.tour === 'PRINTER' && k0.lit === 'printer' && !k0.over && /KEEP/i.test(k0.name || '') && !k1.tour && k1.pane === 'pics' && k1.seen === '1' && k2.pane === 'gap' && k2.on === '60' && k2.set && k3.pane === 'links' && k3.plugs > 3 && k3.panes === 1,
+    JSON.stringify({ made, k0, k1, k2, k3 }));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section keeper: ${e.message.split('\n')[0]}`); }
 
 // ───────── aura: the showcase at /. The seed, the bang, the globe, the irukandji, one piece through its four steps (ONLY=aura) ─────────
 for (const AD of (process.env.AURA_DESK ? [true] : [false, true])) if (run('aura')) try {
