@@ -29,12 +29,15 @@
   .led.on { background: var(--ink); box-shadow: 0 0 8px rgba(236,234,228,.6); }
   .led.hot { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
   /* the printer and its paper */
-  .stage { position: relative; margin: 18px auto 0; width: min(100%, 380px); }
+  .stage { position: relative; margin: 26px auto 0; width: min(100%, 320px); } .stage[hidden] { display: none; }
   .stage svg { display: block; width: 100%; height: auto; position: relative; z-index: 2; }
   #roll { position: relative; z-index: 1; width: 82%; margin: -6px auto 0; display: grid; gap: 0; }
   .slip { position: relative; overflow: hidden; background: var(--paper); box-shadow: 0 1px 0 rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.45); transition: height .9s linear; }
   .slip canvas, .slip img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
   .slip + .slip { margin-top: 10px; }
+  /* the roll as a pile: the newest whole, the ones before it as their top edges; a tap spreads them */
+  #roll { cursor: pointer; } #roll .slip:not(:first-child) { max-height: 26px; margin-top: 5px; opacity: .8; transition: max-height .5s, opacity .5s; } #roll .slip:not(:first-child)::after { display: none; } #roll .slip:nth-child(n+6) { display: none; }
+  #roll.all .slip { max-height: none; opacity: 1; margin-top: 10px; } #roll.all .slip:first-child { margin-top: 0; } #roll.all .slip:nth-child(n+6) { display: block; } #roll.all .slip:not(:first-child)::after { display: block; }
   .slip::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--bg) 50%) 0 0 / 8px 6px repeat-x, linear-gradient(225deg, transparent 50%, var(--bg) 50%) 4px 0 / 8px 6px repeat-x; }
   .slip .tag { position: absolute; right: 6px; top: 6px; font: 600 9px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; color: #fff; background: rgba(15,15,14,.78); padding: 4px 6px; border-radius: 3px; }
   .slip.radio { background: transparent; box-shadow: none; border: 1px dashed var(--line); padding: 10px 12px; color: var(--ink); font-size: 12px; }
@@ -67,18 +70,19 @@
   .bench .air.tx path { animation-duration: .7s; } @keyframes air { 20% { opacity: .9; } to { opacity: 0; } }
   /* the gate: no key on this phone */
   #gate { padding-top: 12vh; display: grid; gap: 18px; }
-  #gate h1 { font-size: 44px; }
+  #gate h1 { font-size: 44px; } #gate .rite { margin: 0 0 6px; pointer-events: none; }
   #gate form { display: flex; gap: 8px; } #gate input { flex: 1; }
   #gate .alt { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
   /* the bench: each part drawn by hand, its ports below it; tap a port, then another, for a cable */
   .bench { display: block; width: 100%; height: auto; margin: 4px 0 6px; color: var(--ink); overflow: visible; }
   .bench path { fill: none; }
-  .bench .pt { color: var(--ink); transition: opacity .3s; } .bench .pt.off { opacity: .42; }
+  .bench .pt { color: var(--ink); transition: opacity .3s; } .bench .pt.off > g:not(.po) { opacity: .55; }
+  .bench .pt > .bk { fill: #1C1C1A; stroke: rgba(236, 234, 228, .2); stroke-width: 1; } .bench .pt > .sh { fill: #000; opacity: .5; }
   .bench .ac { color: var(--hot); }
   .bench .bk { fill: var(--bg); }
   .bench text { font: 600 8.5px 'IBM Plex Mono', monospace; letter-spacing: .12em; fill: var(--ink); }
   .bench text.jb { font: 700 10.5px Poppins, sans-serif; letter-spacing: .08em; } .bench text.md { font-size: 6.5px; letter-spacing: .14em; fill: var(--grey); } .bench .gh text.jb { fill: currentColor; }
-  .bench .bolt { fill: var(--ink); stroke: none; opacity: .75; } .bench .bolt.no { fill: none; stroke: var(--hot); stroke-width: 1.1; opacity: 1; }
+  .bench .bolt { fill: var(--ink); stroke: none; opacity: .75; } .bench .bolt.no { fill: none; stroke: var(--grey); stroke-width: 1.1; opacity: 1; } .bench.pw-on .bolt.no { stroke: var(--hot); }
   .bench .pl { font-size: 7.5px; fill: var(--grey); letter-spacing: .06em; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
   .bench .po { cursor: pointer; outline: none; } .bench .po circle { fill: var(--bg); stroke: var(--ink); stroke-width: 1.3; } .bench .po circle.ph { fill: transparent !important; stroke: none !important; }
   .bench .po.fit circle:not(.ph) { stroke: var(--hot); stroke-width: 2; stroke-dasharray: 2 2; animation: fit 1.2s ease-in-out infinite alternate; } @keyframes fit { to { stroke-dashoffset: 4; } }
@@ -88,86 +92,122 @@
   .bench .sdf { fill: var(--hot); opacity: .55; } .bench .sdf.v { opacity: 1; }
   #fls .dn::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
   .bench .hit { stroke: transparent; stroke-width: 14; cursor: pointer; }
-  .pw { margin: 0; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; } .pw.short { color: var(--hot); }
-  .more { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; } .why { color: var(--ink); margin-top: 6px; letter-spacing: .04em; line-height: 1.5; } .why:empty { display: none; }
+  .why { color: var(--ink); margin-top: 6px; letter-spacing: .04em; line-height: 1.5; } .why:empty { display: none; }
   /* the build: what the island wants next is drawn where it goes. A ghost of the part, or two ports breathing and a dotted cable */
-  .bench .gh { cursor: pointer; color: var(--grey); opacity: .5; outline: none; animation: ghost 2.4s ease-in-out infinite alternate; } @keyframes ghost { to { opacity: .95; } }
-  .bench .gh .bk { fill: transparent; pointer-events: all; stroke: var(--grey); stroke-dasharray: 4 4; } .bench .gh:hover .bk, .bench .gh:focus-visible .bk { stroke: var(--hot); }
-  .bench .gp { font-size: 15px; fill: var(--hot); }
+  .bench .gh { cursor: pointer; color: var(--grey); outline: none; } .bench .gh > g { opacity: .45; animation: ghost 2.4s ease-in-out infinite alternate; } @keyframes ghost { to { opacity: .85; } }
+  .bench .gh .bk { fill: rgba(226, 85, 46, .04); pointer-events: all; stroke: var(--hot); stroke-width: 1.3; stroke-dasharray: 5 4; animation: march 1.6s linear infinite; } @keyframes march { to { stroke-dashoffset: -18; } } .bench .gh:hover .bk, .bench .gh:focus-visible .bk { fill: rgba(226, 85, 46, .1); }
+  .bench .gh .gb { fill: var(--hot); } .bench .gp { font: 700 13px Poppins, sans-serif; fill: var(--bg); } .bench .gh text.md { fill: var(--hot); }
   .bench .po { touch-action: none; } .bench .po.want circle:not(.ph) { stroke: var(--hot); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: want .9s ease-in-out infinite alternate; } @keyframes want { to { transform: scale(1.45); } }
   .bench .cbg { stroke: var(--hot); stroke-width: 1.5; stroke-dasharray: 1 6; stroke-linecap: round; animation: flow 1.4s linear infinite; }
   .bench .cbd { stroke: var(--hot); stroke-width: 1.8; fill: none; pointer-events: none; }
   .bench [data-body] { cursor: pointer; outline: none; } .bench [data-body]:focus-visible .bk { stroke: var(--hot); }
-  .bench .pt.want .bk { stroke: var(--hot); stroke-width: 1.6; animation: pulse 1.3s ease-in-out infinite alternate; } @keyframes pulse { to { stroke-opacity: .2; } }
+  .bench .pt.want > .bk { stroke: var(--hot); stroke-width: 1.8; animation: pulse 1.3s ease-in-out infinite alternate; } @keyframes pulse { to { stroke-opacity: .25; } }
   .bench .roll .rl0 { fill: none; stroke: var(--line); } .bench .roll .rl { fill: var(--bg); stroke: var(--ink); stroke-width: 1.2; transition: r .6s; } .bench .roll .rl.low { stroke: var(--hot); } .bench .roll .rc { fill: var(--ink); }
-  .tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin: 2px 0 12px; } .tray[hidden] { display: none; }
+  .tray { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin: 2px 0 12px; } .tray[hidden] { display: none; } .tray:not(.swap) .th { display: none; }
   .tile { display: grid; justify-items: center; align-content: start; gap: 3px; padding: 8px 4px 8px; border-radius: 12px; font: 600 8.5px/1.25 'IBM Plex Mono', monospace; letter-spacing: .1em; min-height: 0; }
   .tile span { font-size: 6.5px; letter-spacing: .14em; color: var(--grey); text-align: center; } .tile b { font-size: 9px; } .tray .th { grid-column: 1 / -1; margin: 0; font: 700 11px Poppins, sans-serif; letter-spacing: .12em; color: var(--grey); }
-  .tile svg { width: 72px; height: 54px; color: var(--ink); } .tile svg path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; } .tile svg .ac { stroke: var(--hot); }
+  .tile svg { width: 100%; max-width: 72px; height: auto; aspect-ratio: 4 / 3; color: var(--ink); } .tile svg path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; } .tile svg .ac { stroke: var(--hot); }
   .tile i { font-style: normal; font-size: 7px; color: var(--hot); letter-spacing: .16em; } .tile.on { border-color: var(--hot); background: transparent; color: var(--ink); } .tile.x { font-size: 20px; font-weight: 400; color: var(--grey); align-content: center; }
   .day { display: block; width: 100%; height: auto; margin: 0 0 8px; } .day[hidden] { display: none; }
   .day .sun { fill: none; stroke: var(--hot); stroke-width: 1.4; } .day .lv { fill: var(--ink); fill-opacity: .12; stroke: var(--ink); stroke-width: 1; } .day .nt { fill: var(--ink); opacity: .1; } .day .dk { stroke: var(--ink); stroke-width: 1.4; }
-  /* the rite: five stations on the sun's path; the one Irukandji under it, waking as they light */
+  /* the stages: five, in a line; done is filled, now is the hot ring, to come is a faint ring */
   .top .chip { border: 0; padding: 0; min-height: 0; background: none; color: var(--grey); } .top .chip:disabled { opacity: 1; cursor: default; } .top .chip.off .led { background: transparent; box-shadow: inset 0 0 0 1.4px var(--hot); }
-  .rite { display: block; width: 100%; height: auto; margin: 14px 0 -4px; overflow: visible; }
-  .rite .rp { fill: none; stroke: var(--line); stroke-width: 1; } .rite .rp.on { stroke: var(--ink); stroke-opacity: .5; }
-  .rite .ik { transition: opacity 1.4s; } .rite .ik path { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; } .rite .ik .tn { stroke-dasharray: .2 3.6; }
-  .rite .ik.beat { animation: beat 1.05s ease-in-out infinite; } @keyframes beat { 45% { opacity: .95; } }
-  .rite .ik.all .tn { animation: drift 5s ease-in-out infinite alternate; } @keyframes drift { to { stroke-dashoffset: 3.8; } }
-  .rite .st { cursor: pointer; outline: none; } .rite .st .hb { fill: transparent; stroke: none; } .rite .st circle:not(.hb) { fill: var(--dim); transition: fill .5s; }
-  .rite .st.lit circle:not(.hb) { fill: var(--ink); } .rite .st.lit .c { fill: var(--hot); } .rite .st.now circle:not(.hb) { fill: var(--grey); animation: wake 2.2s ease-in-out infinite alternate; } @keyframes wake { from { opacity: .3; } }
-  .rite .rw { font: 600 8px 'IBM Plex Mono', monospace; letter-spacing: .32em; fill: var(--grey); }
+  .rite { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); }
+  .rite .st { position: relative; display: grid; justify-items: center; }
+  .rite .st + .st::before { content: ''; position: absolute; top: 11px; right: 50%; width: 100%; height: 1.5px; background: var(--line); }
+  .rite .st.lit + .st::before { background: var(--ink); opacity: .55; }
+  .rite button { all: unset; position: relative; z-index: 1; display: grid; justify-items: center; gap: 7px; cursor: pointer; padding: 0 2px; }
+  .rite button:focus-visible i { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .rite i { width: 22px; height: 22px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid var(--dim); background: var(--bg); display: grid; place-items: center; transition: background .4s, border-color .4s; }
+  .rite b { font: 600 8.5px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: var(--dim); }
+  .rite .lit i { background: var(--ink); border-color: var(--ink); } .rite .lit i::after { content: ''; width: 7px; height: 4px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+  .rite .lit b { color: var(--grey); }
+  .rite .now i { border: 2px solid var(--hot); box-shadow: 0 0 0 4px rgba(226, 85, 46, .16); animation: wake 1.6s ease-in-out infinite alternate; } .rite .now i::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--hot); } .rite .now b { color: var(--ink); }
+  @keyframes wake { to { box-shadow: 0 0 0 7px rgba(226, 85, 46, 0); } }
+  .rite .seal i { animation: seal .7s cubic-bezier(.2, 1.5, .4, 1) both; } @keyframes seal { from { transform: scale(2); } }
+  /* the build: a cutting mat, the parts on it, and the dock that says what is next */
+  .build { position: relative; margin: 16px -16px 0; padding: 14px 16px 0; background: radial-gradient(rgba(236, 234, 228, .075) 1px, transparent 1.3px) 0 0 / 16px 16px; border-top: 1px solid var(--line); }
+  .build[hidden] { display: none; }
+  .dock { position: sticky; bottom: 0; z-index: 5; margin: 6px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: rgba(15, 15, 14, .96); border-top: 1px solid var(--line); box-shadow: 0 -18px 28px rgba(15, 15, 14, .9); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .dh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .dw { flex: 1 1 140px; min-width: 0; display: grid; gap: 3px; }
+  .nw { margin: 0; font: 700 15px/1.15 Poppins, sans-serif; letter-spacing: .03em; text-transform: uppercase; } .nw.bad { color: var(--hot); }
+  .ds { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .ds:not(:has(:not([hidden]):not(:empty))) { display: none; }
+  .dw .say { margin: 0; min-height: 0; font-size: 9.5px; letter-spacing: .16em; } .dw .say:empty { display: none; }
+  .na { display: flex; gap: 6px; margin-left: auto; } .na:empty { display: none; }
+  .na button { min-height: 36px; padding: 0 16px; } .na button.on { animation: nb 1.4s ease-in-out infinite alternate; } @keyframes nb { to { box-shadow: 0 0 0 4px rgba(236, 234, 228, .1); } }
+  .dock .ik { width: 30px; height: 32px; flex: none; transition: opacity 1.2s; } .dock .ik path { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; } .dock .ik .tn { stroke-dasharray: .2 3.6; }
+  .dock .ik.beat { animation: beat 1.05s ease-in-out infinite; } @keyframes beat { 45% { opacity: .95; } }
+  .dock .ik.all .tn { animation: drift 5s ease-in-out infinite alternate; } @keyframes drift { to { stroke-dashoffset: 3.8; } } .dock .ik.all path:not(.tn) { stroke: var(--hot); }
+  .dock .tray, .dock .img, .dock .boot, .dock .day { margin-top: 12px; } .dock .why { margin: 8px 0 0; font-size: 11px; }
+  .pw { min-height: 22px; padding: 0 8px 0 7px; font-size: 9px; letter-spacing: .16em; gap: 5px; } .pw::before { content: ''; width: 7px; height: 11px; background: currentColor; clip-path: polygon(60% 0, 0 58%, 45% 58%, 35% 100%, 100% 40%, 55% 40%); }
+  .pw.short { color: var(--hot); border-color: rgba(226, 85, 46, .5); }
+  .more { margin-top: 26px; } .more > .parts { margin-top: 0; padding-bottom: 4px; } .more.air > summary b::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 7px; vertical-align: middle; border-radius: 50%; background: var(--hot); animation: dot 2.6s ease-in-out infinite; }
   #pf button.want { border-color: var(--hot); animation: btn 1.1s ease-in-out infinite alternate; } @keyframes btn { to { border-color: var(--line); } } .dots { -webkit-text-security: disc; }
-  .rite .st:hover .hb, .rite .st:focus-visible .hb { stroke: var(--line); stroke-width: 1; }
-  .rite .st.seal { transform-box: fill-box; transform-origin: center; animation: seal .8s cubic-bezier(.2, 1.5, .4, 1) both; } @keyframes seal { from { transform: scale(2.4) rotate(-24deg); opacity: 0; } }
   /* the first start: its log, the last five lines */
   .boot { list-style: none; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #0A0A09; font: 500 10px/1.65 'IBM Plex Mono', monospace; letter-spacing: .02em; color: var(--dim); cursor: pointer; }
-  .boot li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .boot li.nw { color: var(--ink); animation: type .45s steps(24) both; } .boot li[data-err] { color: var(--hot); } @keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  .boot li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .boot li.nl { color: var(--ink); animation: type .45s steps(24) both; } .boot li[data-err] { color: var(--hot); } @keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
   .bench .leds .lp { fill: var(--hot); } .bench .leds .la { fill: var(--dim); } .bench .leds .la.run, .bench .leds .la.rd { animation: act .26s steps(2, jump-none) infinite; } .bench .leds .la.idle { animation: act 4.3s steps(9, jump-none) infinite; } @keyframes act { 50% { fill: var(--ink); } }
   .bench .cue { fill: none; stroke: var(--hot); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; animation: pulse 1.3s ease-in-out infinite alternate; }
-  /* the imager, mimicked */
-  #flp { margin-top: 10px; } #flp .row { justify-content: space-between; } #flp .say { margin: 0; }
-  .bar { height: 6px; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 10px; } .bar i { display: block; height: 100%; background: var(--ink); transition: width .1s linear; }
-  .flf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; } .flf label { display: grid; gap: 6px; } .flf .lbl { margin: 0; } .flf input { width: 100%; font-size: 13px; } .flf button { justify-self: start; }
+  /* the imager, mimicked: what it writes to (three rows, as the Imager's three choices), its settings, one WRITE */
+  .img .ch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .img .ch button { display: grid; gap: 4px; justify-items: start; align-content: start; text-align: left; border-radius: 10px; min-height: 0; padding: 8px 9px; white-space: normal; } .img .ch button:disabled { opacity: 1; cursor: default; }
+  .img .ch i { font-style: normal; font-size: 7.5px; letter-spacing: .2em; color: var(--grey); } .img .ch b { font-size: 9.5px; letter-spacing: .08em; overflow-wrap: anywhere; line-height: 1.3; } .img .ch .x b { color: var(--hot); }
+  .flf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; margin-top: 10px; } .flf label { display: grid; gap: 6px; } .flf .lbl { margin: 0; } .flf input { width: 100%; font-size: 13px; padding: 8px 10px; }
+  .flf .wr { grid-column: 1 / -1; justify-content: center; min-height: 40px; font-size: 12px; } .flf[hidden] { display: none; }
+  #flp:empty { display: none; } #flp { margin-top: 10px; } #flp .row { justify-content: space-between; flex-wrap: nowrap; } #flp .say { margin: 0; }
+  .bar { height: 8px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 10px; } .bar i { display: block; height: 100%; background: var(--ink); transition: width .1s linear; } .bar.v i { background: var(--hot); }
+  .ok { margin: 0; font: 700 13px Poppins, sans-serif; letter-spacing: .08em; } .ok::before { content: '\2713  '; color: var(--hot); }
   .bench .fv { font-size: 7.5px; fill: var(--hot); letter-spacing: .06em; }
-  @media (prefers-reduced-motion: reduce) { .bench .air path { opacity: .8; } .slip { transition: none; } .bench .po.fit circle, .bench .cb.pwr.on, .bench .gh, .bench .po.want circle, .bench .cbg, .bench .pt.want .bk, .rite .st.now circle, .rite .ik.beat, .rite .ik.all .tn, .bench .air path, #rd.air summary b::after, #rd.rx summary, .rite .st.seal, .boot li.nw, .bench .leds .la, .bench .cue, #pf button.want { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .bench .air path { opacity: .8; } .slip { transition: none; } .bench .po.fit circle, .bench .cb.pwr.on, .bench .gh, .bench .po.want circle, .bench .cbg, .bench .pt.want .bk, .rite .now i, .dock .ik.beat, .dock .ik.all .tn, .bench .gh > g, .bench .gh .bk, .na button.on, .bench .air path, #rd.air summary b::after, #rd.rx summary, .rite .seal i, .more.air > summary b::after, .boot li.nl, .bench .leds .la, .bench .cue, #pf button.want { animation: none; } }
 </style>
 </head>
 <body><main>
 <section id="gate" hidden>
   <h1>Ghost</h1>
+  <ol class="rite" aria-hidden="true"><li class="st now"><button type="button" tabindex="-1"><i></i><b>PARTS</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>SD</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>POWER</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>START</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>REAL</b></button></li></ol>
   <form id="gf"><input id="gn" maxlength="40" autocomplete="off" placeholder="ITS NAME" aria-label="The ghost island's name"><button class="on" title="An island with no printer yet: its prints come out here, on this page">START</button></form>
   <p class="say" id="gsay"></p>
   <form id="kf" class="alt"><input id="kk" maxlength="64" autocomplete="off" spellcheck="false" placeholder="KEY" aria-label="An island's key"><button title="Open an island with the key from its welcome slip">OPEN</button></form>
 </section>
 <div id="twin" hidden>
   <div class="top"><div class="id"><h1 id="nm"></h1><button type="button" class="chip" id="body" aria-pressed="false" title="What prints this island's paper"><i class="led" id="led"></i><span id="bodyw"></span></button></div>
-    <div class="row"><button type="button" id="test" title="A test slip, drawn here only">TEST</button><a class="k mk" href="/#home" title="novel.global" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg></a></div></div>
-  <svg class="rite" id="rite" viewBox="0 0 320 86" role="group" aria-label="Five stations, lit as the island is made" hidden></svg>
-  <div class="stage">
-    <svg viewBox="0 0 380 150" aria-hidden="true">
+    <div class="row"><button type="button" id="test" hidden title="A test slip, drawn here only">TEST</button><a class="k mk" href="/#home" title="novel.global" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg></a></div></div>
+  <ol class="rite" id="rite" aria-label="The build, stage by stage" hidden></ol>
+  <section class="build" id="bnd" hidden>
+    <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
+    <div class="dock" id="dock" aria-live="polite">
+      <div class="dh"><svg class="ik" id="ik" viewBox="8 6 48 52" aria-hidden="true"></svg><div class="dw"><p class="nw" id="nw"></p><div class="ds"><button type="button" class="pw" id="bnp" hidden></button><p class="say" id="bnsay"></p></div></div><div class="na" id="na"></div></div>
+      <p class="why" id="bnw"></p>
+      <svg class="day" id="bnday" viewBox="0 0 320 46" role="img" aria-label="A day of this island's power: the sun, the battery, the hours asleep" hidden></svg>
+      <div class="tray" id="bnl" hidden></div>
+      <div class="img" id="fl" hidden>
+        <div class="ch" id="fls"></div>
+        <form class="flf" id="flf"><label><span class="lbl" title="Its name on the network">NAME</span><input name="name" maxlength="32" autocomplete="off" spellcheck="false"></label><label><span class="lbl" title="The network it joins on first start. Kept on this screen only, never sent">WI-FI</span><input name="ssid" maxlength="32" autocomplete="off" spellcheck="false"></label><label><span class="lbl" title="Never sent or kept: a ghost joins no network">PASSWORD</span><input name="pw" type="text" class="dots" maxlength="63" autocomplete="off" spellcheck="false"></label><label><span class="lbl" title="Its Wi-Fi country">COUNTRY</span><input name="cc" maxlength="2" autocomplete="off" autocapitalize="characters" value="AU"></label><button class="on wr" data-write="1">WRITE</button></form>
+        <div id="flp"></div>
+      </div>
+      <ol class="boot" id="bnlog" hidden title="Its log · tap to skip" role="button" tabindex="0" aria-label="Its log: press to skip"></ol>
+    </div>
+  </section>
+  <div class="stage" id="stage">
+    <svg viewBox="0 0 380 132" aria-hidden="true">
       <defs><linearGradient id="smoke" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34332F"/><stop offset=".55" stop-color="#252522"/><stop offset="1" stop-color="#1A1A18"/></linearGradient>
-        <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D3C38"/><stop offset="1" stop-color="#2B2A27"/></linearGradient></defs>
-      <rect x="18" y="20" width="344" height="118" rx="16" fill="url(#smoke)"/>
-      <path d="M34 20h312a16 16 0 0 1 16 16v26H18V36a16 16 0 0 1 16-16z" fill="url(#lid)"/>
-      <rect x="18" y="61" width="344" height="1.5" fill="#121211"/>
-      <rect x="50" y="128" width="280" height="6" rx="3" fill="#0B0B0A"/>
-      <circle id="lamp" cx="322" cy="92" r="4" fill="#4A4843"/>
-      <rect x="296" y="104" width="40" height="11" rx="5.5" fill="#1E1E1C" stroke="#3A3935"/>
-      <text x="40" y="100" fill="#5E5C56" style="font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .3em">TWIN</text>
+        <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#43423D"/><stop offset="1" stop-color="#2B2A27"/></linearGradient></defs>
+      <rect x="18" y="14" width="344" height="110" rx="18" fill="url(#smoke)"/>
+      <path d="M36 14h308a18 18 0 0 1 18 18v28H18V32a18 18 0 0 1 18-18z" fill="url(#lid)"/>
+      <path d="M40 22h300" stroke="#55534D" stroke-width="1" stroke-linecap="round" opacity=".6"/>
+      <rect x="18" y="59" width="344" height="1.5" fill="#121211"/>
+      <rect x="50" y="114" width="280" height="6" rx="3" fill="#0B0B0A"/>
+      <circle cx="300" cy="84" r="2.4" fill="#4A4843"/><circle id="lamp" cx="310" cy="84" r="2.4" fill="#4A4843"/><circle cx="320" cy="84" r="2.4" fill="#4A4843"/>
+      <rect x="296" y="94" width="34" height="10" rx="5" fill="#1E1E1C" stroke="#3A3935"/>
+      <circle cx="340" cy="99" r="6" fill="#1E1E1C" stroke="#3A3935"/>
+      <text id="pnm" x="40" y="92" fill="#6A6862" style="font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .3em">TWIN</text>
     </svg>
-    <div id="roll" aria-live="polite"></div>
+    <div id="roll" aria-live="polite" title="Every print · tap to spread"></div>
     <p class="empty" id="none" hidden title="Prints sent to this island come out here">READY</p>
   </div>
+  <details class="more" id="xd"><summary><b>MORE</b><span id="xs"></span></summary>
   <div class="parts">
-    <details id="bnd" hidden><summary><b>BENCH</b><span id="bns"></span></summary>
-      <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
-      <ol class="boot" id="bnlog" hidden title="Its log · tap to skip" aria-live="polite" role="button" tabindex="0" aria-label="Its log: press to skip"></ol>
-      <div class="tray" id="bnl" hidden></div>
-      <svg class="day" id="bnday" viewBox="0 0 320 46" role="img" aria-label="A day of this island's power: the sun, the battery, the hours asleep" hidden></svg>
-      <p class="pw" id="bnp"></p>
-      <div id="fl" hidden><span class="lbl" title="Island OS written onto the SD on this bench, as the Raspberry Pi Imager writes it">FLASH</span><div class="opts" id="fls"></div><div id="flp"></div></div>
-      <p class="say" id="bnsay"></p><p class="say why" id="bnw" aria-live="polite"></p></details>
     <details id="jd"><summary><b>JOINS</b><span id="js"></span></summary>
       <svg class="map" id="jmap" viewBox="0 0 320 150" role="img" aria-label="This island's joins"></svg>
       <span class="lbl" title="Up to three islands that print what prints here">ECHO</span><div class="opts" id="jto"></div>
@@ -178,12 +218,12 @@
       <form class="row" id="mf" hidden><input id="ml" maxlength="200" autocomplete="off" spellcheck="false" placeholder="LINE" aria-label="A line for the mesh"><button title="Out over the mesh, radio to radio">SEND</button></form>
       <div class="opts"><button type="button" id="madd" hidden title="A LoRa mesh radio (T-Beam) on the bench: its lines go radio to radio">T-BEAM</button><button type="button" id="mu" hidden aria-pressed="false" title="A Meshtastic radio on this screen's USB (Chrome): this screen becomes a node">USB</button><button type="button" id="mb" hidden aria-pressed="false" title="A Meshtastic radio by Bluetooth (Chrome): this screen becomes a node">BLUETOOTH</button></div>
       <p class="say" id="msay"></p></details>
-    <details id="bd"><summary><b>BODY</b><span id="bs"></span></summary>
+    <details id="bd"><summary><b>PRINTER</b><span id="bs"></span></summary>
       <div class="opts"><button type="button" id="usb" hidden title="A USB receipt printer beside this screen (Chrome). On Windows it wants the WinUSB driver">USB</button><button type="button" id="ser" hidden title="A serial or Bluetooth receipt printer beside this screen (Chrome)">SERIAL</button></div>
       <form class="row" id="pf" style="margin-top:12px"><input id="pc" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PAIR CODE" aria-label="The pair code your Pi prints"><button title="Your Raspberry Pi prints a pair code when it first starts: this island becomes that printer">ADD</button></form>
       <p class="say" id="bsay"></p></details>
     <details id="kd"><summary><b>KEY</b><span>· · ·</span></summary><div class="opts"><button type="button" id="kcopy" title="Copy this island's key, to open it on another screen">COPY</button><button type="button" id="kout" title="Forget the key on this screen">FORGET</button></div></details>
-  </div>
+  </div></details>
 </div>
 </main>
 <script src="vendor/qrcode.js"></script>

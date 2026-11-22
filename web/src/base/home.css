@@ -1730,6 +1730,7 @@ html.ng-low #hm *, html.ng-low #hm *::before, html.ng-low #hm *::after { -webkit
 
 /* THE LABEL: a first visit meets it. A card on the wall beside the work: small plain type, a title, a credit line with its number, the words, the links, the counts; a film under it */
 #lb { position: fixed; inset: 0; z-index: 2147483000; display: grid; justify-items: center; align-items: center; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: rgba(16, 16, 16, .62); animation: lb-in .35s ease both; transition: opacity .26s ease; overscroll-behavior: contain; touch-action: none; }
+#lb.lb-full { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
 #lb.lb-top { align-items: start; } #lb.lb-low { align-items: end; } #lb.lb-out { opacity: 0; pointer-events: none; }
 @keyframes lb-in { from { opacity: 0; } }
 #lb .lb-w { display: flex; flex-direction: column; gap: 10px; width: min(100%, 430px); max-height: 100%; min-height: 0; }
@@ -1781,7 +1782,7 @@ html.hm-night #lbm .lbm-g { background: #F4F2EE; color: #161514; }
 #lbm.lbm-out { opacity: 0; transform: translateY(12px); }
 @keyframes lbm-in { from { opacity: 0; transform: translateY(16px); } }
 /* opened from it: the whole label over the full screen, grown from where the small card stood, the film first and large */
-#lb.lb-full { background: #E9E7E1; padding: calc(56px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom)); align-items: start; overflow: auto; transform-origin: var(--ox, 30%) var(--oy, 90%); animation: lb-grow .45s cubic-bezier(.2, .8, .2, 1) both; }
+#lb.lb-full { background: #E9E7E1; padding: calc(56px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom)); align-items: start; overflow: auto; transform-origin: var(--ox, 30%) var(--oy, 90%); animation: lb-grow .45s cubic-bezier(.2, .8, .2, 1) backwards; }
 html.hm-night #lb.lb-full { background: #121212; }
 @keyframes lb-grow { from { opacity: 0; transform: scale(.16); border-radius: 18px; } }
 #lb.lb-full .lb-w { width: min(100%, 1040px); max-height: none; gap: 16px; align-items: center; }

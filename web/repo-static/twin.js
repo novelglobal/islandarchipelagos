@@ -87,7 +87,7 @@
   var lamp = function (on) { LAMP = on; var l = $('#lamp'); if (l) l.setAttribute('fill', on ? '#E2552E' : '#4A4843'); $$('.bench .la').forEach(function (a) { a.classList.toggle('rd', on); }); };
   var look = function (e, at) { if (e) e.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: at || 'nearest' }); };
   function slipEl(cv, tag, feed) { var s = D.createElement('div'); s.className = 'slip'; s.appendChild(cv); if (tag) { var t = D.createElement('span'); t.className = 'tag'; t.textContent = tag; s.appendChild(t); }
-    var roll = $('#roll'); roll.insertBefore(s, roll.firstChild); $('#none').hidden = true;
+    var roll = $('#roll'); roll.insertBefore(s, roll.firstChild); $('#none').hidden = true; $('#stage').hidden = false;
     if (feed && !matchMedia('(prefers-reduced-motion: reduce)').matches) { var h = s.getBoundingClientRect().height, ms = Math.max(500, Math.min(4000, cv.height / 0.6)); s.style.transitionDuration = ms + 'ms'; s.style.height = '0px'; lamp(true);
       requestAnimationFrame(function () { requestAnimationFrame(function () { s.style.height = h + 'px'; }); }); setTimeout(function () { s.style.height = ''; lamp(false); }, ms + 60); }
     while (roll.children.length > 24) roll.removeChild(roll.lastChild); return s; }
@@ -95,7 +95,7 @@
     while (!store.set('da.twin.roll' + TS, ROLL) && ROLL.length > 1) ROLL.pop(); }
   function shown(id, cv, tag, feed, kept, label) { if (SEEN[id]) return; SEEN[id] = 1; var e = slipEl(cv, tag, feed); e.setAttribute('role', 'img'); e.setAttribute('aria-label', label || tag || 'A slip'); if (kept) keep(id, cv, tag); }
   var BACK = 0;
-  function seen(cv) { look($('.stage'), 'start'); clearTimeout(BACK); BACK = setTimeout(function () { if (BT.run) return; look($('.bench .pt.want') || (WANT && WANT.k === 'done' ? $('#rite') : null) || $('#bnlog'), 'center'); }, (RM.matches ? 300 : Math.max(500, Math.min(4000, cv.height / 0.6))) + 900); }
+  function seen(cv) { look($('.stage'), 'start'); clearTimeout(BACK); BACK = setTimeout(function () { if (BT.run) return; look($('.bench .pt.want') || $('.bench .gh') || $('#dock'), 'center'); }, (RM.matches ? 300 : Math.max(500, Math.min(4000, cv.height / 0.6))) + 900); }
   var rkey = function () { return 'da.twin.radio.' + (T ? T.id : '') + TS; };
   function radio(line, from, who) { RADIO.unshift({ t: String(line).slice(0, 240), f: from || '', w: who ? String(who).slice(0, 12) : '' }); RADIO = RADIO.slice(0, 40); if (T) store.set(rkey(), RADIO.filter(function (r) { return r.f !== 'in'; })); radioDraw(); }
   /* on air: a ghost's radio on its bench with power in; a real island's MESH; or a radio linked to this screen */
@@ -106,13 +106,14 @@
   /* where a line typed here really goes: a radio linked to this screen, or the ghost's own radio on its bench */
   function canSay() { return !!ML.link.on || !!(T && T.ghost && benchRadio()); }
   function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
-    var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; $('#rd').classList.toggle('air', air);
+    var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; $('#rd').classList.toggle('air', air); $('#xd').classList.toggle('air', air);
     $('#mf').hidden = !canSay(); $('#madd').hidden = !(T && T.ghost && BN && !ofKind('radio').length);
     [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
   /* a line out: in the log, through a radio linked here, the bench radio's waves, and the muse stirs */
   function meshOut(line, mine) { line = String(line || '').trim(); if (!line) return; if (ML.cut) line = ML.cut(line); radio(line, 'out'); clearTimeout(TX); TX = setTimeout(function () { TX = 0; benchDraw(); }, 2400); benchDraw();
     var ik = $('#rite .ik'); if (ik && !BT.run) { ik.classList.add('beat'); setTimeout(function () { if (!BT.run) ik.classList.remove('beat'); }, 2200); }
     if (ML.link.on && (mine || !T || !T.ghost)) ML.say(line).catch(function (e) { $('#msay').textContent = '× ' + String(e && e.message || e).slice(0, 40).toUpperCase(); }); }
+  $('#roll').addEventListener('click', function () { this.classList.toggle('all'); });
   /* what this screen kept, first, so the roll is there with no signal */
   ROLL.slice().reverse().forEach(function (r) { var im = new Image(); im.alt = ''; im.src = r.u; SEEN[r.id] = 1; slipEl(im, r.tag, false); });
 
@@ -133,7 +134,7 @@
   function bodyDraw() { if (!T) return; var w = T.paired ? 'PI' : OUT ? OUT.name : 'GHOST', on = T.paired ? T.ready : true;
     $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
-    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
+    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#test').hidden = !!T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
   function take(j) { var cv = j.escpos ? draw(j.escpos, paperOf()) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), paperOf()) : null;
     if (j.mesh && !MSEEN[j.id]) { MSEEN[j.id] = 1; meshOut(j.mesh); }
     if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
@@ -145,7 +146,7 @@
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
       (j.roll || []).slice().reverse().forEach(function (x) { if (SEEN[x.id] || (j.took || []).some(function (y) { return y.id === x.id; })) return;
         var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv) return; shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : '', !first, false); });
-      if (!$('#roll').children.length) $('#none').hidden = false;
+      if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
       .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
   D.addEventListener('visibilitychange', function () { if (!D.hidden && T) tick(); });
@@ -223,7 +224,7 @@
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
   /* what a part is for, in one word: its plaque */
   var JOBW = { printer: 'PRINTER', pi: 'BRAIN', sd: 'MEMORY', power: 'PLUG', solar: 'SUN', battery: 'BATTERY', charger: 'CHARGER', radio: 'RADIO', screen: 'SCREEN' }, POWERS = ['wall-strip', 'solar-100w', 'power-bank'];
-  function job(p) { if (!p) return ''; if (p.id === 'power-bank') return 'BANK'; if (p.kind === 'converter') { var o = (p.ports || []).filter(function (r) { return r.role === 'out'; })[0]; return o && o.volts != null ? vs(o.volts) + ' V' : 'ADAPTER'; } return JOBW[p.kind] || String(p.name).toUpperCase(); }
+  function job(p) { if (!p) return ''; if (p.id === 'power-bank') return 'BANK'; if (p.kind === 'converter' || (p.kind === 'power' && p.id !== 'wall-strip')) { var o = (p.ports || []).filter(function (r) { return r.role === 'out'; }); return o.length === 1 && o[0].volts != null ? vs(o[0].volts) + ' V' : p.kind === 'power' ? 'PLUG' : 'ADAPTER'; } return JOBW[p.kind] || String(p.name).toUpperCase(); }
   function nameN(x) { if (!BN) return PART[x[1]].name; var same = BN.p.filter(function (q) { return q[1] === x[1]; }), i = same.indexOf(x); return PART[x[1]].name + (i > 0 ? ' #' + (i + 1) : ''); }
   /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
      what it drives (the printer, the SD, the radio, the screen). Each row ordered under what it is joined to, so cables cross least.
@@ -259,35 +260,35 @@
   function canGive(p, o) { return (p.ports || []).some(function (g) { if (!OK[g.role + ' ' + o.role] || dataOnly(g, o)) return false; if (g.volts != null && o.volts != null && !inside(g.volts, o.volts)) return false;
     return (g.plug === o.plug && STRAIGHT.indexOf(g.plug) >= 0) || PARTS.some(function (c) { return c.kind === 'cable' && c.ends && ((c.ends[0] === g.plug && c.ends[1] === o.plug) || (c.ends[1] === g.plug && c.ends[0] === o.plug)); }); }); }
   function wantOf(P) { var pr = ofKind('printer')[0], pi = ofKind('pi')[0], i, k;
-    if (!pr) return { k: 'part', ids: idsOf('printer'), near: null };
-    if (!pi) return { k: 'part', ids: idsOf('pi'), near: pr[0] };
-    var slot = portIds(pi, 'slot')[0]; if (slot && !inUse(slot)) { var sd = ofKind('sd').filter(function (x) { return !portIds(x, 'card').some(inUse); })[0];
-      return !sd ? { k: 'part', ids: idsOf('sd'), near: pi[0] } : !flashedOf(sd[0]) ? { k: 'flash', iid: sd[0] } : { k: 'join', a: slot, b: portIds(sd, 'card')[0] }; }
+    if (!pr) return { k: 'part', ids: idsOf('printer'), near: null, s: 0 };
+    if (!pi) return { k: 'part', ids: idsOf('pi'), near: pr[0], s: 0 };
     var link = P.J.some(function (r) { return r.ok && ((r.give.iid === pi[0] && r.take.iid === pr[0]) || (r.give.iid === pr[0] && r.take.iid === pi[0])); });
     if (!link) { var hs = portIds(pi, 'host').filter(function (h) { return !inUse(h); }), ds = portIds(pr, 'device');
-      for (i = 0; i < hs.length; i++) for (k = 0; k < ds.length; k++) if (joinOf(hs[i], ds[k]).ok) return { k: 'join', a: hs[i], b: ds[k] }; }
+      for (i = 0; i < hs.length; i++) for (k = 0; k < ds.length; k++) if (joinOf(hs[i], ds[k]).ok) return { k: 'join', a: hs[i], b: ds[k], s: 0 }; }
+    var slot = portIds(pi, 'slot')[0]; if (slot && !inUse(slot)) { var sd = ofKind('sd').filter(function (x) { return !portIds(x, 'card').some(inUse); })[0];
+      return !sd ? { k: 'part', ids: idsOf('sd'), near: pi[0], s: 1 } : !flashedOf(sd[0]) ? { k: 'flash', iid: sd[0], s: 1 } : { k: 'join', a: slot, b: portIds(sd, 'card')[0], s: 1 }; }
     /* power, from what is cold, backwards: an unfed input is joined to a part already here with a free output, or a part is asked for */
     var order = [pr, pi].concat(BN.p.filter(function (x) { return x !== pr && x !== pi; }));
     for (i = 0; i < order.length; i++) { var x = order[i], p = PART[x[1]]; if (!p || !p.watts || p.source || P.on[x[0]]) continue;
       var ins = (p.ports || []).filter(function (o) { return (o.role === 'in' || (o.role === 'device' && o.volts != null)) && !inUse(x[0] + '.' + o.id); }); if (!ins.length) continue; var o = ins[0], to = x[0] + '.' + o.id;
       /* a screw terminal takes a second wire, as a real one does; every other output feeds one thing. A Pi's USB (power and data) before a supply */
       var gv = []; for (k = 0; k < BN.p.length; k++) { var y = BN.p[k]; if (y === x) continue; ((PART[y[1]] || {}).ports || []).forEach(function (g) { if (GIVE[g.role] && g.role !== 'store' && (g.role !== 'host' || !BRAIN[p.kind]) && (g.plug === 'screw' || !inUse(y[0] + '.' + g.id))) gv.push([y[0] + '.' + g.id, g.role === 'host' ? 0 : 1]); }); }
-      gv.sort(function (a, b) { return a[1] - b[1]; }); for (k = 0; k < gv.length; k++) if (joinOf(gv[k][0], to).ok) return { k: 'join', a: gv[k][0], b: to };
+      gv.sort(function (a, b) { return a[1] - b[1]; }); for (k = 0; k < gv.length; k++) if (joinOf(gv[k][0], to).ok) return { k: 'join', a: gv[k][0], b: to, s: 2 };
       /* the parts that could feed it, the island's own (sun, battery, converters) before the wall */
       var c = PARTS.filter(function (q) { return FEEDS[q.kind] && q.id !== x[1] && canGive(q, o); }).sort(function (a, b) { var w = function (q) { return q.source === 'wall' ? 2 : q.source ? 1 : 0; }; return w(a) - w(b); }).map(function (q) { return q.id; });
-      if (c.length) return BN.p.some(function (y) { return PART[y[1]] && PART[y[1]].source; }) ? { k: 'part', ids: c, near: x[0], port: to } : { k: 'part', ids: POWERS.filter(function (id) { return PART[id]; }), near: x[0], port: to, power: true }; }
+      if (c.length) return BN.p.some(function (y) { return PART[y[1]] && PART[y[1]].source; }) ? { k: 'part', ids: c, near: x[0], port: to, s: 2 } : { k: 'part', ids: POWERS.filter(function (id) { return PART[id]; }), near: x[0], port: to, power: true, s: 2 }; }
     /* the night: a charger with nothing kept asks for a battery */
     var ch = ofKind('charger')[0]; if (ch) { var bt = portIds(ch, 'store').filter(function (s) { return !inUse(s); })[0];
       if (bt && P.need && P.kept < P.need * (24 - P.sunH)) { var have = BN.p.filter(function (y) { return PART[y[1]].kind === 'battery' && !portIds(y, 'store').some(inUse); })[0];
-        return have ? { k: 'join', a: portIds(have, 'store')[0], b: bt } : { k: 'part', ids: idsOf('battery'), near: ch[0], port: bt }; } }
-    var sd2 = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f2 = sd2 && flashedOf(sd2[0]); if (sd2 && !f2) return { k: 'flash', iid: sd2[0] };
+        return have ? { k: 'join', a: portIds(have, 'store')[0], b: bt, s: 2 } : { k: 'part', ids: idsOf('battery'), near: ch[0], port: bt, s: 2 }; } }
+    var sd2 = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f2 = sd2 && flashedOf(sd2[0]); if (sd2 && !f2) return { k: 'flash', iid: sd2[0], s: 1 };
     if ((+BN.m || 0) >= ROLLMM) return { k: 'paper', iid: pr[0] };
     /* the first start, on the Pi: power on, its setup Wi-Fi, its pair code */
     var O = BN.o, st = f2 && O && O[0] === sd2[0] && O[1] === f2[1] ? O[2] : 0; if (sd2 && st < 3) return { k: ['boot', 'wifi', 'pair'][st], iid: pi[0] };
     return { k: 'done', iid: pr[0] }; }
   /* a small sketch of a part, for the tray */
   function mini(p) { return '<svg viewBox="0 0 120 90" aria-hidden="true">' + (p.draw || []).map(function (st) { return '<path d="' + st[0] + '"' + (st[1] ? ' class="ac"' : '') + '/>'; }).join('') + '</svg>'; }
-  function trayDraw() { var t = $('#bnl'); if (!TRAY) { t.innerHTML = ''; t.hidden = true; return; } t.hidden = false;
+  function trayDraw() { var t = $('#bnl'); if (!TRAY) { t.innerHTML = ''; t.hidden = true; return; } t.hidden = false; t.classList.toggle('swap', !!TRAY.iid);
     var here = TRAY.iid ? BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0] : null;
     var ids = TRAY.all || TRAY.ids.length <= 4 ? TRAY.ids : TRAY.ids.slice(0, 3), head = TRAY.power ? 'POWER' : job(PART[here ? here[1] : TRAY.ids[0]]);
     t.innerHTML = '<p class="th">' + esc(head) + '</p>' + ids.map(function (id) { var p = PART[id]; return '<button type="button" class="tile' + (here && here[1] === id ? ' on' : '') + '" data-part="' + esc(id) + '" title="' + esc(p.about || p.name) + '">' + mini(p) + '<b>' + esc(TRAY.power ? job(p) : String(p.name).toUpperCase()) + '</b><span>' + esc(String(TRAY.power ? p.name : p.sub || '').toUpperCase()) + '</span>' + (p.tested ? '<i>TESTED</i>' : '') + '</button>'; }).join('') +
@@ -295,7 +296,7 @@
       (here ? '<button type="button" class="tile x" data-off="' + esc(here[0]) + '" title="Take it off the bench">×</button>' : ''); }
   /* power through a day: the sun's arc, what the battery holds hour by hour, and the hours the island sleeps. No clock, just the day */
   function dayDraw(P) { var s = $('#bnday'); if (!s) return; var W = 320, H = 46, h, out = '';
-    if (!P.need || (!P.sun && !P.wall)) { s.innerHTML = ''; s.setAttribute('hidden', ''); return; } s.removeAttribute('hidden');   /* an svg has no .hidden of its own */
+    if (!P.need || (!P.sun && !P.wall) || $('#bnw').dataset.of !== 'bnp') { s.innerHTML = ''; s.setAttribute('hidden', ''); return; } s.removeAttribute('hidden');   /* an svg has no .hidden of its own */
     if (P.wall && !P.sun) { s.innerHTML = '<line x1="0" y1="10" x2="' + W + '" y2="10" class="dk"/><title>From the wall: never dark</title>'; return; }
     var sh = P.sunH || 1, rise = 12 - sh / 2, kWh = P.kept, lv = kWh, sun = [], lvl = [], dark = [];
     for (var day = 0; day < 3; day++) for (h = 0; h < 96; h++) { var t = (h + .5) / 4, z = P.sun && t > rise && t < rise + sh ? Math.sin(Math.PI * (t - rise) / sh) : 0, gain = z * P.sun * Math.PI / 2 / sh;
@@ -309,16 +310,17 @@
     /* a part wanted is laid out with the rest, as a ghost beside what wants it */
     var gid = null; if (W0.k === 'part') { gid = 'p999'; BN.p.push([gid, W0.ids[0]]); if (W0.near) BN.j.push([gid + '.x', W0.near + '.x']); }
     var L = layout(); if (gid) { BN.p.pop(); if (W0.near) BN.j.pop(); }
-    var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
+    var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.setAttribute('class', 'bench' + (stageOf(W0) >= 2 ? ' pw-on' : '')); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
     var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; }); var want = {}; if (W0.k === 'join') want[W0.a] = want[W0.b] = 1;
     var sketch = function (p, X, Y, seed) { var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
     if (gid && L.pos[gid]) { var gp = PART[W0.ids[0]], gx = L.pos[gid][0], gy = L.pos[gid][1];
-      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 6 }), sketch(gp, gx, gy, 3)]);
+      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 8 }), el('g', {}, [sketch(gp, gx, gy, 3)])]);
       var gj = el('text', { 'class': 'jb', x: gx + cw / 2, y: gy + 84, 'text-anchor': 'middle' }); gj.textContent = W0.power ? 'POWER' : job(gp); gh.appendChild(gj);
-      var plus = el('text', { 'class': 'gp', x: gx + cw / 2, y: gy + 99, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
+      var ga = el('text', { 'class': 'md', x: gx + cw / 2, y: gy + 96, 'text-anchor': 'middle' }); ga.textContent = 'ADD'; gh.appendChild(ga);
+      gh.appendChild(el('circle', { 'class': 'gb', cx: gx + cw - 12, cy: gy + 12, r: 9 })); var plus = el('text', { 'class': 'gp', x: gx + cw - 12, y: gy + 16.6, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
       var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
-      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 6 })]);
+      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: 104, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 8 })]);
       var sk = sketch(p, X, Y, 7 + x[1].length);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
@@ -352,12 +354,46 @@
       cg.appendChild(el('path', { d: d, 'class': 'hit', 'data-cut': String(i), role: 'button', 'aria-label': label + ': tap to take it out' }, [tt(label + ' · tap to take it out')])); });
     /* the cable wanted, dotted where it will go */
     if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
-    var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : '') + (P.t ? ' more' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
-    $('#bns').textContent = BN.p.length ? BN.p.length + (BN.p.length === 1 ? ' PART · ' : ' PARTS · ') + P.w + ((BN.f || []).length ? ' · FLASHED' : '') : 'EMPTY';
-    $('#fl').hidden = !(FLOPEN || FL.run); flDraw(); dayDraw(P); trayDraw(); riteDraw(); }
-  function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; return; } w.textContent = e.title; w.dataset.of = id; }
-  $('#bnp').addEventListener('click', function () { why('bnp'); }); $('#bnsay').addEventListener('click', function () { why('bnsay'); });
-  function benchSave(say) { $('#bnsay').textContent = say || ''; $('#bnsay').classList.toggle('more', !!$('#bnsay').title); if ($('#bnw').dataset.of === 'bnsay') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function (r) { if (T && r && r.mesh != null) T.mesh = r.mesh; radioDraw(); if (!SEL) $('#bnsay').textContent = say || ''; }, function (e) { $('#bnsay').textContent = '× ' + String(e.message || '').toUpperCase(); }); }, 500); }
+    var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
+    /* the printer at the foot of the page: the one on the bench, once there is one */
+    var prx = ofKind('printer')[0]; $('#pnm').textContent = prx ? String(PART[prx[1]].name).toUpperCase() : 'TWIN'; $('#stage').hidden = !$('#roll').children.length;
+    trayDraw(); dockDraw(P, W0); flDraw(); dayDraw(P); riteDraw(); }
+  /* ───────── the dock: what the island wants now, in plain words, and the one thing to press. Wrong is said as wrong, with why ───────── */
+  var FB = '', HINT = '', fbT = 0, KN = { printer: 'A PRINTER', pi: 'A BRAIN', sd: 'A MEMORY CARD', charger: 'A CHARGER', battery: 'A BATTERY', radio: 'A RADIO', screen: 'A SCREEN' };
+  function jobN(p) { return p.kind === 'converter' ? job(p) + ' ADAPTER' : job(p); }
+  function wantSay(W) {
+    if (W.k === 'part') { var p = PART[W.ids[0]]; return W.power ? 'CHOOSE POWER' : 'ADD ' + (KN[p.kind] || 'A ' + jobN(p)); }
+    if (W.k === 'join') { var r = joinOf(W.a, W.b); if (!r.ok) return 'A CABLE'; var g = r.give, t = r.take;
+      if (g.port.role === 'slot') return 'CARD INTO THE ' + job(g.part); if (g.port.role === 'host' && t.port.role === 'device' && t.port.volts == null) return 'CABLE ' + job(g.part) + ' TO ' + job(t.part);
+      return g.part.source ? job(g.part) + ' INTO THE ' + jobN(t.part) : 'POWER THE ' + jobN(t.part); }
+    return { flash: 'WRITE THE CARD', paper: 'OUT OF PAPER', boot: 'SWITCH ON', wifi: 'JOIN ITS WI-FI', pair: 'APPROVE ' + showCode(pairCode()), done: 'LIVE' }[W.k] || ''; }
+  function sayDraw() { $('#bnsay').textContent = FB || HINT; }
+  function dockDraw(P, W) { var c = stageOf(W), bad = -1, acts = []; P.J.forEach(function (r, i) { if (!r.ok) bad = i; });
+    if (BT.run) acts = [];
+    else if (bad >= 0) acts = [['undo', 'UNDO', 'Take the wrong cable out']];
+    else if (W.k === 'part') acts = TRAY && !TRAY.iid ? [] : [['add', W.power ? 'CHOOSE' : 'ADD', 'The parts that fit']];
+    else if (W.k === 'paper') acts = [['roll', 'NEW ROLL', '80 m of fresh paper']];
+    else if (W.k === 'boot') acts = [['on', 'ON', 'Power it on']];
+    else if (W.k === 'wifi') acts = [['wifi', 'JOIN', 'Join the setup Wi-Fi its slip shows, from a phone']];
+    else if (W.k === 'pair') acts = [['pair', 'APPROVE', 'Approve the code it printed, as on novel.global']];
+    else if (W.k === 'done') acts = [['print', 'PRINT', 'A test print']].concat(T.paired ? [] : [['real', TESTQ ? 'MOVE' : 'REAL', TESTQ ? 'What works here, moved to its real island' : 'A real printer, by the pair code its Pi prints']]);
+    var nw = $('#nw'); nw.textContent = BT.run ? 'STARTING' : bad >= 0 ? 'WRONG CABLE' : wantSay(W); nw.classList.toggle('bad', bad >= 0 && !BT.run);
+    $('#na').innerHTML = acts.map(function (a, i) { return '<button type="button" data-act="' + a[0] + '" title="' + esc(a[2]) + '"' + (i ? '' : ' class="on"') + '>' + a[1] + '</button>'; }).join('');
+    var w = $('#bnw'); if (bad >= 0) { w.textContent = P.J[bad].why; w.dataset.of = 'bad'; } else if (w.dataset.of === 'bad') { w.textContent = ''; w.dataset.of = ''; }
+    $('#bnp').hidden = c < 2 || P.w === '—';
+    HINT = SEL ? 'NOW ITS OTHER END' : bad < 0 && W.k === 'join' && BN.j.length < 3 ? 'TAP THE TWO GLOWING ENDS' : ''; sayDraw();
+    $('#fl').hidden = !(FLOPEN || FL.run || FL.ok || (W.k === 'flash' && !BT.run)); }
+  $('#na').addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (!b || !BN) return; var a = b.dataset.act;
+    if (a === 'add') { TRAY = { ids: WANT.ids, power: !!WANT.power }; benchDraw(); return; }
+    if (a === 'undo') { var i = power().J.map(function (r) { return r.ok; }).lastIndexOf(false); if (i >= 0) BN.j.splice(i, 1); benchDraw(); benchSave(''); return; }
+    if (a === 'on' || a === 'wifi') { bootStep(a === 'on' ? 'boot' : 'wifi'); return; }
+    if (a === 'pair') { bootStep('pair'); return; }
+    if (a === 'roll') { BN.m = 0; benchDraw(); benchSave('✓ NEW ROLL'); return; }
+    if (a === 'print') { $('#test').click(); return; }
+    if (a === 'real') { if (TESTQ) { location.href = '/#home'; return; } $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); } });
+  function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; } else { w.textContent = e.title; w.dataset.of = id; } if (BN) dayDraw(power()); }
+  $('#bnp').addEventListener('click', function () { why('bnp'); });
+  function benchSave(say) { if (say != null) { FB = say; clearTimeout(fbT); if (say) fbT = setTimeout(function () { FB = ''; sayDraw(); }, 3500); } sayDraw(); clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function (r) { if (T && r && r.mesh != null) T.mesh = r.mesh; radioDraw(); }, function (e) { FB = '× ' + String(e.message || '').toUpperCase(); sayDraw(); }); }, 500); }
   function partAdd(id) { var n = 1; BN.p.forEach(function (x) { n = Math.max(n, +x[0].slice(1) + 1); }); BN.p.push(['p' + n, id]); return 'p' + n; }
   function partOff(iid) { var ko0 = (PART[(BN.p.filter(function (q) { return q[0] === iid; })[0] || [])[1]] || {}).kind; if (BN.o && (BN.o[0] === iid || ko0 === 'pi' || ko0 === 'printer')) BN.o = null; BN.p = BN.p.filter(function (q) { return q[0] !== iid; }); BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== iid && j[1].split('.')[0] !== iid; }); BN.f = (BN.f || []).filter(function (q) { return q[0] !== iid; }); if (SEL && SEL.split('.')[0] === iid) SEL = null; }
   /* paper: each print on a ghost's twin takes its length off the roll */
@@ -368,30 +404,30 @@
     if (!TESTQ && !BN.p.length && tray && done !== j.id) { var nameTo = function (n) { if (PART[n]) return n; var m = PARTS.filter(function (p) { return p.kind !== 'cable' && String(p.name).toUpperCase() === String(n).toUpperCase(); })[0]; return m ? m.id : /^(TM-P20|MTP-2|PT-210)$/.test(n) ? 'printer-58' : n === 'SRP-350' ? 'tm-t20' : null; };
       [tray.printers, tray.pi].concat(Array.isArray(tray.power) ? tray.power : []).forEach(function (n) { var id = n && nameTo(n); if (id && !BN.p.some(function (x) { return x[1] === id; })) partAdd(id); });
       store.set('da.ghost.seeded', j.id); if (BN.p.length) benchSave(); }
-    benchDraw(); if (WANT && WANT.k !== 'done') gb.open = true; if (location.hash === '#bench') { gb.open = true; setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
+    benchDraw(); if (location.hash === '#bench') setTimeout(function () { gb.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }
   /* a join made: by two taps, or by dragging from one port to another */
   function joinTo(a, pid) { var there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
-    if (BN.j.length >= 24) { benchDraw(); $('#bnsay').textContent = 'FULL'; return; }
-    BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); $('#bnsay').title = r.ok ? '' : r.why; benchSave(r.ok ? (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : 'WRONG'); }
+    if (BN.j.length >= 24) { benchDraw(); FB = 'FULL'; sayDraw(); return; }
+    BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); benchSave(r.ok ? '✓ ' + (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : ''); }
   $('#bnd').addEventListener('click', function (e) { if (!BN) return; if (DRAG && DRAG.moved) return; var t = e.target.closest('[data-port],[data-cut],[data-part],[data-off],[data-want],[data-body],[data-more]'); if (!t) return; if (t.dataset.more) { TRAY.all = true; trayDraw(); return; }
-    if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids, power: !!WANT.power }; trayDraw(); $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; return; }
+    if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids, power: !!WANT.power }; $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; benchDraw(); return; }
     if (t.dataset.off) { partOff(t.dataset.off); TRAY = null; benchDraw(); benchSave(); return; }
     if (t.dataset.part) { var id = t.dataset.part;
       if (TRAY && TRAY.iid) { var here = BN.p.filter(function (q) { return q[0] === TRAY.iid; })[0]; if (here && here[1] !== id) { if (/^(pi|printer|sd)$/.test(PART[here[1]].kind)) BN.o = null; here[1] = id; BN.j = BN.j.filter(function (j) { return j[0].split('.')[0] !== here[0] && j[1].split('.')[0] !== here[0]; }); } }
       else if (BN.p.length < 12) { partAdd(id); if (id === 'wall-strip' && ofKind('printer').some(function (y) { return (PART[y[1]].ports || []).some(function (o) { return o.role === 'in' && o.volts === 24; }); }) && !BN.p.some(function (y) { return y[1] === 'ps-180'; })) partAdd('ps-180'); }
-      TRAY = null; benchDraw(); benchSave(String(PART[id].name).toUpperCase()); return; }
+      TRAY = null; benchDraw(); benchSave('✓ ' + String(PART[id].name).toUpperCase()); return; }
     if (t.dataset.cut) { BN.j.splice(+t.dataset.cut, 1); benchDraw(); benchSave(); return; }
     if (t.dataset.body) { var x = BN.p.filter(function (q) { return q[0] === t.dataset.body; })[0], p = x && PART[x[1]]; if (!p) return;
-      if (WANT.k === 'paper' && WANT.iid === x[0]) { BN.m = 0; benchDraw(); benchSave('NEW ROLL'); return; }
+      if (WANT.k === 'paper' && WANT.iid === x[0]) { BN.m = 0; benchDraw(); benchSave('✓ NEW ROLL'); return; }
       if (WANT.k === 'done' && WANT.iid === x[0]) { $('#test').click(); return; }
-      if (WANT.k === 'pair' && WANT.iid === x[0]) { $('#pc').value = showCode(pairCode()); $('#bd').open = true; $('#pf button').classList.add('want'); look($('#bd'), 'center'); return; }
+      if (WANT.k === 'pair' && WANT.iid === x[0]) { bootStep('pair'); return; }
       if (/^(boot|wifi)$/.test(WANT.k) && WANT.iid === x[0]) { bootStep(WANT.k); return; }
       if (BT.run) return;
       if (p.kind === 'sd') { if (WANT.k === 'flash' && WANT.iid === x[0]) { FLOPEN = true; FL.sd = x[0]; } else FLOPEN = !FLOPEN; TRAY = null; benchDraw(); if (FLOPEN) setTimeout(function () { look($('#fl')); }, 50); return; }
-      TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; trayDraw(); var bw = $('#bnw'); bw.textContent = TRAY ? job(p) + ' · ' + (p.about || p.name) : ''; bw.dataset.of = TRAY ? 'part' : ''; return; }
+      TRAY = TRAY && TRAY.iid === x[0] ? null : { ids: idsOf(p.kind), iid: x[0] }; benchDraw(); var bw = $('#bnw'); bw.textContent = TRAY ? job(p) + ' · ' + (p.about || p.name) : ''; bw.dataset.of = TRAY ? 'part' : ''; return; }
     var pid = t.dataset.port;
-    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; benchDraw(); $('#bnsay').title = ''; $('#bnsay').classList.remove('more'); $('#bnsay').textContent = ''; return; }
+    if (!SEL || SEL.split('.')[0] === pid.split('.')[0]) { SEL = SEL === pid ? null : pid; FB = ''; benchDraw(); return; }
     joinTo(SEL, pid); });
   $('#bnd').addEventListener('keydown', function (e) { var t = (e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-port],[data-cut],[data-want],[data-body]'); if (!t) return; e.preventDefault();
     var k = ['port', 'body', 'want'].filter(function (a) { return t.dataset[a]; })[0], v = k && t.dataset[k]; t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -412,39 +448,34 @@
   /* ───────── FLASH: an SD on the bench written with Island OS as the Raspberry Pi Imager writes it. DEVICE, OS, STORAGE, SETTINGS,
      WRITE (then VERIFY, then EJECT). The OS is the latest release as the real Imager lists it (/api/os); the write takes the time a
      real one would at 20 MB/s, and its check 40 MB/s, both twenty times faster, with a skip. The Wi-Fi stays on this screen ───────── */
-  var FL = { step: 0, dev: '', sd: '', name: '', ssid: '', pw: '', cc: 'AU', run: null, done: '' }, OS, STEPS = ['DEVICE', 'OS', 'STORAGE', 'SETTINGS', 'WRITE'];
+  var FL = { dev: '', sd: '', name: '', ssid: '', pw: '', cc: 'AU', run: null, ok: '' }, OS;
   var gb = function (n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : Math.round(n / 1e6) + ' MB'; };
   function osGet() { if (OS !== undefined) return; OS = null; var kept = store.get('da.os', null);
     fetch('/api/os').then(function (r) { return r.json(); }).then(function (j) { OS = j.os || (kept ? Object.assign({}, kept, { kept: true }) : false); if (j.os) store.set('da.os', j.os); flDraw(); }, function () { OS = kept ? Object.assign({}, kept, { kept: true }) : false; flDraw(); }); }
   function flashedOf(iid) { return (BN.f || []).filter(function (x) { return x[0] === iid; })[0]; }
   function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32) || 'island'; }
-  function flDraw() { var host = $('#fl'); if (!host || !BN) return; var of = function (k) { return BN.p.filter(function (x) { return PART[x[1]] && PART[x[1]].kind === k; }); }, pis = of('pi'), sds = of('sd');
+  var sdSize = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? (+(/(\d+)/.exec(PART[x[1]].id) || [])[1] || 0) * 1e9 : 0; };
+  function flDraw() { var host = $('#fl'); if (!host || !BN || host.hidden) return; osGet(); var of = function (k) { return BN.p.filter(function (x) { return PART[x[1]] && PART[x[1]].kind === k; }); }, pis = of('pi'), sds = of('sd');
     if (FL.dev && !pis.some(function (x) { return x[0] === FL.dev; })) FL.dev = ''; if (FL.sd && !sds.some(function (x) { return x[0] === FL.sd; })) FL.sd = '';
-    if (pis.length === 1 && !FL.dev) FL.dev = pis[0][0]; if (sds.length === 1 && !FL.sd) FL.sd = sds[0][0];
-    var can = [true, !!FL.dev, !!FL.dev && !!OS, !!FL.dev && !!OS && !!FL.sd, !!FL.dev && !!OS && !!FL.sd && !!FL.name], nm = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? String(PART[x[1]].name).toUpperCase() : '—'; };
-    var said = [nm(FL.dev), OS ? 'ISLAND OS ' + OS.version : OS === false ? 'OFFLINE' : '· · ·', nm(FL.sd), FL.name || '—', FL.done ? 'FLASHED' : ''];
-    var dn = [!!FL.dev, !!OS && FL.step > 1, !!FL.sd && FL.step > 2, !!FL.name && FL.step > 3, !!FL.done];
-    $('#fls').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" aria-pressed="' + (FL.step === i) + '"' + (dn[i] ? ' class="dn"' : '') + (can[i] && !FL.run && !BT.run ? '' : ' disabled') + ' title="' + esc(said[i]) + '">' + s + '</button>'; }).join('');
-    var P = '', sdP = function (x) { var p = PART[x[1]], g = +(/(\d+)/.exec(p.id) || [])[1] || 0, small = OS && g * 1e9 * 0.93 < OS.size, f = flashedOf(x[0]); return '<button type="button" data-sd="' + x[0] + '" aria-pressed="' + (FL.sd === x[0]) + '"' + (small ? ' disabled title="Too small for ' + gb(OS.size) + '"' : ' title="' + (f ? 'Has Island OS ' + esc(f[1]) + ': writing again erases it' : 'Empty') + '"') + '>' + esc(String(p.name).toUpperCase()) + (f ? ' · ' + esc(f[1]) : '') + '</button>'; };
-    if (!pis.length || !sds.length) P = '<p class="say">NEEDS ' + (!pis.length ? 'A PI' : '') + (!pis.length && !sds.length ? ' + ' : '') + (!sds.length ? 'AN SD' : '') + '</p>';
-    else if (FL.step === 0) P = '<div class="opts">' + pis.map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (FL.dev === x[0]) + '" title="' + esc(PART[x[1]].about || '') + '">' + esc(String(PART[x[1]].name).toUpperCase()) + '</button>'; }).join('') + '</div>';
-    else if (FL.step === 1) P = OS ? '<div class="opts"><button type="button" data-os="1" aria-pressed="' + (FL.step > 1 || !!FL.sd) + '" title="' + gb(OS.download) + ' to download, ' + gb(OS.size) + ' written · for ' + esc((OS.devices || []).join(', ')) + (OS.kept ? ' · offline: the last one seen' : '') + '">ISLAND OS ' + esc(OS.version) + '</button></div>' : '<p class="say">' + (OS === false ? 'OFFLINE' : '· · ·') + '</p>';
-    else if (FL.step === 2) P = '<div class="opts">' + sds.map(sdP).join('') + '</div>';
-    else if (FL.step === 3) P = '<form class="flf" id="flf"><label><span class="lbl">NAME</span><input name="name" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.name || slug(T && T.name)) + '" title="Its name on the network"></label>' +
-      '<label><span class="lbl" title="The network it joins on first start. Kept on this screen only, never sent">WI-FI</span><input name="ssid" maxlength="32" autocomplete="off" spellcheck="false" value="' + esc(FL.ssid) + '"></label>' +
-      '<label><span class="lbl" title="Never sent or kept: a ghost joins no network">PASSWORD</span><input name="pw" type="text" class="dots" maxlength="63" autocomplete="off" spellcheck="false" value="' + esc(FL.pw) + '"></label>' +
-      '<label><span class="lbl">COUNTRY</span><input name="cc" maxlength="2" autocomplete="off" autocapitalize="characters" value="' + esc(FL.cc) + '"></label><button class="on">NEXT</button></form>';
-    else if (FL.step === 4) P = FL.run ? '<div class="bar"><i style="width:' + Math.round(FL.run.pc) + '%"></i></div><div class="row"><p class="say" id="flsay">' + FL.run.say + '</p><button type="button" data-skip="1" title="Straight to the end">SKIP</button></div>'
-      : FL.done ? '<div class="row"><p class="say">FLASHED · ' + esc(FL.done) + '</p><button type="button" data-eject="1" title="Take the SD out: it goes in the Pi">EJECT</button></div>'
-      : '<div class="row"><button type="button" class="on" data-write="1" title="Everything on ' + esc(nm(FL.sd)) + ' is erased">WRITE</button><p class="say">' + esc(nm(FL.sd)) + ' · ' + gb(OS ? OS.size : 0) + '</p></div>';
-    $('#flp').innerHTML = P; }
+    if (!FL.dev && pis.length) FL.dev = pis[0][0]; if ((!FL.sd || (WANT && WANT.k === 'flash' && WANT.iid !== FL.sd)) && sds.length) FL.sd = WANT && WANT.k === 'flash' ? WANT.iid : sds[0][0];
+    var nm = function (iid) { var x = BN.p.filter(function (q) { return q[0] === iid; })[0]; return x ? String(PART[x[1]].name).toUpperCase() : '—'; };
+    var had = FL.sd && flashedOf(FL.sd), small = !!(OS && FL.sd && sdSize(FL.sd) * 0.93 < OS.size);
+    var row = function (k, lab, val, n, bad, tip) { return '<button type="button" data-pick="' + k + '"' + (n > 1 && !FL.run ? '' : ' disabled') + (bad ? ' class="x"' : '') + ' title="' + esc(tip) + '"><i>' + lab + '</i><b>' + esc(val) + '</b></button>'; };
+    $('#fls').innerHTML = row('dev', 'DEVICE', nm(FL.dev), pis.length, false, 'The Pi it is for') +
+      row('os', 'OS', OS ? 'ISLAND OS ' + OS.version : OS === false ? 'OFFLINE' : '· · ·', 1, OS === false, OS ? gb(OS.download) + ' to download, ' + gb(OS.size) + ' written · for ' + (OS.devices || []).join(', ') + (OS.kept ? ' · offline: the last one seen' : '') : 'Island OS, as the Raspberry Pi Imager lists it') +
+      row('sd', 'STORAGE', nm(FL.sd) + (had ? ' · ' + had[1] : ''), sds.length, small, small ? 'Too small for ' + gb(OS.size) : had ? 'Has Island OS ' + had[1] + ': writing again erases it' : 'Empty');
+    var fm = $('#flf'), nf = fm.elements.namedItem('name'); fm.hidden = !!(FL.run || FL.ok); if (!nf.value) nf.value = FL.name || slug(T && T.name);
+    var wr = fm.querySelector('[data-write]'); wr.disabled = !OS || !FL.dev || !FL.sd || small; wr.textContent = had ? 'WRITE AGAIN' : 'WRITE';
+    $('#flp').innerHTML = FL.run ? '<div class="bar' + (FL.run.v ? ' v' : '') + '"><i style="width:' + Math.round(FL.run.pc) + '%"></i></div><div class="row"><p class="say" id="flsay">' + FL.run.say + '</p><button type="button" data-skip="1" title="Straight to the end">SKIP</button></div>'
+      : FL.ok ? '<p class="ok">WRITTEN · ' + esc(FL.ok) + '</p>' : ''; }
   /* the write, as long as a real one at 20 MB/s, its check at 40 MB/s, each twenty times faster */
   function flWrite() { var size = OS.size || 3e9, w = size / 20e6 / 20 * 1000, v = size / 40e6 / 20 * 1000, t0 = performance.now(), sd = FL.sd, ver = OS.version, name = FL.name;
     FL.run = { pc: 0, say: 'WRITING 0%' }; benchDraw();
     var tick = function () { if (!FL.run) return; var t = performance.now() - t0 + FL.run.skip;
       if (t < w) { FL.run.pc = t / w * 100; FL.run.say = 'WRITING ' + Math.floor(FL.run.pc) + '% · ' + gb(size * t / w) + ' · 20 MB/S'; }
-      else if (t < w + v) { FL.run.pc = (t - w) / v * 100; FL.run.say = 'VERIFYING ' + Math.floor(FL.run.pc) + '%'; }
-      else { FL.run = null; FL.done = ver; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); if (BN.o && BN.o[0] === sd) BN.o = null; benchDraw(); benchSave('FLASHED'); flSlip(sd, ver); return; }
+      else if (t < w + v) { FL.run.pc = (t - w) / v * 100; FL.run.say = 'CHECKING ' + Math.floor(FL.run.pc) + '%'; if (!FL.run.v) { FL.run.v = true; var br = $('#flp .bar'); if (br) br.classList.add('v'); } }
+      else { FL.run = null; FL.ok = ver; FLOPEN = false; BN.f = (BN.f || []).filter(function (x) { return x[0] !== sd; }).concat([[sd, ver, name]]); if (BN.o && BN.o[0] === sd) BN.o = null; benchDraw(); benchSave('✓ WRITTEN'); flSlip(sd, ver);
+        setTimeout(function () { FL.ok = ''; benchDraw(); }, 1800); return; }
       var sf = $('#sdf'); if (sf) { var wr = t < w, h = 54 * FL.run.pc / 100; sf.setAttribute('class', 'sdf' + (wr ? '' : ' v')); sf.setAttribute('y', wr ? 74 - h : 20 + h); sf.setAttribute('height', wr ? h : 1.6); }
       var b = $('#flp .bar i'), s = $('#flsay'); if (b && s) { b.style.width = FL.run.pc.toFixed(1) + '%'; s.textContent = FL.run.say; } else flDraw(); setTimeout(tick, 100); };
     FL.run.skip = 0; FL.run.end = w + v; tick(); }
@@ -453,15 +484,12 @@
     var L = ['ISLAND OS ' + ver, 'NAME ' + FL.name, 'WI-FI ' + (FL.ssid || '-'), 'PASSWORD ' + (FL.pw ? '********' : '-'), 'COUNTRY ' + FL.cc, (x ? PART[x[1]].name : 'SD') + ' VERIFIED', 'FOR ' + (d ? PART[d[1]].name : 'PI'), 'SHA ' + (OS.sha || '')];
     var u = textSlip(L.map(function (s) { return String(s).replace(/[^\x20-\x7E]/g, ''); })), cv = draw(u, paperOf()); shown('f' + Date.now(), cv, 'FLASH', true, true, 'Island OS ' + ver + ' written'); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   $('#fl').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.disabled || !BN) return; var d = b.dataset;
-    if (d.step != null) { FL.step = +d.step; if (FL.step === 1) osGet(); }
-    else if (d.dev) { FL.dev = d.dev; FL.step = 1; osGet(); }
-    else if (d.os) FL.step = 2;
-    else if (d.sd) { FL.sd = d.sd; FL.step = 3; }
-    else if (d.write) { if (!confirm('Everything on the SD is erased. Write Island OS ' + OS.version + '?')) return; FL.done = ''; flWrite(); return; }
-    else if (d.skip) { if (FL.run) FL.run.skip = FL.run.end; return; }
-    else if (d.eject) { FL.done = ''; FL.step = 0; FLOPEN = false; benchDraw(); $('#bnsay').textContent = 'EJECTED'; return; }
-    else return; flDraw(); });
-  $('#fl').addEventListener('submit', function (e) { e.preventDefault(); var f = e.target; var v = function (n) { return String(f.elements.namedItem(n).value || ''); }; FL.name = slug(v('name')); FL.ssid = v('ssid').slice(0, 32); FL.pw = v('pw'); FL.cc = (v('cc') || 'AU').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'AU'; FL.step = 4; flDraw(); });
+    var next = function (k, cur) { var xs = BN.p.filter(function (x) { return PART[x[1]] && PART[x[1]].kind === k; }).map(function (x) { return x[0]; }); return xs[(xs.indexOf(cur) + 1) % xs.length] || cur; };
+    if (d.pick === 'dev') FL.dev = next('pi', FL.dev); else if (d.pick === 'sd') FL.sd = next('sd', FL.sd);
+    else if (d.skip) { if (FL.run) FL.run.skip = FL.run.end; return; } else return; flDraw(); });
+  $('#flf').addEventListener('submit', function (e) { e.preventDefault(); if (FL.run || !OS || !FL.sd) return; var f = e.target, v = function (n) { return String(f.elements.namedItem(n).value || ''); };
+    FL.name = slug(v('name')); FL.ssid = v('ssid').slice(0, 32); FL.pw = v('pw'); FL.cc = (v('cc') || 'AU').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'AU';
+    var had = flashedOf(FL.sd); if (had && !confirm('Everything on the card is erased. Write Island OS ' + OS.version + ' again?')) return; FL.ok = ''; flWrite(); });
 
   /* ───────── BOOT: the first start, as a real island makes it (kit/island). The red light, the green one reading the SD, the lines it
      logs, the slips it prints: its test strip, the setup Wi-Fi with its QR, then on Wi-Fi its pair code. A ghost's code pairs nothing ───────── */
@@ -495,10 +523,10 @@
     shown('b' + name + Date.now(), cv, '', true, true, say); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   /* the log: the last five lines, like the island's own journal */
   var stamp = function (s) { return s; };
-  function bootLog(s) { BT.lines.push(s); BT.lines = BT.lines.slice(-40); var l = $('#bnlog'); l.hidden = false; l.innerHTML = BT.lines.slice(-5).map(function (x, i, a) { return '<li' + (i === a.length - 1 ? ' class="nw"' : '') + (/^×/.test(x) ? ' data-err="1"' : '') + '>' + esc(x.replace(/^× /, '')) + '</li>'; }).join(''); }
+  function bootLog(s) { BT.lines.push(s); BT.lines = BT.lines.slice(-40); var l = $('#bnlog'); l.hidden = false; l.innerHTML = BT.lines.slice(-5).map(function (x, i, a) { return '<li' + (i === a.length - 1 ? ' class="nl"' : '') + (/^×/.test(x) ? ' data-err="1"' : '') + '>' + esc(x.replace(/^× /, '')) + '</li>'; }).join(''); }
   /* the steps play at their own pace (a real Pi 3 A+ takes about 25 s to its island; here a fifth of that), a tap on the log skips */
   function bootRun(steps, done) { var i = 0; BT.run = {}; benchDraw(); riteDraw(); var lg = $('#bnlog'); lg.hidden = false; setTimeout(function () { look(lg); }, 60);
-    var next = function () { if (i >= steps.length) { BT.run = null; benchDraw(); riteDraw(); if (!LAMP) look($('.bench .pt.want'), 'center'); if (done) done(); return; } var s = steps[i++];
+    var next = function () { if (i >= steps.length) { BT.run = null; benchDraw(); riteDraw(); setTimeout(function () { if (!BT.run) $('#bnlog').hidden = true; }, 2600); if (!LAMP) look($('.bench .pt.want') || $('#dock'), 'center'); if (done) done(); return; } var s = steps[i++];
       BT.run.go = function () { BT.run.go = null; var bad = bootBad(); if (bad) { bootLog('× ' + bad); BT.run = null; benchDraw(); riteDraw(); return; } if (s[1] === false) { BT.run = null; benchDraw(); riteDraw(); return; } if (typeof s[1] === 'string') bootLog(/^K:/.test(s[1]) ? stamp(s[1].slice(2)) : s[1]); else s[1](); next(); };
       BT.run.t = setTimeout(BT.run.go, BT.run.skip ? 40 : s[0]); };
     next(); }
@@ -521,35 +549,24 @@
   $('#bnlog').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
 
   /* ───────── the rite: five stations on the sun's path, lit as the island is made. Its one Irukandji wakes as they light ───────── */
-  var RITE = [['BENCH', 'Every part on the bench, and enough power'], ['FLASH', 'Island OS on its SD'], ['BOOT', 'Started, on Wi-Fi, its code printed'], ['HOME', 'Its home made'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['REAL', 'A real printer, by its pair code']];
+  var RITE = [['PARTS', 'A printer, its brain (a Pi) and the cable between them'], ['SD', 'Island OS written on its memory card, the card in the Pi'], ['POWER', 'Power to every part'], ['START', 'Switched on, on Wi-Fi, its code approved'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['REAL', 'A real printer, by the pair code its Pi prints']];
   var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8'],
     TENT = ['M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
   var RLIT = null;
-  function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN) return [true, true, true, !!(ISLE && ISLE.home), !!T.paired];
-    var P = power(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f = sd && flashedOf(sd[0]);
-    return [(P.w === 'ENOUGH' || P.w === 'CHARGED') && !!ofKind('printer').length && !!ofKind('pi').length, !!f, !!(f && BN.o && BN.o[0] === sd[0] && BN.o[1] === f[1] && BN.o[2] === 3), !!(ISLE && ISLE.home), !!T.paired]; }
-  var at = function (i, k) { var a = Math.PI * (0.9 - (k == null ? i * 10 : k) * 0.02); return [160 + Math.cos(a) * 132, 66 - Math.sin(a) * 50]; }, f1 = function (n) { return n.toFixed(1); };
-  function riteBuild(s) { var pts = []; for (var k = 0; k <= 40; k++) { var p = at(0, k); pts.push(f1(p[0]) + ' ' + f1(p[1])); } s.dataset.pts = JSON.stringify(pts);
-    var out = '<path class="rp" d="M' + pts.join(' L') + '"/><path class="rp on" d=""/>';
-    out += '<g class="ik" style="opacity:.1" transform="translate(141 26) scale(.6)">' + IRUK.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + TENT.map(function (d) { return '<path class="tn" d="' + d + '"/>'; }).join('') + '</g>';
-    RITE.forEach(function (r, i) { var p = at(i), dots = ''; for (var d = 0; d < 8; d++) { var b = d * Math.PI / 4; dots += '<circle cx="' + f1(p[0] + Math.cos(b) * 8) + '" cy="' + f1(p[1] + Math.sin(b) * 8) + '" r="1.35"/>'; }
-      out += '<g class="st" data-rite="' + i + '" role="button" tabindex="0"><title>' + r[0] + ' · ' + r[1] + '</title><circle class="hb" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="15"/>' + dots + '<circle class="c" cx="' + f1(p[0]) + '" cy="' + f1(p[1]) + '" r="2.2"/></g>'; });
-    s.innerHTML = out + '<text class="rw" x="160" y="81" text-anchor="middle"></text>'; s.dataset.built = '1'; }
-  function riteDraw() { var s = $('#rite'); if (!s || !T) return; if (!T.ghost) { s.setAttribute('hidden', ''); return; } s.removeAttribute('hidden'); if (!s.dataset.built) riteBuild(s);
-    var lit = riteLit(), cur = lit.indexOf(false), n = lit.filter(Boolean).length, was = RLIT || store.get('da.twin.rite.' + T.id + TS, null), pts = JSON.parse(s.dataset.pts);
-    var last = cur < 0 ? 4 : cur - 1; s.querySelector('.rp.on').setAttribute('d', last > 0 ? 'M' + pts.slice(0, last * 10 + 1).join(' L') : '');
-    var ik = s.querySelector('.ik'); ik.style.opacity = (0.1 + n * 0.16).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n === 5 ? ' all' : ''));
-    $$('#rite .st').forEach(function (g, i) { var seal = lit[i] && was && !was[i]; g.setAttribute('class', 'st' + (lit[i] ? ' lit' : '') + (i === cur ? ' now' : '') + (seal ? ' seal' : '') + (g.classList.contains('seal') && lit[i] ? ' seal' : ''));
-      g.setAttribute('aria-label', RITE[i][0] + (lit[i] ? ', done' : i === cur ? ', next' : '')); g.querySelector('.c').setAttribute('r', lit[i] ? 3.4 : 2.2);
-      if (seal) setTimeout(function () { g.classList.remove('seal'); }, 900); });
-    s.querySelector('.rw').textContent = cur >= 0 ? RITE[cur][0] : ''; RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
-  $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite, bd = $('#bnd');
-    if (i === 3) { location.href = '/#home'; return; }
-    if (i === 4 && TESTQ) { location.href = '/#home'; return; }
-    if (i === 4) { $('#bd').open = true; look($('#bd'), 'center'); return; }
-    if (!BN) return; bd.open = true; if (i === 1 && !FLOPEN) { FLOPEN = true; benchDraw(); }
-    var pi = ofKind('pi')[0]; look(i === 1 ? $('#fl') : i === 2 && pi ? D.querySelector('#bnv [data-body="' + pi[0] + '"]') : $('#bnv'), i ? 'center' : 'start'); });
-  $('#rite').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-rite]')) { e.preventDefault(); e.target.closest('[data-rite]').dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+  function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
+  function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : !!T.paired; }); }
+  /* the one Irukandji in the dock: faint at the start, waking stage by stage, beating while it starts, lit when it lives */
+  function riteDraw() { var s = $('#rite'); if (!s || !T) return; if (!T.ghost) { s.hidden = true; return; } s.hidden = false;
+    if (!s.dataset.built) { s.innerHTML = RITE.map(function (r, i) { return '<li class="st" data-rite="' + i + '"><button type="button" title="' + r[0] + ' · ' + r[1] + '"><i></i><b>' + r[0] + '</b></button></li>'; }).join(''); s.dataset.built = '1'; }
+    var lit = riteLit(), cur = lit.indexOf(false), n = lit.filter(Boolean).length, was = RLIT || store.get('da.twin.rite.' + T.id + TS, null);
+    $$('#rite .st').forEach(function (g, i) { var seal = lit[i] && was && !was[i]; g.className = 'st' + (lit[i] ? ' lit' : '') + (i === cur ? ' now' : '') + (seal ? ' seal' : '');
+      g.querySelector('button').setAttribute('aria-label', RITE[i][0] + (lit[i] ? ', done' : i === cur ? ', now' : '')); if (seal) setTimeout(function () { g.classList.remove('seal'); }, 900); });
+    var ik = $('#ik'); if (ik) { if (!ik.dataset.built) { ik.innerHTML = IRUK.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + TENT.map(function (d) { return '<path class="tn" d="' + d + '"/>'; }).join(''); ik.dataset.built = '1'; }
+      ik.style.opacity = (0.22 + n * 0.17).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n >= 4 ? ' all' : '')); }
+    RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
+  $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite;
+    if (i === 4) { if (TESTQ) { location.href = '/#home'; return; } $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); return; }
+    look($('#bnd'), 'start'); });
 
   /* ───────── OFFLINE: the island with no internet, as a real one goes when its Wi-Fi drops. The twin stops asking; what is sent waits
      on the site, and comes out once each when it is back ───────── */
@@ -558,7 +575,7 @@
   $('#body').addEventListener('click', function () { if (!T || !T.ghost) return; OFF = !OFF; clearTimeout(timer); offDraw(); if (!OFF) tick(); });
 
   /* ───────── the mesh: a T-Beam for the bench; a real Meshtastic radio linked to this screen (mesh.js); a line out ───────── */
-  $('#madd').addEventListener('click', function () { if (!BN || ofKind('radio').length || BN.p.length >= 12) return; partAdd('t-beam'); TRAY = null; $('#bnd').open = true; benchDraw(); benchSave('T-BEAM'); radioDraw(); setTimeout(function () { look($('.bench .po.want') || $('#bnv'), 'center'); }, 60); });
+  $('#madd').addEventListener('click', function () { if (!BN || ofKind('radio').length || BN.p.length >= 12) return; partAdd('t-beam'); TRAY = null; benchDraw(); benchSave('T-BEAM'); radioDraw(); setTimeout(function () { look($('.bench .po.want') || $('#bnv'), 'center'); }, 60); });
   var mlink = function (how, name) { if (ML.link.on) { if (ML.link.name === name) ML.link.close(); return; } $('#msay').textContent = '· · ·';
     ML[how]().then(function () { $('#msay').textContent = ''; radioDraw(); }, function (e) { $('#msay').textContent = e && e.name === 'NotFoundError' ? '' : '× ' + String(e && e.message || e).slice(0, 48).toUpperCase(); radioDraw(); }); };
   $('#mu').addEventListener('click', function () { mlink('serial', 'USB'); }); $('#mb').addEventListener('click', function () { mlink('ble', 'BLUETOOTH'); });
@@ -568,7 +585,7 @@
   /* ───────── a printer added: the pair code a Pi prints ───────── */
   $('#pf').addEventListener('submit', function (e) { e.preventDefault(); var c = $('#pc').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length !== 8) { $('#bsay').textContent = '× 8 LETTERS'; return; }
     /* a ghost's own code, the one its Pi printed: paired here, and nowhere else */
-    if (T && T.ghost && BN && c === pairCode()) { $('#pf button').classList.remove('want'); $('#pc').value = ''; if (WANT && WANT.k === 'pair') { $('#bsay').textContent = 'PAIRED'; bootStep('pair'); } else $('#bsay').textContent = BN.o && BN.o[2] === 3 ? 'PAIRED' : '× NOT YET'; return; }
+    if (T && T.ghost && BN && c === pairCode()) { $('#pc').value = ''; if (WANT && WANT.k === 'pair') { $('#bsay').textContent = 'PAIRED'; bootStep('pair'); } else $('#bsay').textContent = BN.o && BN.o[2] === 3 ? 'PAIRED' : '× NOT YET'; return; }
     $('#bsay').textContent = '· · ·';
     api('/api/twin', { method: 'POST', body: JSON.stringify({ pair: c }) }).then(function (j) { $('#bsay').textContent = j.waiting ? 'WAIT LIST' : 'PAIRED · THE PI TAKES OVER'; $('#pc').value = ''; setTimeout(tick, 6e3); }, function (er) { $('#bsay').textContent = er.status === 404 ? '× NO SUCH CODE' : er.status === 409 ? '× TAKEN' : '× ' + String(er.message || '').toUpperCase(); }); });
   $('#test').addEventListener('click', function () { var id = 't' + Date.now(), u = SLIPS.strip(), cv = draw(u, paperOf()); shown(id, cv, '', true, false, 'Test strip'); paperUse(cv);
