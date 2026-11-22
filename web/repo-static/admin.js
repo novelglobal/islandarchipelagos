@@ -665,7 +665,7 @@
     fv.oninput = () => { fvn.textContent = fv.value; };
     const film = F => { F = F || {}; at.value = L.at === 'top' || L.at === 'low' ? L.at : 'mid'; fo.checked = !!F.on; ff.value = F.file || ''; fs.value = F.side === 'above' ? 'above' : 'below'; fw.value = F.w || 100; fv.value = F.vol == null || F.vol === '' ? 80 : F.vol; fvn.textContent = fv.value; fm.value = F.max || ''; fe.value = F.each || ''; }; film(L.film);
     api('film').then(r => r.json()).then(j => { fsay.textContent = 'PLAYED TODAY: ' + (j.today || 0) + ' · ' + (!j.bucket ? 'NO FILMS BUCKET YET' : j.found ? 'FILE FOUND' : 'FILE NOT FOUND'); }).catch(() => {});
-    const TO = [['card', 'THE BACK OF THE FIRST CARD'], ['islands', 'FIND AN ISLAND (THE LIST OF PRINTERS)'], ['kit', 'BUILD YOUR OWN (THE KIT PAGE)'], ['note', 'THE PRIVATE PAGE'], ['url', 'A LINK OF ITS OWN']];
+    const TO = [['card', 'THE BACK OF THE FIRST CARD'], ['islands', 'FIND AN ISLAND (THE LIST OF PRINTERS)'], ['kit', 'BUILD YOUR OWN (THE KIT PAGE)'], ['note', 'ETHICS AND AI DISCLOSURE'], ['url', 'A LINK OF ITS OWN']];
     const lbox = el('div', { style: 'display:grid;gap:8px' }), cbox = el('div', { style: 'display:grid;gap:8px' });
     const drawL = () => lbox.replaceChildren(...L.links.map((k, i) => { const before = inp(k.b), words = inp(k.t), to = el('select', {}, ...TO.map(([v, t]) => el('option', { value: v, text: t }))), url = inp(k.u, { placeholder: 'https://' }); to.value = k.to || 'url'; url.hidden = to.value !== 'url';
         before.oninput = () => { k.b = before.value; }; words.oninput = () => { k.t = words.value; }; url.oninput = () => { k.u = url.value.trim(); }; to.onchange = () => { k.to = to.value; url.hidden = to.value !== 'url'; };
@@ -715,7 +715,7 @@
     const isl = el('section', { class: 'ed' }, el('h3', { text: 'THE ISLANDS' }), el('small', { class: 'hint', text: 'The page people are sent to: novel.global/islands. Each paired printer, whether it is on, and whether it is open. Where it is shows only while it is open (a pop-up is open on it, or it is ticked open here).' }),
       ...(rows.length ? rows : [el('p', { class: 'empty', text: 'NO PRINTER IS PAIRED YET' })]),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => put({ isles: JSON.stringify(I) }) }), el('button', { type: 'button', text: 'SEE IT', onclick: () => window.open('/islands', '_blank', 'noopener') })));
-    main.replaceChildren(...head('Label'), lab, notesCard(st), isl);
+    main.replaceChildren(...head('Label'), lab, noteCard(st, async o => { await api('settings', { method: 'POST', body: JSON.stringify(o) }); show('label'); }), notesCard(st), isl);
   }
   /* a picture of a place made small enough to keep (a jpeg, 900 across at most); and a data URL as a blob, since this page shows no data: pictures */
   function islePic(file) { return new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { let k = Math.min(1, 900 / Math.max(im.width, im.height)), q = 0.8, d = ''; const c = document.createElement('canvas'); for (;;) { c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); d = c.toDataURL('image/jpeg', q); if (d.length < 110e3 || k < 0.2) break; k *= 0.82; } URL.revokeObjectURL(u); res(d); }; im.onerror = rej; im.src = u; }); }
@@ -760,19 +760,6 @@
       el('label', {}, 'HEADLINE', ofs[0]), el('label', {}, 'LEDE', ofs[1]), el('label', {}, 'WORDS', ofs[2]), hint('A blank line starts a new paragraph.'), el('label', {}, 'SIGNED', ofs[3]), el('label', {}, 'BLACK BAR', ofs[4]),
       hint('Empty: the words shown in grey stay.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = {}; ofs.forEach(t => { if (t.value.trim()) o[t.dataset.k] = t.value.trim(); }); save({ opener: JSON.stringify(o) }); } })));
-    /* a private page: words read only by their own link. Chosen from a file or typed; never in a backup, never listed */
-    const nta = el('textarea', { rows: '8', maxlength: '80000', placeholder: 'Plain words. # a heading, ## a smaller one, - a list line, > a quoted line.' }); nta.value = st.note || '';
-    const nsl = el('textarea', { rows: '5', maxlength: '700', placeholder: 'A few lines for the slip that carries its code. A blank line starts a new paragraph.' }); nsl.value = st.noteSlip || '';
-    const npub = el('input', { type: 'checkbox' }); npub.checked = st.notePub === '1';
-    const nurl = () => location.origin + '/note#' + (st.noteKey || ''), nmint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(24); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
-    const note = el('section', { class: 'ed' }, el('h3', { text: 'PRIVATE PAGE' }), nta, el('label', {}, 'ITS SLIP (PRINTED FROM A DESK, WITH THE CODE THAT OPENS THE PAGE)', nsl), el('label', { class: 'check' }, npub, 'LINK IT FROM THE BACK OF THE FIRST CARD (ANYONE CAN THEN READ IT)'),
-      st.noteKey && st.note ? el('p', { class: 'hint', text: nurl() }) : hint('SAVE makes its link. Only people given the link can read it.'),
-      el('div', { class: 'acts' },
-        el('button', { type: 'button', text: 'CHOOSE FILE', onclick: () => { const fi = el('input', { type: 'file', accept: '.txt,.md,text/plain,text/markdown' }); fi.onchange = async () => { if (fi.files[0]) nta.value = (await fi.files[0].text()).slice(0, 80000); }; fi.click(); } }),
-        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ note: nta.value, noteSlip: nsl.value, notePub: npub.checked ? '1' : '', noteKey: st.noteKey || nmint() }) }),
-        st.noteKey ? el('button', { type: 'button', text: 'COPY LINK', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(nurl()); } }) : '',
-        st.noteKey ? el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link. The old one stops working.')) save({ note: nta.value, noteSlip: nsl.value, notePub: npub.checked ? '1' : '', noteKey: nmint() }); } }) : '',
-        st.note ? el('button', { type: 'button', class: 'no', text: 'DELETE', onclick: () => { if (confirm('Delete the private page? Its link stops working.')) save({ note: '', noteSlip: '', notePub: '', noteKey: '' }); } }) : ''));
     /* the novel.global business card: what it made, and its partners; one a line */
     let bz = {}; try { bz = st.bizcard ? JSON.parse(st.bizcard) : {}; } catch (e) { bz = {}; }
     const bzl = el('textarea', { rows: 7, style: 'width:100%', placeholder: 'I W.I.S.H.™ framework\nPoP™ Proof of Presence\nIsland Archipelagos OS\nLAN parties\nbluepaper strategy\nsolar thermal printer from e-waste' }), bzp = el('textarea', { rows: 5, style: 'width:100%', placeholder: '/logos/rmit.png\n/logos/inaturalist.png\n/logos/blue4est.png\nRaspberry Pi' });
@@ -794,7 +781,7 @@
       el('label', {}, 'HEROES ', scHero), hint('Big cards (BIG on a play) shown with the big cards, starred first.'),
       el('label', {}, 'SHELVES', scSh), hint('One a line, in the order they stand. A play joins one with SHELF on its approval.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ showcase: JSON.stringify({ cap: Math.max(0, Math.round(+scCap.value || 0)), star: $('#sc-star').checked, heroes: Math.max(0, Math.min(6, Math.round(+scHero.value))), shelves: lines(scSh).map(v => v.toUpperCase().slice(0, 16)).slice(0, 12) }) }) })));
-    main.replaceChildren(...head('Home'), opener, bizEd, spEd, scEd, cardsEd, look, note);
+    main.replaceChildren(...head('Home'), opener, bizEd, spEd, scEd, cardsEd, look);
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); try { const st0 = await (await api('settings')).json(); BUILD = st0.builds ? JSON.parse(st0.builds) : {}; } catch (e) { BUILD = {}; }
@@ -819,6 +806,23 @@
     el('small', { class: 'hint', text: 'A build is what an island’s keeper can change from their own home: its name, pictures, connections, cards, picks, passes, stamps, the gap between prints and its gang. FULL is all of it; SIMPLE is name, pictures, gap and passes; CUSTOM ticks each part. A keeper only ever sees what is in their build, and the site refuses the rest. This one is for new islands and any left AS NEW ISLANDS; each island below has its own.' }), buildRow(null)); }
   /* the slip every printer prints once it joins a Wi-Fi: its words, one line each, and the link its code opens. Each printer asks for them
      as it joins, so a change here reaches every printer the next time one joins; with none to be had it prints the last it had */
+  /* ETHICS AND AI DISCLOSURE: the private page. Words read only by their own link (the back of the first card links it while novel.global
+     says so). Chosen from a file or typed; never in a backup, never listed. Kept with the label, whose links can open it */
+  function noteCard(st, save) {
+    const hint = t => el('small', { class: 'hint', text: t });
+    const nta = el('textarea', { rows: '8', maxlength: '80000', placeholder: 'Plain words. # a heading, ## a smaller one, - a list line, > a quoted line.' }); nta.value = st.note || '';
+    const nsl = el('textarea', { rows: '5', maxlength: '700', placeholder: 'A few lines for the slip that carries its code. A blank line starts a new paragraph.' }); nsl.value = st.noteSlip || '';
+    const npub = el('input', { type: 'checkbox' }); npub.checked = st.notePub === '1';
+    const nurl = () => location.origin + '/note#' + (st.noteKey || ''), nmint = () => { const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = new Uint32Array(24); crypto.getRandomValues(r); return [...r].map(n => A[n % A.length]).join(''); };
+    const note = el('section', { class: 'ed' }, el('h3', { text: 'ETHICS AND AI DISCLOSURE' }), hint('The long page behind “Ethics and AI disclosure” on the back of the first card, and behind a label link set to it. # a heading, ## a smaller one, - a list line, > a quoted line, a blank line a new paragraph.'), nta, el('label', {}, 'ITS SLIP (PRINTED FROM A DESK, WITH THE CODE THAT OPENS THE PAGE)', nsl), el('label', { class: 'check' }, npub, 'LINK IT FROM THE BACK OF THE FIRST CARD (ANYONE CAN THEN READ IT)'),
+      st.noteKey && st.note ? el('p', { class: 'hint', text: nurl() }) : hint('SAVE makes its link. Only people given the link can read it.'),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', text: 'CHOOSE FILE', onclick: () => { const fi = el('input', { type: 'file', accept: '.txt,.md,text/plain,text/markdown' }); fi.onchange = async () => { if (fi.files[0]) nta.value = (await fi.files[0].text()).slice(0, 80000); }; fi.click(); } }),
+        el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ note: nta.value, noteSlip: nsl.value, notePub: npub.checked ? '1' : '', noteKey: st.noteKey || nmint() }) }),
+        st.noteKey ? el('button', { type: 'button', text: 'COPY LINK', onclick: () => { if (navigator.clipboard) navigator.clipboard.writeText(nurl()); } }) : '',
+        st.noteKey ? el('button', { type: 'button', text: 'NEW LINK', onclick: () => { if (confirm('A new link. The old one stops working.')) save({ note: nta.value, noteSlip: nsl.value, notePub: npub.checked ? '1' : '', noteKey: nmint() }); } }) : '',
+        st.note ? el('button', { type: 'button', class: 'no', text: 'DELETE', onclick: () => { if (confirm('Delete the private page? Its link stops working.')) save({ note: '', noteSlip: '', notePub: '', noteKey: '' }); } }) : ''));
+    return note; }
   /* the note each card brings up once, as it is first reached: a blank line between paragraphs; a short first line is its heading */
   function notesCard(st) {
     let N = {}; try { N = JSON.parse(st.notes || '{}') || {}; } catch (e) { N = {}; }
@@ -1270,7 +1274,7 @@
     ['print', 'PRINT', 'How prints look, tested on paper', [P('quality', 'QUALITY', [[site, ['PRINT QUALITY']]], null, 'set dots grey photographs mid-tones contrast sharpen stretch words lines bolden speed darkness curve calibration strip text test photo test'),
       P('tune', 'TUNE', [[site, ['TUNE']]], null, 'tune photo test five ways own photo'), P('styles', 'STYLES', [[site, ['STYLES · MOD PACKS']]], null, 'mod packs house press quiet loud'),
       P('rules', 'RULES', [[site, ['PRINTING', 'SENT WITHOUT A PRINT', 'MAKING']]], null, 'codes gap touch maker free print approval')]],
-    ['site', 'SITE', 'What the site shows and says', [P('home', 'HOME', home, null, 'opener business card species list showcase cards order size look private page'), P('label', 'LABEL', [[label, ['THE LABEL', 'THE FILM', 'CARD NOTES']]], null, 'label film card notes'),
+    ['site', 'SITE', 'What the site shows and says', [P('home', 'HOME', home, null, 'opener business card species list showcase cards order size look'), P('label', 'LABEL', [[label, ['THE LABEL', 'THE FILM', 'ETHICS AND AI DISCLOSURE', 'CARD NOTES']]], null, 'label film ethics ai disclosure private page card notes'),
       P('words', 'WORDS', [[site, ['START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES']], [stations, ['INTENTION AND W.I.S.H. · THE WORDS']]], null, 'start booth notice country lan parties intention wish'),
       P('boards', 'BOARDS', [[stations, ['THE EXAMPLE · ITS POSTER AND BOARD 00', 'BOARD 01 · THE TEMPLATE']]], null, 'example board 00 board 01 template'),
       P('map', 'MAP', [[stations, ['LIVING', 'THE MOON', 'THE BUOY', 'CITIES AND DATA PACKS']]], null, 'living moon buoy cities data packs'),
