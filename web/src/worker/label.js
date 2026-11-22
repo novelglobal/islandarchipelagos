@@ -7,7 +7,7 @@ export const LABEL = {
   "meta": "",
   "credit": "",
   "num": "",
-  "body": "This teaching tool is on loan from RMIT University's Fashion and Textiles School, developed by novel.global for the Fashion AI course within the Sustainable Innovation program.\n\nEvery idea here is one person's: 15 years of research into noticing, place, maps, music and connection.\n\nIts working parts are 36 open-source projects, made by people.\n\nAI was the glue, writing the code that joins them to that person's instructions. None of it runs here.\n\nWithout AI, that alone would take 10 people 18 months and A$4 million. It took 40 days.\n\nThe proposal: rescue 150 thermal printers from landfill and raise AU$4 million for local creatives and coders working towards climate adaptation.",
+  "body": "This teaching tool is on loan from RMIT University's Fashion and Textiles School, developed by novel.global for the Fashion AI course within the Sustainable Innovation program.\n\nIts working parts are 36 open-source projects, made by people.\n\nAI-assisted code, shared on GitHub, was the glue that let them communicate and allowed this to exist. It did in 40 days what would otherwise have taken an estimated 10 people 18 months and over A$4 million.\n\nThe proposal: rescue 150 thermal printers from landfill and raise AU$4 million for local creatives and coders working towards climate adaptation.",
   "links": [
     {
       "b": "Read the report",
