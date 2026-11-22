@@ -263,12 +263,24 @@
   #roll { margin: 0 auto; }
   /* live: the ledger. Built, gained, open: line and dot */
   .dev { position: relative; width: min(100%, 300px); margin: 22px auto 0; padding: 10px 12px 18px; border-radius: 16px; color: #A8A59C; background-color: #282723; background-image: linear-gradient(180deg, #3A3934 0%, #282723 55%, #1C1C1A 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -2px 0 rgba(0, 0, 0, .35), 0 12px 26px var(--shade); transition: padding .3s; } .dev[hidden] { display: none; }
-  .dev .dtop { display: flex; align-items: center; gap: 6px; } .dev .lmp { width: 7px; height: 7px; border-radius: 50%; background: #8FB98A; box-shadow: 0 0 6px rgba(143, 185, 138, .7); margin-right: auto; } .dev.on .lmp { background: #E2552E; box-shadow: 0 0 8px rgba(226, 85, 46, .9); }
-  .dev .dk { appearance: none; min-width: 26px; height: 22px; padding: 0 6px; border: 1px solid #4A4843; border-radius: 11px; background: #1E1E1C; color: #CFCBC0; font: 600 12px/1 'IBM Plex Mono', monospace; cursor: pointer; } .dev .dk[hidden] { display: none; }
+  .dev .dtop { display: flex; align-items: center; gap: 8px; }
+  .dev .dsc { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 30px; padding: 0 10px; border-radius: 7px; background: #141412; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .7), 0 1px 0 rgba(255, 255, 255, .05); }
+  .dev .dnm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: #E9E6DC; }
+  .dev .chip { flex: none; gap: 6px; color: #9DC598; font-size: 9px; letter-spacing: .16em; } .dev .chip:disabled { cursor: default; opacity: 1; } .dev .chip.off { color: #F06A40; }
+  .dev .led { width: 7px; height: 7px; background: #4A4843; } .dev .led.on { background: #8FB98A; box-shadow: 0 0 6px rgba(143, 185, 138, .7); } .dev.on .led { background: #E2552E; box-shadow: 0 0 8px rgba(226, 85, 46, .9); }
+  .ddr { width: min(100%, 300px); margin: 10px auto 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 12px; } .ddr[hidden] { display: none; }
+  .ddr .dh { display: grid; gap: 5px; } .ddr .dh b { font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .2em; } .ddr .dh span { font: 500 10.5px/1.4 'IBM Plex Mono', monospace; letter-spacing: .04em; color: var(--grey); }
+  .ddr details { border: 0; padding: 0; background: none; } .ddr details > summary { display: none; } .ddr details[open] { padding-bottom: 0; } .ddr .map { margin-top: 10px; }
+  #twin.dv .top, #twin.dv .more { display: none; } #twin.live #ddr:not([hidden]) ~ .stage { margin-top: 14px; } #twin.live #ddr:not([hidden]) ~ .stage #roll { margin-top: 0; }
+  .dev .chip, .dev .chip:hover { background: none; border: 0; box-shadow: none; padding: 0; min-height: 0; } .ddr .say:empty, #rlog:empty { display: none; }
+  #roll .slip[data-cap]:not(.open)::before { content: attr(data-cap); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; padding: 0 10px; background: var(--paper); font: 600 9.5px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; color: #2A2925; white-space: nowrap; overflow: hidden; }
+  #roll .slip:not(.open) .tag { z-index: 2; top: 50%; transform: translateY(-50%); }
+  .dev .dk { appearance: none; flex: none; height: 30px; padding: 0 10px; border: 1px solid #4A4843; border-radius: 7px; background: #1E1E1C; color: #CFCBC0; font: 600 9px/1 'IBM Plex Mono', monospace; letter-spacing: .16em; cursor: pointer; } .dev .dk[hidden] { display: none; }
   .dev .dkeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 12px; }
   .dev .ky { appearance: none; border: 0; background: none; padding: 2px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: inherit; }
   .dev .ky i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3E3D38, #191918 70%); box-shadow: inset 0 0 0 1px #4A4843, 0 2px 0 #0B0B0A; transition: background .15s, transform .1s; }
-  .dev .ky b { font: 600 8px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: #A8A59C; }
+  .dev .ky b { font: 600 8px/1 'IBM Plex Mono', monospace; letter-spacing: .18em; color: #CFCBC0; } .dev .ky small { min-height: 8px; margin-top: -2px; font: 500 8px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; color: #8A877E; }
+  .dev .ky[aria-expanded=true] i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); } .dev .ky[aria-expanded=true] b { color: #F06A40; }
   .dev .ky:hover i, .dev .ky:focus-visible i { background: radial-gradient(circle at 40% 35%, #F06A40, #C9441F 70%); } .dev .ky:active i { transform: translateY(1px); box-shadow: inset 0 0 0 1px #4A4843; } .dev .ky:focus-visible { outline: none; } .dev .ky:focus-visible b, .dev .dk:focus-visible { color: #F06A40; outline: none; }
   .dev .slot { position: absolute; left: 12%; right: 12%; bottom: 7px; height: 4px; border-radius: 2px; background: #0B0B0A; box-shadow: 0 1px 0 rgba(255, 255, 255, .06); }
   .dev.back .dkeys, .dev.shut .dkeys, .dev.back .slot, .dev.shut .slot { display: none; } .dev.back, .dev.shut { padding-bottom: 10px; } .dev.back [data-go=bench] { color: #F06A40; border-color: #F06A40; }
@@ -300,6 +312,7 @@
     <div class="row"><button type="button" id="test" hidden title="A test slip, drawn here only">TEST</button></div></div>
   <ol class="rite" id="rite" aria-label="The build, stage by stage" hidden></ol>
   <div class="dev" id="dev" role="group" aria-label="The island" hidden></div>
+  <div class="ddr" id="ddr" hidden></div>
   <section class="build" id="bnd" hidden>
     <svg class="bench" id="bnv" viewBox="0 0 320 140" role="group" aria-label="This ghost's parts and the cables between them"></svg>
     <div class="dock" id="dock" aria-live="polite">
@@ -348,7 +361,7 @@
       <div class="opts"><button type="button" id="usb" hidden title="A USB receipt printer beside this screen (Chrome). On Windows it wants the WinUSB driver">USB</button><button type="button" id="ser" hidden title="A serial or Bluetooth receipt printer beside this screen (Chrome)">SERIAL</button></div>
       <form class="row" id="pf" style="margin-top:12px"><input id="pc" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PAIR CODE" aria-label="The pair code your Pi prints"><button title="Your Raspberry Pi prints a pair code when it first starts: this island becomes that printer">ADD</button></form>
       <p class="say" id="bsay"></p></details>
-    <details id="kd"><summary><b>KEY</b></summary><div class="opts"><button type="button" id="kcopy" title="Copy this island's key, to open it on another screen">COPY</button><button type="button" id="kout" title="Forget the key on this screen">FORGET</button></div></details>
+    <details id="kd"><summary><b>KEY</b></summary><div class="opts"><button type="button" id="kcopy" title="Copy this island's key, to open it on another screen">COPY KEY</button><button type="button" id="kout" title="Forget the key on this screen">FORGET KEY</button></div></details>
   </div></details>
 </div>
 </main>

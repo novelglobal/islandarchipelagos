@@ -86,15 +86,15 @@
   var LAMP = false, RM = matchMedia('(prefers-reduced-motion: reduce)');
   var lamp = function (on) { LAMP = on; var l = $('#lamp'); if (l) l.setAttribute('fill', on ? '#E2552E' : '#4A4843'); $$('.bench .la').forEach(function (a) { a.classList.toggle('rd', on); }); var dv = $('#dev'); if (dv) dv.classList.toggle('on', on); };
   var look = function (e, at) { if (e) e.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: at || 'nearest' }); };
-  function slipEl(cv, tag, feed) { var s = D.createElement('div'); s.className = 'slip'; s.appendChild(cv); if (tag) { var t = D.createElement('span'); t.className = 'tag'; t.textContent = tag; s.appendChild(t); }
+  function slipEl(cv, tag, feed, cap) { var s = D.createElement('div'); s.className = 'slip'; s.appendChild(cv); cap = String(cap || '').toUpperCase().replace(/[^\x20-\x7E]/g, '').trim().slice(0, 36); if (cap) s.dataset.cap = cap; if (tag) { var t = D.createElement('span'); t.className = 'tag'; t.textContent = tag; s.appendChild(t); }
     var roll = $('#roll'); roll.insertBefore(s, roll.firstChild); $('#none').hidden = true; $('#stage').hidden = false;
     if (feed && !matchMedia('(prefers-reduced-motion: reduce)').matches) { var h = s.getBoundingClientRect().height, ms = Math.max(500, Math.min(4000, cv.height / 0.6)); s.style.transitionDuration = ms + 'ms'; s.style.height = '0px'; lamp(true);
       requestAnimationFrame(function () { requestAnimationFrame(function () { s.style.height = h + 'px'; }); }); setTimeout(function () { s.style.height = ''; lamp(false); }, ms + 60); }
     [].forEach.call(roll.children, function (c) { c.classList.toggle('open', c === s); }); while (roll.children.length > 24) roll.removeChild(roll.lastChild); rollMore(); return s; }
-  function rollMore() { var r = $('#roll'), b = $('#rall'), n = r.children.length, all = r.classList.contains('all'); if (!b) return; b.hidden = n <= 3; b.textContent = all ? '▴' : '▾ ' + (n - 3); b.title = all ? 'Fewer' : 'Every print'; b.setAttribute('aria-expanded', String(all)); }
-  function keep(id, cv, tag) { var u = ''; try { u = cv.toDataURL('image/png'); } catch (e) { u = ''; } if (!u) return; ROLL.unshift({ id: id, u: u, tag: tag || '' }); ROLL = ROLL.slice(0, 12);
+  function rollMore() { var r = $('#roll'), b = $('#rall'), n = r.children.length, all = r.classList.contains('all'); if (!b) return; b.hidden = n <= 3; b.textContent = all ? 'FEWER' : (n - 3) + ' MORE'; b.title = all ? 'Only the last three' : 'Every print'; b.setAttribute('aria-expanded', String(all)); }
+  function keep(id, cv, tag, cap) { var u = ''; try { u = cv.toDataURL('image/png'); } catch (e) { u = ''; } if (!u) return; ROLL.unshift({ id: id, u: u, tag: tag || '', cap: cap || '' }); ROLL = ROLL.slice(0, 12);
     while (!store.set('da.twin.roll' + TS, ROLL) && ROLL.length > 1) ROLL.pop(); }
-  function shown(id, cv, tag, feed, kept, label) { if (SEEN[id]) return; SEEN[id] = 1; var e = slipEl(cv, tag, feed); e.setAttribute('role', 'img'); e.setAttribute('aria-label', label || tag || 'A slip'); if (kept) keep(id, cv, tag); }
+  function shown(id, cv, tag, feed, kept, label) { if (SEEN[id]) return; SEEN[id] = 1; var e = slipEl(cv, tag, feed, label || tag); e.setAttribute('role', 'img'); e.setAttribute('aria-label', label || tag || 'A slip'); if (kept) keep(id, cv, tag, label); }
   var BACK = 0;
   function seen(cv) { look($('.stage'), 'start'); clearTimeout(BACK); BACK = setTimeout(function () { if (BT.run) return; look($('.bench .pt.want') || $('.bench .gh') || $('#dock'), 'center'); }, (RM.matches ? 300 : Math.max(500, Math.min(4000, cv.height / 0.6))) + 900); }
   var rkey = function () { return 'da.twin.radio.' + (T ? T.id : '') + TS; };
@@ -106,7 +106,7 @@
   function onAir() { return !!ML.link.on || (T && T.ghost ? !!benchRadio() : !!(T && T.mesh)); }
   /* where a line typed here really goes: a radio linked to this screen, or the ghost's own radio on its bench */
   function canSay() { return !!ML.link.on || !!(T && T.ghost && benchRadio()); }
-  function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
+  function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '';
     var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : ''; $('#rd').classList.toggle('air', air); $('#xd').classList.toggle('air', air);
     $('#mf').hidden = !canSay(); $('#madd').hidden = !(T && T.ghost && BN && !ofKind('radio').length);
     [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
@@ -118,7 +118,7 @@
   $('#roll').addEventListener('click', function (e) { var s = e.target.closest('.slip'); if (s) s.classList.toggle('open'); });
   $('#rall').addEventListener('click', function () { $('#roll').classList.toggle('all'); rollMore(); });
   /* what this screen kept, first, so the roll is there with no signal */
-  ROLL.slice().reverse().forEach(function (r) { var im = new Image(); im.alt = ''; im.src = r.u; SEEN[r.id] = 1; slipEl(im, r.tag, false); });
+  ROLL.slice().reverse().forEach(function (r) { var im = new Image(); im.alt = ''; im.src = r.u; SEEN[r.id] = 1; slipEl(im, r.tag, false, r.cap || r.tag); });
 
   /* ───────── the printer beside the screen: USB or serial, in Chrome ───────── */
   var hasUsb = !!(navigator.usb && navigator.usb.requestDevice), hasSer = !!(navigator.serial && navigator.serial.requestPort);
@@ -135,12 +135,12 @@
 
   /* ───────── the island ───────── */
   function bodyDraw() { if (!T) return; var w = T.paired ? 'PI' : OUT ? OUT.name : 'GHOST', on = T.paired ? T.ready : true;
-    $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
+    $('#bodyw').textContent = $('#twin').classList.contains('dv') ? (T.paired && !T.ready ? 'ASLEEP' : 'READY') : w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
     $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; $('#body').classList.toggle('gh', !!T.ghost); if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#test').hidden = !!T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
   function take(j) { var cv = j.escpos ? draw(j.escpos, paperOf()) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), paperOf()) : null;
     if (j.mesh && !MSEEN[j.id]) { MSEEN[j.id] = 1; meshOut(j.mesh); }
-    if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
+    if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true, j.code || ''); paperUse(cv); }
     if (OUT) return (j.escpos ? OUT.write(b64(j.escpos)) : Promise.resolve()).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
     return Promise.resolve(); }
   function tick() { clearTimeout(timer); if (!KEY || (OFF && T)) return;
@@ -149,7 +149,7 @@
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
       (j.roll || []).slice().reverse().forEach(function (x) { if (SEEN[x.id] || (j.took || []).some(function (y) { return y.id === x.id; })) return;
         var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv && x.off) cv = draw(textSlip([x.code || 'PRINT', 'OFFLINE']), j.paper); if (!cv) return;
-        shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false); });
+        shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false, x.code || ''); });
       if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
       .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
@@ -618,22 +618,36 @@
     /* alive, its two ends are dots: the lamp here, the island it can reach there */
     if (n >= 4) put(4, 'live', [el('circle', { 'class': 'node hot', cx: 124.5, cy: 12, r: 1.4 }), el('circle', { 'class': 'node', cx: 293, cy: 54, r: 2 })]); }
   var RLIT = null, BOPEN = false;
-  var OPENS = [['home', 'Its home: connections, cards, what it makes'], ['print', 'A test print'], ['radio', 'Its radio: lines in and out'], ['joins', 'Islands it echoes or mirrors'], ['bench', 'The bench it was built on']];
-  /* live: what it is made of runs into the island, and out of the island each thing it can now do, the thing itself, tapped to use.
-     What it gained (its OS, its paper, its air, its net, its power) is in each one's hover. Line and dot */
-  /* the finished island: a small smoked device. Its keys act in place; ↻ turns it to the breadboard it was built on; – closes it */
-  var SHUT = !!store.get('da.twin.shut', false);
-  function devDraw(P, live) { var d = $('#dev'), tw = $('#twin'); if (!d) return; if (!live || !BN || !T) { d.hidden = true; tw.classList.remove('shut'); return; }
+  /* the finished island: a small smoked device. On its glass, its name and one word for how it is (tap a ghost's: offline). Four keys,
+     each with what it holds under it; a key opens its own panel just under the device, and again closes it. PARTS turns it to the
+     breadboard it was built on */
+  var DRW = null, DV = { left: 1, mesh: false }, PANES = ['jd', 'rd', 'bd', 'kd'];
+  var KEYS = [['print', 'PRINT', 'A test print, and the paper left'], ['radio', 'RADIO', 'Its radio: lines in and out'], ['joins', 'JOINS', 'Islands it echoes or mirrors'], ['home', 'HOME', 'Its home: cards, connections, what it makes']];
+  function devDraw(P, live) { var d = $('#dev'), tw = $('#twin'), bd = $('#body'), top = $('.top .id'); if (!d) return;
+    if (!live || !BN || !T) { d.hidden = true; tw.classList.remove('dv'); if (bd.parentNode !== top) top.appendChild(bd); if (DRW) { DRW = null; drawerDraw(); } return; }
     var L = layout(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], fv = sd && flashedOf(sd[0]), left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rad = benchRadio(),
-      gain = { home: fv ? 'Island OS ' + fv[1] + ' · ' + fv[2] : 'Island OS', print: Math.round(left * ROLLMM / 1000) + ' m of paper · about ' + Math.round(left * ROLLMM / 160) + ' receipts', radio: rad ? 'On the mesh, radio to radio' : 'Lines in and out by its Wi-Fi',
-        joins: 'On its Wi-Fi, paired to novel.global', bench: P.w + (P.t ? ' · ' + P.t : '') };
-    if (!d.dataset.built) { d.innerHTML = '<div class="dtop"><i class="lmp" aria-hidden="true"></i><button type="button" class="dk" data-go="bench"></button><button type="button" class="dk" data-go="shut"></button></div>' +
-      '<div class="dkeys">' + ['print', 'radio', 'joins', 'home'].map(function (k) { return OPENS.filter(function (o) { return o[0] === k; })[0]; }).map(function (o) { return '<button type="button" class="ky" data-go="' + o[0] + '"><i aria-hidden="true"></i><b>' + o[0].toUpperCase() + '</b></button>'; }).join('') + '</div><i class="slot" aria-hidden="true"></i>'; d.dataset.built = '1'; }
-    d.hidden = false; d.dataset.parts = BN.p.filter(function (x) { return PART[x[1]] && L.pos[x[0]]; }).length;
-    d.classList.toggle('back', BOPEN); d.classList.toggle('shut', SHUT && !BOPEN); tw.classList.toggle('shut', SHUT && !BOPEN);
-    $$('#dev [data-go]').forEach(function (g) { var o = OPENS.filter(function (x) { return x[0] === g.dataset.go; })[0]; if (o) g.title = o[1] + ' · ' + gain[o[0]]; });
-    var fb = $('#dev [data-go=bench]'), sh = $('#dev [data-go=shut]'); fb.textContent = '↻'; fb.setAttribute('aria-label', BOPEN ? 'Front' : 'Back'); if (BOPEN) fb.title = 'The finished island';
-    sh.textContent = SHUT ? '+' : '–'; sh.title = SHUT ? 'Open' : 'Close'; sh.setAttribute('aria-label', sh.title); sh.hidden = BOPEN; }
+      mesh = !!rad || !!T.mesh, jn = T.joins ? (T.joins.to || []).length + (T.joins.mirror ? 1 : 0) : 0,
+      gain = { home: fv ? 'Island OS ' + fv[1] + ' · ' + fv[2] : 'Island OS', print: Math.round(left * ROLLMM / 1000) + ' m of paper · about ' + Math.round(left * ROLLMM / 160) + ' receipts', radio: mesh ? 'On the mesh, radio to radio' : 'Lines in and out by its Wi-Fi',
+        joins: jn ? jn + ' joined' : 'None yet', bench: P.w + (P.t ? ' · ' + P.t : '') },
+      val = { print: Math.round(left * ROLLMM / 1000) + ' M', radio: mesh ? 'MESH' : 'WI-FI', joins: jn ? String(jn) : 'NONE', home: T.paired ? 'PI' : 'GHOST' };
+    if (!d.dataset.built) { d.innerHTML = '<div class="dtop"><div class="dsc"><b class="dnm"></b></div><button type="button" class="dk" data-go="bench"></button></div>' +
+      '<div class="dkeys">' + KEYS.map(function (k) { return '<button type="button" class="ky" data-go="' + k[0] + '" aria-expanded="false"><i aria-hidden="true"></i><b>' + k[1] + '</b><small></small></button>'; }).join('') + '</div><i class="slot" aria-hidden="true"></i>'; d.dataset.built = '1'; }
+    var sc = d.querySelector('.dsc'); if (bd.parentNode !== sc) sc.appendChild(bd);
+    d.querySelector('.dnm').textContent = T.name;
+    d.hidden = false; tw.classList.add('dv'); d.dataset.parts = BN.p.filter(function (x) { return PART[x[1]] && L.pos[x[0]]; }).length; d.classList.toggle('back', BOPEN);
+    KEYS.forEach(function (k) { var g = d.querySelector('[data-go=' + k[0] + ']'); g.title = k[2] + ' · ' + gain[k[0]]; g.querySelector('small').textContent = val[k[0]]; });
+    var fb = d.querySelector('[data-go=bench]'); fb.textContent = BOPEN ? 'FRONT' : 'PARTS'; fb.title = BOPEN ? 'The finished island' : 'The bench it was built on · ' + gain.bench;
+    DV = { left: left, mesh: mesh, jn: jn }; if (BOPEN) DRW = null; drawerDraw(); }
+  /* a key's panel: a line of what it is, its own buttons, and the part of the page it was (JOINS, RADIO, PRINTER, KEY), moved in */
+  function drawerDraw() { var r = $('#ddr'), home = $('#xd .parts'); if (!r) return;
+    PANES.forEach(function (id) { var e = $('#' + id); if (e && e.parentNode !== home) home.appendChild(e); });
+    $$('#dev .ky').forEach(function (g) { g.setAttribute('aria-expanded', String(DRW === g.dataset.go)); }); r.hidden = !DRW; if (!DRW) { r.replaceChildren(); return; }
+    var k = KEYS.filter(function (x) { return x[0] === DRW; })[0], line = DRW === 'print' ? Math.round(DV.left * ROLLMM / 1000) + ' m of paper · about ' + Math.round(DV.left * ROLLMM / 160) + ' receipts' :
+      DRW === 'radio' ? (DV.mesh ? 'Radio to radio, with no internet' : 'Lines in and out over its Wi-Fi') : DRW === 'joins' ? 'Islands that print what prints here, or lend it their cards' : 'Its cards, its connections, what it makes';
+    r.innerHTML = '<div class="dh"><b>' + k[1] + '</b><span>' + esc(line) + '</span></div>' +
+      (DRW === 'print' ? '<div class="opts"><button type="button" data-dd="test" title="A test strip, out of this island">TEST</button></div>' : DRW === 'home' ? '<div class="opts"><button type="button" data-dd="home" title="Its home on novel.global">OPEN ↗</button></div>' : '');
+    var e = $('#' + { print: 'bd', radio: 'rd', joins: 'jd', home: 'kd' }[DRW]); if (e && !e.hidden) { e.open = true; r.appendChild(e); }
+    var jm = $('#jmap'); if (jm) jm.style.display = DRW === 'joins' && !DV.jn ? 'none' : ''; }
   /* home: the island's own keeper section; inside the home's sheet, the home itself turns to it */
   function homeGo() { if (IN) { try { window.top.location.hash = 'keeper'; return; } catch (e) { /* not ours */ } } location.href = '/#keeper'; }
   function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
@@ -649,11 +663,11 @@
       ik.style.opacity = (0.22 + n * 0.17).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n >= 4 ? ' all' : '')); }
     RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
   isleDraw($('#isle'), 0);
-  function goTo(k) { if (k === 'home') { homeGo(); return; } if (k === 'print') { $('#test').click(); return; }
-    if (k === 'shut') { SHUT = !SHUT; store.set('da.twin.shut', SHUT); benchDraw(); return; }
+  function goTo(k) { if (KEYS.some(function (x) { return x[0] === k; })) { DRW = DRW === k ? null : k; drawerDraw(); if (DRW) look($('#ddr'), 'nearest'); return; }
     if (k === 'bench') { BOPEN = !BOPEN; var dv = $('#dev'); dv.classList.remove('turn'); void dv.offsetWidth; dv.classList.add('turn'); benchDraw(); if (BOPEN) look($('#bnd'), 'start'); return; }
-    var d = $(k === 'radio' ? '#rd' : '#jd'); $('#xd').open = true; d.open = true; look(d, 'center'); }
+  }
   $('#dev').addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) goTo(g.dataset.go); });
+  $('#ddr').addEventListener('click', function (e) { var b = e.target.closest('[data-dd]'); if (!b) return; if (b.dataset.dd === 'test') $('#test').click(); else homeGo(); });
   $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite;
     if (i === 4) { homeGo(); return; }
     look($('#bnd'), 'start'); });
