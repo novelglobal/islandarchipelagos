@@ -625,7 +625,7 @@ html.hm-away #hm-cx, html.hm-sheet #hm-cx { visibility: hidden; }
 .hm-ghost .f { fill: currentColor; stroke: none; }
 .hm-ghost::after { content: ''; position: absolute; left: 50%; top: 100%; height: 18px; border-left: 1.5px dotted rgba(244, 241, 232, .6); }
 .hm-ghost.out { opacity: 0; transform: translateY(16px); }
-html.hm-away .hm-ghost, html.hm-sheet .hm-ghost { display: none; }
+html.hm-away .hm-ghost, html.hm-sheet .hm-ghost, .hm-ghost { display: none !important; }
 @keyframes hm-ghost { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 26, .5); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 107, 26, 0); } }
 @keyframes hm-ghost-in { from { opacity: 0; transform: translateY(24px); } }
 @media (prefers-reduced-motion: reduce) { .hm-ghost { animation: none; } }

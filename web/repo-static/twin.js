@@ -229,7 +229,7 @@
   /* the bench reads top to bottom as the power runs: what gives it (sun, battery, wall), the charger, the converters, the Pi, then
      what it drives (the printer, the SD, the radio, the screen). Each row ordered under what it is joined to, so cables cross least.
      A part takes at its top edge and gives at its bottom edge */
-  var ROWK = { power: 0, solar: 0, battery: 0, charger: 1, converter: 2, pi: 3, printer: 4, sd: 4, radio: 4, screen: 4 }, RH = 160, CW = 100;
+  var ROWK = { power: 0, solar: 0, battery: 0, charger: 1, converter: 2, pi: 3, printer: 4, sd: 4, radio: 4, screen: 4 }, RH = 136, CW = 100, TH = 96;
   var topSide = function (p, o) { return o.role === 'in' || o.role === 'device' || o.role === 'card' || (o.role === 'store' && !p.source); };
   function layout() { var rows = {}, nb = {}, cx = {}, out = [], pos = {};
     BN.j.forEach(function (j) { var a = j[0].split('.')[0], b = j[1].split('.')[0]; (nb[a] = nb[a] || []).push(b); (nb[b] = nb[b] || []).push(a); });
@@ -312,27 +312,27 @@
     var L = layout(); if (gid) { BN.p.pop(); if (W0.near) BN.j.pop(); }
     var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.setAttribute('class', 'bench' + (stageOf(W0) >= 2 ? ' pw-on' : '')); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
     var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; }); var want = {}; if (W0.k === 'join') want[W0.a] = want[W0.b] = 1;
-    var sketch = function (p, X, Y, seed, ro) { var sk = el('g', { 'class': 'sk', transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: ro == null ? .9 : ro, bowing: ro > 1.5 ? 1.6 : .7, strokeWidth: ro > 1.5 ? 1.1 : 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
+    var sketch = function (p, X, Y, seed, ro) { var sk = el('g', { 'class': 'sk', transform: 'translate(' + (X + cw * .07) + ' ' + (Y + 6) + ') scale(' + (cw * .72 / 100) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: ro == null ? .9 : ro, bowing: ro > 1.5 ? 1.6 : .7, strokeWidth: ro > 1.5 ? 1.1 : 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
     if (gid && L.pos[gid]) { var gp = PART[W0.ids[0]], gx = L.pos[gid][0], gy = L.pos[gid][1];
       var gc = gx + cw / 2, gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit')]),
-        sc = el('g', { 'class': 'scr', transform: 'rotate(-1.6 ' + gc + ' ' + (gy + 52) + ')' }, [el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 1.5 })]);
-      if (rc) { var pen = rc.rectangle(gx + 5, gy + 5, cw - 10, 94, { roughness: 2.4, bowing: 2.2, strokeWidth: .8, stroke: 'currentColor', seed: 11 }); pen.setAttribute('class', 'pen'); sc.appendChild(pen); }
+        sc = el('g', { 'class': 'scr', transform: 'rotate(-1.6 ' + gc + ' ' + (gy + TH / 2) + ')' }, [el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: TH, rx: 1.5 })]);
+      if (rc) { var pen = rc.rectangle(gx + 5, gy + 5, cw - 10, TH - 10, { roughness: 2.4, bowing: 2.2, strokeWidth: .8, stroke: 'currentColor', seed: 11 }); pen.setAttribute('class', 'pen'); sc.appendChild(pen); }
       sc.appendChild(sketch(gp, gx, gy, 3, 2.4));
-      var gj = el('text', { 'class': 'jb hw', x: gc, y: gy + 86, 'text-anchor': 'middle' }); gj.textContent = (W0.power ? 'power' : job(gp).toLowerCase()) + '?'; sc.appendChild(gj);
+      var gj = el('text', { 'class': 'jb hw', x: gc, y: gy + TH - 9, 'text-anchor': 'middle' }); gj.textContent = (W0.power ? 'power' : job(gp).toLowerCase()) + '?'; sc.appendChild(gj);
       var gb = el('g', { 'class': 'gb' }); if (rc) { [rc.ellipse(gx + cw - 15, gy + 16, 21, 19, { roughness: 1.7, strokeWidth: 1.5, stroke: 'currentColor', seed: 4 }), rc.line(gx + cw - 19.5, gy + 16.4, gx + cw - 10.5, gy + 15.6, { roughness: .8, strokeWidth: 1.7, stroke: 'currentColor', seed: 5 }), rc.line(gx + cw - 15.2, gy + 11.6, gx + cw - 14.8, gy + 20.6, { roughness: .8, strokeWidth: 1.7, stroke: 'currentColor', seed: 6 })].forEach(function (n) { gb.appendChild(n); }); }
       sc.appendChild(gb); gh.appendChild(sc);
       gh.appendChild(el('rect', { 'class': 'tp', x: gc - 17, y: gy - 6, width: 34, height: 12, transform: 'rotate(5 ' + gc + ' ' + gy + ')' })); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
       var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
       var joined = (p.ports || []).some(function (o) { return used[x[0] + '.' + o.id]; }), lv = !joined ? 0 : P.on[x[0]] ? 2 : 1;
-      var g = el('g', { 'class': 'pt l' + lv + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: 104, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 8 })]);
+      var g = el('g', { 'class': 'pt l' + lv + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: TH, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: TH, rx: 8 })]);
       var sk = sketch(p, X, Y, 7 + x[1].length, [1.9, .9, .3][lv]);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
       g.appendChild(sk);
       if (lv) g.appendChild(el('rect', { 'class': 'tp', x: X - 5, y: Y + 3, width: 26, height: 9, transform: 'rotate(-38 ' + (X + 8) + ' ' + (Y + 7) + ')' }));
       /* alive: the island's own mark pressed into its corner, the square and the sun in dots */
-      if (lv === 2) { var mx = X + cw - 27, my = Y + 96; g.appendChild(el('g', { 'class': 'stmp', transform: 'rotate(-9 ' + (mx + 8) + ' ' + (my + 4) + ')' }, [el('rect', { x: mx, y: my, width: 7.5, height: 7.5 }), el('circle', { cx: mx + 13.5, cy: my + 3.75, r: 3.8 })])); }
+      if (lv === 2) { var mx = X + cw - 21, my = Y + TH - 3.5; g.appendChild(el('g', { 'class': 'stmp', transform: 'rotate(-9 ' + (mx + 8) + ' ' + (my + 4) + ')' }, [el('rect', { x: mx, y: my, width: 7.5, height: 7.5 }), el('circle', { cx: mx + 13.5, cy: my + 3.75, r: 3.8 })])); }
       /* the printer's roll: 80 mm × 80 m, smaller with every print */
       if (p.kind === 'printer') { var left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rr = 3 + 9 * Math.sqrt(left);
         g.appendChild(el('g', { 'class': 'roll' }, [tt(Math.round(left * ROLLMM / 1000) + ' m of paper left · about ' + Math.round(left * ROLLMM / 160) + ' receipts'), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 12.5, 'class': 'rl0' }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: rr, 'class': 'rl' + (left < .1 ? ' low' : '') }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 2.2, 'class': 'rc' })])); }
@@ -343,12 +343,12 @@
           wifi: 'M' + (cx0 - 8) + ' ' + (cy0 - 1) + ' Q' + cx0 + ' ' + (cy0 - 9) + ' ' + (cx0 + 8) + ' ' + (cy0 - 1) + ' M' + (cx0 - 4.6) + ' ' + (cy0 + 2.4) + ' Q' + cx0 + ' ' + (cy0 - 2.6) + ' ' + (cx0 + 4.6) + ' ' + (cy0 + 2.4) + ' M' + cx0 + ' ' + (cy0 + 5.6) + ' v.1',
           pair: 'M' + (cx0 - 7) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 + 2) + ' ' + (cy0 - 7) + ' h5 v5 h-5 Z M' + (cx0 - 7) + ' ' + (cy0 + 2) + ' h5 v5 h-5 Z M' + (cx0 + 3) + ' ' + (cy0 + 3) + ' h3 v3' };
         g.appendChild(el('path', { 'class': 'cue', d: CUE[W0.k] })); }
-      var nm = el('text', { 'class': 'jb', x: X + cw / 2, y: Y + 84, 'text-anchor': 'middle' }), md = el('text', { 'class': 'md', x: X + cw / 2, y: Y + 93, 'text-anchor': 'middle' }); nm.textContent = job(p); md.textContent = nameN(x).toUpperCase() === nm.textContent ? String(p.sub || '').toUpperCase() : nameN(x).toUpperCase(); g.appendChild(nm); g.appendChild(md);
+      var nm = el('text', { 'class': 'jb', x: X + cw / 2, y: Y + TH - 15, 'text-anchor': 'middle' }), md = el('text', { 'class': 'md', x: X + cw / 2, y: Y + TH - 7, 'text-anchor': 'middle' }); nm.textContent = job(p); md.textContent = nameN(x).toUpperCase() === nm.textContent ? String(p.sub || '').toUpperCase() : nameN(x).toUpperCase(); g.appendChild(nm); g.appendChild(md);
       /* a bolt in the corner: filled with power in, hollow and hot with none */
       if (p.watts && !p.source) { var bx = X + 8, by = Y + 8; g.appendChild(el('path', { 'class': 'bolt' + (cold ? ' no' : ''), d: 'M' + (bx + 5) + ' ' + by + ' L' + bx + ' ' + (by + 8) + ' H' + (bx + 4) + ' L' + (bx + 3) + ' ' + (by + 14) + ' L' + (bx + 8) + ' ' + (by + 6) + ' H' + (bx + 4) + ' Z' })); }
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
-      [[tops, Y, -1], [bots, Y + 104, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
+      [[tops, Y, -1], [bots, Y + TH, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
         var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
         var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
@@ -364,6 +364,7 @@
     if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
     /* the printer at the foot of the page: the one on the bench, once there is one */
+    var live = stageOf(W0) >= 4; $('#bnd').classList.toggle('folded', live && !BOPEN); $('#twin').classList.toggle('live', live);
     var prx = ofKind('printer')[0]; $('#pnm').textContent = prx ? String(PART[prx[1]].name).toUpperCase() : 'TWIN'; $('#stage').hidden = !$('#roll').children.length;
     trayDraw(); dockDraw(P, W0); flDraw(); dayDraw(P); riteDraw(); }
   /* ───────── the dock: what the island wants now, in plain words, and the one thing to press. Wrong is said as wrong, with why ───────── */
@@ -384,7 +385,7 @@
     else if (W.k === 'boot') acts = [['on', 'ON', 'Power it on']];
     else if (W.k === 'wifi') acts = [['wifi', 'JOIN', 'Join the setup Wi-Fi its slip shows, from a phone']];
     else if (W.k === 'pair') acts = [['pair', 'APPROVE', 'Approve the code it printed, as on novel.global']];
-    else if (W.k === 'done') acts = [['print', 'PRINT', 'A test print']].concat(T.paired ? [] : [['real', TESTQ ? 'MOVE' : 'REAL', TESTQ ? 'What works here, moved to its real island' : 'A real printer, by the pair code its Pi prints']]);
+    else if (W.k === 'done') acts = [['print', 'PRINT', 'A test print'], ['home', TESTQ ? 'MOVE' : 'HOME', TESTQ ? 'What works here, moved to its real island' : 'Its home: connections, cards, what it makes']];
     var nw = $('#nw'); nw.textContent = BT.run ? 'STARTING' : bad >= 0 ? 'WRONG CABLE' : wantSay(W); nw.classList.toggle('bad', bad >= 0 && !BT.run);
     $('#na').innerHTML = acts.map(function (a, i) { return '<button type="button" data-act="' + a[0] + '" title="' + esc(a[2]) + '"' + (i ? '' : ' class="on"') + '>' + a[1] + '</button>'; }).join('');
     var w = $('#bnw'); if (bad >= 0) { w.textContent = P.J[bad].why; w.dataset.of = 'bad'; } else if (w.dataset.of === 'bad') { w.textContent = ''; w.dataset.of = ''; }
@@ -398,7 +399,8 @@
     if (a === 'pair') { bootStep('pair'); return; }
     if (a === 'roll') { BN.m = 0; benchDraw(); benchSave('✓ NEW ROLL'); return; }
     if (a === 'print') { $('#test').click(); return; }
-    if (a === 'real') { if (TESTQ) { location.href = '/#home'; return; } $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); } });
+    if (a === 'home') { location.href = '/#keeper'; return; }
+    if (a === 'real') { $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); } });
   function why(id) { var w = $('#bnw'), e = $('#' + id); if (w.dataset.of === id || !e.title) { w.textContent = ''; w.dataset.of = ''; } else { w.textContent = e.title; w.dataset.of = id; } if (BN) dayDraw(power()); }
   $('#bnp').addEventListener('click', function () { why('bnp'); });
   function benchSave(say) { if (say != null) { FB = say; clearTimeout(fbT); if (say) fbT = setTimeout(function () { FB = ''; sayDraw(); }, 3500); } sayDraw(); clearTimeout(bnTimer); bnTimer = setTimeout(function () { api('/api/twin', { method: 'POST', body: JSON.stringify({ bench: BN }) }).then(function (r) { if (T && r && r.mesh != null) T.mesh = r.mesh; radioDraw(); }, function (e) { FB = '× ' + String(e.message || '').toUpperCase(); sayDraw(); }); }, 500); }
@@ -557,7 +559,7 @@
   $('#bnlog').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
 
   /* ───────── the rite: five stations on the sun's path, lit as the island is made. Its one Irukandji wakes as they light ───────── */
-  var RITE = [['PARTS', 'A printer, its brain (a Pi) and the cable between them'], ['SD', 'Island OS written on its memory card, the card in the Pi'], ['POWER', 'Power to every part'], ['START', 'Switched on, on Wi-Fi, its code approved'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['REAL', 'A real printer, by the pair code its Pi prints']];
+  var RITE = [['PARTS', 'A printer, its brain (a Pi) and the cable between them'], ['SD', 'Island OS written on its memory card, the card in the Pi'], ['POWER', 'Power to every part'], ['START', 'Switched on, on Wi-Fi, its code approved'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['HOME', 'Its home: its connections, its cards, what it makes']];
   function IRK(tl) { var w = 15, h = 25, top = -h * .55, bot = top + h, TL = h * tl, B = [], o = '', f = function (n) { return n.toFixed(1); }, ln = function (a) { return 'M' + a.map(function (q) { return f(q[0]) + ' ' + f(q[1]); }).join(' L'); };
     for (var k = 0; k < 48; k++) { var u = k / 48, X, Y; if (u < .8) { var an = Math.PI * (1 - u / .8), cu = Math.cos(an), su = Math.sin(an); X = Math.pow(Math.abs(cu), .55) * (cu < 0 ? -1 : 1) * w; Y = bot - Math.pow(su, .42) * h * (.94 + .06 * su); } else { var q2 = (u - .8) / .2; X = w - 2 * w * q2; Y = bot - Math.sin(q2 * Math.PI) * h * .09; } B.push([X, Y]); }
     for (var i = 0; i < 4; i++) { var rx = (i - 1.5) / 1.5 * w * .82, T = []; for (var j = 0; j < 24; j++) { var s = j / 23, env = Math.min(1, j / 4); T.push([rx + (i - 1.5) * s * TL * .05 + (Math.sin(s * (6 + i) + i * 1.7) * h * .3 + Math.sin(s * 3.1 + i * 2.3) * h * .2) * s * env, bot - 1 + s * TL]); }
@@ -580,12 +582,17 @@
     if (n >= 1) put(1, 'relic', [rc.line(126, 50, 124, 12, o({ seed: 41 })), rc.line(115, 21, 135, 20, o({ seed: 42 })), rc.rectangle(136, 39, 17, 10, o({ seed: 43 }))]);
     if (n >= 2) put(2, 'relic', [rc.line(178, 51, 180, 31, o({ seed: 44 })), rc.line(212, 51, 210, 31, o({ seed: 45 })), rc.path('M171 33 L195 20 L219 33', o({ seed: 46, fill: 'currentColor', fillStyle: 'hachure', hachureGap: 2.4, hachureAngle: 70, fillWeight: .4 }))]);
     if (n >= 3) put(3, 'relic', [rc.path('M184 25 L203 15 L211 22 L192 32 Z', o({ seed: 47, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 3, fillWeight: .35 }))]).appendChild(el('circle', { 'class': 'sun', cx: 284, cy: 18, r: 8.5 }));
-    if (n >= 4) { put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]);
+    if (n >= 4) { put(4, 'relic', [rc.rectangle(91, 46, 15, 8, o({ seed: 51 })), rc.path('M95 46 q3.5 -4 7 0', o({ seed: 52, strokeWidth: .8 }))]);
+      put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]);
       put(4, 'jl', []).innerHTML = '<g transform="translate(54 76) rotate(-96) scale(.5)">' + IRK(1.6) + '</g>'; }
-    if (n >= 5) put(5, 'live', [rc.path('M282 58 Q292 52 304 58', o({ seed: 50 })), el('path', { 'class': 'tie', d: 'M126 14 Q210 -2 293 54' })]); }
-  var RLIT = null;
+    if (n >= 4) put(4, 'live', [rc.path('M282 58 Q292 52 304 58', o({ seed: 50 })), el('path', { 'class': 'tie', d: 'M126 14 Q210 -2 293 54' })]);
+    /* once it lives, its places are named in hand and each opens what it does: home, radio, print, joins, and the bench it was built on */
+    if (n >= 4 && s.id === 'isle') { var hub = put(4, 'hub', []);
+      [['home', 196, 10, 166, 0, 58, 54, 'Its home: connections, cards, what it makes'], ['radio', 97, 17, 74, 0, 50, 26, 'Its radio: lines in and out'], ['print', 145, 36, 128, 26, 36, 26, 'A test print'], ['joins', 293, 46, 268, 36, 50, 26, 'Islands it echoes or mirrors'], ['bench', 76, 41, 52, 30, 58, 26, 'The bench it was built on']].forEach(function (h) {
+        var g = el('g', { 'class': 'go', 'data-go': h[0], role: 'button', tabindex: '0', 'aria-label': h[0] }, [tt(h[7]), el('rect', { 'class': 'hot', x: h[3], y: h[4], width: h[5], height: h[6] })]), t = el('text', { x: h[1], y: h[2], 'text-anchor': 'middle' }); t.textContent = h[0]; g.appendChild(t); hub.appendChild(g); }); } }
+  var RLIT = null, BOPEN = false;
   function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
-  function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : !!T.paired; }); }
+  function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : TESTQ ? !!T.paired : c >= 4; }); }
   /* the one Irukandji in the dock: faint at the start, waking stage by stage, beating while it starts, lit when it lives */
   function riteDraw() { var s = $('#rite'); if (!s || !T) return; if (!T.ghost) { s.hidden = true; return; } s.hidden = false;
     if (!s.dataset.built) { s.innerHTML = RITE.map(function (r, i) { return '<li class="st" data-rite="' + i + '"><button type="button" title="' + r[0] + ' · ' + r[1] + '"><i></i><b>' + r[0] + '</b></button></li>'; }).join(''); s.dataset.built = '1'; }
@@ -597,8 +604,13 @@
       ik.style.opacity = (0.22 + n * 0.17).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n >= 4 ? ' all' : '')); }
     RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
   isleDraw($('#gisle'), 0);
+  function goTo(k) { if (k === 'home') { location.href = '/#keeper'; return; } if (k === 'print') { $('#test').click(); return; }
+    if (k === 'bench') { BOPEN = !BOPEN; benchDraw(); if (BOPEN) look($('#bnd'), 'start'); return; }
+    var d = $(k === 'radio' ? '#rd' : '#jd'); $('#xd').open = true; d.open = true; look(d, 'center'); }
+  $('#isle').addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) goTo(g.dataset.go); });
+  $('#isle').addEventListener('keydown', function (e) { var g = e.target.closest('[data-go]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goTo(g.dataset.go); } });
   $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite;
-    if (i === 4) { if (TESTQ) { location.href = '/#home'; return; } $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); return; }
+    if (i === 4) { location.href = '/#keeper'; return; }
     look($('#bnd'), 'start'); });
 
   /* ───────── OFFLINE: the island with no internet, as a real one goes when its Wi-Fi drops. The twin stops asking; what is sent waits

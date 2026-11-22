@@ -765,7 +765,7 @@
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
   function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = PLACE.name || PLACE.isle; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + PLACE.isle; L.fk = 'i-' + PLACE.isle; return L; }
   var LBT = '';
-  function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
+  function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || (HASHGO && !force)) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
@@ -1173,7 +1173,9 @@
   addEventListener('popstate', function () { if (xv.classList.contains('on')) shut(true); else if (away) home(); });
   /* a printed receipt's code (#x=…): opened in DESIGN PRINT, the card that prints it */
   /* /#home: the code's own home, opened */
-  var homeHash = function () { if (!/^#home$/i.test(location.hash)) return; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} setTimeout(function () { var b = $('#hm-mine'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); }, 0); };
+  /* #keeper (from a ghost's twin): the home opens straight on the island's own keeper section, and no label covers it */
+  var KEEPGO = false, HASHGO = /^#(home|keeper)$/i.test(location.hash);
+  var homeHash = function () { if (!/^#(home|keeper)$/i.test(location.hash)) return; KEEPGO = /keeper/i.test(location.hash); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} setTimeout(function () { var b = $('#hm-mine'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); }, 0); };
   homeHash(); window.addEventListener('hashchange', homeHash);
   if (/^#x=/i.test(location.hash)) { var XIN = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ } setTimeout(function () { var c = byId('zine'); if (!c) return; IN.id = 'zine'; sheet(c.title, inFrame('studio?from=aura&only=print' + XIN)); }, 0); }
   setTimeout(function () { var a = AU(); if ((location.hash || (a && a.linked)) && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
@@ -1890,6 +1892,7 @@
      GANG (a code a keeper lets help run their island), KEEPER (whoever owns the printer). ADMIN is only the site's approval page */
   function mineIn(body) { body.classList.add('mn');
     var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
+    if (KEEPGO) { KEEPGO = false; SEC = { isles: 1 }; ISLE = 'own'; }
     var who, ok, pl, ps, hk, an, mods, ikey;
     var load = function () { who = store.get('da.who', ''); ok = !!store.get('da.who.ok', 0); pl = store.get('da.who.places', null) || []; ps = store.get('da.pass', null); if (ps && (ps.day !== cartDay() || !ps.code)) ps = null;
       hk = store.get('da.who.home', ''); an = window.NG && NG.animalOf ? NG.animalOf() : null; mods = store.get('da.who.mods', null) || []; ikey = store.get('da.hm.key', ''); };
@@ -2414,7 +2417,7 @@
   function ghostOnce() { if (ghost || store.get('da.sb.ghost', 0) || !sb.classList.contains('low') || xv.classList.contains('on') || away) return; store.set('da.sb.ghost', 1);
     ghost = D.createElement('button'); ghost.className = 'hm-ghost'; ghost.setAttribute('aria-label', 'Cables'); ghost.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><circle cx="12" cy="9" r="1.6" class="f"/><path d="M12 14v3.5c0 1.8 1.5 3 3.5 3"/></svg>';
     ghost.addEventListener('click', function () { var id = CUR && JACKED.indexOf(CUR) >= 0 ? CUR : 'radio'; plugOut(id); }); root.appendChild(ghost); setTimeout(ghostGone, 9000); }
-  col.addEventListener('scroll', function () { if (CUR && CUR !== 'radio' && !ghost) setTimeout(ghostOnce, 1200); }, { passive: true });
+  /* the jack hint no longer rises over the cards: the board shows itself only when the cables are up */
   function rise() { clearTimeout(idleT); if (sb.classList.contains('low')) { sb.classList.remove('low'); beep(392, 0.04); } }
   function idleSoon(ms) { clearTimeout(idleT); idleT = setTimeout(function () { if (!drag && !sb.classList.contains('big')) sb.classList.add('low'); }, ms || 3600); }
   sb.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') rise(); });

@@ -17,7 +17,7 @@
 <script>
 /* every printed code still opens here: a receipt's (#x=) in DESIGN PRINT, a piece's (#DA-XXXX) as its note, a song's in the aura; an old studio link stays home */
 (function () { var h = location.hash.slice(1); if (/^DA-[0-9A-Z]{4}$/i.test(h)) { history.replaceState(null, '', location.pathname + location.search + '#n=' + h.toUpperCase()); return; }
-  if (h && !/^(radio|wish|shop|print|showcase|pixel|search|guide|now|home|songs?=[-.0-9v~%7E]+|mix=.+|x=.+|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) history.replaceState(null, '', location.pathname + location.search); })();
+  if (h && !/^(radio|wish|shop|print|showcase|pixel|search|guide|now|home|keeper|songs?=[-.0-9v~%7E]+|mix=.+|x=.+|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) history.replaceState(null, '', location.pathname + location.search); })();
 /* flags work on a local build only */
 window.__LH = (function (h) { return h === 'localhost' || h === '127.0.0.1' || h.slice(-5) === '.test'; })(location.hostname);
 if (!(window.__LH && /[?&]base\b/.test(location.search))) document.documentElement.classList.add('aura-on');
