@@ -106,7 +106,7 @@
   /* where a line typed here really goes: a radio linked to this screen, or the ghost's own radio on its bench */
   function canSay() { return !!ML.link.on || !!(T && T.ghost && benchRadio()); }
   function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '<li><i>·</i><span>—</span></li>';
-    var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : 'QUIET'; $('#rd').classList.toggle('air', air); $('#xd').classList.toggle('air', air);
+    var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : ''; $('#rd').classList.toggle('air', air); $('#xd').classList.toggle('air', air);
     $('#mf').hidden = !canSay(); $('#madd').hidden = !(T && T.ghost && BN && !ofKind('radio').length);
     [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
   /* a line out: in the log, through a radio linked here, the bench radio's waves, and the muse stirs */
@@ -134,7 +134,7 @@
   function bodyDraw() { if (!T) return; var w = T.paired ? 'PI' : OUT ? OUT.name : 'GHOST', on = T.paired ? T.ready : true;
     $('#bodyw').textContent = w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
-    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#test').hidden = !!T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
+    $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; $('#body').classList.toggle('gh', !!T.ghost); if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#test').hidden = !!T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
   function take(j) { var cv = j.escpos ? draw(j.escpos, paperOf()) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), paperOf()) : null;
     if (j.mesh && !MSEEN[j.id]) { MSEEN[j.id] = 1; meshOut(j.mesh); }
     if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true); paperUse(cv); }
@@ -157,7 +157,7 @@
   function joinsDraw() { if (!T) return; var J = (ISLE && ISLE.joins) || null, can = !!J;
     var to = J ? J.to : (T.joins.to || []).map(function (x) { return x.id; }), only = J ? J.only : T.joins.only, mir = J ? J.mirror : T.joins.mirror && T.joins.mirror.id;
     var nameOf = function (id) { var a = (J && J.isles || []).filter(function (x) { return x.id === id; })[0] || (T.joins.to || []).concat(T.joins.mirror ? [T.joins.mirror] : []).filter(function (x) { return x.id === id; })[0]; return a ? a.name : id; };
-    $('#js').textContent = to.length || mir ? (to.length ? (only ? 'ONLY → ' : '→ ') + to.map(nameOf).join(' · ').toUpperCase() : '') + (mir ? (to.length ? ' · ' : '') + '⟲ ' + nameOf(mir).toUpperCase() : '') : 'NONE';
+    $('#js').textContent = to.length || mir ? (to.length ? (only ? 'ONLY → ' : '→ ') + to.map(nameOf).join(' · ').toUpperCase() : '') + (mir ? (to.length ? ' · ' : '') + '⟲ ' + nameOf(mir).toUpperCase() : '') : '';
     /* the map: here in the middle, the islands it prints at on the right, the island it mirrors on the left */
     var S = [], cy = 75, hx = 160, node = function (x, y, r, label, sub, dash, cross) { S.push('<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="none" stroke="currentColor" stroke-width="1.4"' + (dash ? ' stroke-dasharray="3 3"' : '') + '/>');
       if (cross) S.push('<path d="M' + (x - r * .6) + ' ' + (y - r * .6) + 'L' + (x + r * .6) + ' ' + (y + r * .6) + '" stroke="#E2552E" stroke-width="1.6"/>');
@@ -167,7 +167,6 @@
     to.forEach(function (id, i) { var y = to.length === 1 ? cy : 26 + i * (98 / Math.max(1, to.length - 1)); arrow(hx + 22, cy, 250, y, only); node(266, y, 14, nameOf(id), only ? 'ONLY' : 'ECHO'); });
     if (mir) { arrow(68, cy, hx - 24, cy, false); node(54, cy, 14, nameOf(mir), 'CARDS · ART', true); }
     node(hx, cy, 20, T.name, T.ghost ? 'GHOST' : 'HERE', !!T.ghost, only && to.length);
-    if (!to.length && !mir) S.push('<text class="sub" x="160" y="24" text-anchor="middle">ON ITS OWN</text>');
     var m = $('#jmap'); m.style.color = 'var(--ink)'; m.innerHTML = S.join('');
     /* the choices: only the islands that take prints (W.I.S.H. on) or share cards and art; none at all outside this island's build */
     var L = J ? J.isles || [] : []; ['#jto', '#jmode', '#jmir'].forEach(function (s) { $(s).previousElementSibling.hidden = $(s).hidden = !can; });
@@ -184,7 +183,7 @@
   /* ───────── the bench: a ghost's parts (spec/parts, as parts.js), drawn by hand; pull a cable from one port to another (or tap one, then the other). A wrong
      join stays, dull and dashed, and says why. Power as one word: ENOUGH or SHORT, the sums in its hover ───────── */
   var PARTS = window.PARTS || [], PART = {}; PARTS.forEach(function (p) { PART[p.id] = p; });
-  var BN = null, SEL = null, bnTimer = 0, NS = 'http://www.w3.org/2000/svg';
+  var BN = null, SEL = null, NOPE = null, bnTimer = 0, NS = 'http://www.w3.org/2000/svg';
   var PLUG = { 'usb-a': 'USB-A', 'usb-b': 'USB-B', 'micro-usb': 'micro-USB', 'micro-sd': 'microSD', dsi: 'DSI ribbon', 'power-din': 'round power plug', barrel: 'barrel', mc4: 'MC4', screw: 'screw terminal' };
   var STRAIGHT = ['micro-sd', 'dsi', 'power-din'], GIVE = { out: 1, host: 1, store: 1 }, TAKE = { 'in': 1, device: 1, store: 1 };
   var ROLE = { host: 'A host', device: 'A device', 'in': 'A power input', out: 'A power output', slot: 'A card slot', card: 'A card', store: 'A battery terminal' };
@@ -222,6 +221,15 @@
     res.on = on; res.J = J; res.need = need; res.sun = sun; res.sunH = sunH; res.kept = kept; res.wall = wall; return res; }
   function el(n, a, kids) { var e = D.createElementNS(NS, n); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
   function tt(s) { var t = el('title'); t.textContent = s; return t; }
+  var WC = { yellow: ['#F2C94C', '#E6B53A', '#F7DB7E'], orange: ['#E2552E', '#EE7D48', '#D24A22'], pink: ['#E890B0', '#F2AECA', '#D9789E'], blue: ['#5D8FD6', '#86AFE6', '#4677C2'], sky: ['#9CC2EE', '#B9D5F4', '#86B1E6'] };
+  function wash(rc, shape, a, col, seed, op) { var g = el('g', { 'class': 'wc' }), tn = WC[col] || WC.blue;
+    for (var i = 0; i < 3; i++) { var o2 = { stroke: 'none', fill: tn[i], fillStyle: 'solid', roughness: 2.2 + i * .5, bowing: 2.5, seed: seed + i * 7 }, dx = (i - 1) * 1.6, dy = (i % 2) * 1.3 - .6,
+        n = shape === 'path' ? rc.path(a[0], o2) : shape === 'ellipse' ? rc.ellipse(a[0] + dx, a[1] + dy, a[2] * (1 - i * .1), a[3] * (1 + i * .06), o2) : rc.rectangle(a[0] + dx, a[1] + dy, a[2] * (1 - i * .07), a[3] * (1 + i * .05), o2);
+      if (shape === 'path' && i) n.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')'); n.setAttribute('opacity', ((op || .4) * (1 - i * .25)).toFixed(2)); [].forEach.call(n.querySelectorAll('path'), function (q) { q.style.fill = tn[i]; q.style.stroke = 'none'; }); g.appendChild(n); }
+    return g; }
+  /* a part's colour, once it lives: the sun's things yellow, what changes power orange, the brain and its memory pink, what it makes blue */
+  var WCK = { solar: 'yellow', battery: 'yellow', power: 'yellow', charger: 'orange', converter: 'orange', pi: 'pink', sd: 'pink', printer: 'blue', radio: 'blue', screen: 'blue' };
+  var rnd = function (seed) { var x = seed * 9301 + 49297; return function () { x = (x * 9301 + 49297) % 233280; return x / 233280; }; };
   /* what a part is for, in one word: its plaque */
   var JOBW = { printer: 'PRINTER', pi: 'BRAIN', sd: 'MEMORY', power: 'PLUG', solar: 'SUN', battery: 'BATTERY', charger: 'CHARGER', radio: 'RADIO', screen: 'SCREEN' }, POWERS = ['wall-strip', 'solar-100w', 'power-bank'];
   function job(p) { if (!p) return ''; if (p.id === 'power-bank') return 'BANK'; if (p.kind === 'converter' || (p.kind === 'power' && p.id !== 'wall-strip')) { var o = (p.ports || []).filter(function (r) { return r.role === 'out'; }); return o.length === 1 && o[0].volts != null ? vs(o[0].volts) + ' V' : p.kind === 'power' ? 'PLUG' : 'ADAPTER'; } return JOBW[p.kind] || String(p.name).toUpperCase(); }
@@ -324,12 +332,20 @@
       gh.appendChild(el('rect', { 'class': 'tp', x: gc - 17, y: gy - 6, width: 34, height: 12, transform: 'rotate(5 ' + gc + ' ' + gy + ')' })); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
       var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
-      var joined = (p.ports || []).some(function (o) { return used[x[0] + '.' + o.id]; }), lv = !joined ? 0 : P.on[x[0]] ? 2 : 1;
+      var joined = (p.ports || []).some(function (o) { return used[x[0] + '.' + o.id]; }),
+        /* a part that draws nothing (an SD in its slot) holds once what it is joined to has power */
+        held = !p.watts && !p.source && BN.j.some(function (j) { var a = j[0].split('.')[0], b = j[1].split('.')[0]; return (a === x[0] && P.on[b]) || (b === x[0] && P.on[a]); }), lv = !joined ? 0 : P.on[x[0]] || held ? 2 : 1;
       var g = el('g', { 'class': 'pt l' + lv + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: TH, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: TH, rx: 8 })]);
       var sk = sketch(p, X, Y, 7 + x[1].length, [1.9, .9, .3][lv]);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
+      if (!lv) { var R = rnd(x[1].length * 13 + X), gm = el('g', { 'class': 'grm' }); for (var gi = 0; gi < 11; gi++) gm.appendChild(el('circle', { cx: (X + 6 + R() * (cw - 12)).toFixed(1), cy: (Y + 6 + R() * (TH - 26)).toFixed(1), r: (.5 + R() * 1.1).toFixed(2) }));
+        var cx1 = X + cw * (.55 + R() * .3); gm.appendChild(el('path', { d: 'M' + cx1.toFixed(1) + ' ' + Y + ' l-4 7 l5 4 l-6 9 l3 5', 'stroke-width': '.7' })); g.appendChild(gm); }
+      if (lv === 2 && rc) g.appendChild(wash(rc, 'ellipse', [X + cw / 2 + 3, Y + 34, cw * .74, 46], WCK[p.kind] || 'blue', 30 + x[1].length, +(getComputedStyle(D.documentElement).getPropertyValue('--wco')) || .42));
       g.appendChild(sk);
+      if (lv) { g.appendChild(el('g', { 'class': 'mod' }, [el('circle', { cx: X + 4.5, cy: Y + TH - 4.5, r: 1.6 }), el('circle', { cx: X + cw - 4.5, cy: Y + 4.5, r: 1.6 }), el('path', { d: 'M' + (X + 3.4) + ' ' + (Y + TH - 5.6) + ' l2.2 2.2 M' + (X + cw - 5.6) + ' ' + (Y + 3.4) + ' l2.2 2.2 M' + (X + 6) + ' ' + (Y + TH - 22) + ' v6 M' + (X + 9) + ' ' + (Y + TH - 22) + ' v6 M' + (X + 12) + ' ' + (Y + TH - 22) + ' v6' })]));
+        if (p.kind === 'pi') { var sx = X + cw - 27, sy = Y + 8, scl = [el('rect', { x: sx, y: sy, width: 22, height: 19, rx: 1.5 })]; for (var si = 0; si < 6; si++) scl.push(el('path', { d: 'M' + (sx + 1) + ' ' + (sy + 2.5 + si * 3) + ' h20' }));
+          if (P.on[x[0]] && !wk) scl.push(el('rect', { 'class': 'cur', x: sx + 3, y: sy + 12, width: 3.5, height: 4.5 })); g.appendChild(el('g', { 'class': 'scn' }, scl)); } }
       if (lv) g.appendChild(el('rect', { 'class': 'tp', x: X - 5, y: Y + 3, width: 26, height: 9, transform: 'rotate(-38 ' + (X + 8) + ' ' + (Y + 7) + ')' }));
       /* alive: the island's own mark pressed into its corner, the square and the sun in dots */
       if (lv === 2) { var mx = X + cw - 21, my = Y + TH - 3.5; g.appendChild(el('g', { 'class': 'stmp', transform: 'rotate(-9 ' + (mx + 8) + ' ' + (my + 4) + ')' }, [el('rect', { x: mx, y: my, width: 7.5, height: 7.5 }), el('circle', { cx: mx + 13.5, cy: my + 3.75, r: 3.8 })])); }
@@ -349,8 +365,8 @@
       var fv = p.kind === 'sd' && flashedOf(x[0]); if (fv) { var vt = el('text', { 'class': 'fv', x: X + cw - 6, y: Y + 22, 'text-anchor': 'end' }, [tt('Island OS ' + fv[1] + ' · ' + fv[2])]); vt.appendChild(D.createTextNode(fv[1])); g.appendChild(vt); }
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
       [[tops, Y, -1], [bots, Y + TH, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
-        var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok;
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok, no = SEL && SEL !== id && !fit;
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (no ? ' no' : '') + (NOPE === id ? ' nope' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
         var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
       svg.appendChild(g); });
     /* the cables behind the parts, from what gives to what takes. Power that is there runs along its cable; power that is not stays grey */
@@ -364,7 +380,7 @@
     if (W0.k === 'join' && at[W0.a] && at[W0.b] && !SEL) { var jr = joinOf(W0.a, W0.b), wa = at[jr.ok ? jr.give.iid + '.' + jr.give.port.id : W0.a], wb = at[jr.ok ? jr.take.iid + '.' + jr.take.port.id : W0.b]; cg.appendChild(el('path', { d: curve(wa, wb), 'class': 'cbg' }, [tt((jr.cable ? jr.cable.name : 'Straight in') + ' wanted here')])); }
     var pw = $('#bnp'); pw.textContent = P.w; pw.title = P.t; pw.className = 'pw' + (P.w === 'SHORT' ? ' short' : ''); if ($('#bnw').dataset.of === 'bnp') $('#bnw').textContent = P.t;
     /* the printer at the foot of the page: the one on the bench, once there is one */
-    var live = stageOf(W0) >= 4; $('#bnd').classList.toggle('folded', live && !BOPEN); $('#twin').classList.toggle('live', live);
+    var live = stageOf(W0) >= 4; $('#bnd').classList.toggle('folded', live && !BOPEN); $('#twin').classList.toggle('live', live); ledgerDraw(P, live);
     var prx = ofKind('printer')[0]; $('#pnm').textContent = prx ? String(PART[prx[1]].name).toUpperCase() : 'TWIN'; $('#stage').hidden = !$('#roll').children.length;
     trayDraw(); dockDraw(P, W0); flDraw(); dayDraw(P); riteDraw(); }
   /* ───────── the dock: what the island wants now, in plain words, and the one thing to press. Wrong is said as wrong, with why ───────── */
@@ -376,7 +392,8 @@
       if (g.port.role === 'slot') return 'CARD INTO THE ' + job(g.part); if (g.port.role === 'host' && t.port.role === 'device' && t.port.volts == null) return 'CABLE ' + job(g.part) + ' TO ' + job(t.part);
       return g.part.source ? job(g.part) + ' INTO THE ' + jobN(t.part) : 'POWER THE ' + jobN(t.part); }
     return { flash: 'WRITE THE CARD', paper: 'OUT OF PAPER', boot: 'SWITCH ON', wifi: 'JOIN ITS WI-FI', pair: 'APPROVE ' + showCode(pairCode()), done: 'LIVE' }[W.k] || ''; }
-  function sayDraw() { $('#bnsay').textContent = FB || HINT; }
+  /* only what is wrong is said out loud; the rest (a hint, a tick) is there for a screen reader and is otherwise the thing itself */
+  function sayDraw() { var b = $('#bnsay'), t = FB || HINT; b.textContent = t; b.classList.toggle('err', /^×/.test(t)); }
   function dockDraw(P, W) { var c = stageOf(W), bad = -1, acts = []; P.J.forEach(function (r, i) { if (!r.ok) bad = i; });
     if (BT.run) acts = [];
     else if (bad >= 0) acts = [['undo', 'UNDO', 'Take the wrong cable out']];
@@ -385,12 +402,14 @@
     else if (W.k === 'boot') acts = [['on', 'ON', 'Power it on']];
     else if (W.k === 'wifi') acts = [['wifi', 'JOIN', 'Join the setup Wi-Fi its slip shows, from a phone']];
     else if (W.k === 'pair') acts = [['pair', 'APPROVE', 'Approve the code it printed, as on novel.global']];
-    else if (W.k === 'done') acts = [['print', 'PRINT', 'A test print'], ['home', TESTQ ? 'MOVE' : 'HOME', TESTQ ? 'What works here, moved to its real island' : 'Its home: connections, cards, what it makes']];
+    else if (W.k === 'done') acts = TESTQ ? [['home', 'MOVE', 'What works here, moved to its real island']] : [];
     var nw = $('#nw'); nw.textContent = BT.run ? 'STARTING' : bad >= 0 ? 'WRONG CABLE' : wantSay(W); nw.classList.toggle('bad', bad >= 0 && !BT.run);
+    /* the words go quiet when the thing says it: a button with the verb, the scrap on the bench, the writer, the log running */
+    nw.classList.toggle('so', bad < 0 && (BT.run || W.k === 'part' || W.k === 'flash' || W.k === 'done' || (acts.length > 0 && W.k !== 'pair')));
     $('#na').innerHTML = acts.map(function (a, i) { return '<button type="button" data-act="' + a[0] + '" title="' + esc(a[2]) + '"' + (i ? '' : ' class="on"') + '>' + a[1] + '</button>'; }).join('');
     var w = $('#bnw'); if (bad >= 0) { w.textContent = P.J[bad].why; w.dataset.of = 'bad'; } else if (w.dataset.of === 'bad') { w.textContent = ''; w.dataset.of = ''; }
     $('#bnp').hidden = c < 2 || P.w === '—';
-    HINT = SEL ? 'NOW ITS OTHER END' : bad < 0 && W.k === 'join' && BN.j.length < 3 ? 'TAP THE TWO GLOWING ENDS' : ''; sayDraw();
+    HINT = SEL ? ($$('.bench .po.fit').length ? 'NOW ITS OTHER END' : 'NOTHING HERE FITS') : bad < 0 && W.k === 'join' && BN.j.length < 3 ? 'TAP THE TWO GLOWING ENDS' : ''; sayDraw();
     $('#fl').hidden = !(FLOPEN || FL.run || FL.ok || (W.k === 'flash' && !BT.run)); }
   $('#na').addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (!b || !BN) return; var a = b.dataset.act;
     if (a === 'add') { TRAY = { ids: WANT.ids, power: !!WANT.power }; benchDraw(); return; }
@@ -419,7 +438,8 @@
   function joinTo(a, pid) { var there = BN.j.filter(function (j) { return (j[0] === a && j[1] === pid) || (j[1] === a && j[0] === pid); })[0]; SEL = null;
     if (there) { BN.j = BN.j.filter(function (j) { return j !== there; }); benchDraw(); benchSave(); return; }
     if (BN.j.length >= 24) { benchDraw(); FB = 'FULL'; sayDraw(); return; }
-    BN.j.push([a, pid]); var r = joinOf(a, pid); benchDraw(); benchSave(r.ok ? '✓ ' + (r.cable ? String(r.cable.name).toUpperCase() : 'IN') : ''); }
+    var r = joinOf(a, pid); if (!r.ok) { SEL = a; NOPE = pid; var w = $('#bnw'); w.textContent = r.why; w.dataset.of = 'no'; FB = '× NO FIT'; clearTimeout(fbT); fbT = setTimeout(function () { FB = ''; NOPE = null; if (w.dataset.of === 'no') { w.textContent = ''; w.dataset.of = ''; } sayDraw(); }, 3200); benchDraw(); return; }
+    BN.j.push([a, pid]); if ($('#bnw').dataset.of === 'no') { $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; } NOPE = null; benchDraw(); benchSave('✓ ' + (r.cable ? String(r.cable.name).toUpperCase() : 'IN')); }
   $('#bnd').addEventListener('click', function (e) { if (!BN) return; if (DRAG && DRAG.moved) return; var t = e.target.closest('[data-port],[data-cut],[data-part],[data-off],[data-want],[data-body],[data-more]'); if (!t) return; if (t.dataset.more) { TRAY.all = true; trayDraw(); return; }
     if (t.dataset.want) { TRAY = TRAY && !TRAY.iid ? null : { ids: WANT.ids, power: !!WANT.power }; $('#bnw').textContent = ''; $('#bnw').dataset.of = ''; benchDraw(); return; }
     if (t.dataset.off) { partOff(t.dataset.off); TRAY = null; benchDraw(); benchSave(); return; }
@@ -448,10 +468,10 @@
     DRAG = { from: t.dataset.port, x0: e.clientX, y0: e.clientY, moved: false, a: [+c.getAttribute('cx'), +c.getAttribute('cy')], line: null, id: e.pointerId }; });
   $('#bnv').addEventListener('pointermove', function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; if (!DRAG.moved && Math.hypot(e.clientX - DRAG.x0, e.clientY - DRAG.y0) < 8) return;
     var svg = $('#bnv'), m = svg.getScreenCTM().inverse(), p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; p = p.matrixTransform(m);
-    if (!DRAG.moved) { DRAG.moved = true; try { svg.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } DRAG.line = el('path', { 'class': 'cbd' }); svg.appendChild(DRAG.line); SEL = DRAG.from; }
+    if (!DRAG.moved) { DRAG.moved = true; try { svg.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } SEL = DRAG.from; benchDraw(); DRAG.line = el('path', { 'class': 'cbd' }); svg.appendChild(DRAG.line); }
     DRAG.line.setAttribute('d', 'M' + DRAG.a[0] + ' ' + DRAG.a[1] + ' Q' + DRAG.a[0] + ' ' + ((DRAG.a[1] + p.y) / 2 + 20) + ' ' + p.x + ' ' + p.y); e.preventDefault(); });
   var dragEnd = function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; var d = DRAG; if (d.line) d.line.remove();
-    if (d.moved) { var over = D.elementFromPoint(e.clientX, e.clientY), t = over && over.closest && over.closest('[data-port]'); SEL = null; if (t && t.dataset.port.split('.')[0] !== d.from.split('.')[0]) joinTo(d.from, t.dataset.port); else benchDraw(); setTimeout(function () { DRAG = null; }, 0); }
+    if (d.moved) { var over = D.elementFromPoint(e.clientX, e.clientY), t = over && over.closest && over.closest('[data-port]'); SEL = null; if (t && t.dataset.port.split('.')[0] !== d.from.split('.')[0]) { joinTo(d.from, t.dataset.port); if (SEL) { SEL = null; benchDraw(); } } else benchDraw(); setTimeout(function () { DRAG = null; }, 0); }
     else DRAG = null; };
   $('#bnv').addEventListener('pointerup', dragEnd); $('#bnv').addEventListener('pointercancel', function (e) { if (DRAG && DRAG.line) DRAG.line.remove(); DRAG = null; SEL = null; benchDraw(); });
 
@@ -573,24 +593,46 @@
   function isleDraw(s, n) { if (!s || !window.rough || s.dataset.n === String(n)) return; var was = s.dataset.n == null ? n : +s.dataset.n; s.dataset.n = n; s.innerHTML = '';
     var rc = rough.svg(s), o = function (x) { var b = { stroke: 'currentColor', strokeWidth: 1, roughness: 1.3, seed: 5 }; for (var k in x) b[k] = x[k]; return b; },
       put = function (k, cls, nodes) { var g = el('g', { 'class': cls + (k > was ? ' grow' : '') }); nodes.forEach(function (q) { g.appendChild(q); }); s.appendChild(g); return g; };
+    s.appendChild(el('rect', { 'class': 'deep', x: -40, y: 58, width: 400, height: 60 }));
     put(0, 'sea', [rc.line(0, 58, 320, 58, o({ roughness: .7, seed: 1 }))].concat([[18, 66], [70, 84], [238, 70], [292, 82], [150, 80]].map(function (q, i) { return rc.path('M' + q[0] + ' ' + q[1] + ' q5 -3 10 0 t10 0', o({ roughness: .6, seed: 20 + i, strokeWidth: .7 })); })));
     var mk = Math.max(0, .55 - n * .14); if (mk) { var mu = rc.path('M14 62 L306 62 L290 90 L30 90 Z', o({ stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: 5.5, hachureAngle: 88, fillWeight: .6, roughness: 2.4, seed: 9 })); mu.setAttribute('class', 'murk'); mu.style.opacity = mk.toFixed(2); s.appendChild(mu); }
+    if (n >= 4) s.appendChild(wash(rc, 'path', ['M86 58 Q112 46 160 46 T238 58 Z'], 'yellow', 60, .5));
     put(0, 'sand', [rc.path('M84 59 Q112 45 160 45 T240 59', o({ fill: 'currentColor', fillStyle: 'hachure', hachureGap: 3.6, hachureAngle: -32, fillWeight: .45, seed: 2 }))]);
     /* what the sea left: a bottle, a tyre, a net, a can, a crate. One goes with each stage */
     var junk = [function () { return rc.path('M32 72 l10 -3 l1 3 l-10 3 z M43 69.6 l3 -1', o({ seed: 31 })); }, function () { return rc.ellipse(262, 76, 13, 6, o({ seed: 32 })); }, function () { return rc.path('M196 70 l5 4 l5 -4 l5 4 l5 -4 M198 73 l16 0', o({ seed: 33, strokeWidth: .7 })); }, function () { return rc.rectangle(96, 80, 6, 8, o({ seed: 34 })); }, function () { return rc.rectangle(122, 63, 12, 7, o({ seed: 35, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 2.6, fillWeight: .3 })); }];
     junk.forEach(function (j, i) { if (i >= n) put(0, 'junk', [j()]); });
+    if (n >= 1) s.appendChild(wash(rc, 'rect', [136, 39, 17, 10], 'orange', 61, .55));
     if (n >= 1) put(1, 'relic', [rc.line(126, 50, 124, 12, o({ seed: 41 })), rc.line(115, 21, 135, 20, o({ seed: 42 })), rc.rectangle(136, 39, 17, 10, o({ seed: 43 }))]);
+    if (n >= 2) s.appendChild(wash(rc, 'path', ['M172 33 L195 21 L218 33 Z'], 'pink', 62, .6));
     if (n >= 2) put(2, 'relic', [rc.line(178, 51, 180, 31, o({ seed: 44 })), rc.line(212, 51, 210, 31, o({ seed: 45 })), rc.path('M171 33 L195 20 L219 33', o({ seed: 46, fill: 'currentColor', fillStyle: 'hachure', hachureGap: 2.4, hachureAngle: 70, fillWeight: .4 }))]);
+    if (n >= 3) { s.appendChild(wash(rc, 'path', ['M184 25 L203 15 L211 22 L192 32 Z'], 'sky', 63, .65)); s.appendChild(wash(rc, 'ellipse', [284, 18, 19, 18], 'yellow', 64, .6)); }
     if (n >= 3) put(3, 'relic', [rc.path('M184 25 L203 15 L211 22 L192 32 Z', o({ seed: 47, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 3, fillWeight: .35 }))]).appendChild(el('circle', { 'class': 'sun', cx: 284, cy: 18, r: 8.5 }));
-    if (n >= 4) { put(4, 'relic', [rc.rectangle(91, 46, 15, 8, o({ seed: 51 })), rc.path('M95 46 q3.5 -4 7 0', o({ seed: 52, strokeWidth: .8 }))]);
+    if (n >= 4) { s.appendChild(wash(rc, 'ellipse', [124.5, 12, 12, 11], 'orange', 65, .55)); put(4, 'relic', [rc.rectangle(91, 46, 15, 8, o({ seed: 51 })), rc.path('M95 46 q3.5 -4 7 0', o({ seed: 52, strokeWidth: .8 }))]);
       put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]);
       put(4, 'jl', []).innerHTML = '<g transform="translate(54 76) rotate(-96) scale(.5)">' + IRK(1.6) + '</g>'; }
     if (n >= 4) put(4, 'live', [rc.path('M282 58 Q292 52 304 58', o({ seed: 50 })), el('path', { 'class': 'tie', d: 'M126 14 Q210 -2 293 54' })]);
-    /* once it lives, its places are named in hand and each opens what it does: home, radio, print, joins, and the bench it was built on */
-    if (n >= 4 && s.id === 'isle') { var hub = put(4, 'hub', []);
-      [['home', 196, 10, 166, 0, 58, 54, 'Its home: connections, cards, what it makes'], ['radio', 97, 17, 74, 0, 50, 26, 'Its radio: lines in and out'], ['print', 145, 36, 128, 26, 36, 26, 'A test print'], ['joins', 293, 46, 268, 36, 50, 26, 'Islands it echoes or mirrors'], ['bench', 76, 41, 52, 30, 58, 26, 'The bench it was built on']].forEach(function (h) {
-        var g = el('g', { 'class': 'go', 'data-go': h[0], role: 'button', tabindex: '0', 'aria-label': h[0] }, [tt(h[7]), el('rect', { 'class': 'hot', x: h[3], y: h[4], width: h[5], height: h[6] })]), t = el('text', { x: h[1], y: h[2], 'text-anchor': 'middle' }); t.textContent = h[0]; g.appendChild(t); hub.appendChild(g); }); } }
+    /* alive, its two ends are dots: the lamp here, the island it can reach there */
+    if (n >= 4) put(4, 'live', [el('circle', { 'class': 'node hot', cx: 124.5, cy: 12, r: 1.4 }), el('circle', { 'class': 'node', cx: 293, cy: 54, r: 2 })]); }
   var RLIT = null, BOPEN = false;
+  var OPENS = [['home', 'Its home: connections, cards, what it makes'], ['print', 'A test print'], ['radio', 'Its radio: lines in and out'], ['joins', 'Islands it echoes or mirrors'], ['bench', 'The bench it was built on']];
+  /* live: what it is made of runs into the island, and out of the island each thing it can now do, the thing itself, tapped to use.
+     What it gained (its OS, its paper, its air, its net, its power) is in each one's hover. Line and dot */
+  function ledgerDraw(P, live) { var s = $('#ledger'); if (!s) return; if (!live || !BN || !T) { if (!s.hasAttribute('hidden')) { s.setAttribute('hidden', ''); s.innerHTML = ''; s.dataset.k = ''; } return; }
+    var L = layout(), built = BN.p.filter(function (x) { return PART[x[1]] && L.pos[x[0]]; }).sort(function (a, b) { var p = L.pos[a[0]], q = L.pos[b[0]]; return p[1] - q[1] || p[0] - q[0]; }),
+      sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], fv = sd && flashedOf(sd[0]), left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rad = benchRadio(),
+      gain = { home: fv ? 'Island OS ' + fv[1] + ' · ' + fv[2] : 'Island OS', print: Math.round(left * ROLLMM / 1000) + ' m of paper · about ' + Math.round(left * ROLLMM / 160) + ' receipts', radio: rad ? 'On the mesh, radio to radio' : 'Lines in and out by its Wi-Fi', joins: 'On its Wi-Fi, paired to novel.global', bench: P.w + (P.t ? ' · ' + P.t : '') },
+      key = built.map(function (x) { return x[1]; }).join() + '|' + OPENS.map(function (o) { return gain[o[0]]; }).join(); if (s.dataset.k === key) return; s.dataset.k = key; s.removeAttribute('hidden'); s.innerHTML = '';
+    var rc = window.rough ? rough.svg(s) : null, H = 128, cy = 64, nb = built.length, sp = Math.min(14, 96 / Math.max(1, nb - 1)), y0 = cy - sp * (nb - 1) / 2, cx = 160, R = 27,
+      tx = function (x, y, t, c, a) { var e = el('text', { x: x, y: y, 'class': c || '', 'text-anchor': a || 'start' }); e.textContent = t; return e; },
+      ln = function (d, c, seed) { var g = rc ? rc.path(d, { stroke: 'currentColor', strokeWidth: .9, roughness: .55, bowing: .8, seed: seed }) : el('path', { d: d }); g.setAttribute('class', c); return g; };
+    s.setAttribute('viewBox', '0 0 320 ' + H);
+    built.forEach(function (x, i) { var y = y0 + i * sp, p = PART[x[1]]; s.appendChild(ln('M120 ' + y.toFixed(1) + ' C132 ' + y.toFixed(1) + ' ' + (cx - R - 6) + ' ' + cy + ' ' + (cx - R) + ' ' + cy, 'll', 80 + i));
+      var g = el('g', {}, [tt(nameN(x)), el('circle', { 'class': 'dt', cx: 118, cy: y, r: 1.8 })]); g.appendChild(tx(112, y + 2.6, job(p), 'bt', 'end')); s.appendChild(g); });
+    if (rc) { var rg = rc.circle(cx, cy, R * 2, { stroke: 'currentColor', strokeWidth: 1.1, roughness: .9, seed: 90 }); rg.setAttribute('class', 'lg'); s.appendChild(rg); s.appendChild(wash(rc, 'ellipse', [cx + 2, cy + 1, R * 1.8, R * 1.7], 'blue', 91, .3)); }
+    OPENS.forEach(function (o, i) { var y = 20 + i * 22;
+      s.appendChild(ln('M' + (cx + R) + ' ' + cy + ' C' + (cx + R + 14) + ' ' + cy + ' ' + (cx + R + 12) + ' ' + y + ' 214 ' + y, 'lg', 100 + i));
+      var d = el('g', { 'class': 'go', 'data-go': o[0], role: 'button', tabindex: '0', 'aria-label': o[0] }, [tt(o[1] + ' · ' + gain[o[0]]), el('rect', { 'class': 'hot', x: 206, y: y - 10, width: 110, height: 20 }), el('rect', { 'class': 'bx', x: 214, y: y - 3, width: 6, height: 6, transform: 'rotate(' + (i % 2 ? 6 : -5) + ' 217 ' + y + ')' })]);
+      d.appendChild(tx(228, y + 4, o[0])); s.appendChild(d); }); }
   function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
   function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : TESTQ ? !!T.paired : c >= 4; }); }
   /* the one Irukandji in the dock: faint at the start, waking stage by stage, beating while it starts, lit when it lives */
@@ -599,16 +641,16 @@
     var lit = riteLit(), cur = lit.indexOf(false), n = lit.filter(Boolean).length, was = RLIT || store.get('da.twin.rite.' + T.id + TS, null);
     $$('#rite .st').forEach(function (g, i) { var seal = lit[i] && was && !was[i]; g.className = 'st' + (lit[i] ? ' lit' : '') + (i === cur ? ' now' : '') + (seal ? ' seal' : '');
       g.querySelector('button').setAttribute('aria-label', RITE[i][0] + (lit[i] ? ', done' : i === cur ? ', now' : '')); if (seal) setTimeout(function () { g.classList.remove('seal'); }, 900); });
-    var is = $('#isle'); if (is) { is.removeAttribute('hidden'); isleDraw(is, n); }
+    var is = $('#isle'); if (is) isleDraw(is, n);
     var ik = $('#ik'); if (ik) { if (!ik.dataset.built) { ik.innerHTML = IRK(1.3); ik.dataset.built = '1'; }
       ik.style.opacity = (0.22 + n * 0.17).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n >= 4 ? ' all' : '')); }
     RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
-  isleDraw($('#gisle'), 0);
+  isleDraw($('#isle'), 0);
   function goTo(k) { if (k === 'home') { location.href = '/#keeper'; return; } if (k === 'print') { $('#test').click(); return; }
     if (k === 'bench') { BOPEN = !BOPEN; benchDraw(); if (BOPEN) look($('#bnd'), 'start'); return; }
     var d = $(k === 'radio' ? '#rd' : '#jd'); $('#xd').open = true; d.open = true; look(d, 'center'); }
-  $('#isle').addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) goTo(g.dataset.go); });
-  $('#isle').addEventListener('keydown', function (e) { var g = e.target.closest('[data-go]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goTo(g.dataset.go); } });
+  $('#ledger').addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) goTo(g.dataset.go); });
+  $('#ledger').addEventListener('keydown', function (e) { var g = e.target.closest('[data-go]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goTo(g.dataset.go); } });
   $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite;
     if (i === 4) { location.href = '/#keeper'; return; }
     look($('#bnd'), 'start'); });
@@ -644,6 +686,10 @@
     fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: n }) }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); }).then(function (x) {
       if (x.s === 201 && x.j.key) { KEY = x.j.key; store.set('da.hm.key', KEY); open(); } else $('#gsay').textContent = x.s === 202 ? 'WAIT LIST' : x.s === 429 ? 'LATER' : x.s === 403 ? 'CLOSED' : '×'; }, function () { $('#gsay').textContent = 'OFFLINE'; }); });
   $('#kf').addEventListener('submit', function (e) { e.preventDefault(); var k = $('#kk').value.trim(); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return; KEY = k; store.set('da.hm.key', k); open(); });
+  function themeSet(on) { var h = D.documentElement; h.classList.toggle('night', on); store.set('da.hm.night', on); var m = $('meta[name="theme-color"]'); if (m) m.content = on ? '#06152A' : '#17457F'; }
+  themeSet(D.documentElement.classList.contains('night'));
+  $('#theme').addEventListener('click', function () { themeSet(!D.documentElement.classList.contains('night')); });
+  var SCQ = 0; addEventListener('scroll', function () { if (SCQ) return; SCQ = requestAnimationFrame(function () { SCQ = 0; var y = scrollY || 0, h = D.documentElement.style; h.setProperty('--sc', y.toFixed(0)); h.setProperty('--gy', (y * .18 % 24).toFixed(1)); }); }, { passive: true });
   function open() { $('#gate').hidden = true; $('#twin').hidden = false; $('#kd').hidden = TESTQ; radioDraw(); tick(); }
   if (KEY) open(); else gate('');
 })();
