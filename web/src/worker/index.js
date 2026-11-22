@@ -682,7 +682,6 @@ async function filmPlay(db, env, req, tok) {
    open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture). At a glance as well: its
    paper, its Wi-Fi in bars, a radio, how many prints wait; and, while open, its pop-up (its card, its own home) to print at it or make it home.
    Never a key: a pop-up still asks its code */
-/* you: the asker's rough place from its network (a city, never kept), for a finder whose phone keeps its own place back */
 async function isles(db, req) {
   const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
   const pops = (await popsOf(db)).filter(p => p && p.on);
@@ -698,8 +697,7 @@ async function isles(db, req) {
     if (open) { ['addr', 'words', 'pic', 'find'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } else if (n && Array.isArray(n.ll)) o.near = n.ll;
       if (pop && /^[a-z0-9-]{1,40}$/.test(pop.id || '')) { o.pop = pop.id; o.card = !!pop.card; if (pop.home && typeof pop.home === 'object') o.home = pop.home; } }
     return o; });
-  const cf = (req && req.cf) || {}, you = Number.isFinite(+cf.latitude) && Number.isFinite(+cf.longitude) && (+cf.latitude || +cf.longitude) ? [Math.round(+cf.latitude * 100) / 100, Math.round(+cf.longitude * 100) / 100] : null;
-  return json({ isles: out, paired: results.length, ...(you ? { you } : {}) });
+  return json({ isles: out, paired: results.length });
 }
 
 /* ───────── a printer's receiver: it asks for the next job, prints it, and says how it went ───────── */

@@ -43,7 +43,7 @@
   .scope.here .me { fill: var(--sun); animation: ping 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
   .loc { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); appearance: none; border: 0; padding: 9px 13px; background: var(--ink); color: var(--wall); font: 700 10.5px/1 var(--mono); letter-spacing: .14em; cursor: pointer; box-shadow: 3px 3px 0 var(--sun); }
   .loc.err { background: var(--sun); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
-  .why { position: absolute; left: 12%; right: 12%; top: calc(50% + 22px); margin: 0; text-align: center; font: 600 9.5px/1.35 var(--mono); letter-spacing: .04em; color: var(--ink); background: var(--wall); padding: 4px 6px; }
+  .why { margin: 10px auto 0; max-width: 300px; text-align: center; font: 600 9.5px/1.4 var(--mono); letter-spacing: .06em; color: var(--dim); }
   .loc:active { transform: translate(calc(-50% + 3px), calc(-50% + 3px)); box-shadow: none; }
   .read { margin: 8px 0 14px; min-height: 0; text-align: center; font: 700 22px/1.1 var(--mono); letter-spacing: .04em; font-variant-numeric: tabular-nums; } .read:empty { margin: 0 0 6px; }
   .read small { font-size: 11px; letter-spacing: .14em; color: var(--dim); margin-left: 6px; }
@@ -110,8 +110,8 @@
       <circle class="me" cx="150" cy="150" r="4"/>
     </svg>
     <button type="button" class="loc" id="loc" title="Where you stand, to point the way: it never leaves this phone">LOCATE</button>
-    <p class="why" id="why" hidden></p>
   </div>
+  <p class="why" id="why" hidden></p>
   <p class="read" id="read" aria-live="polite"></p>
   <ol id="list"></ol>
   <button type="button" class="all" id="all" hidden>ALL</button>

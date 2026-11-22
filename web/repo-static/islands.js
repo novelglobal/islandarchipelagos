@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var D = document, $ = function (s) { return D.querySelector(s); }, Q = new URLSearchParams(location.search), EMB = Q.get('in') === '1';
-  var LIST = [], ME = null, HEAD = null, PICK = Q.get('i') || null, WAS = {}, LAST = 0, ALL = false, BUZZ = null, WATCH = null, NET = null, MAXN = 5, HERE_M = 40;
+  var LIST = [], ME = null, HEAD = null, PICK = Q.get('i') || null, WAS = {}, LAST = 0, ALL = false, BUZZ = null, WATCH = null, MAXN = 5, HERE_M = 40;
   var mem = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* this visit */ } } };
   var NS = 'http://www.w3.org/2000/svg';
   function el(tag, cls, txt) { var e = D.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -20,9 +20,9 @@
   /* an island with no place set is known only by its town (where its printer asks from): a distance with ~, never HERE */
   function rough(p) { return !has(p) && Array.isArray(p.near) && p.near.length === 2; }
   function spot(p) { return has(p) ? p : rough(p) ? { lat: p.near[0], lng: p.near[1] } : null; }
-  function dist(p) { var a = spot(p), o = ME || NET; return o && a ? far(o, a) : null; }
-  function bear(p) { return way(ME || NET, spot(p)); }
-  function say(p, m) { return rough(p) || !ME ? '~' + metres(Math.max(1000, m)) : m < HERE_M ? 'HERE' : metres(m); }
+  function dist(p) { var a = spot(p); return ME && a ? far(ME, a) : null; }
+  function bear(p) { return way(ME, spot(p)); }
+  function say(p, m) { return rough(p) ? '~' + metres(Math.max(1000, m)) : m < HERE_M ? 'HERE' : metres(m); }
 
   if (Q.get('night') === '1') D.documentElement.classList.add('night'); else if (Q.get('night') === '0') D.documentElement.classList.add('day');
   if (EMB) $('#bk').hidden = true; else $('#bk').onclick = function (e) { if (history.length > 1 && D.referrer.indexOf(location.origin) === 0) { e.preventDefault(); history.back(); } };
@@ -34,7 +34,7 @@
     var bars = '', h = [4, 7.5, 11]; for (var k = 0; k < 3; k++) bars += '<rect' + (p.sig != null && p.sig > k ? ' class="y"' : '') + ' x="' + (1 + k * 4.5) + '" y="' + (13 - h[k]) + '" width="3" height="' + h[k] + '"/>';
     it(p.sig == null ? 'x' : '', svg('wf', '0 0 14 14', bars), 'WI-FI', p.sig == null ? 'Wi-Fi not known' : ['Wi-Fi weak', 'Wi-Fi fair', 'Wi-Fi good', 'Wi-Fi strong'][p.sig]);
     it(p.mesh ? '' : 'x', svg('ms', '0 0 14 14', '<circle cx="7" cy="7" r="1.4"/><path d="M4 4a4.3 4.3 0 0 0 0 6M10 4a4.3 4.3 0 0 1 0 6M2 2a7.2 7.2 0 0 0 0 10M12 2a7.2 7.2 0 0 1 0 10"/>'), p.mesh ? 'MESH' : 'NO MESH', p.mesh ? 'On the mesh: reached by radio, with no internet' : 'Not on the mesh');
-    var q = el('span', 'q', String(Math.min(99, p.queue || 0))); it(p.queue ? '' : 'x', q, 'WAITING', (p.queue || 0) + ' waiting to print');
+    if (p.queue) it('', el('span', 'q', String(Math.min(99, p.queue))), 'WAITING', p.queue + ' waiting to print');
     return g; }
 
   /* ISLAND: go to it. novel.global opens as that island (its card, its order) from then on; novel.global's own key goes back to it as it comes */
@@ -62,7 +62,6 @@
     row.type = 'button'; row.setAttribute('aria-expanded', String(me)); row.title = me ? '' : 'Point the way to ' + p.name;
     nm.appendChild(el('b', '', p.name)); sub.appendChild(el('em', '', p.open ? 'OPEN' : 'CLOSED')); var pl = place(p.addr); if (pl) sub.appendChild(D.createTextNode(' · ' + pl)); if (isHome(p)) sub.appendChild(D.createTextNode(' · HOME ISLAND')); nm.appendChild(sub); if (p.line) nm.appendChild(el('span', 'ln', p.line));
     if (m != null) { var bg = bear(p), ar = svg('', '0 0 24 24', '<path d="M12 21V4M6 10l6-6 6 6"/>'); ar.style.transform = 'rotate(' + (bg - (HEAD || 0)).toFixed(0) + 'deg)'; ar.dataset.b = bg; d.append(ar, say(p, m)); }
-    else d.appendChild(el('i', '', '—'));
     row.append(el('span', 'n', pad(p.number)), nm, d, glance(p)); li.appendChild(row);
     row.onclick = function () { if (PICK === p.id) return; PICK = p.id; BUZZ = null; draw(); };
     if (me) li.appendChild(more(p)); return li; }
@@ -75,14 +74,14 @@
     mp.appendChild(svg('', '0 0 24 24', '<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>')); mp.appendChild(D.createTextNode('MAP')); mp.target = '_blank'; mp.rel = 'noopener';
     if (has(p)) { mp.href = 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B' + p.lat + '%2C' + p.lng + '#map=17/' + p.lat + '/' + p.lng; mp.title = 'Walking directions, on OpenStreetMap'; }
     else if (p.addr) { mp.href = 'https://www.openstreetmap.org/search?query=' + encodeURIComponent(p.addr); mp.title = 'Its address, on OpenStreetMap'; }
-    else { mp.setAttribute('aria-disabled', 'true'); mp.title = 'Not on the map yet'; }
     var can = p.open && (!!p.pop || p.id === 'novelglobal'); hm.type = 'button'; hm.className = 'isl';
     hm.appendChild(D.createTextNode('ISLAND')); hm.appendChild(svg('', '0 0 24 24', '<path d="M5 12h13M13 6l6 6-6 6"/>'));
     hm.title = !can ? 'Closed' : 'Go to ' + p.name + ' and make it your home island: its card, its order. You can still use every island';
     if (!can) hm.setAttribute('aria-disabled', 'true'); hm.onclick = function () { goIsle(p); };
-    acts.append(mp, hm); mo.appendChild(acts); return mo; }
+    if (mp.href) acts.appendChild(mp); acts.appendChild(hm); mo.appendChild(acts); return mo; }
 
-  /* the dial: dots by way and distance (a log scale, out to 20 km at the rim); an island with no place, or you not located, rides the rim */
+  /* the dial: dots by way and distance (a log scale, out to 20 km at the rim); an island with no place, or you not located, rides the rim.
+     Not located, there is no distance at all: no number, no needle */
   function scope() { var g = $('#dots'), p = picked(), sc = $('#scope'), rd = $('#read'), ndl = $('#ndl'); g.replaceChildren();
     var rim = LIST.filter(function (q) { return dist(q) == null; }), at = {};
     LIST.forEach(function (q) { var m = dist(q), a, r; if (m != null) { a = bear(q); r = 14 + 128 * Math.min(1, Math.log(1 + m / 40) / Math.log(1 + 20000 / 40)); } else { a = 360 * rim.indexOf(q) / Math.max(1, rim.length) + 20; r = 142; }
@@ -94,7 +93,7 @@
     var here = !!ME && m != null && m < HERE_M && !rough(p); sc.classList.toggle('here', here); rd.className = 'read' + (here ? ' here' : m == null ? ' dim' : '');
     if (here) { rd.textContent = 'HERE'; if (BUZZ !== PICK) { BUZZ = PICK; try { navigator.vibrate && navigator.vibrate([60, 60, 120]); } catch (e) { /* no buzz */ } } }
     else if (m != null) { rd.textContent = say(p, m); rd.appendChild(el('small', '', POINT[Math.round(bear(p) / 45) % 8])); }
-    else rd.textContent = !p ? '' : !ME ? (LOC || '') : 'UNMAPPED';
+    else rd.textContent = !p || !ME ? '' : 'UNMAPPED';
     rose(); }
   function rose() { $('#rose').style.transform = HEAD == null ? '' : 'rotate(' + (-HEAD).toFixed(1) + 'deg)';
     [].forEach.call(D.querySelectorAll('.row .d svg'), function (s) { s.style.transform = 'rotate(' + (+s.dataset.b - (HEAD || 0)).toFixed(0) + 'deg)'; }); }
@@ -108,24 +107,25 @@
   var LOC = '';
   function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; $('#read').title = ''; var y = $('#why'); if (y) y.hidden = true; return first; }
   /* LOCATE asks the phone; found, the button goes; otherwise it says why in a word, and the fix under it. A tap tries again */
-  var WHY = { 1: ['OFF', 'Location is off for this site. iPhone: Settings › Privacy › Location Services › Safari Websites, or aA › Website Settings. Android: the lock by the address › Permissions'],
-    2: ['NO FIX', 'The phone cannot find where it is. Turn on Location (GPS), or step outside'], 3: ['SLOW', 'No answer yet. Tap to try again'],
-    0: ['NO GPS', 'This browser cannot share a location'] };
-  function why(c) { var w = WHY[c] || WHY[2], b = $('#loc'), y = $('#why'); b.textContent = w[0]; b.classList.add('err'); b.title = w[1]; if (y) { y.textContent = w[1]; y.hidden = false; } LOC = w[0]; }
+  /* the fix in a word on the button, the steps in its hover; on a phone they show under the dial only once a second tap fails too */
+  var UA = navigator.userAgent, IOS = /iP(hone|ad|od)/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1), AND = /Android/.test(UA), TRIED = 0;
+  var WHY = { 1: ['OFF', IOS ? 'Settings › Privacy › Location Services › Safari Websites' : AND ? 'Lock by the address › Permissions › Location' : 'Lock by the address › Location › Allow'],
+    2: ['NO FIX', 'Turn Location on, or step outside'], 3: ['SLOW', 'Tap to try again'], 0: ['NO GPS', 'This browser cannot share a location'] };
+  function why(c) { var w = WHY[c] || WHY[2], b = $('#loc'), y = $('#why'); b.textContent = w[0]; b.classList.add('err'); b.title = w[1]; if (y) { y.textContent = w[1]; y.hidden = TRIED < 2; } LOC = w[0]; }
   function stop() { if (WATCH != null) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; } }
   function locate(asked) { if (ME) return; if (!navigator.geolocation) { why(0); return; } stop(); var b = $('#loc'), y = $('#why'); b.textContent = '· · ·'; b.classList.remove('err'); if (y) y.hidden = true;
     /* a quick rough place first (a phone can take a while to find a close one), then the close one as it comes */
     navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function (e) { if (!ME) { if (e && e.code === 1) no(); else if (asked) why(e && e.code); } }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     WATCH = navigator.geolocation.watchPosition(function (p) { var first = fix(p); if (first) { var b = sorted().filter(function (q) { return q.open && has(q); })[0]; if (b && !Q.get('i') && !LIST.some(function (q) { return q.id === homeId() && q.open; })) PICK = b.id; draw(); } else { scope(); [].forEach.call(D.querySelectorAll('li[data-id]'), function (li) { var q = LIST.filter(function (x) { return x.id === li.dataset.id; })[0], d = li.querySelector('.d'), m = q && dist(q); if (m != null && d) d.lastChild.textContent = m < HERE_M ? 'HERE' : metres(m); }); } },
       function (e) { if (ME) return; if (e && e.code === 1) no(); else { stop(); why(e && e.code); draw(); } }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
-  /* refused: the watch stops so the next tap asks again; the dial keeps a rough way from the network meanwhile */
+  /* refused: the watch stops so the next tap asks again */
   function no() { stop(); why(1); draw(); }
-  $('#loc').onclick = function () { locate(true); };
+  $('#loc').onclick = function () { TRIED++; locate(true); };
   $('#all').onclick = function () { ALL = true; draw(); };
   try { navigator.permissions.query({ name: 'geolocation' }).then(function (s) { if (s.state === 'granted') { locate(false); compass(); } }, function () { /* ask on LOCATE */ }); } catch (e) { /* ask on LOCATE */ }
 
   function stale() { $('#live').classList.toggle('stale', !LAST || Date.now() - LAST > 70000); }
-  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; if (Array.isArray(j.you) && j.you.length === 2) NET = { lat: +j.you[0], lng: +j.you[1] }; LAST = Date.now(); stale(); draw(); }, stale); }
+  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; LAST = Date.now(); stale(); draw(); }, stale); }
   load(); setInterval(function () { if (!D.hidden) load(); else stale(); }, 15000);
   D.addEventListener('visibilitychange', function () { if (!D.hidden) load(); });
 })();
