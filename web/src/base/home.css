@@ -1788,6 +1788,7 @@ html.hm-night #lb.lb-full { background: #121212; }
 #lb.lb-full .lb-w { width: min(100%, 1040px); max-height: none; gap: 16px; align-items: center; }
 #lb.lb-full .lb-v { width: min(100%, calc(64vh * var(--r, 1.7778))); }
 #lb.lb-full .lb-c { width: min(100%, 620px); overflow: visible; box-shadow: none; }
+#lb.lb-read .lb-v, #lb.lb-read .lb-l, #lb.lb-read .lb-n:not(.lb-x), #lb.lb-read .lb-f { display: none; } #lb.lb-read { align-items: center; } #lb.lb-read .lb-c { padding: 1em 1.2em .9em; } #lb.lb-full .lb-v { margin-inline: auto; }
 #lb .lb-cl { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #161514; color: #F3F2EE; cursor: pointer; }
 html.hm-night #lb .lb-cl { background: #F4F2EE; color: #161514; }
 @media (prefers-reduced-motion: reduce) { #lbm, #lb.lb-full { animation: none; } }

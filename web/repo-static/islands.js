@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var D = document, $ = function (s) { return D.querySelector(s); }, Q = new URLSearchParams(location.search), EMB = Q.get('in') === '1';
-  var LIST = [], ME = null, HEAD = null, PICK = Q.get('i') || null, WAS = {}, LAST = 0, ALL = false, BUZZ = null, WATCH = null, MAXN = 5, HERE_M = 40;
+  var LIST = [], ME = null, HEAD = null, PICK = Q.get('i') || null, WAS = {}, LAST = 0, ALL = false, BUZZ = null, WATCH = null, NET = null, MAXN = 5, HERE_M = 40;
   var mem = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* this visit */ } } };
   var NS = 'http://www.w3.org/2000/svg';
   function el(tag, cls, txt) { var e = D.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -20,9 +20,9 @@
   /* an island with no place set is known only by its town (where its printer asks from): a distance with ~, never HERE */
   function rough(p) { return !has(p) && Array.isArray(p.near) && p.near.length === 2; }
   function spot(p) { return has(p) ? p : rough(p) ? { lat: p.near[0], lng: p.near[1] } : null; }
-  function dist(p) { var a = spot(p); return ME && a ? far(ME, a) : null; }
-  function bear(p) { return way(ME, spot(p)); }
-  function say(p, m) { return rough(p) ? '~' + metres(Math.max(1000, m)) : m < HERE_M ? 'HERE' : metres(m); }
+  function dist(p) { var a = spot(p), o = ME || NET; return o && a ? far(o, a) : null; }
+  function bear(p) { return way(ME || NET, spot(p)); }
+  function say(p, m) { return rough(p) || !ME ? '~' + metres(Math.max(1000, m)) : m < HERE_M ? 'HERE' : metres(m); }
 
   if (Q.get('night') === '1') D.documentElement.classList.add('night'); else if (Q.get('night') === '0') D.documentElement.classList.add('day');
   if (EMB) $('#bk').hidden = true; else $('#bk').onclick = function (e) { if (history.length > 1 && D.referrer.indexOf(location.origin) === 0) { e.preventDefault(); history.back(); } };
@@ -91,7 +91,7 @@
       var t = D.createElementNS(NS, 'title'); t.textContent = q.name; d.appendChild(t); d.addEventListener('click', function () { if (PICK !== q.id) { PICK = q.id; BUZZ = null; draw(); } var li = D.querySelector('li[data-id="' + q.id + '"]'); if (li) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }); g.appendChild(d); });
     var m = p ? dist(p) : null, xy = p && at[p.id]; sc.classList.toggle('lost', m == null); $('#loc').hidden = !!ME;
     if (xy && m != null) { ndl.setAttribute('x2', xy[0].toFixed(1)); ndl.setAttribute('y2', xy[1].toFixed(1)); }
-    var here = m != null && m < HERE_M && !rough(p); sc.classList.toggle('here', here); rd.className = 'read' + (here ? ' here' : m == null ? ' dim' : '');
+    var here = !!ME && m != null && m < HERE_M && !rough(p); sc.classList.toggle('here', here); rd.className = 'read' + (here ? ' here' : m == null ? ' dim' : '');
     if (here) { rd.textContent = 'HERE'; if (BUZZ !== PICK) { BUZZ = PICK; try { navigator.vibrate && navigator.vibrate([60, 60, 120]); } catch (e) { /* no buzz */ } } }
     else if (m != null) { rd.textContent = say(p, m); rd.appendChild(el('small', '', POINT[Math.round(bear(p) / 45) % 8])); }
     else rd.textContent = !p ? '' : !ME ? (LOC || '') : 'UNMAPPED';
@@ -102,23 +102,25 @@
   /* the phone's heading turns the dial so up is the way you face; and where you stand, watched while the finder is open */
   /* an iPhone gives its heading only when asked from a tap: asked again on the next tap until it answers */
   var CMP = 0;
-  function compass() { if (CMP) return; var on = function (e) { var h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null); if (h == null) return; HEAD = h; rose(); };
-    try { var DO = window.DeviceOrientationEvent; if (DO && typeof DO.requestPermission === 'function') DO.requestPermission().then(function (r) { if (r === 'granted' && !CMP) { CMP = 1; addEventListener('deviceorientation', on); } else if (r === 'denied') CMP = 2; }, function () { /* no tap yet */ }); else { CMP = 1; addEventListener('deviceorientationabsolute', on); addEventListener('deviceorientation', on); } } catch (e) { /* north stays up */ } }
-  D.addEventListener('click', function () { if (!CMP) compass(); }, true);
+  function compass() { if (CMP) return; CMP = 3; var on = function (e) { var h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null); if (h == null) return; HEAD = h; rose(); };
+    try { var DO = window.DeviceOrientationEvent; if (DO && typeof DO.requestPermission === 'function') DO.requestPermission().then(function (r) { if (r === 'granted') { CMP = 1; addEventListener('deviceorientation', on); } else CMP = r === 'denied' ? 2 : 0; }, function () { CMP = 0; /* no tap yet */ }); else { CMP = 1; addEventListener('deviceorientationabsolute', on); addEventListener('deviceorientation', on); } } catch (e) { /* north stays up */ } }
+  D.addEventListener('click', function (e) { if (!CMP && !(e.target.closest && e.target.closest('#loc'))) compass(); }, true);
   var LOC = '';
   function fix(p) { var first = !ME; ME = { lat: p.coords.latitude, lng: p.coords.longitude }; LOC = ''; $('#read').title = ''; return first; }
-  function locate(asked) { if (!navigator.geolocation || WATCH != null) return; if (asked) compass(); $('#loc').textContent = '· · ·';
+  function locate(asked) { if (!navigator.geolocation || WATCH != null) return; $('#loc').textContent = '· · ·';
     /* a quick rough place first (a phone can take a while to find a close one), then the close one as it comes */
-    navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function () { /* the watch goes on */ }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+    navigator.geolocation.getCurrentPosition(function (p) { if (ME) return; fix(p); draw(); }, function (e) { if (!ME && e && e.code === 1) no(); }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
     WATCH = navigator.geolocation.watchPosition(function (p) { var first = fix(p); if (first) { var b = sorted().filter(function (q) { return q.open && has(q); })[0]; if (b && !Q.get('i') && !LIST.some(function (q) { return q.id === homeId() && q.open; })) PICK = b.id; draw(); } else { scope(); [].forEach.call(D.querySelectorAll('li[data-id]'), function (li) { var q = LIST.filter(function (x) { return x.id === li.dataset.id; })[0], d = li.querySelector('.d'), m = q && dist(q); if (m != null && d) d.lastChild.textContent = m < HERE_M ? 'HERE' : metres(m); }); } },
-      function (e) { if (ME) return; if (e && e.code === 1) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; LOC = 'NOT ALLOWED'; $('#loc').textContent = 'LOCATE'; }
-        else LOC = 'FINDING'; $('#read').className = 'read dim'; $('#read').textContent = LOC; $('#read').title = LOC === 'NOT ALLOWED' ? 'Location is off for novel.global: on an iPhone, Settings › Privacy › Location Services › Safari Websites, or the aA menu › Website Settings' : ''; }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
+      function (e) { if (ME) return; if (e && e.code === 1) no(); else { LOC = 'FINDING'; draw(); } }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }); }
+  /* refused: the watch stops so the next tap asks again; the dial keeps a rough way from the network meanwhile */
+  function no() { if (WATCH != null) { try { navigator.geolocation.clearWatch(WATCH); } catch (x) { /* gone */ } WATCH = null; }
+    LOC = 'NOT ALLOWED'; $('#loc').textContent = 'LOCATE'; $('#read').title = 'Location is off for novel.global: on an iPhone, Settings › Privacy › Location Services › Safari Websites, or the aA menu › Website Settings'; draw(); }
   $('#loc').onclick = function () { locate(true); };
   $('#all').onclick = function () { ALL = true; draw(); };
   try { navigator.permissions.query({ name: 'geolocation' }).then(function (s) { if (s.state === 'granted') { locate(false); compass(); } }, function () { /* ask on LOCATE */ }); } catch (e) { /* ask on LOCATE */ }
 
   function stale() { $('#live').classList.toggle('stale', !LAST || Date.now() - LAST > 70000); }
-  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; LAST = Date.now(); stale(); draw(); }, stale); }
+  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; if (Array.isArray(j.you) && j.you.length === 2) NET = { lat: +j.you[0], lng: +j.you[1] }; LAST = Date.now(); stale(); draw(); }, stale); }
   load(); setInterval(function () { if (!D.hidden) load(); else stale(); }, 15000);
   D.addEventListener('visibilitychange', function () { if (!D.hidden) load(); });
 })();

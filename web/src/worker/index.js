@@ -682,7 +682,8 @@ async function filmPlay(db, env, req, tok) {
    open, where it is (as the approval page set it down: its address, its place on the map, a few words, a picture). At a glance as well: its
    paper, its Wi-Fi in bars, a radio, how many prints wait; and, while open, its pop-up (its card, its own home) to print at it or make it home.
    Never a key: a pop-up still asks its code */
-async function isles(db) {
+/* you: the asker's rough place from its network (a city, never kept), for a finder whose phone keeps its own place back */
+async function isles(db, req) {
   const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
   const pops = (await popsOf(db)).filter(p => p && p.on);
   const { results } = await db.prepare(`SELECT id, name, number, seen, net, mesh, live, home, (SELECT count(*) FROM jobs j WHERE j.printer = printers.id AND j.status IN ('queued', 'printing')) AS queued FROM printers WHERE token IS NOT NULL ORDER BY number, created`).all();
@@ -697,7 +698,8 @@ async function isles(db) {
     if (open) { ['addr', 'words', 'pic', 'find'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } else if (n && Array.isArray(n.ll)) o.near = n.ll;
       if (pop && /^[a-z0-9-]{1,40}$/.test(pop.id || '')) { o.pop = pop.id; o.card = !!pop.card; if (pop.home && typeof pop.home === 'object') o.home = pop.home; } }
     return o; });
-  return json({ isles: out, paired: results.length });
+  const cf = (req && req.cf) || {}, you = Number.isFinite(+cf.latitude) && Number.isFinite(+cf.longitude) && (+cf.latitude || +cf.longitude) ? [Math.round(+cf.latitude * 100) / 100, Math.round(+cf.longitude * 100) / 100] : null;
+  return json({ isles: out, paired: results.length, ...(you ? { you } : {}) });
 }
 
 /* ───────── a printer's receiver: it asks for the next job, prints it, and says how it went ───────── */
@@ -1935,7 +1937,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'mine' && p[1] && !p[3] && (m === 'GET' && !p[2] || m === 'POST' && p[2])) return mine(db, env, req, p[1], p[2]);
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
   if (p[0] === 'partners' && m === 'GET') return partners(db, req);
-  if (p[0] === 'isles' && m === 'GET') return isles(db);
+  if (p[0] === 'isles' && m === 'GET') return isles(db, req);
   /* the joined slip's words, for a printer that has just joined a Wi-Fi: plain lines a receipt can print */
   if (p[0] === 'welcome' && m === 'GET') { let w = null; try { w = JSON.parse((await settingsOf(db)).welcome || 'null'); } catch (e) { w = null; } w = w && typeof w === 'object' ? w : WELCOME;
     const a = s => String(s == null ? '' : s).normalize('NFKD').replace(/[^\x20-\x7e]/g, '').slice(0, 42);

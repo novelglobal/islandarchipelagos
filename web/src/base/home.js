@@ -764,7 +764,8 @@
       tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
   function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = PLACE.name || PLACE.isle; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + PLACE.isle; L.fk = 'i-' + PLACE.isle; return L; }
-  function labelShow(txt) { var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
+  var LBT = '';
+  function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb')) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
@@ -791,7 +792,11 @@
     var lb = mk('div'), w = mk('div', 'lb-w', null, lb), c = mk('div', 'lb-c', null, w), nv, vid = null, fv = null; lb.id = 'lb'; lb.className = 'lb-' + (L.at === 'top' || L.at === 'low' ? L.at : 'mid') + (full ? ' lb-full' : '');
     var closer = function () { if (lb.querySelector('.lb-cl')) return; var cx = mk('button', 'lb-cl', null, lb); cx.type = 'button'; cx.setAttribute('aria-label', 'Close'); cx.title = 'Close'; cx.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; cx.addEventListener('click', function () { shutLb(); }); };
     if (full) { lb.style.setProperty('--ox', Math.round(from.left + from.width / 2) + 'px'); lb.style.setProperty('--oy', Math.round(from.top + from.height / 2) + 'px'); closer(); } lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', L.title || L.top || 'novel.global');
-    var fit = function () { var px = full ? 15 : 13.5; c.style.fontSize = px + 'px'; while (px > (full ? 11.5 : 8) && c.scrollHeight > c.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; } };
+    /* the small label shrinks its words into its box; the whole one shrinks them to the screen first, and scrolls only past that */
+    var fit = function () { var px = full ? 15 : 13.5, box = full ? lb : c, fv0 = full && lb.querySelector('.lb-v'), fw = 100; c.style.fontSize = px + 'px'; if (fv0) fv0.style.maxWidth = '';
+      while (px > (full ? 11.5 : 8) && box.scrollHeight > box.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; }
+      /* still past the screen with the film up: the film gives way, down to half its width */
+      if (fv0 && fv0.offsetHeight) while (fw > 50 && box.scrollHeight > box.clientHeight + 1) { fw -= 5; fv0.style.maxWidth = fw + '%'; } };
     var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen' + (L.key || ''), '1'); if (nv.checked) mem(localStorage, 'da.label.never' + (L.key || ''), '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
         lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (from && !nv.checked) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
@@ -800,8 +805,8 @@
     /* the rest of the words, and the counts where they are set to wait there, open from one small key */
     if (L.cnt === 'off') L.counts = []; var folded = !!b.querySelector('p.lb-x') || (L.cnt === 'more' && Array.isArray(L.counts) && L.counts.length);
     if (folded) { var mo = mk('button', 'lb-mo', L.more || 'More', c); mo.type = 'button'; mo.setAttribute('aria-expanded', 'false'); mo.addEventListener('click', function () { var o = c.classList.toggle('lb-open'); mo.textContent = o ? (L.less || 'Less') : (L.more || 'More'); mo.setAttribute('aria-expanded', String(o));
-      /* more: the whole label on the whole screen, read by scrolling */
-      if (o && !full) { full = true; lb.classList.add('lb-full'); closer(); } fit(); }); }
+      /* more: the whole label on the whole screen, and only its words while they are read: the film, links and counts step aside until Less */
+      if (o && !full) { full = true; lb.classList.add('lb-full'); closer(); } lb.classList.toggle('lb-read', o); if (o && vid) { try { vid.pause(); } catch (e) { /* not playing */ } } lb.scrollTop = 0; fit(); }); }
     /* the links: the back of the first card, the islands, the kit, the private page, or one of its own; plain links, so nothing blocks them */
     var go = { card: function () { shutLb(); col.scrollTo({ top: 0, behavior: 'smooth' }); var cd = col.querySelector('.sk-intro'); if (cd && !cd.classList.contains('flip')) { cd.classList.add('flip'); requestAnimationFrame(function () { introFit(); introArc(); }); } } };
     var href = function (k) { return k.to === 'islands' ? '/islands' : k.to === 'kit' ? '/kit' : k.to === 'note' ? (ETH.k ? '/note#' + ETH.k : '') : k.to === 'url' ? (/^https:\/\//.test(k.u || '') ? k.u : '') : ''; };
@@ -1737,7 +1742,10 @@
   /* ───────── the sea: the banner is its surface; pressed, the sea opens down into the reef, one water with no line between ───────── */
   var top = $('#hm-top'), tcv = top.querySelector('canvas'), tx = tcv.getContext('2d'), dpr = 1, TOPH = 52, CH = 52, VW = 360;
   var NIGHT = store.get('da.hm.night', null); if (NIGHT == null) { var a0 = AU(); NIGHT = !!(a0 && a0.dark && a0.dark()); }
-  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); D.documentElement.classList.toggle('hm-night', NIGHT); var tm = D.querySelector('meta[name="theme-color"]'); if (tm) tm.content = NIGHT ? '#06152A' : '#17457F'; warmDrop(); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) { beep(NIGHT ? 392 : 523, 0.05); store.set('da.notes.seen', []); noteWait(); } }
+  function setNight(on, quiet) { NIGHT = !!on; store.set('da.hm.night', NIGHT); root.classList.toggle('night', NIGHT); D.documentElement.classList.toggle('hm-night', NIGHT); var tm = D.querySelector('meta[name="theme-color"]'); if (tm) tm.content = NIGHT ? '#06152A' : '#17457F'; warmDrop(); var a = AU(); if (a && a.dark && a.dark() !== NIGHT) a.dark(NIGHT); RB = null; if (!quiet) { beep(NIGHT ? 392 : 523, 0.05); store.set('da.notes.seen', []); noteWait(); labelAgain(); } }
+  /* day and night is a fresh look: a label put away (for the visit, or for good) comes back */
+  function labelAgain() { if (!LBT) return; try { [sessionStorage, localStorage].forEach(function (st) { for (var i = st.length - 1; i >= 0; i--) { var k = st.key(i); if (k && /^da\.label\.(seen|never)/.test(k)) st.removeItem(k); } }); } catch (e) { /* a private window */ }
+    if (D.getElementById('lb') || D.getElementById('lbm')) return; labelShow(LBT); lbmAt(0); }
   setNight(NIGHT, true);
   function reefH() { return Math.round(Math.min(innerHeight * 0.68, 640)); }
   function seaSize() {

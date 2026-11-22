@@ -1332,7 +1332,7 @@ if (run('access')) try {
   const old = await page.evaluate(() => ({ full: document.getElementById('lb').classList.contains('lb-full'), mini: !!document.getElementById('lbm') }));
   check('the label as it was stays the way it comes: over the site, no small card', !old.full && !old.mini, JSON.stringify(old));
   /* MORE on a phone: the whole label on the whole screen, read by scrolling, closed by its ×. Never squeezed to fit */
-  await admin('settings', { label: JSON.stringify({ on: true, title: 'T', fold: 1, body: ['First words.'].concat(Array.from({ length: 14 }, (_, i) => 'More words, paragraph ' + (i + 2) + ', long enough to need the whole screen and then some more of it.')).join(String.fromCharCode(10, 10)) }) });
+  await admin('settings', { label: JSON.stringify({ on: true, title: 'T', fold: 1, body: ['First words.'].concat(Array.from({ length: 40 }, (_, i) => 'More words, paragraph ' + (i + 2) + ', long enough to need the whole screen and then some more of it.')).join(String.fromCharCode(10, 10)) }) });
   await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb .lb-mo', { timeout: 15000 }); await sleep(500);
   await page.click('#lb .lb-mo'); await sleep(500);
   const more = await page.evaluate(async () => { const l = document.getElementById('lb'), c = l.querySelector('.lb-c'), r = l.getBoundingClientRect(); const o = { full: l.classList.contains('lb-full'), x: !!l.querySelector('.lb-cl'), ta: getComputedStyle(l).touchAction, fs: parseFloat(c.style.fontSize), w: r.width, W: innerWidth, h: r.height, H: innerHeight, tall: l.scrollHeight > l.clientHeight + 200, shown: [...c.querySelectorAll('.lb-b p')].every(p => p.offsetHeight > 0) };
@@ -1340,6 +1340,14 @@ if (run('access')) try {
   await page.mouse.move(195, 500); await page.mouse.wheel(0, 300); await sleep(300); await shot(page, 'access-more.png');
   await page.click('#lb .lb-cl'); await sleep(500); const shut = await page.evaluate(() => !document.getElementById('lb'));
   check('MORE on a phone opens the whole label over the whole screen: every paragraph at a readable size, it scrolls (a wheel or a finger never closes it), its × stays in the corner as it scrolls and closes it', more.full && more.x && more.ta === 'pan-y' && more.fs >= 11.5 && Math.abs(more.w - more.W) < 2 && Math.abs(more.h - more.H) < 2 && more.tall && more.shown && more.top > 300 && more.still && more.xTop >= 0 && more.xTop < 60 && shut, JSON.stringify({ more, shut }));
+  /* a label the size of the real one: MORE shows its words alone, on one screen; put away, day or night brings it back */
+  await admin('settings', { label: JSON.stringify({ on: true, title: 'T', fold: 3, links: [{ b: 'Find a printer:', t: 'islands', to: 'islands' }], body: Array.from({ length: 8 }, (_, i) => 'Paragraph ' + (i + 1) + ': words about the islands, the printers and who gets to benefit from what is made here.').join(String.fromCharCode(10, 10)) }) });
+  await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb .lb-mo', { timeout: 15000 }); await sleep(500); await page.click('#lb .lb-mo'); await sleep(600);
+  const fits = await page.evaluate(() => { const l = document.getElementById('lb'), c = l.querySelector('.lb-c'), k = l.querySelector('.lb-l'); return { read: l.classList.contains('lb-read'), fit: l.scrollHeight <= l.clientHeight + 1, fs: parseFloat(c.style.fontSize), links: k ? k.offsetHeight : 0, all: [...c.querySelectorAll('.lb-b p')].every(p => p.offsetHeight > 0) }; });
+  await page.click('#lb .lb-cl'); await sleep(600); const gone = await page.evaluate(() => !document.querySelector('#lb, #lbm'));
+  await page.click('#hm-theme'); await sleep(1200); const again = await page.evaluate(() => !!document.querySelector('#lb, #lbm'));
+  await page.evaluate(() => { document.querySelectorAll('#lb, #lbm').forEach(e => e.remove()); }); await page.click('#hm-theme'); await sleep(600); await page.evaluate(() => { document.querySelectorAll('#lb, #lbm').forEach(e => e.remove()); });
+  check('MORE on a real-sized label shows only its words, all on one screen at a readable size; put away, switching day or night brings it back', fits.read && fits.fit && fits.fs >= 11.5 && fits.links === 0 && fits.all && gone && again, JSON.stringify({ fits, gone, again }));
   await page.evaluate(() => { const l = document.getElementById('lb'); if (l) l.remove(); });
   const go = await page.evaluate(() => { const a = document.querySelector('.sk-intro .in-ia a.in-go'); return a ? { href: a.getAttribute('href'), t: a.textContent.trim(), tt: a.title } : null; });
   const gw = await page.evaluate(() => { const a = document.querySelector('.sk-intro .in-ia a.in-go'), s = a && getComputedStyle(a), r = a && a.getBoundingClientRect(); return a ? { bg: s.backgroundColor, c: s.color, h: r.height, fs: parseFloat(s.fontSize), ws: s.whiteSpace } : null; });
@@ -2249,7 +2257,7 @@ if (run('bench')) try {
     wants.join() === 'J,sd,F,J,converter,J,converter,J,charger,J,J,J,battery,J' && /sd-32/.test(trays[0]) && /^boost-24v\/.*ps-180$/.test(trays[1]) && /^buck-5v/.test(trays[2]) && /^mppt-10a/.test(trays[3]) && /lifepo4-50ah/.test(trays[4]) && /^(TM-T88V USB→Pi 3 A\+ USB|Pi 3 A\+ USB→TM-T88V USB)$/.test(dragged), JSON.stringify({ wants, trays, dragged }));
   check('bench: built, a Pi, an SD, a TM-T88V and solar (charger, battery, boost, buck) read ENOUGH, the sums in its hover; it reads top to bottom from the sun to the paper, power running along its cables; the day drawn (the sun, the battery, never asleep); what it wants now is to start; kept with the ghost through a reload; nothing runs off the phone',
     b1.cables === 8 && !b1.bad && !b1.off && b1.word === 'ENOUGH' && /Uses 113 Wh a day · the sun gives 338 Wh \(4\.5 h\) · the battery holds 576 Wh, 123 h with no sun/.test(b1.why) && b1.nw === 'SWITCH ON' && b1.act === 'on' && b1.dayShut && b1.wide && b1.on === 6 && b1.dat === 2 && b1.rows.every((y, i) => y >= 0 && (!i || y > b1.rows[i - 1]))
-    && b1.next === 'pt want boot:Pi 3 A+' && b1.day === '1|1|0|Awake all day and night' && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
+    && b1.next === 'pt l2 want boot:Pi 3 A+' && b1.day === '1|1|0|Awake all day and night' && b2.cables === 8 && b2.word === 'ENOUGH' && b2.n === 8,
     JSON.stringify({ b1, b2 }));
   await sleep(900); const bk = await page.evaluate(async () => (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench);
   check('bench: at SD the imager opens by itself on one screen: DEVICE, OS (the latest release) and STORAGE already chosen, the settings, one WRITE (a fresh card is not asked twice); the card fills as it is written, then is checked; WRITTEN, and the dock moves on to putting the card in; the SD reads its version, the settings print on the twin, and the Wi-Fi is never sent',
@@ -2271,9 +2279,9 @@ if (run('bench')) try {
   await tap('#na [data-act=pair]'); await sleep(300); await skip(); await sleep(700);
   const bt3 = await logOf(), n3 = await nxt(), rt3 = await rite(), live = await page.evaluate(() => ({ nw: document.querySelector('#nw').textContent, act: [...document.querySelectorAll('#na [data-act]')].map(b => b.dataset.act).join(), all: !!document.querySelector('#dock .ik.all') })), o3 = await page.evaluate(async () => (await (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json()).bench.o);
   check('boot: written, START is now and the Pi is what it wants; a touch powers it on (red light, the other flickering, the muse in the dock beating, the dock saying STARTING), its log runs as the kit logs it, a tap skips; its test strip and setup slip print, then JOIN its Wi-Fi and its pair code, then APPROVE that code; kept with the ghost; four stages lit, REAL next, the dock LIVE with PRINT and REAL',
-    rt0 === 'LLLN-' && n0 === 'pt want boot' && bt0.log && bt0.beat && bt0.nw === 'STARTING' && bt0.run === 1 && bt0.red === 1 && !bt0.want
-    && /^the setup Wi-Fi is open: .+ SETUP$/.test(bt1.lines[bt1.lines.length - 1]) && bt1.lines.includes('island v1.1.1: bench-bb, not set up yet') && /^Setup Wi-Fi BENCH BB SETUP, slip key [a-z0-9]{10}\|Test strip\|/.test(bt1.tags) && n1 === 'pt want wifi' && bt1.wide
-    && bt2.lines.some(l => /^pairing code [a-z0-9]{4}-[a-z0-9]{4} for https:\/\/novel\.global$/i.test(l)) && /^Pair code [A-Z0-9]{4}-[A-Z0-9]{4}\|On Wi-Fi /.test(bt2.tags) && n2 === 'pt want pair'
+    rt0 === 'LLLN-' && n0 === 'pt l2 want boot' && bt0.log && bt0.beat && bt0.nw === 'STARTING' && bt0.run === 1 && bt0.red === 1 && !bt0.want
+    && /^the setup Wi-Fi is open: .+ SETUP$/.test(bt1.lines[bt1.lines.length - 1]) && bt1.lines.includes('island v1.1.1: bench-bb, not set up yet') && /^Setup Wi-Fi BENCH BB SETUP, slip key [a-z0-9]{10}\|Test strip\|/.test(bt1.tags) && n1 === 'pt l2 want wifi' && bt1.wide
+    && bt2.lines.some(l => /^pairing code [a-z0-9]{4}-[a-z0-9]{4} for https:\/\/novel\.global$/i.test(l)) && /^Pair code [A-Z0-9]{4}-[A-Z0-9]{4}\|On Wi-Fi /.test(bt2.tags) && n2 === 'pt l2 want pair'
     && pc.act === 'pair' && bt2.tags.indexOf('Pair code ' + pc.v) === 0
     && /^Paired, ready to print\|/.test(bt3.tags) && n3 === '' && JSON.stringify(o3) === '["p4","v1.1.1",3]' && rt3 === 'LLLLN' && live.nw === 'LIVE' && live.act === 'print,real' && live.all, JSON.stringify({ rt0, n0, bt0, bt1, n1, bt2, n2, pc, bt3, n3, o3, rt3, live }));
   /* while a slip feeds the page shows the printer; after, it comes back */
@@ -2337,7 +2345,7 @@ if (run('bench')) try {
   await shot(page, 'bench-bank.png');
   const W = pw['wall-strip'], B = pw['power-bank'];
   check('bench: with no power it asks for POWER, a choice of PLUG, SUN or BANK; the wall brings the printer its own 24 V supply and reads ENOUGH; a bank reads CHARGED, what it holds and how long it lasts; every part that draws power wears a bolt, hollow when cold',
-    W.w.includes('power') && W.ghost === 'POWER' && W.tray.head === 'POWER' && W.tray.jobs === 'PLUG,SUN,BANK' && /PS-180/.test(W.parts) && /POWER STRIP/.test(W.parts) && W.word === 'ENOUGH' && W.why === 'From the wall' && !W.cold && W.bolts >= 2
+    W.w.includes('power') && W.ghost === 'power?' && W.tray.head === 'POWER' && W.tray.jobs === 'PLUG,SUN,BANK' && /PS-180/.test(W.parts) && /POWER STRIP/.test(W.parts) && W.word === 'ENOUGH' && W.why === 'From the wall' && !W.cold && W.bolts >= 2
     && B.w.includes('power') && /POWER BANK/.test(B.parts) && B.word === 'CHARGED' && /the bank holds 84 Wh: about \d+ h/.test(B.why) && !B.cold, JSON.stringify(pw));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }

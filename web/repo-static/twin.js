@@ -312,19 +312,27 @@
     var L = layout(); if (gid) { BN.p.pop(); if (W0.near) BN.j.pop(); }
     var Hh = Math.max(150, L.rows * RH + 6); svg.setAttribute('viewBox', '0 0 320 ' + Hh); svg.setAttribute('class', 'bench' + (stageOf(W0) >= 2 ? ' pw-on' : '')); svg.innerHTML = ''; var cg = el('g'); svg.appendChild(cg);
     var used = {}; BN.j.forEach(function (j) { used[j[0]] = used[j[1]] = 1; }); var want = {}; if (W0.k === 'join') want[W0.a] = want[W0.b] = 1;
-    var sketch = function (p, X, Y, seed) { var sk = el('g', { transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: .9, bowing: .7, strokeWidth: 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
+    var sketch = function (p, X, Y, seed, ro) { var sk = el('g', { 'class': 'sk', transform: 'translate(' + X + ' ' + (Y + 8) + ') scale(' + (cw / 120) + ')' }); (p.draw || []).forEach(function (st, i) { var n = rc ? rc.path(st[0], { roughness: ro == null ? .9 : ro, bowing: ro > 1.5 ? 1.6 : .7, strokeWidth: ro > 1.5 ? 1.1 : 1.3, seed: seed + i, stroke: 'currentColor' }) : el('path', { d: st[0], stroke: 'currentColor' }); if (st[1]) n.setAttribute('class', 'ac'); sk.appendChild(n); }); return sk; };
     if (gid && L.pos[gid]) { var gp = PART[W0.ids[0]], gx = L.pos[gid][0], gy = L.pos[gid][1];
-      var gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit'), el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 8 }), el('g', {}, [sketch(gp, gx, gy, 3)])]);
-      var gj = el('text', { 'class': 'jb', x: gx + cw / 2, y: gy + 84, 'text-anchor': 'middle' }); gj.textContent = W0.power ? 'POWER' : job(gp); gh.appendChild(gj);
-      var ga = el('text', { 'class': 'md', x: gx + cw / 2, y: gy + 96, 'text-anchor': 'middle' }); ga.textContent = 'ADD'; gh.appendChild(ga);
-      gh.appendChild(el('circle', { 'class': 'gb', cx: gx + cw - 12, cy: gy + 12, r: 9 })); var plus = el('text', { 'class': 'gp', x: gx + cw - 12, y: gy + 16.6, 'text-anchor': 'middle' }); plus.textContent = '+'; gh.appendChild(plus); svg.appendChild(gh); }
+      var gc = gx + cw / 2, gh = el('g', { 'class': 'gh', 'data-want': '1', role: 'button', tabindex: '0', 'aria-label': 'Wanted here: ' + (W0.power ? 'power' : String(gp.kind)) }, [tt(W0.power ? 'Power: from the wall, the sun or a bank · tap to choose' : 'Wanted here · tap for the parts that fit')]),
+        sc = el('g', { 'class': 'scr', transform: 'rotate(-1.6 ' + gc + ' ' + (gy + 52) + ')' }, [el('rect', { 'class': 'bk', x: gx, y: gy, width: cw, height: 104, rx: 1.5 })]);
+      if (rc) { var pen = rc.rectangle(gx + 5, gy + 5, cw - 10, 94, { roughness: 2.4, bowing: 2.2, strokeWidth: .8, stroke: 'currentColor', seed: 11 }); pen.setAttribute('class', 'pen'); sc.appendChild(pen); }
+      sc.appendChild(sketch(gp, gx, gy, 3, 2.4));
+      var gj = el('text', { 'class': 'jb hw', x: gc, y: gy + 86, 'text-anchor': 'middle' }); gj.textContent = (W0.power ? 'power' : job(gp).toLowerCase()) + '?'; sc.appendChild(gj);
+      var gb = el('g', { 'class': 'gb' }); if (rc) { [rc.ellipse(gx + cw - 15, gy + 16, 21, 19, { roughness: 1.7, strokeWidth: 1.5, stroke: 'currentColor', seed: 4 }), rc.line(gx + cw - 19.5, gy + 16.4, gx + cw - 10.5, gy + 15.6, { roughness: .8, strokeWidth: 1.7, stroke: 'currentColor', seed: 5 }), rc.line(gx + cw - 15.2, gy + 11.6, gx + cw - 14.8, gy + 20.6, { roughness: .8, strokeWidth: 1.7, stroke: 'currentColor', seed: 6 })].forEach(function (n) { gb.appendChild(n); }); }
+      sc.appendChild(gb); gh.appendChild(sc);
+      gh.appendChild(el('rect', { 'class': 'tp', x: gc - 17, y: gy - 6, width: 34, height: 12, transform: 'rotate(5 ' + gc + ' ' + gy + ')' })); svg.appendChild(gh); }
     BN.p.forEach(function (x) { var p = PART[x[1]], xy = L.pos[x[0]]; if (!p || !xy) return; var X = xy[0], Y = xy[1], cold = p.watts && !p.source && !P.on[x[0]];
       var wt = /^(flash|paper|done|boot|wifi|pair)$/.test(W0.k) && W0.iid === x[0], wk = wt && !BT.run && W0.k !== 'done', WT = { flash: 'tap to write Island OS onto it', done: 'tap: a print', paper: 'out of paper: tap for a new roll', boot: 'tap: power on', wifi: 'tap: join its setup Wi-Fi', pair: 'tap: approve its pair code' };
-      var g = el('g', { 'class': 'pt' + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: 104, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 8 })]);
-      var sk = sketch(p, X, Y, 7 + x[1].length);
+      var joined = (p.ports || []).some(function (o) { return used[x[0] + '.' + o.id]; }), lv = !joined ? 0 : P.on[x[0]] ? 2 : 1;
+      var g = el('g', { 'class': 'pt l' + lv + (cold ? ' off' : '') + (wk ? ' want ' + W0.k : ''), 'data-body': x[0], tabindex: '0' }, [tt(p.name + (p.about ? ' · ' + p.about : '') + (cold ? ' · No power in' : '') + (wt ? ' · ' + WT[W0.k] : ' · tap to swap or take off')), el('rect', { 'class': 'sh', x: X + 2, y: Y + 3, width: cw, height: 104, rx: 8 }), el('rect', { 'class': 'bk', x: X, y: Y, width: cw, height: 104, rx: 8 })]);
+      var sk = sketch(p, X, Y, 7 + x[1].length, [1.9, .9, .3][lv]);
       /* an SD being written fills from the bottom; being checked, a line runs down it */
       if (p.kind === 'sd' && FL.run && FL.sd === x[0]) sk.appendChild(el('rect', { id: 'sdf', 'class': 'sdf', x: 46, y: 74, width: 32, height: 0 }));
       g.appendChild(sk);
+      if (lv) g.appendChild(el('rect', { 'class': 'tp', x: X - 5, y: Y + 3, width: 26, height: 9, transform: 'rotate(-38 ' + (X + 8) + ' ' + (Y + 7) + ')' }));
+      /* alive: the island's own mark pressed into its corner, the square and the sun in dots */
+      if (lv === 2) { var mx = X + cw - 27, my = Y + 96; g.appendChild(el('g', { 'class': 'stmp', transform: 'rotate(-9 ' + (mx + 8) + ' ' + (my + 4) + ')' }, [el('rect', { x: mx, y: my, width: 7.5, height: 7.5 }), el('circle', { cx: mx + 13.5, cy: my + 3.75, r: 3.8 })])); }
       /* the printer's roll: 80 mm × 80 m, smaller with every print */
       if (p.kind === 'printer') { var left = Math.max(0, 1 - (+BN.m || 0) / ROLLMM), rr = 3 + 9 * Math.sqrt(left);
         g.appendChild(el('g', { 'class': 'roll' }, [tt(Math.round(left * ROLLMM / 1000) + ' m of paper left · about ' + Math.round(left * ROLLMM / 160) + ' receipts'), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 12.5, 'class': 'rl0' }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: rr, 'class': 'rl' + (left < .1 ? ' low' : '') }), el('circle', { cx: X + cw - 14, cy: Y + 16, r: 2.2, 'class': 'rc' })])); }
@@ -550,8 +558,31 @@
 
   /* ───────── the rite: five stations on the sun's path, lit as the island is made. Its one Irukandji wakes as they light ───────── */
   var RITE = [['PARTS', 'A printer, its brain (a Pi) and the cable between them'], ['SD', 'Island OS written on its memory card, the card in the Pi'], ['POWER', 'Power to every part'], ['START', 'Switched on, on Wi-Fi, its code approved'], TESTQ ? ['MOVE', 'What works here, moved to its real island'] : ['REAL', 'A real printer, by the pair code its Pi prints']];
-  var IRUK = ['M12.6 31C12.2 18.2 21.2 9.4 32.3 9.6c10.8.2 19.4 8.8 19 21.1', 'M12.4 31.2c7.6 3 31.4 3.1 39-.5', 'M15.4 21.6c8.4 2.4 25 2.5 33.2-.4', 'M32.1 9.9c-6.2 5.8-6.9 15.6-5.6 22.6', 'M32.6 9.8c6.1 6.2 6.6 16 5.3 22.8'],
-    TENT = ['M18.8 33.2c-1.9 5.4 1.9 9.4-.6 15.2 1.4 2.8.5 5-.4 7', 'M27 34.3c.9 5.6-1.1 9.6.4 15.6-.7 2.4-.2 4.4.6 6.4', 'M37 34.4c-.9 5.5 1.2 9.6-.3 15.4.8 2.5.2 4.6-.6 6.5', 'M45.4 33c1.8 5.5-1.8 9.5.7 15.3-1.4 2.8-.4 5 .4 7'];
+  function IRK(tl) { var w = 15, h = 25, top = -h * .55, bot = top + h, TL = h * tl, B = [], o = '', f = function (n) { return n.toFixed(1); }, ln = function (a) { return 'M' + a.map(function (q) { return f(q[0]) + ' ' + f(q[1]); }).join(' L'); };
+    for (var k = 0; k < 48; k++) { var u = k / 48, X, Y; if (u < .8) { var an = Math.PI * (1 - u / .8), cu = Math.cos(an), su = Math.sin(an); X = Math.pow(Math.abs(cu), .55) * (cu < 0 ? -1 : 1) * w; Y = bot - Math.pow(su, .42) * h * (.94 + .06 * su); } else { var q2 = (u - .8) / .2; X = w - 2 * w * q2; Y = bot - Math.sin(q2 * Math.PI) * h * .09; } B.push([X, Y]); }
+    for (var i = 0; i < 4; i++) { var rx = (i - 1.5) / 1.5 * w * .82, T = []; for (var j = 0; j < 24; j++) { var s = j / 23, env = Math.min(1, j / 4); T.push([rx + (i - 1.5) * s * TL * .05 + (Math.sin(s * (6 + i) + i * 1.7) * h * .3 + Math.sin(s * 3.1 + i * 2.3) * h * .2) * s * env, bot - 1 + s * TL]); }
+      o += '<path class="tn" d="' + ln(T) + '"/>'; for (var b = 1; b < 5; b++) o += '<circle class="ey" cx="' + f(T[b][0]) + '" cy="' + f(T[b][1]) + '" r="' + (b % 3 === 0 ? 1.6 : 1.05) + '"/>'; }
+    o += '<path class="bl" d="' + ln(B) + 'Z"/>'; var ew = w * .74, eh = h * .27, ey = top + h * .52;
+    for (var e = 0; e < 26; e++) { var ue = e / 26 * Math.PI * 2, se = Math.sin(ue); o += '<circle class="ey" cx="' + f(Math.cos(ue) * ew) + '" cy="' + f(ey + se * eh * (.35 + .65 * Math.abs(se))) + '" r=".85"/>'; }
+    o += '<circle class="pu" cx="0" cy="' + f(ey) + '" r="' + f(h * .25) + '"/><circle class="ey" cx="0" cy="' + f(ey) + '" r="' + f(h * .1) + '"/>';
+    [-.62, -.22, .22, .62].forEach(function (q) { o += '<circle class="ey" cx="' + f(q * w) + '" cy="' + f(bot - h * .1) + '" r="1.3"/>'; }); return o; }
+  /* the island, drawn as it is made: a sandbank in murky water with the sea's rubbish on it. Each stage lit cleans a piece away and
+     raises something found and mended (a mast, a hut, a panel), until the lamp is lit, the water clears and the Irukandji comes */
+  function isleDraw(s, n) { if (!s || !window.rough || s.dataset.n === String(n)) return; var was = s.dataset.n == null ? n : +s.dataset.n; s.dataset.n = n; s.innerHTML = '';
+    var rc = rough.svg(s), o = function (x) { var b = { stroke: 'currentColor', strokeWidth: 1, roughness: 1.3, seed: 5 }; for (var k in x) b[k] = x[k]; return b; },
+      put = function (k, cls, nodes) { var g = el('g', { 'class': cls + (k > was ? ' grow' : '') }); nodes.forEach(function (q) { g.appendChild(q); }); s.appendChild(g); return g; };
+    put(0, 'sea', [rc.line(0, 58, 320, 58, o({ roughness: .7, seed: 1 }))].concat([[18, 66], [70, 84], [238, 70], [292, 82], [150, 80]].map(function (q, i) { return rc.path('M' + q[0] + ' ' + q[1] + ' q5 -3 10 0 t10 0', o({ roughness: .6, seed: 20 + i, strokeWidth: .7 })); })));
+    var mk = Math.max(0, .55 - n * .14); if (mk) { var mu = rc.path('M14 62 L306 62 L290 90 L30 90 Z', o({ stroke: 'none', fill: 'currentColor', fillStyle: 'hachure', hachureGap: 5.5, hachureAngle: 88, fillWeight: .6, roughness: 2.4, seed: 9 })); mu.setAttribute('class', 'murk'); mu.style.opacity = mk.toFixed(2); s.appendChild(mu); }
+    put(0, 'sand', [rc.path('M84 59 Q112 45 160 45 T240 59', o({ fill: 'currentColor', fillStyle: 'hachure', hachureGap: 3.6, hachureAngle: -32, fillWeight: .45, seed: 2 }))]);
+    /* what the sea left: a bottle, a tyre, a net, a can, a crate. One goes with each stage */
+    var junk = [function () { return rc.path('M32 72 l10 -3 l1 3 l-10 3 z M43 69.6 l3 -1', o({ seed: 31 })); }, function () { return rc.ellipse(262, 76, 13, 6, o({ seed: 32 })); }, function () { return rc.path('M196 70 l5 4 l5 -4 l5 4 l5 -4 M198 73 l16 0', o({ seed: 33, strokeWidth: .7 })); }, function () { return rc.rectangle(96, 80, 6, 8, o({ seed: 34 })); }, function () { return rc.rectangle(122, 63, 12, 7, o({ seed: 35, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 2.6, fillWeight: .3 })); }];
+    junk.forEach(function (j, i) { if (i >= n) put(0, 'junk', [j()]); });
+    if (n >= 1) put(1, 'relic', [rc.line(126, 50, 124, 12, o({ seed: 41 })), rc.line(115, 21, 135, 20, o({ seed: 42 })), rc.rectangle(136, 39, 17, 10, o({ seed: 43 }))]);
+    if (n >= 2) put(2, 'relic', [rc.line(178, 51, 180, 31, o({ seed: 44 })), rc.line(212, 51, 210, 31, o({ seed: 45 })), rc.path('M171 33 L195 20 L219 33', o({ seed: 46, fill: 'currentColor', fillStyle: 'hachure', hachureGap: 2.4, hachureAngle: 70, fillWeight: .4 }))]);
+    if (n >= 3) put(3, 'relic', [rc.path('M184 25 L203 15 L211 22 L192 32 Z', o({ seed: 47, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 3, fillWeight: .35 }))]).appendChild(el('circle', { 'class': 'sun', cx: 284, cy: 18, r: 8.5 }));
+    if (n >= 4) { put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]);
+      put(4, 'jl', []).innerHTML = '<g transform="translate(54 76) rotate(-96) scale(.5)">' + IRK(1.6) + '</g>'; }
+    if (n >= 5) put(5, 'live', [rc.path('M282 58 Q292 52 304 58', o({ seed: 50 })), el('path', { 'class': 'tie', d: 'M126 14 Q210 -2 293 54' })]); }
   var RLIT = null;
   function stageOf(W) { return !W ? 0 : W.k === 'done' || W.k === 'paper' ? 4 : /^(boot|wifi|pair)$/.test(W.k) ? 3 : W.s != null ? W.s : 2; }
   function riteLit() { if (!T) return [false, false, false, false, false]; if (!BN || !WANT) return [true, true, true, true, !!T.paired]; var c = stageOf(WANT); return RITE.map(function (r, i) { return i < 4 ? i < c : !!T.paired; }); }
@@ -561,9 +592,11 @@
     var lit = riteLit(), cur = lit.indexOf(false), n = lit.filter(Boolean).length, was = RLIT || store.get('da.twin.rite.' + T.id + TS, null);
     $$('#rite .st').forEach(function (g, i) { var seal = lit[i] && was && !was[i]; g.className = 'st' + (lit[i] ? ' lit' : '') + (i === cur ? ' now' : '') + (seal ? ' seal' : '');
       g.querySelector('button').setAttribute('aria-label', RITE[i][0] + (lit[i] ? ', done' : i === cur ? ', now' : '')); if (seal) setTimeout(function () { g.classList.remove('seal'); }, 900); });
-    var ik = $('#ik'); if (ik) { if (!ik.dataset.built) { ik.innerHTML = IRUK.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + TENT.map(function (d) { return '<path class="tn" d="' + d + '"/>'; }).join(''); ik.dataset.built = '1'; }
+    var is = $('#isle'); if (is) { is.removeAttribute('hidden'); isleDraw(is, n); }
+    var ik = $('#ik'); if (ik) { if (!ik.dataset.built) { ik.innerHTML = IRK(1.3); ik.dataset.built = '1'; }
       ik.style.opacity = (0.22 + n * 0.17).toFixed(2); ik.setAttribute('class', 'ik' + (BT.run ? ' beat' : '') + (n >= 4 ? ' all' : '')); }
     RLIT = lit; store.set('da.twin.rite.' + T.id + TS, lit); }
+  isleDraw($('#gisle'), 0);
   $('#rite').addEventListener('click', function (e) { var g = e.target.closest('[data-rite]'); if (!g) return; var i = +g.dataset.rite;
     if (i === 4) { if (TESTQ) { location.href = '/#home'; return; } $('#xd').open = true; $('#bd').open = true; look($('#bd'), 'center'); return; }
     look($('#bnd'), 'start'); });
