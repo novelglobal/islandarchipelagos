@@ -273,6 +273,7 @@ func (a *App) online(ctx context.Context) string {
 	var lost time.Time
 	var ready [2]bool
 	var due [2]time.Time
+	shelfDue := time.Now().Add(30 * time.Second)
 	for {
 		wait := 5 * time.Second
 		if !online() {
@@ -288,6 +289,15 @@ func (a *App) online(ctx context.Context) string {
 			}
 		} else {
 			lost = time.Time{}
+			if time.Now().After(shelfDue) {
+				// the carts, kept for the island's own Wi-Fi; a failed copy tries again sooner
+				shelfDue = time.Now().Add(shelfEvery)
+				go func(server string) {
+					if err := a.shelfSync(server); err != nil {
+						log.Printf("shelf: %v", err)
+					}
+				}(a.conf().link(0).Server)
+			}
 			n := a.conf().sites()
 			for i := 0; i < n; i++ {
 				if time.Now().Before(due[i]) {
@@ -389,6 +399,12 @@ func (a *App) demo(which string) {
 	}
 	p := &portal{a: a, setup: which == "setup", chosen: make(chan Choice, 1), known: []Known{{"preconfigured", "Home Wi-Fi"}},
 		nets: []Net{{"Cafe Wi-Fi", 84, true}, {"Telstra5G-2A1F", 61, true}, {"Library Free Wi-Fi", 33, false}}}
+	if from := os.Getenv("ISLAND_SHELF_FROM"); from != "" && which == "island" {
+		// a computer as the island: its shelf copied from a site first (a local one while building)
+		if err := a.shelfSync(strings.TrimRight(from, "/")); err != nil {
+			log.Printf("shelf: %v", err)
+		}
+	}
 	log.Printf("the %s page: http://%s", which, os.Getenv("ISLAND_LISTEN"))
 	go func() {
 		for c := range p.chosen {

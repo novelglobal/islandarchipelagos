@@ -76,6 +76,7 @@ type view struct {
 	Setup, Island, Offline                bool
 	Nets                                  []Net
 	Known                                 []Known
+	Carts                                 []shelfCart
 }
 
 func (p *portal) render(w http.ResponseWriter, v view) {
@@ -83,6 +84,9 @@ func (p *portal) render(w http.ResponseWriter, v view) {
 	v.Name, v.SSID, v.Server = c.Name, setupSSID(c), c.Own.Server
 	v.Offline = c.Mode == "offline"
 	v.Paper = c.Paper
+	if l := p.a.shelf(); l != nil && v.Island {
+		v.Carts = l.Carts
+	}
 	w.Header().Set("content-type", "text/html; charset=utf-8")
 	w.Header().Set("cache-control", "no-store")
 	if err := pages.Execute(w, v); err != nil {
@@ -113,6 +117,9 @@ func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/pass" && r.Method == "POST" && !p.setup:
 		p.passPrint(w, r)
 	default:
+		if !p.setup && p.serveShelf(w, r) {
+			return
+		}
 		http.NotFound(w, r)
 	}
 }
@@ -199,18 +206,7 @@ func (p *portal) reopen(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	p.mu.Lock()
-	if p.last == nil || time.Since(p.dayFrom) > 24*time.Hour {
-		p.last, p.today, p.dayFrom = map[string]time.Time{}, 0, time.Now()
-	}
-	busy := time.Since(p.last[ip]) < 20*time.Second
-	full := p.today >= 300
-	if !busy && !full {
-		p.last[ip] = time.Now()
-		p.today++
-	}
-	p.mu.Unlock()
+	busy, full := p.allow(r)
 	if busy {
 		p.answer(w, r, "ONE AT A TIME: WAIT A MOMENT.")
 		return

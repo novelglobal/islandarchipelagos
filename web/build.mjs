@@ -182,6 +182,23 @@ fs.appendFileSync(path.join(out, '_headers'), `
   ! Content-Security-Policy
   Content-Security-Policy: ${TWIN_CSP}
 `);
+/* the shelf: what an island copies while it is online, to keep its carts working on its own Wi-Fi with none.
+   Every file with its sha-256, and the feeds each cart asks for (the island keeps a snapshot of each). kit/island/shelf.go reads it */
+{
+  const FONTS = ['ibm-plex-mono-latin-500-normal', 'ibm-plex-mono-latin-600-normal', 'poppins-latin-400-normal', 'poppins-latin-600-normal', 'poppins-latin-700-normal', 'vt323-latin-400-normal'].map(f => `vendor/fonts/${f}.woff2`);
+  const OFFLINE = { week: 1, news: 1, events: 1, book: 1, tarot: 1, cards: 1, species: 1, tape: 1 };
+  const carts = JSON.parse(read(path.join(out, 'stacks', 'index.json'))).map(c => ({ ...c, s: JSON.parse(read(path.join(out, 'stacks', c.id + '.json'))) })).filter(c => OFFLINE[c.s.kind]);
+  const feeds = new Set(['/api/settings']);
+  for (const { s } of carts) {
+    const w = s.where || [-37.77, 144.96];
+    if (s.kind === 'week') feeds.add(`/api/wx?at=${w[0]},${w[1]}` + (s.sea ? `&sea=${s.sea[0]},${s.sea[1]}` : ''));
+    if (s.kind === 'news') feeds.add('/api/news');
+    if (s.kind === 'book') for (let p = 1; p <= 3; p++) feeds.add(`/api/book?b=1&p=${p}` + (s.shelf ? `&s=${s.shelf}` : ''));
+  }
+  const files = ['cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]
+    .map(f => { const b = fs.readFileSync(path.join(out, f)); return { p: f, h: crypto.createHash('sha256').update(b).digest('hex'), n: b.length }; });
+  fs.writeFileSync(path.join(out, 'shelf.json'), JSON.stringify({ v: sha, files, feeds: [...feeds], carts: carts.map(c => ({ id: c.id, name: c.name })) }));
+}
 const listing = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => (d.isDirectory() ? listing(path.join(dir, d.name), base) : [path.relative(base, path.join(dir, d.name))])).sort();
 const all = listing(out);
 console.log(`${all.length} files, ${Math.round(all.reduce((n, f) => n + fs.statSync(path.join(out, f)).size, 0) / 1024)} KB in dist/, build ${sha}${preview ? `, PREVIEW ${branch}` : ''}`);

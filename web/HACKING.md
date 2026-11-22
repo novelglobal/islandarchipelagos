@@ -102,6 +102,22 @@
 2. `npm run build`: it is in `parts.js` and the worker's `PART_IDS`
 3. kinds the build asks for: `printer`, `pi`, `sd`, `power`, `solar`, `battery`, `charger`, `converter`; others sit on the bench
 
+## Add a cart
+
+1. `repo-static/stacks/<id>.json`: `id`, `name`, `kind`, `island`, `where`; list it in `repo-static/stacks/index.json`
+2. a new kind: a drawing in `repo-static/cart.js` (`KINDS`): `draw(k, data, stack, o)`, and `feed(stack, o)` (an `/api` path) or `local()`
+3. `npm run build`: it is on `/cart#<id>` and in `shelf.json` (kinds the island can run offline: `OFFLINE` in `build.mjs`)
+
+## The offline island (`../kit/island`)
+
+- `shelf.json` (written by `build.mjs`): `files` (path, sha-256, bytes), `feeds` (`/api` paths), `carts`
+- online, every 6 h: the island copies changed files to `/var/lib/island/shelf/files`, a snapshot of each feed to `shelf/feeds` (`shelf.go`)
+- on its own Wi-Fi: listed files served; `/api/partners` (this island), `/api/c`, feeds from the snapshot, `POST /api/stories` prints at once
+- prints taken: pictures (`GS v 0`, `GS ( L` working memory), text, feeds, alignment, speed, cut; never stored settings or stored pictures (`rasterOnly`)
+- each print noted in `shelf/outbox.jsonl` (sent to the site: next step)
+- try it on a computer: `ISLAND_LISTEN=127.0.0.1:8088 ISLAND_SHELF=./shelf ISLAND_SHELF_FROM=http://localhost:8787 ISLAND_DRY_DIR=./dry go run . -config ./island.json -demo island`
+- tests: `go test ./...` in `kit/island`
+
 ## Release
 
 1. staging → preview: staging-front.novelglobal.workers.dev
