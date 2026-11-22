@@ -521,6 +521,15 @@ try {
       const bnR1 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [['p1.usb2', 'p2.usb']] }), twR = await tw(KB), bnR0 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [] }), twR0 = await tw(KB), bnRw = await bnS(KB, { p: [['p1', 'tm-t88v'], ['p2', 't-beam']], j: [['p1.usb', 'p2.usb']] });
       check('a T-Beam joined on a ghost\'s bench makes it MESH (its twin says so); unjoined, or joined only to a printer, not', bnR1.json.mesh === true && twR.json.mesh === true && bnR0.json.mesh === false && twR0.json.mesh === false && bnRw.json.mesh === false, JSON.stringify({ w: bnRw.json.mesh, a: bnR1.json.mesh, b: twR.json.mesh, c: bnR0.json.mesh, d: twR0.json.mesh }));
       const bnReal = await bnS(KA, { p: [], j: [] }); check('a real island\'s twin keeps no bench (a ghost\'s only)', bnReal.status === 400 && !('bench' in tA4.json), JSON.stringify({ s: bnReal.status, t: Object.keys(tA4.json) }));
+      /* stage L2: prints made on the island's own Wi-Fi with no internet come home once it is back: each id once, printed, on its twin's roll as OFFLINE */
+      { const PT = pp.json.token, PI = pp.json.printer, th = '8,2,' + Buffer.from([0xF0, 0x0F]).toString('base64'), at = Math.floor(Date.now() / 1000) - 600;
+        const ob = (b, k = PT) => call(`/api/printers/${PI}/outbox`, { method: 'POST', token: k, body: b });
+        const o1 = await ob({ prints: [{ id: 'a1b2c3d4e5f6000000010001', at, code: 'DA-7K2Q', from: 'tarot', thumb: th }, { id: 'a1b2c3d4e5f6000000010002', at: at + 60, code: 'DA-3K1D', from: 'weather', thumb: th }] });
+        const o2 = await ob({ prints: [{ id: 'a1b2c3d4e5f6000000010001', at, code: 'DA-7K2Q', thumb: th }, { id: '../x', at }, { id: 'a1b2c3d4e5f6000000010003', at: 9e12, code: '<b>', thumb: '<svg>' }] });
+        const o3 = await ob({ prints: [] }, 'nope'), o4 = await ob({}), roll = ((await tw(KA)).json.roll || []).filter(x => x.off), late = roll.find(x => x.id.endsWith('0003'));
+        check('prints made offline come home once each, on the island\'s roll as OFFLINE with their pictures; a stranger, a bad id, a clock ahead and a bad picture are held off',
+          o1.status === 200 && o1.json.n === 2 && o2.json.n === 1 && o3.status === 401 && o4.status === 400 && roll.length === 3 && roll.filter(x => x.thumb === th && x.status === 'printed').length === 2 && late && late.code === null && late.thumb === null && late.created <= Date.now(),
+          JSON.stringify({ o1: o1.json, o2: o2.json, o3: o3.status, o4: o4.status, roll })); }
       /* stage F: A (real now) keeps a TEST beside it, opened by A's own key with ?isle=test; what works there MOVEs to A, and UNDO puts it back */
       { const isl = (q, o) => call(q, { ip: '10.66.1.1', ...o }), TQ = '?isle=test', put = (q, b, k) => server.fetch(new URL('/api/island/pics/' + q, O), { method: 'PUT', headers: { origin: O, 'cf-connecting-ip': '10.66.1.1', authorization: `Bearer ${k}` }, body: b });
         await isl('/api/island', { method: 'POST', token: KA, body: { home: { line: 'real line', label: { title: 'Real Reef', body: 'Here.' } } } });

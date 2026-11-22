@@ -114,7 +114,7 @@
 - online, every 6 h: the island copies changed files to `/var/lib/island/shelf/files`, a snapshot of each feed to `shelf/feeds` (`shelf.go`)
 - on its own Wi-Fi: listed files served; `/api/partners` (this island), `/api/c`, feeds from the snapshot, `POST /api/stories` prints at once
 - prints taken: pictures (`GS v 0`, `GS ( L` working memory), text, feeds, alignment, speed, cut; never stored settings or stored pictures (`rasterOnly`)
-- each print noted in `shelf/outbox.jsonl` (sent to the site: next step)
+- each print kept in `shelf/outbox.jsonl` with its own id and a one-bit picture; online again, the island sends forty at a time to `POST /api/printers/<id>/outbox`, the site keeps each id once and the twin roll shows them as OFFLINE
 - try it on a computer: `ISLAND_LISTEN=127.0.0.1:8088 ISLAND_SHELF=./shelf ISLAND_SHELF_FROM=http://localhost:8787 ISLAND_DRY_DIR=./dry go run . -config ./island.json -demo island`
 - tests: `go test ./...` in `kit/island`
 

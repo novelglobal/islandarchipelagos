@@ -345,26 +345,6 @@ func (p *portal) shelfPrint(w http.ResponseWriter, r *http.Request) {
 	jsonOut(w, 200, map[string]any{"ok": true, "passed": true, "code": clean(b.Code, 12)})
 }
 
-// outbox notes each print made on the island's own Wi-Fi, one line each, for the island's own record
-// (sent to the site in a later stage)
-func (a *App) outbox(code, from string, raw []byte) {
-	h := sha256.Sum256(raw)
-	line, _ := json.Marshal(map[string]any{"id": hex.EncodeToString(h[:8]) + fmt.Sprintf("%x", time.Now().UnixNano()&0xffffff), "at": time.Now().Unix(), "code": code, "from": from, "n": len(raw)})
-	name := filepath.Join(a.shelfDir(), "outbox.jsonl")
-	if err := os.MkdirAll(filepath.Dir(name), 0o755); err != nil {
-		return
-	}
-	if fi, err := os.Stat(name); err == nil && fi.Size() > 1<<20 {
-		return // full: kept as it is until it is sent
-	}
-	f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	f.Write(append(line, '\n'))
-}
-
 // rasterOnly: a print, and nothing that changes the printer. Pictures (GS v 0, or the greys of GS ( L kept in
 // its working memory and printed), plain text, feeds, alignment, speed and head parts, a cut. Never stored settings
 // (GS ( E) or stored pictures.

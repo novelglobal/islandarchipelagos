@@ -750,6 +750,19 @@ async function usedOff(db, env, req, id) {
     if (await stampPut(db, env, who, { p: { id }, code: k.length === 6 ? k.slice(0, 3) + '-' + k.slice(3) : k, day })) s++; }
   return json({ ok: true, n, s });
 }
+/* stage L2: what an island printed on its own Wi-Fi with no internet, sent once it is back. Each kept once by its own id (sent twice,
+   the second is dropped), printed, with its small picture, on the twin's roll. A clock that drifted with no internet is held to the
+   last ninety days and now */
+async function outboxIn(db, req, id) {
+  if (!(await printerAuth(db, req, id))) return fail(401, 'token'); const b = await body(req, 131072), t = now();
+  if (!Array.isArray(b.prints)) return fail(400, 'prints');
+  const ops = []; for (const x of b.prints.slice(0, 40)) { const oid = String((x && x.id) || ''); if (!/^[0-9a-f]{8,32}$/.test(oid)) continue;
+    const at = Math.max(t - 90 * DAY, Math.min(t, Math.round(+x.at * 1000) || t)), code = /^[A-Z0-9-]{1,12}$/.test(String(x.code || '')) ? x.code : null;
+    const thumb = typeof x.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(x.thumb) ? x.thumb : null;
+    ops.push(db.prepare("INSERT OR IGNORE INTO jobs (id, printer, code, status, created, done, thumb, note) VALUES (?, ?, ?, 'printed', ?, ?, ?, 'off')").bind(`ob.${id}.${oid}`, id, code, at, at, thumb)); }
+  const n = ops.length ? (await db.batch(ops)).reduce((s, r) => s + ((r.meta && r.meta.changes) || 0), 0) : 0;
+  return json({ ok: true, n });
+}
 /* ───────── a printer's touch screen: the slips held for it, each shown with the jellyfish; one press prints it, a long press squashes it ───────── */
 async function touchAuth(db, req, id) {
   const p = await db.prepare('SELECT * FROM printers WHERE id = ?').bind(id).first(); const tok = bearer(req);
@@ -1003,7 +1016,7 @@ async function twin(db, env, req, url) {
     const usb = url.searchParams.get('usb') === '1', { results } = await db.prepare("SELECT id, code, escpos, mesh, created, thumb, story FROM jobs WHERE printer = ? AND (status = 'queued' OR (status = 'printing' AND lease < ?)) ORDER BY created LIMIT 6").bind(p.id, t).all();
     took = results;
     if (took.length) await db.batch(took.map(j => usb ? db.prepare("UPDATE jobs SET status = 'printing', lease = ?, tries = tries + 1 WHERE id = ?").bind(t + 60e3, j.id) : db.prepare("UPDATE jobs SET status = 'printed', done = ?, escpos = NULL, mesh = NULL WHERE id = ?").bind(t, j.id))); }
-  const { results: roll } = await db.prepare("SELECT j.id, j.code, j.status, j.created, j.done, j.thumb, j.mesh IS NOT NULL AS radio, CASE WHEN j.status IN ('held', 'queued') THEN j.escpos END AS escpos FROM jobs j WHERE j.printer = ? ORDER BY j.created DESC LIMIT 24").bind(p.id).all();
+  const { results: roll } = await db.prepare("SELECT j.id, j.code, j.status, j.created, j.done, j.thumb, j.mesh IS NOT NULL AS radio, j.note IS 'off' AS off, CASE WHEN j.status IN ('held', 'queued') THEN j.escpos END AS escpos FROM jobs j WHERE j.printer = ? ORDER BY j.created DESC LIMIT 24").bind(p.id).all();
   const J = joinsOf(p), ids = [...J.to, ...(J.mirror ? [J.mirror] : [])], nm = ids.length ? (await db.prepare(`SELECT id, name, number, seen, ghost FROM printers WHERE id IN (${ids.map(() => '?').join(', ')})`).bind(...ids).all()).results : [];
   const isleOf = id => { const r = nm.find(x => x.id === id) || { id }; return { id, name: r.name || id, number: r.number || null, ready: !!r.seen && t - r.seen < 120e3, ghost: !!r.ghost }; };
   return json({ id: p.id, name: p.name || p.id, number: p.number || null, paper: p.paper || '80', ghost: !!p.ghost, paired: !!p.paired, mesh: !!p.mesh, ready: !!p.seen && t - p.seen < 120e3, ...(p.ghost ? { bench: benchOf(p.bench) } : {}),
@@ -1969,6 +1982,7 @@ async function api(req, env, url, ctx) {
   if ((p[0] === 'printers' || p[0] === 'touch') && p[1] && bearer(req) && !(await db.prepare('SELECT 1 FROM printers WHERE id = ?').bind(p[1]).first())) { const r = await db.prepare(`SELECT id FROM printers WHERE ${p[0] === 'touch' ? 'touch' : 'token'} = ?`).bind(await sha256(bearer(req))).first(); if (r) p[1] = r.id; }
   if (p[0] === 'printers' && p[1] && p[2] === 'next' && m === 'GET') return next(db, env, req, p[1]);
   if (p[0] === 'printers' && p[1] && p[2] === 'used' && !p[3] && m === 'POST') return usedOff(db, env, req, p[1]);
+  if (p[0] === 'printers' && p[1] && p[2] === 'outbox' && !p[3] && m === 'POST') return outboxIn(db, req, p[1]);
   if (p[0] === 'printers' && p[1] && p[2] === 'jobs' && p[3] && m === 'POST') return report(db, req, p[1], p[3]);
   if (p[0] === 'pair' && !p[1] && m === 'POST') return pairAsk(db, env, req);
   if (p[0] === 'pair' && p[1] === 'poll' && !p[2] && m === 'POST') return pairPoll(db, env, req);

@@ -137,6 +137,7 @@ func (a *App) pullStep(i int) (time.Duration, string) {
 	}
 	if i == 0 && (r.Status == 200 || r.Status == 204) {
 		a.sendUsed(l)
+		a.sendOutbox(l)
 	}
 	wait := r.Wait
 	if wait == 0 {

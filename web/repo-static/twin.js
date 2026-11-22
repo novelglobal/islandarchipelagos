@@ -148,7 +148,8 @@
       var p = Promise.resolve(); (j.took || []).forEach(function (x) { p = p.then(function () { return take(x); }); });
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
       (j.roll || []).slice().reverse().forEach(function (x) { if (SEEN[x.id] || (j.took || []).some(function (y) { return y.id === x.id; })) return;
-        var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv) return; shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : '', !first, false); });
+        var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv && x.off) cv = draw(textSlip([x.code || 'PRINT', 'OFFLINE']), j.paper); if (!cv) return;
+        shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false); });
       if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
       .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
