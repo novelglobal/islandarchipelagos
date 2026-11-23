@@ -841,10 +841,10 @@
     const acc = el('select', {}, ...[['open', 'OPEN: A GHOST ISLAND’S CODE COUNTS'], ['pop', 'PRESENCE: ONLY A PRINT COUNTS']].map(([v, t]) => el('option', { value: v, text: t, ...((st.access || 'open') === v ? { selected: '' } : {}) })));
     const say = el('small', { class: 'hint' });
     const wipe = async (what, sure) => { if (!confirm(sure)) return; const j = await (await api('makers', { method: 'POST', body: JSON.stringify({ wipe: what }) })).json(); say.textContent = (j.wiped || 0) + ' WIPED'; setTimeout(() => show('printers'), 900); };
-    const ky = el('input', { maxlength: '200', placeholder: 'Your island’s key opens it on any phone.' }); ky.value = w.key || '';
-    const kp = el('input', { maxlength: '200', placeholder: 'Keep it safe: take a screenshot, or download it.' }); kp.value = w.keep || '';
-    const rw = el('textarea', { rows: '4', maxlength: '900', placeholder: 'Your island is on. Your reward is this code, and it’s yours. With it you can save what you make, talk on the board, keep passes and open your home on another phone.' }); rw.value = w.reward || '';
-    const pp = el('input', { maxlength: '200', placeholder: 'Bring this code to a printer to make it yours.' }); pp.value = w.pop || '';
+    const ky = el('input', { maxlength: '200', placeholder: 'Opens your island on any phone.' }); ky.value = w.key || '';
+    const kp = el('input', { maxlength: '200', placeholder: 'Screenshot or download it.' }); kp.value = w.keep || '';
+    const rw = el('textarea', { rows: '4', maxlength: '900', placeholder: 'Your island is on. Your code lets you save, talk and keep passes.' }); rw.value = w.reward || '';
+    const pp = el('input', { maxlength: '200', placeholder: 'Print it at a printer to make it real.' }); pp.value = w.pop || '';
     return el('section', { class: 'ed' }, el('h3', { text: 'CODES' }),
       el('small', { class: 'hint', text: `MADE REAL BY A PRINT: ${n.print || 0} · BY A GHOST ISLAND: ${n.ghost || 0}. Both open everything (saving, talking, passes, the home); a ghost’s carries a GHOST badge, and a print later makes it PRINTED.` }),
       el('label', { class: 'row' }, el('span', { text: 'ACCESS' }), acc),

@@ -64,7 +64,7 @@
     cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); paint(g, w, h, seed || 61); return true; }
   function paint(g, w, h, seed, sz) { var r = rnd(seed + 7); paper(g, w, h, r); press(g, w, h, seed, sz || Math.max(34, Math.min(120, h * 0.42))); grain(g, w, h, Math.round(w * h / 160), 'rgba(238,234,224,.5)', seed + 11, 1.4); }
   /* the words to keep a code or a key, and the reward's note: the owner's own from the approval page (codeNotes), else these */
-  var NOTES = { key: 'Your island’s key opens it on any phone.', keep: 'Keep it safe: take a screenshot, or download it.', reward: 'Your island is on. Your reward is this code, and it’s yours. With it you can save what you make, talk on the board, keep passes and open your home on another phone.', pop: 'Bring this code to a printer to make it yours.' };
+  var NOTES = { key: 'Opens your island on any phone.', keep: 'Screenshot or download it.', reward: 'Your island is on. Your code lets you save, talk and keep passes.', pop: 'Print it at a printer to make it real.' };
   function notes(set) { var o = {}; try { o = JSON.parse((set && set.codeNotes) || '{}') || {}; } catch (e) { o = {}; } return { key: o.key || NOTES.key, keep: o.keep || NOTES.keep, reward: o.reward || NOTES.reward, pop: o.pop || NOTES.pop }; }
   /* a code or a key as a picture to keep: the card's face, its label, the thing itself large, a line under it */
   function keepCard(o) { var W = 1080, H = 1350, c = mk(W, H), g = c.getContext('2d'), sd = seedOf(o.big), r = rnd(sd + 3);
