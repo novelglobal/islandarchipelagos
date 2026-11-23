@@ -29,6 +29,12 @@ html.hm-away #hm-jf, html.hm-sheet.hm-nosea #hm-jf { visibility: hidden; }
 #hm-top nav { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 10px); display: flex; gap: 4px; z-index: 1; }
 #hm-top nav button { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; opacity: .85; color: #F4F1E8; }
 #hm-top nav button[hidden] { display: none; }
+/* which home: novel.global or your island */
+#hm-top nav #hm-env { display: flex; align-items: center; gap: 2px; margin-right: 4px; padding: 2px; border-radius: 16px; background: rgba(244, 241, 232, .12); box-shadow: inset 0 0 0 1px rgba(244, 241, 232, .3); }
+#hm-top nav #hm-env[hidden] { display: none; }
+#hm-top nav #hm-env button { display: block; width: auto; height: 28px; max-width: 108px; padding: 0 8px; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 9px/28px 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; color: #F4F1E8; background: none; box-shadow: none; opacity: .8; }
+#hm-top nav #hm-env button[aria-pressed="true"] { background: #F4F1E8; color: #17457F; opacity: 1; box-shadow: none; }
+@media (max-width: 360px) { #hm-top nav #hm-env button { max-width: 80px; padding: 0 6px; } }
 #hm-top nav button:hover { opacity: 1; background: rgba(244, 241, 232, .1); }
 #hm-top nav svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 #hm-top nav .f { fill: currentColor; stroke: none; }
@@ -1187,6 +1193,9 @@ html.hm-on.hm-night:not(.hm-away), html.hm-on.hm-night:not(.hm-away) body { back
 #hm-x .mn-keep { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; } #hm-x .mn-keep .mn-say { flex: 1; margin: 0; opacity: .7; }
 #hm-x .mn-keep button { flex: none; min-height: 36px; padding: 0 14px; border: 1px solid var(--hm-ink); border-radius: 18px; background: none; color: var(--hm-ink); font: 600 11px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; cursor: pointer; }
 #hm-x .mn-id dd i.mn-bdg { display: inline-block; padding: 3px 6px; border: 1px solid currentColor; border-radius: 3px; } #hm-x .mn-id dd i.mn-gh { border-style: dashed; }
+#hm-x .mn-ans { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+#hm-x .mn-ans button { min-height: 34px; padding: 0 12px; border: 1px solid var(--hm-line); border-radius: 17px; background: none; color: var(--hm-ink); font: 500 12.5px/1 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; cursor: pointer; }
+#hm-x .mn-ans button[aria-pressed="true"] { background: var(--hm-ink); color: var(--hm-bg); border-color: var(--hm-ink); }
 #hm-x .mn-plain { font: 400 11.5px/1.5 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: 0; }
 #hm-x .mn-mnl { margin: 0 0 14px; } #hm-x .mn-mnl > div { display: grid; grid-template-columns: 118px 1fr; gap: 10px; padding: 9px 0; border-top: 1px dashed color-mix(in srgb, var(--hm-ink) 25%, transparent); }
 #hm-x .mn-mnl dt { display: flex; align-items: center; gap: 6px; font: 600 10px/1.3 'IBM Plex Mono', monospace; letter-spacing: .16em; color: var(--hm-ink); }
@@ -1948,6 +1957,23 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .ik-tour button { min-height: 32px; min-width: 32px; padding: 0 12px; border-radius: 16px; color: var(--hm-bg); font-size: 10.5px; }
 #hm .ik-tour .ik-nx { background: var(--hm-bg); color: var(--hm-ink); }
 #hm .ik-pane { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ik-acc); animation: ik-in .22s ease-out; }
+/* the island, set up a step at a time */
+#hm .ik-step { margin-top: 12px; padding: 16px 14px 12px; border: 1.5px solid var(--hm-ink); border-radius: 6px; animation: ik-in .22s ease-out; }
+#hm .ik-sn { display: flex; align-items: center; gap: 8px; margin: 0; font: 600 10px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .2em; color: var(--hm-dim); }
+#hm .ik-sn i { font-style: normal; padding: 3px 6px; border-radius: 3px; background: var(--hm-ink); color: var(--hm-bg); letter-spacing: .14em; }
+#hm .ik-st { margin: 10px 0 6px; font: 700 26px/1 Poppins, 'Helvetica Neue', Arial, sans-serif; letter-spacing: -.02em; }
+#hm .ik-ss { margin: 0; font: 500 14px/1.45 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 0; }
+#hm .ik-step .ik-pane { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hm-line); }
+#hm .ik-nav { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+#hm .ik-nav > button { flex: none; min-height: 40px; min-width: 64px; padding: 0 12px; border: 1px solid var(--hm-ink); border-radius: 20px; font: 600 11px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .16em; color: var(--hm-ink); background: none; cursor: pointer; }
+#hm .ik-nav > button:disabled { opacity: .3; cursor: default; }
+#hm .ik-nav .ik-nx { background: var(--hm-ink); color: var(--hm-bg); }
+#hm .ik-steps { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 0; padding: 0; list-style: none; }
+#hm .ik-steps button { width: 13px; height: 28px; display: grid; place-items: center; padding: 0; background: none; border: 0; cursor: pointer; }
+#hm .ik-steps button::before { content: ''; width: 7px; height: 7px; border: 1.2px solid currentColor; border-radius: 50%; opacity: .5; }
+#hm .ik-steps button.ok::before { background: currentColor; opacity: .8; }
+#hm .ik-steps button.on::before { width: 9px; height: 9px; background: var(--ik-acc); border-color: var(--ik-acc); opacity: 1; }
+#hm .ik-nmf input { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: inherit; font: 500 15px/1 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 #hm .ik-ph { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; } #hm .ik-ph b { letter-spacing: .2em; color: var(--ik-acc); }
 #hm .ik-ph button { width: 32px; height: 32px; color: var(--hm-dim); font-size: 16px; }
 #hm .ik-pane .hm-row { margin-bottom: 12px; }

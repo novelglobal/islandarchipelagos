@@ -87,18 +87,28 @@
   /* the owner's switches (Settings): keys on the small cards, ISLAND folded into ISLAND ARCHIPELAGOS, the second jellyfish's look */
   var OPT = { talk: false, find: false, one: true, stamp: false, carts: false };
   /* a cartridge: a small card, three to a screen. With EVERY CARD on, the big ones stand that way too */
-  var MINE = store.get('da.hm.mine', null);
   /* a place's own novel.global (a pop-up's, from its link): its order, sizes and its card. A person's own choices sit over it */
   /* or the island someone made their home on the islands page (pick): that one stays until they change it */
   var PLACE = store.get('da.pop.home', null); if (PLACE && !PLACE.pick && !(PLACE.at && Date.now() - PLACE.at < 30 * 864e5)) PLACE = null;
   var PH = (PLACE && PLACE.home) || {};
   /* the home island's own home, as its keeper set it: its big cards in order (the first its main), which nines stand and which of their
      cards, and its label. Kept with the pick, and fresh from the islands each visit */
-  var IH = PLACE && PLACE.isle && PLACE.isle !== 'novelglobal' ? PLACE.ihome || null : null;
+  /* two homes on one phone: novel.global as everyone sees it, and your island's own (yours by its key, else the one you picked on the islands
+     page). The switch in the top bar swaps them; each keeps its own layout */
+  var ENVI = store.get('da.hm.isle', null) || (PLACE && PLACE.pick && PLACE.isle && PLACE.isle !== 'novelglobal' ? { id: PLACE.isle, name: PLACE.name, home: PLACE.ihome || null } : null);
+  var ENV = ENVI ? store.get('da.hm.env', PLACE && PLACE.pick && PLACE.isle === ENVI.id ? 'isle' : 'ng') : 'ng';
+  function mineKey() { return ENV === 'isle' && ENVI ? 'da.hm.mine.' + ENVI.id : 'da.hm.mine'; }
+  var MINE = store.get(mineKey(), null);
+  var IH = ENV === 'isle' && ENVI ? ENVI.home || null : null;
+  function envDraw() { var g = D.getElementById('hm-env'); if (!g) return; g.hidden = !ENVI; if (!ENVI) return; var b = g.querySelectorAll('button');
+    b[1].textContent = String(ENVI.name || ENVI.id).toUpperCase(); b[0].setAttribute('aria-pressed', String(ENV !== 'isle')); b[1].setAttribute('aria-pressed', String(ENV === 'isle')); }
+  function envGo(e) { ENV = e === 'isle' && ENVI ? 'isle' : 'ng'; store.set('da.hm.env', ENV); MINE = store.get(mineKey(), null); IH = ENV === 'isle' ? ENVI.home || null : null; applyCards(null); envDraw(); }
+  function envKeep(o) { if (!o) { store.set('da.hm.isle', null); ENVI = null; if (ENV === 'isle') envGo('ng'); envDraw(); return; }
+    var was = JSON.stringify(ENVI); ENVI = o; store.set('da.hm.isle', o); envDraw(); if (was !== JSON.stringify(o) && ENV === 'isle') { IH = o.home || null; applyCards(null); } }
   var NINE_G = { utils: ['week', 'read', 'deck'], soon: ['soon'], dev: ['dev'] }, MAINS = ['radio', 'wish', 'research', 'zine', 'kit', 'space', 'portfolio'];
   function nineOf(c) { for (var k in NINE_G) if (NINE_G[k].indexOf(c.g) >= 0) return k; return null; }
   function isleOff(c, h) { h = h || IH; if (!h || c.id === 'intro') return false; if (h.main && MAINS.indexOf(c.id) >= 0 && h.main.indexOf(c.id) < 0) return true; var n = nineOf(c); if (h.nines && n && h.nines.indexOf(n) < 0) return true; return (h.off || []).indexOf(c.id) >= 0; }
-  function isleSort() { var h = IH; if (!h || (!h.main && !h.nines)) return; var at = {}; CARDS.forEach(function (c, i) { at[c.id] = i; });
+  function isleSort() { CARDS.forEach(function (c, i) { if (c.o0 == null) c.o0 = i; }); var h = IH; if (!h || (!h.main && !h.nines)) { CARDS.sort(function (a, b) { return a.o0 - b.o0; }); return; } var at = {}; CARDS.forEach(function (c, i) { at[c.id] = i; });
     var rank = function (c) { if (c.id === 'intro') return -1; var m = h.main ? h.main.indexOf(c.id) : -1; if (m >= 0) return m; var n = nineOf(c), q = n && h.nines ? h.nines.indexOf(n) : -1; return q >= 0 ? 20 + q : 10; };
     CARDS.sort(function (a, b) { return rank(a) - rank(b) || at[a.id] - at[b.id]; }); }
   if (PLACE && PLACE.card) (function () { var at = CARDS.findIndex(function (c) { return c.id === 'portfolio'; }); CARDS.splice(at < 0 ? CARDS.length : at, 0, { id: 'pop-' + PLACE.id, pop: PLACE.id, size: 'small', title: String(PLACE.name || PLACE.id).toUpperCase().slice(0, 24), opens: 'pop', skin: 'play', art: 'slot', pal: 5, motion: 'shadow', where: [-37.8136, 144.9631] }); })();
@@ -546,6 +556,7 @@
   var root = D.createElement('div'); root.id = 'hm';
   root.innerHTML = '<header id="hm-top" aria-label="The sea" aria-expanded="false"><canvas aria-hidden="true"></canvas><nav>' +
     '<button id="hm-snork" aria-label="Back up to the surface" hidden>' + SNORKEL + '</button>' +
+    '<div id="hm-env" role="group" aria-label="Which home" hidden><button type="button" data-env="ng" title="novel.global as everyone sees it">NOVEL.GLOBAL</button><button type="button" data-env="isle" title="Your island’s own home"></button></div>' +
     '<button id="hm-mine" aria-label="Home" aria-pressed="false" title="Your home: your code, your pass, your cards"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6"/><circle cx="14" cy="17" r="1.6"/></svg></button>' + '<button id="hm-snd" aria-label="Sounds" title="Sounds" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 6v12M9.5 9v6M14 4v16M18.5 8v8"/></svg><i class="led"></i></button>' + '<button id="hm-theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav><div id="hm-care" role="toolbar" aria-label="Care for the reef" hidden></div></header><canvas id="hm-jf" aria-hidden="true"></canvas>' +
     '<main id="hm-col">' + colHTML() + '</main><nav class="hm-dots" aria-hidden="true"></nav>' +
     '<section id="hm-x" role="dialog" aria-modal="true" aria-label=""><header><button class="hm-back" aria-label="Back"></button></header><div class="hm-body"></div></section>' +
@@ -556,6 +567,7 @@
   function dotsAt() { var d = $('.hm-dots'), op = d && d.offsetParent; if (!op) return; var r = col.getBoundingClientRect(), pr = parseFloat(getComputedStyle(col).paddingRight) || 0, mid = r.left + col.clientWidth - pr / 2;
     d.style.right = Math.max(0, op.getBoundingClientRect().right - mid - d.offsetWidth / 2) + 'px'; }
   dotsAt(); addEventListener('resize', dotsAt);
+  envDraw(); $('#hm-env').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.getAttribute('aria-pressed') === 'true') return; beep(660, 0.05); envGo(b.dataset.env); });
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
   var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
@@ -614,7 +626,8 @@
       /* a set stands at the size novel.global gave last to any of its cards */
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
-      for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1); }
+      for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1);
+      CARDS.forEach(function (c, k) { c.o0 = k; }); }
     isleSort(); col.innerHTML = colHTML(); devBar(); cards = $$('.hm-card', col); logosCheck(); wlWire(); setTimeout(introArc, 1200); setTimeout(introArc, 4000); if (INTRO_TXT) introCopy(INTRO_TXT); if ('ResizeObserver' in window) { if (introArc.ro) introArc.ro.disconnect(); introArc.ro = new ResizeObserver(function () { requestAnimationFrame(introArc); }); $$('.sk-intro .in-arc', col).forEach(function (cv) { introArc.ro.observe(cv); }); } requestAnimationFrame(introFit); ((D.fonts && D.fonts.ready) || Promise.resolve()).then(introFit); idleWatch(); wxCard(); receipt(); lastPrint(); $('.hm-dots').innerHTML = dotsHTML(); paintAll(); pics(); radars(); lamps(); parallax(); zpStart(); rnStart(); paperEdges(); topo();
   }
   var CARDS_TXT = null;
@@ -763,7 +776,7 @@
       v.addEventListener('click', function (e) { if (e.target.closest('.lb-vb')) return; play(); }); v.addEventListener('contextmenu', function (e) { e.preventDefault(); });
       tr.addEventListener('click', function (e) { if (!vid || !vid.duration) return; var r = tr.getBoundingClientRect(); vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vid.duration; });
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
-  function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = PLACE.name || PLACE.isle; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + PLACE.isle; L.fk = 'i-' + PLACE.isle; return L; }
+  function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = ENVI.name || ENVI.id; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + ENVI.id; L.fk = 'i-' + ENVI.id; return L; }
   var LBT = '';
   function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || ((HASHGO || (xv.classList.contains('on') && /^(TWIN|GHOST)$/.test(xv.getAttribute('aria-label') || ''))) && !force)) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
@@ -863,7 +876,7 @@
   addEventListener('click', function (e) { var f = e.target.closest && (e.target.closest('[data-inflip]') || e.target.closest('.sk-intro .in-front')); if (!f) return; var cd = f.closest('.sk-intro'); if (!cd) return; e.preventDefault(); e.stopPropagation(); cd.classList.toggle('flip'); if (cd.classList.contains('flip')) requestAnimationFrame(function () { introFit(); introArc(); }); }, true);
   /* small-card keys that lie under the card's open-button answer where they show */
   addEventListener('click', function (e) { if (e.clientX == null || (e.target.closest && e.target.closest('.rd-mute, [data-inflip]'))) return; var k = $$('[data-gh], .sm-f [data-kitopen], .sm-f [data-ghostopen]').filter(function (m) { var r = m.getBoundingClientRect(); return r.width && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; })[0]; if (!k) return; e.preventDefault(); e.stopPropagation(); if (k.hasAttribute('data-gh')) window.__hmLeave(k.href, e.clientX, e.clientY); else if (k.hasAttribute('data-ghostopen')) ghostOpen(); else open('kit'); }, true);
-  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set('da.hm.mine', MINE); applyCards(null); }, true);
+  addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set(mineKey(), MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
     var sm = sizeOf(c) === 'small', noT = c.ph || (sm && !OPT.talk), noF = c.ph || (sm && !OPT.find);
@@ -1620,6 +1633,12 @@
   var ikGauge = function (at, vals, cur, lab, t) { return '<div class="ik-gauge" role="group" title="' + t + '" aria-label="' + t + '">' + vals.map(function (v) { var on = String(cur) === String(v); return '<button type="button"' + (on ? ' class="on"' : '') + ' ' + at + '="' + v + '" aria-pressed="' + on + '"><i></i><b>' + lab(v) + '</b></button>'; }).join('') + '</div>'; };
   var ikNo = function () { return ''; }, ikYes = function () { return true; };
   var IKL = [
+    { k: 'build', part: null, name: 'BUILD', say: 'Build your printer on the bench, one part at a time.',
+      show: function (p, own, isle) { return own && !isle && p.ghost && !p.testOf; }, set: function (p) { return !!p.ready; }, badge: ikNo,
+      pane: function () { return '<div class="hm-row"><button class="hm-btn ik-go" data-twin>SET UP</button></div>'; } },
+    { k: 'name', part: 'name', name: 'NAME', say: 'Give your island a name.',
+      show: function (p, own) { return own; }, set: function (p) { return !!p.name; }, badge: ikNo,
+      pane: function (p) { return '<form class="hm-row ik-nmf"><input maxlength="40" autocomplete="off" value="' + esc(p.name || '') + '" aria-label="Island name"><button class="hm-btn ik-go">SAVE</button></form>'; } },
     { k: 'printer', part: null, name: 'PRINTER', say: 'How many prints are waiting and how many have printed.',
       show: ikYes, set: function (p) { return !!p.ready; }, badge: function (p) { return p.queued > 0 ? String(+p.queued) : ''; },
       pane: function (p, own) { var j = p.joins; return '<div class="ik-nums"><p title="Waiting to print"><b>' + (+p.queued || 0) + '</b><span>WAITING</span></p><p title="Printed here"><b>' + (+p.printed || 0) + '</b><span>PRINTED</span></p></div>' +
@@ -1661,6 +1680,7 @@
       show: function (p, own, isle) { return own && !isle && ('test' in p || !!p.testOf); }, set: function (p) { return !!(p.test || p.testOf); }, badge: ikNo,
       pane: function (p) { return testKeep(p).replace(/^<p class="hm-h"[^>]*>TEST<\/p>/, ''); } }
   ];
+  var IK_ORD = ['build', 'name', 'pics', 'home', 'passes', 'cards', 'use', 'picks', 'gang', 'links', 'gap', 'printer', 'test'];
   /* the next good thing to do on it, shown as a small sun */
   function ikNext(p, has) { var l = (p.home || {}).label || {};
     if (has('pics') && !(p.pics || []).length) return 'pics';
@@ -1695,35 +1715,39 @@
     var fill = function (p) { HK.p = p; var can = p.build || null, has = function (k) { return !k || !can || can.indexOf(k) >= 0; };
       var L = IKL.filter(function (l) { return l.show(p, own, isle); }), go = L.filter(function (l) { return has(l.part); });
       if (HK.at && !go.some(function (l) { return l.k === HK.at; })) HK.at = null;
-      if (HK.tour != null && HK.tour >= go.length) HK.tour = null;
-      var tk = HK.tour != null ? go[HK.tour].k : null, nx = ikNext(p, has), at = tk ? null : HK.at, cur = IKL.filter(function (l) { return l.k === (tk || at); })[0];
+      go.sort(function (a, b) { return IK_ORD.indexOf(a.k) - IK_ORD.indexOf(b.k); });
+      if (!HK.at) { var f0 = go.filter(function (l) { return !l.set(p); })[0]; HK.at = (f0 || go[0] || {}).k || null; }
+      var tk = null, at = HK.at, si = go.map(function (l) { return l.k; }).indexOf(at), cur = go[si], nx = at;
+      /* this phone's own island, kept for the home's switch */
+      if (own && !isle && !p.testOf && p.id) envKeep({ id: p.id, name: p.name || p.id, home: p.home || null });
       var mk = function (l) { var ok = has(l.part), st = ok && l.set(p), b = ok ? l.badge(p) : '';
         return '<button type="button" class="ik-m' + (l.sea ? ' sea' : '') + (ok ? '' : ' lock') + (st ? ' set' : '') + (l.k === at ? ' at' : '') + (l.k === tk ? ' tour' : '') + (ok && !tk && l.k === nx ? ' nx' : '') + ((IK_AT[l.k] || [])[2] ? ' up' : '') + '" data-ik="' + l.k + '" style="' + ikPos(l.k) + '"' +
           (ok ? ' aria-expanded="' + (l.k === at) + '"' : ' disabled') + ' aria-label="' + l.name + '" title="' + l.name + ': ' + esc(l.say) + '"><i>' + (b ? '<em>' + b + '</em>' : '') + '</i></button>'; };
       var nm = esc(p.name || p.id), gh = p.ghost && !p.testOf;
       box.innerHTML = '<div class="ik' + (p.ready ? ' up' : '') + '">' +
         '<div class="ik-top">' + (has('name') ? '<button type="button" class="ik-nm" data-rn title="Rename">' + nm + '</button>' : '<b class="ik-nm">' + nm + '</b>') +
-          (p.number ? '<small title="Its number">' + (+p.number) + '</small>' : '') + '<i class="ik-led" title="' + (p.ready ? 'Its printer is on' : 'Its printer is asleep') + '"></i>' +
-          '<button type="button" class="ik-q" data-ikt aria-pressed="' + (tk ? 'true' : 'false') + '" title="Guide">?</button></div>' +
-        (own ? '<div class="ik-way"><p class="ik-man">' + (p.testOf ? 'Your test island: try changes here before your real one.' : gh ? 'Your island has no printer yet: tap SET UP to build one.' : 'Your island: tap TWIN to see its printer.') + ' Tap a spot on the island to change it.</p>' +
-          '<button type="button" class="ik-bench" data-twin>' + (gh ? 'SET UP' : 'TWIN') + '</button></div>' : '') +
+          (p.number ? '<small title="Its number">' + (+p.number) + '</small>' : '') + '<i class="ik-led" title="' + (p.ready ? 'Its printer is on' : 'Its printer is asleep') + '"></i></div>' +
+        (own && p.testOf ? '<p class="ik-man">Your test island: try changes here before your real one.</p>' : '') +
         (own && !p.testOf ? '<div class="ik-keep"><p class="ik-man">' + esc(KEYSAY) + ' ' + esc(KEEPSAY) + '</p><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button></div>' : '') +
-        '<div class="ik-map' + (p.ghost || p.testOf ? ' gh' : '') + (p.ready ? ' up' : '') + '"><svg class="isle-h" role="img" aria-label="' + nm + '"></svg>' + L.map(mk).join('') + '</div>' +
-        (tk ? '<div class="ik-tour"><p><b>' + cur.name + '</b><span>' + esc(cur.say) + '</span></p><div class="ik-dots" aria-hidden="true">' + go.map(function (l, i) { return '<i' + (i === HK.tour ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
-          '<button type="button" data-ikx aria-label="End the guide">×</button><button type="button" class="ik-nx" data-ikn>' + (HK.tour < go.length - 1 ? 'NEXT' : 'DONE') + '</button></div>'
-         : at ? '<div class="ik-pane" data-pane="' + at + '"><p class="ik-ph"><b>' + cur.name + '</b><button type="button" data-ikc aria-label="Close">×</button></p>' + cur.pane(p, own, isle) + '</div>' : '') +
+        '<div class="ik-map' + (p.ghost || p.testOf ? ' gh' : '') + (p.ready ? ' up' : '') + '"><svg class="isle-h" role="img" aria-label="' + nm + '"></svg>' + L.filter(function (l) { return IK_AT[l.k]; }).map(mk).join('') + '</div>' +
+        (cur ? '<section class="ik-step" data-pane="' + cur.k + '" aria-label="Step ' + (si + 1) + ' of ' + go.length + '"><p class="ik-sn">STEP ' + (si + 1) + ' OF ' + go.length + (cur.set(p) ? '<i>DONE</i>' : '') + '</p>' +
+          '<h3 class="ik-st">' + cur.name + '</h3><p class="ik-ss">' + esc(cur.say) + '</p><div class="ik-pane">' + cur.pane(p, own, isle) + '</div>' +
+          '<div class="ik-nav"><button type="button" class="ik-bk" data-ikb' + (si > 0 ? '' : ' disabled') + '>BACK</button><ol class="ik-steps">' + go.map(function (l, i) {
+            return '<li><button type="button" data-ikj="' + i + '" class="' + (i === si ? 'on' : '') + (l.set(p) ? ' ok' : '') + '" aria-label="Step ' + (i + 1) + ': ' + l.name + '" title="' + l.name + '"></button></li>'; }).join('') + '</ol>' +
+          '<button type="button" class="ik-nx" data-ikn>' + (si < go.length - 1 ? 'NEXT' : 'DONE') + '</button></div></section>' : '') +
         (own && !p.testOf ? '<p class="ik-ft"><button type="button" data-out title="Remove this island from this phone">FORGET</button></p>' : '') + '</div>';
       needIsle(function () { var sv = $('.isle-h', box); if (!sv || !sv.isConnected) return; var sh = {}; L.forEach(function (l) { sh[l.k] = has(l.part); });
         var lab = (p.home || {}).label || {}, j0 = p.joins || {};
         window.ISLE.home(sv, { seed: Math.floor(ikSeed(p.id || p.name)() * 40), show: sh, links: (p.all || []).map(function (k) { return (p.links || []).indexOf(k) >= 0; }),
           has: { pics: !!(p.pics || []).length, picks: HK.pk > 0, gang: !!(p.mods || []).length, passes: (p.ways || ['touch', 'print']).length > 0, test: !!(p.test || p.testOf), use: !!p.use, home: !!(lab.title || lab.body) },
           n: { pics: (p.pics || []).length, gang: (p.mods || []).length, joins: (j0.to || []).length + (j0.mirror ? 1 : 0) } }); });
-      $$('[data-ik]', box).forEach(function (b) { b.addEventListener('click', function () { var k = b.dataset.ik; if (HK.tour != null) { HK.tour = go.map(function (l) { return l.k; }).indexOf(k); beep(660, 0.04); fill(p); return; }
-        HK.at = HK.at === k ? null : k; beep(HK.at ? 660 : 330, 0.04); fill(p); var pn = $('.ik-pane', box); if (pn && pn.scrollIntoView) pn.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }); });
-      var tq = $('[data-ikt]', box); tq.addEventListener('click', function () { HK.tour = HK.tour == null ? 0 : null; HK.at = null; store.set('da.ik.tour', 1); beep(550, 0.05); fill(p); });
-      var tn = $('[data-ikn]', box); if (tn) tn.addEventListener('click', function () { HK.tour = HK.tour < go.length - 1 ? HK.tour + 1 : null; if (HK.tour == null) HK.at = nx; store.set('da.ik.tour', 1); beep(HK.tour == null ? 880 : 660, 0.04); fill(p); });
-      var tx = $('[data-ikx]', box); if (tx) tx.addEventListener('click', function () { HK.tour = null; store.set('da.ik.tour', 1); beep(330, 0.04); fill(p); });
-      var pc = $('[data-ikc]', box); if (pc) pc.addEventListener('click', function () { HK.at = null; beep(330, 0.04); fill(p); });
+      /* a step at a time: BACK, NEXT, a dot for each step (filled once it is done), or the spot on the island itself */
+      var step = function (i) { if (i < 0 || i >= go.length) return; HK.at = go[i].k; beep(660, 0.04); fill(p); var st = $('.ik-step', box); if (st && st.scrollIntoView) st.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
+      $$('[data-ik]', box).forEach(function (b) { b.addEventListener('click', function () { step(go.map(function (l) { return l.k; }).indexOf(b.dataset.ik)); }); });
+      var bk = $('[data-ikb]', box); if (bk) bk.addEventListener('click', function () { step(si - 1); });
+      var tn = $('[data-ikn]', box); if (tn) tn.addEventListener('click', function () { if (si < go.length - 1) return step(si + 1); var f1 = go.filter(function (l) { return !l.set(p); })[0]; step(f1 ? go.indexOf(f1) : 0); });
+      $$('[data-ikj]', box).forEach(function (b) { b.addEventListener('click', function () { step(+b.dataset.ikj); }); });
+      var nmf = $('.ik-nmf', box); if (nmf) nmf.addEventListener('submit', function (e) { e.preventDefault(); var v = $('input', nmf).value.trim(); if (!v) return; beep(660, 0.05); call({ method: 'POST', body: JSON.stringify({ name: v }) }).then(fill); });
       $$('[data-pack]', box).forEach(function (b) { b.addEventListener('click', function () { post({ pack: b.dataset.pack }); beep(550, 0.05); }); });
       $$('[data-way]', box).forEach(function (b) { b.addEventListener('click', function () { var w = (p.ways || ['touch', 'print']).slice(), k = w.indexOf(b.dataset.way); if (k >= 0) w.splice(k, 1); else w.push(b.dataset.way); post({ ways: w }); beep(k >= 0 ? 330 : 660, 0.05); }); });
       $$('[data-use]', box).forEach(function (b) { b.addEventListener('click', function () { post({ use: b.dataset.use ? { kind: b.dataset.use, every: p.use ? p.use.every : 5 } : null }); beep(550, 0.05); }); });
@@ -1757,8 +1781,8 @@
       if (pkl) $('.hm-pk', box).addEventListener('submit', function (e) { e.preventDefault(); var q = $('.hm-pkq', box).value.trim(); if (!q) { found = []; pkDraw(); return; }
         fetch('/api/plays?n=9&off=0&q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) { found = (j.plays || []).filter(function (x) { return !x.first; }); pkDraw(); }); });
       var rnb = $('[data-rn]', box); if (rnb) rnb.addEventListener('click', function () { var n = prompt('Its name', p.name); if (n && n.trim()) call({ method: 'POST', body: JSON.stringify({ name: n.trim() }) }).then(fill); });
-      if ($('[data-out]', box)) $('[data-out]', box).addEventListener('click', function () { if (confirm('Forget this island’s key on this phone? The slip still has it.')) { store.set('da.hm.key', ''); box.innerHTML = ''; } }); };
-    box.innerHTML = '<div class="ik"><p class="hm-say">· · ·</p></div>'; call().then(function (p) { if (!store.get('da.ik.tour', 0)) HK.tour = 0; fill(p); }, function () { box.innerHTML = '<div class="ik"><p class="hm-say" title="The key did not open it">LOCKED</p></div>'; });
+      if ($('[data-out]', box)) $('[data-out]', box).addEventListener('click', function () { if (confirm('Remove this island from this phone? Its slip still has the key.')) { store.set('da.hm.key', ''); envKeep(null); box.innerHTML = ''; } }); };
+    box.innerHTML = '<div class="ik"><p class="hm-say">· · ·</p></div>'; call().then(function (p) { fill(p); }, function () { box.innerHTML = '<div class="ik"><p class="hm-say" title="The key did not open it">LOCKED</p></div>'; });
   }
 
   /* one file picker kept in the page (a phone drops the choice of one that never was); the camera first when asked */
@@ -1778,8 +1802,9 @@
   /* ───────── the printers: who is listening, for the radar keys ───────── */
   var PRN = [], PRN_AT = 0;
   function partners(force) { if (!force && Date.now() - PRN_AT < 60e3) return Promise.resolve(PRN); var ik = store.get('da.hm.key', ''); return fetch('/api/partners', /^[A-Za-z0-9_-]{16,64}$/.test(ik) ? { headers: { authorization: 'Bearer ' + ik } } : {}).then(function (r) { return r.ok ? r.json() : { partners: [] }; }).then(function (j) { var pk0 = JSON.stringify(atPack()); PRN = j.partners || []; PRN_AT = Date.now(); radars(); isleFresh(); if (JSON.stringify(atPack()) !== pk0) applyCards(null); return PRN; }).catch(function () { return PRN; }); }
-  function isleFresh() { if (!PLACE || !PLACE.isle || PLACE.isle === 'novelglobal') return; var p = PRN.filter(function (x) { return x.id === PLACE.isle; })[0]; if (!p) return; var h = p.home || null;
-    if (JSON.stringify(h) === JSON.stringify(IH)) return; IH = h; PLACE.ihome = h; store.set('da.pop.home', PLACE); applyCards(null); }
+  function isleFresh() { if (!ENVI) return; var p = PRN.filter(function (x) { return x.id === ENVI.id; })[0]; if (!p) return; var h = p.home || null;
+    if (JSON.stringify(h) === JSON.stringify(ENVI.home || null)) return; ENVI.home = h; if (store.get('da.hm.isle', null)) store.set('da.hm.isle', ENVI);
+    if (PLACE && PLACE.isle === ENVI.id) { PLACE.ihome = h; store.set('da.pop.home', PLACE); } if (ENV === 'isle') { IH = h; applyCards(null); } }
   function turn(el, dir, mid) { if (RM.matches || !el.animate) { mid(); return; } var p = 'perspective(1400px) rotateY(';
     var a = el.animate([{ transform: p + '0deg)' }, { transform: p + (dir * -90) + 'deg)' }], { duration: 170, easing: 'cubic-bezier(.5,0,.9,.6)' });
     var done = false, half = function () { if (done) return; done = true; mid(); el.animate([{ transform: p + (dir * 90) + 'deg)' }, { transform: p + '0deg)' }], { duration: 210, easing: 'cubic-bezier(.1,.4,.4,1)' }); }; a.onfinish = half; setTimeout(half, 220); }
@@ -1986,13 +2011,13 @@
      are in the gang of). The words: HOME ISLAND (the one you set, else the first you joined), JOINED (an island where you kept a pass),
      GANG (a code a keeper lets help run their island), KEEPER (whoever owns the printer). ADMIN is only the site's approval page */
   function mineIn(body) { body.classList.add('mn');
-    var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
+    var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PICKA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
     if (KEEPGO) { KEEPGO = false; SEC = {}; }
     var who, ok, via, pl, ps, hk, an, mods, ikey; needArt();
     var load = function () { who = store.get('da.who', ''); ok = !!store.get('da.who.ok', 0); via = store.get('da.who.via', ''); pl = store.get('da.who.places', null) || []; ps = store.get('da.pass', null); if (ps && (ps.day !== cartDay() || !ps.code)) ps = null;
       hk = store.get('da.who.home', ''); an = window.NG && NG.animalOf ? NG.animalOf() : null; mods = store.get('da.who.mods', null) || []; ikey = store.get('da.hm.key', ''); };
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
-    var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
+    var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set(mineKey(), MINE); applyCards(null); draw(); };
     var MAN = { code: 'Your code is your name on the site, and it opens your home on another phone.', print: 'Your print pass for today.',
       admin: 'Choose which cards show and in what order.', isles: 'The islands you belong to.', man: 'What each part of the home does.' };
     var sec = function (id, label, sum, inner) { return '<details class="mn-sec" data-s="' + id + '"' + (SEC[id] ? ' open' : '') + '><summary><b>' + label + '</b><span>' + sum + '</span><i class="mn-man">' + MAN[id] + '</i></summary><div class="mn-in">' + inner + '</div></details>'; };
@@ -2004,15 +2029,18 @@
         ['', 'ISLANDS', 'An island is a place with a printer.']].map(function (r) {
           return '<div><dt>' + (r[0] ? '<span aria-hidden="true">' + r[0] + '</span>' : '') + r[1] + '</dt><dd>' + r[2] + '</dd></div>'; }).join('') + '</dl>'; };
     var opts = function (first) { return '<option value="">' + first + '</option>' + A.map(function (n, i) { return '<option value="' + i + '">' + esc(n) + '</option>'; }).join(''); };
-    var codePart = function () {
-      return '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? (via === 'ghost' ? '<i class="mn-bdg mn-gh" title="Made real by building a ghost island">GHOST</i>' : '<i class="mn-bdg" title="Made real at a printer">PRINTED</i>') : '') + '</dd></div>' +
-        '<div title="With your code, your animal opens your home on another phone"><dt>ANIMAL</dt><dd class="mn-an' + (an == null ? ' no' : '') + '">' + (an == null ? '—' : SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' +
-        (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Islands you have a pass for' : 'Get a pass at a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
+    var codePart = function () { var pick = who && hk && (an == null || PICKA);
+      return '<dl class="mn-id"><div title="' + (who ? (ok ? (via === 'ghost' ? 'Yours for building an island' : 'Yours from a print') : 'Yours for good once you print with it') : 'You get a code when you print or build an island') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? (via === 'ghost' ? '<i class="mn-bdg mn-gh" title="Made real by building a ghost island">GHOST</i>' : '<i class="mn-bdg" title="Made real at a printer">PRINTED</i>') : '') + '</dd></div>' +
+        (who && hk && an != null && !PICKA ? '<div title="Your animal"><dt>ANIMAL</dt><dd class="mn-an">' + (SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' : '') +
+        (pl.length ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Islands you have a pass for' : 'Get a pass at a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
           return '<span' + (u ? ' title="' + (u.kind === 'shop' ? 'Card' + (full ? ', ' + full + ' full' : '') : 'Class') + '"' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (e ? '<i class="mn-card">' + Array(k + 1).join('●') + Array(e - k + 1).join('○') + '</i>' : p.n > 1 ? '<i>×' + (+p.n) + '</i>' : '') + '</span>'; }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
+        (!who ? '<p class="mn-say mn-plain">You get a code when you print, or when you build an island.</p>' : '') +
         (who ? '<div class="mn-keep"><p class="mn-say mn-plain">' + esc(KEEPSAY) + '</p><button type="button" data-a="keepc">DOWNLOAD</button></div>' : '') +
-        (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="Get a random animal and remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
-          : who ? '<p class="mn-say" title="Open your code on this phone with its animal, below">LOCKED</p>' : '') +
-        '<details class="mn-sub"><summary title="Open your home with your code and animal">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
+        (pick ? '<p class="mn-say mn-plain">' + (an == null ? 'Pick an animal. With your code, it opens your home on another phone.' : 'Pick a new animal.') + '</p><div class="mn-ans" role="group" aria-label="Animals">' +
+            A.map(function (n, i) { return '<button type="button" data-an="' + i + '"' + (i === an ? ' aria-pressed="true"' : '') + '>' + esc(n) + '</button>'; }).join('') + '</div>' + (an != null ? '<div class="mn-row"><button type="button" data-a="nochange">CANCEL</button></div>' : '')
+          : who && hk ? '<div class="mn-row"><button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button><button type="button" data-a="change">CHANGE</button></div>'
+          : who ? '<p class="mn-say mn-plain">To use this code here, open it below with its animal.</p>' : '') +
+        '<details class="mn-sub"><summary title="Open your home from another phone">OPEN A CODE</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
     var printPart = function () {
       return '<dl class="mn-id"><div class="mn-wide" title="' + (ps ? 'Your pass for today: your prints there go straight out' : 'You get a pass for the day at a printer') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
         (who ? '<ol class="mn-pl">' + (PRINTS == null ? '<li class="no">· · ·</li>' : PRINTS.length ? PRINTS.slice(0, 12).map(function (m) { return '<li><b>' + esc(m.code) + '</b><span>' + (m.shown ? 'SHOWN' : 'WAITING') + '</span></li>'; }).join('') : '<li class="no">—</li>') + '</ol>' : ''); };
@@ -2049,11 +2077,14 @@
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b || b.closest('.mn-keeper')) return;
       if (b.dataset.find != null) { e.stopPropagation(); SH.swap = true; finder(b.dataset.find); return; }
       if (b.dataset.a === 'show') { SHOWA = !SHOWA; return draw(); }
+      if (b.dataset.an != null) { beep(660, 0.05); NG.animalSet(+b.dataset.an).then(function () { SHOWA = true; PICKA = false; draw(); }, function () { draw(); }); return; }
+      if (b.dataset.a === 'change') { PICKA = true; return draw(); }
+      if (b.dataset.a === 'nochange') { PICKA = false; return draw(); }
       if (b.dataset.a === 'keepc') { beep(660, 0.05); keepSave({ label: 'Your code', big: who, sub: [ok ? (via === 'ghost' ? 'GHOST' : 'PRINTED') : 'NOT PRINTED YET', 'Opens your home on novel.global'], file: 'novel-global-code-' + who }); return; }
       if (b.dataset.a === 'rand') { if (an != null && !confirm('Give this code a new animal?')) return; beep(660, 0.05); NG.animalSet(crypto.getRandomValues(new Uint8Array(1))[0] % A.length).then(function () { SHOWA = true; draw(); }, function () { draw(); }); return; }
       if (b.dataset.isle) { ISLE = ISLE === b.dataset.isle ? null : b.dataset.isle; beep(520, 0.05); return draw(); }
       if (b.hasAttribute('data-ghost')) { ghostOpen(); return; }
-      if (b.hasAttribute('data-reset')) { MINE = null; store.set('da.hm.mine', null); applyCards(null); draw(); return; }
+      if (b.hasAttribute('data-reset')) { MINE = null; store.set(mineKey(), null); applyCards(null); draw(); return; }
       if (b.dataset.per) { MINE = MINE || {}; MINE.per = +b.dataset.per; return keep(null); }
       if (b.dataset.main) { MINE = MINE || {}; MINE.main = +b.dataset.main; return keep(null); }
       var li = b.closest('.mn-l li'), id = li && li.dataset.id, l = rows(), i = l.findIndex(function (c) { return c.id === id; }); if (i < 0) return; MINE = MINE || {};
