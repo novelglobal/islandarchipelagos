@@ -42,12 +42,12 @@
      amber, the archipelagos' coral */
   var CARDS = [
     { id: 'intro', size: 'small', title: 'ISLAND ARCHIPELAGOS', skin: 'intro', opens: 'none', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
+    { id: 'space', size: 'small', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'small', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'wish', size: 'small', title: 'BLUEPAPER', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'research', size: 'small', title: 'RESEARCH BOARD', opens: 'research', island: 'novelglobal', art: 'board', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'zine', size: 'small', title: 'DESIGN PRINT', opens: 'press', island: 'milkbar', art: 'dots', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'kit', size: 'small', title: 'ISLAND', tag: 'ONE CLICK INSTALL', opens: 'kit', island: 'novelglobal', art: 'printer', motion: 'speed', where: [-37.8136, 144.9631] },
-    { id: 'space', size: 'small', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
 
     /* the small cards: three themes, three ways each. THIS WEEK, READ, CARDS */
     { id: 'weather', size: 'small', title: 'WEATHER', opens: 'stack:weather', cart: 'week', g: 'week', tag: 'THIS WEEK', skin: 'wx', island: 'novelglobal', art: 'slot', motion: 'shadow', where: [-37.77, 144.96] },
@@ -1005,7 +1005,9 @@
       cv.width = Math.round(lw * k); cv.height = Math.round(lh * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); L[n] = g; });
     if (!w || !h) return; el.dataset.pw = w + 'x' + h; (ART[c.art] || ART.plain)(L, w, h, i, c);
   }
-  function paintAll(force) { cards.forEach(function (el) { var l = el.querySelector('.hm-l.b'); if (force || el.dataset.pw !== l.clientWidth + 'x' + l.clientHeight) paint(el); }); }
+  /* only the cards near the screen are painted; the rest wait until a scroll brings them close */
+  var PIO = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && e.target.dataset.pd) { delete e.target.dataset.pd; paint(e.target); } }); }, { root: col, rootMargin: '150% 0px' }) : null;
+  function paintAll(force) { cards.forEach(function (el) { var l = el.querySelector('.hm-l.b'); if (!(force || el.dataset.pw !== l.clientWidth + 'x' + l.clientHeight)) return; if (!PIO) return paint(el); el.dataset.pd = 1; PIO.unobserve(el); PIO.observe(el); }); }
   var FONTS = D.fonts && D.fonts.ready ? D.fonts.ready : Promise.resolve(); FONTS.then(function () { paintAll(true); });
   var pT = 0; addEventListener('resize', function () { clearTimeout(pT); pT = setTimeout(paintAll, 180); });
 
