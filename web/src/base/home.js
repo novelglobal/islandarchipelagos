@@ -1574,14 +1574,14 @@
   function homeKeep(p) { var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); }), on = h.main || mains, ns = h.nines || ['utils', 'soon', 'dev'];
     var grid = function (k) { var cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<svg viewBox="0 0 24 24" aria-hidden="true">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var c = cs[i], off = !c || (h.off || []).indexOf(c.id) >= 0; return '<rect x="' + (3 + (i % 3) * 6.5) + '" y="' + (3 + Math.floor(i / 3) * 6.5) + '" width="5" height="5" rx=".8"' + (off ? ' fill="none" stroke="currentColor" stroke-width="1"' : '') + '/>'; }).join('') + '</svg>'; };
     var L = h.label || {}, ln = L.links || [], o9 = HK.open && ns.indexOf(HK.open) >= 0 && HK.open !== 'dev' ? HK.open : null;
-    return '<p class="hm-h" title="The big cards here, in the order tapped: the first is the main. Below, each nine on or off; an open nine shows its cards to leave out">HOME</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k === 0 ? '<i class="hm-first" aria-label="Main"></i>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
+    return '<p class="hm-h" title="Tap the big cards in the order you want them; the first one leads">HOME</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k === 0 ? '<i class="hm-first" aria-label="Main"></i>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
       '<div class="hm-row hm-nines">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<button class="hm-btn hm-nine' + (i >= 0 ? ' on' : '') + (o9 === k ? ' open' : '') + '" data-hnine="' + k + '" aria-pressed="' + (i >= 0) + '" title="' + esc(cs.slice(0, 9).map(cardName).join(' · ')) + '">' + grid(k) + (i >= 0 ? '<b>' + (i + 1) + '</b>' : '') + '</button>'; }).join('') +
-      (h.main || h.nines || (h.off || []).length ? '<button class="hm-btn" data-hreset title="The site’s own order">RESET</button>' : '') + '</div>' +
+      (h.main || h.nines || (h.off || []).length ? '<button class="hm-btn" data-hreset title="Put the cards back in the site’s order">RESET</button>' : '') + '</div>' +
       (o9 ? '<div class="hm-row hm-n9">' + CARDS.filter(function (c) { return nineOf(c) === o9; }).map(function (c) { var off = (h.off || []).indexOf(c.id) >= 0; return '<button class="hm-btn' + (off ? '' : ' on') + '" data-hoff="' + c.id + '" aria-pressed="' + !off + '">' + esc(cardName(c)) + '</button>'; }).join('') + '</div>' : '') +
-      '<form class="hm-lnf" title="A short line under its name in the islands list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
-      '<p class="hm-h" title="What a first visit meets here. A blank line between paragraphs; past the first, they wait under More">LABEL</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
+      '<form class="hm-lnf" title="One line under your island’s name in the list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
+      '<p class="hm-h" title="The welcome note a first-time visitor reads">LABEL</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
       [0, 1, 2].filter(function (i) { return i <= ln.length; }).map(function (i) { var k = ln[i] || {}; return '<div class="hm-row hm-lbl"><input name="lt' + i + '" maxlength="60" autocomplete="off" placeholder="LINK" aria-label="A link’s words" value="' + esc(k.t || '') + '"><input name="lu' + i + '" type="url" maxlength="300" autocomplete="off" placeholder="https://" aria-label="Where it goes" value="' + esc(k.u || '') + '"></div>'; }).join('') +
-      '<div class="hm-row"><button class="hm-btn">SAVE</button>' + (L.title || L.body ? '<label class="hm-say" title="Shown to a first visit here"><input type="checkbox" name="on"' + (L.on !== false ? ' checked' : '') + '> ON</label>' : '') + (L.film ? '<span class="hm-say" title="A film, given by novel.global">FILM</span>' : '') + '<span class="hm-say" data-lbs></span></div></form>'; }
+      '<div class="hm-row"><button class="hm-btn">SAVE</button>' + (L.title || L.body ? '<label class="hm-say" title="Shown to first-time visitors"><input type="checkbox" name="on"' + (L.on !== false ? ' checked' : '') + '> ON</label>' : '') + (L.film ? '<span class="hm-say" title="A film from novel.global">FILM</span>' : '') + '<span class="hm-say" data-lbs></span></div></form>'; }
   function homeWire(box, p, post) { if (p.home === undefined) return; var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); });
     var set = function (o) { beep(550, 0.05); post({ home: o }); };
     $$('[data-hmain]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.main || mains).slice(), i = l.indexOf(b.dataset.hmain); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hmain); set({ main: l }); }); });
@@ -1605,7 +1605,7 @@
     if (w === 'card') { var ps = (after ? t.pics : p.pics) || [], sp = after ? t.speed : p.speed;
       return (ps.length ? '<span class="hm-mvp">' + ps.slice(0, 4).map(function (q) { return '<img alt="" src="' + esc(q.url) + '">'; }).join('') + '</span>' : none) + '<span>' + (sp || 2) + ' S</span>'; }
     var b = (after ? t.bench : p.bench) || { p: [] }; return b.p.length ? '<span class="hm-mvb" title="' + b.p.length + ' · ' + (b.j || []).length + '">' + b.p.map(function () { return '<i></i>'; }).join('') + '</span>' : none; }
-  function testKeep(p) { var hd = '<p class="hm-h" title="A test island beside this one: try things there, then move what works here">TEST</p>';
+  function testKeep(p) { var hd = '<p class="hm-h" title="A copy of your island to try changes on first">TEST</p>';
     if (p.testOf) return hd + '<div class="hm-row"><button class="hm-btn" data-real title="Back to the real island">REAL</button></div>';
     if (!p.test) return hd + '<div class="hm-row"><button class="hm-btn" data-test title="Make a test island beside this one">TEST</button></div>';
     var ks = Object.keys(MV).filter(function (k) { return k !== 'card' || (p.build || []).indexOf('pics') >= 0; }), w = ks.indexOf(HK.mv) >= 0 ? HK.mv : null, n = (p.moves || []).length;
@@ -1620,44 +1620,44 @@
   var ikGauge = function (at, vals, cur, lab, t) { return '<div class="ik-gauge" role="group" title="' + t + '" aria-label="' + t + '">' + vals.map(function (v) { var on = String(cur) === String(v); return '<button type="button"' + (on ? ' class="on"' : '') + ' ' + at + '="' + v + '" aria-pressed="' + on + '"><i></i><b>' + lab(v) + '</b></button>'; }).join('') + '</div>'; };
   var ikNo = function () { return ''; }, ikYes = function () { return true; };
   var IKL = [
-    { k: 'printer', part: null, name: 'PRINTER', say: 'What waits, what printed.',
+    { k: 'printer', part: null, name: 'PRINTER', say: 'How many prints are waiting and how many have printed.',
       show: ikYes, set: function (p) { return !!p.ready; }, badge: function (p) { return p.queued > 0 ? String(+p.queued) : ''; },
       pane: function (p, own) { var j = p.joins; return '<div class="ik-nums"><p title="Waiting to print"><b>' + (+p.queued || 0) + '</b><span>WAITING</span></p><p title="Printed here"><b>' + (+p.printed || 0) + '</b><span>PRINTED</span></p></div>' +
-        (j && (j.to.length || j.mirror) ? '<p class="ik-say" title="Its prints echoed to other islands, or sent only there; another island’s cards mirrored here">' + esc(joinSay(j)) + '</p>' : '') +
-        (own ? '<div class="hm-row"><button class="hm-btn ik-go" data-twin title="' + (p.testOf ? 'Its TEST’s bench and paper' : 'This island’s paper, its joins and its printer') + '">TWIN</button></div>' : ''); } },
-    { k: 'home', part: 'home', name: 'HOME', say: 'The door a visit opens.',
+        (j && (j.to.length || j.mirror) ? '<p class="ik-say" title="Other islands this one prints to">' + esc(joinSay(j)) + '</p>' : '') +
+        (own ? '<div class="hm-row"><button class="hm-btn ik-go" data-twin title="' + (p.testOf ? 'Open the test island’s printer screen' : 'Open your island’s printer screen') + '">TWIN</button></div>' : ''); } },
+    { k: 'home', part: 'home', name: 'HOME', say: 'The page people see when they open your island.',
       show: function (p) { return p.home !== undefined; }, set: function (p) { var h = p.home || {}, l = h.label || {}; return !!(h.main || h.nines || h.line || l.title || l.body); }, badge: ikNo,
       pane: function (p) { return homeKeep(p).replace(/^<p class="hm-h"[^>]*>HOME<\/p>/, ''); } },
-    { k: 'pics', part: 'pics', name: 'PICTURES', say: 'Ten pictures, turning.',
+    { k: 'pics', part: 'pics', name: 'PICTURES', say: 'Up to ten photos that play as a slideshow.',
       show: ikYes, set: function (p) { return !!(p.pics || []).length; }, badge: function (p) { return (p.pics || []).length ? String(p.pics.length) : ''; },
       pane: function (p) { return '<div class="hm-pgrid">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { var q = (p.pics || []).filter(function (x) { return x.slot === n; })[0]; return '<button class="hm-pslot' + (q ? ' on' : '') + '" data-ps="' + n + '" aria-label="' + (q ? 'Take this picture away' : 'Add a picture') + '">' + (q ? '<img alt="" src="' + esc(q.url) + '">' : '+') + '</button>'; }).join('') + '</div>' +
         ikGauge('data-sp', [2, 3, 5, 8], p.speed || 2, function (n) { return n + ' S'; }, 'Seconds on each picture'); } },
-    { k: 'picks', part: 'picks', name: 'PICKS', say: 'Plays it holds up.',
+    { k: 'picks', part: 'picks', name: 'PICKS', say: 'Things people made that your island shows.',
       show: ikYes, set: function () { return HK.pk > 0; }, badge: function () { return HK.pk > 0 ? String(HK.pk) : ''; },
-      pane: function () { return '<form class="hm-row hm-pk"><input class="hm-pkq" maxlength="24" autocomplete="off" enterkeyhint="search" placeholder="name or PL-code" aria-label="Find a play to pick"></form><ol class="hm-list hm-pkl"></ol>'; } },
-    { k: 'cards', part: 'cards', name: 'CARDS', say: 'Cards a pass opens.',
+      pane: function () { return '<form class="hm-row hm-pk"><input class="hm-pkq" maxlength="24" autocomplete="off" enterkeyhint="search" placeholder="name or PL-code" aria-label="Find something to show"></form><ol class="hm-list hm-pkl"></ol>'; } },
+    { k: 'cards', part: 'cards', name: 'CARDS', say: 'The set of cards people get with a pass.',
       show: function (p) { return !!(p.packs || []).length; }, set: function (p) { return !!p.pack; }, badge: ikNo,
       pane: function (p) { return '<div class="ik-plugs">' + p.packs.map(function (k) { return ikPlug('data-pack', k, p.pack === k, esc(k.toUpperCase())); }).join('') + '</div>'; } },
-    { k: 'passes', part: 'passes', name: 'PASSES', say: 'How people get in.',
+    { k: 'passes', part: 'passes', name: 'PASSES', say: 'How people get a pass to your island.',
       show: ikYes, set: function (p) { return (p.ways || ['touch', 'print']).length > 0; }, badge: ikNo,
       pane: function (p) { var w = p.ways || ['touch', 'print']; return '<div class="ik-plugs">' + (p.allWays || []).map(function (k) { return ikPlug('data-way', k, w.indexOf(k) >= 0, esc(k.toUpperCase())); }).join('') + '</div>' +
         (p.testOf ? '' : '<div class="hm-row"><button class="hm-btn ik-go" data-pass title="Print today’s passes' + (p.mark ? ', ' + esc(p.mark.w.toLowerCase()) : '') + '">' + (p.mark ? esc(p.mark.e) + ' ' : '') + 'TODAY</button></div>'); } },
-    { k: 'use', part: 'use', name: 'STAMPS', say: 'A card that fills up.',
+    { k: 'use', part: 'use', name: 'STAMPS', say: 'A stamp card that gets a stamp each visit.',
       show: function (p) { return !!(p.uses || []).length; }, set: function (p) { return !!p.use; }, badge: ikNo,
       pane: function (p) { var k0 = p.use ? p.use.kind : ''; return '<div class="ik-plugs">' + [''].concat(p.uses || []).map(function (k) { return ikPlug('data-use', k, k0 === k, k ? esc(k.toUpperCase()) : 'NONE'); }).join('') + '</div>' +
-        (p.use ? ikGauge('data-every', p.everys || [], p.use.every, String, 'Stamps to a full card, or to count as there') : '') +
-        (p.roll ? '<ol class="hm-list hm-roll" title="Codes stamped here this moon">' + (p.roll.map(function (x) { return '<li class="on"><i></i><span>' + esc(x.who) + '</span><b>' + (+x.n) + (p.use && x.n >= p.use.every ? ' ✓' : '') + '</b></li>'; }).join('') || '<li>—</li>') + '</ol>' : ''); } },
-    { k: 'gang', part: 'gang', name: 'GANG', say: 'Who helps run it.',
+        (p.use ? ikGauge('data-every', p.everys || [], p.use.every, String, 'Stamps needed for a full card') : '') +
+        (p.roll ? '<ol class="hm-list hm-roll" title="Codes stamped here">' + (p.roll.map(function (x) { return '<li class="on"><i></i><span>' + esc(x.who) + '</span><b>' + (+x.n) + (p.use && x.n >= p.use.every ? ' ✓' : '') + '</b></li>'; }).join('') || '<li>—</li>') + '</ol>' : ''); } },
+    { k: 'gang', part: 'gang', name: 'GANG', say: 'People who help you run your island.',
       show: function (p) { return !p.mod; }, set: function (p) { return !!(p.mods || []).length; }, badge: function (p) { return (p.mods || []).length ? String(p.mods.length) : ''; },
       pane: function (p) { return '<ol class="hm-list hm-mods">' + (p.mods || []).map(function (m) { return '<li class="on"><i></i><span>' + esc(m) + '</span><button class="hm-btn" data-unmod="' + esc(m) + '" aria-label="Take ' + esc(m) + ' off">×</button></li>'; }).join('') + '</ol>' +
-        '<form class="hm-row hm-modf"><input maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="A code to join this island’s gang"><button class="hm-btn ik-go">ADD</button></form>'; } },
-    { k: 'links', part: 'links', name: 'LINKS', say: 'What reaches its paper.',
+        '<form class="hm-row hm-modf"><input maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="A code to add as a helper"><button class="hm-btn ik-go">ADD</button></form>'; } },
+    { k: 'links', part: 'links', name: 'LINKS', say: 'Which parts of the site can print on your printer.',
       show: function (p) { return !!(p.all || []).length; }, set: function (p) { return !!(p.links || []).length; }, badge: ikNo,
       pane: function (p) { return '<div class="ik-plugs">' + p.all.map(function (k) { return ikPlug('data-ln', k, (p.links || []).indexOf(k) >= 0, IK_LN[k] || esc(k.toUpperCase())); }).join('') + '</div>'; } },
-    { k: 'gap', part: 'gap', name: 'PACE', say: 'Time between prints.',
+    { k: 'gap', part: 'gap', name: 'PACE', say: 'How long one person waits between prints.',
       show: ikYes, set: function (p) { return p.gap != null; }, badge: ikNo,
       pane: function (p) { return ikGauge('data-gap', [''].concat(p.gaps || []), p.gap == null ? '' : p.gap, function (g) { return IK_GAP[g]; }, 'Time between one person’s prints here'); } },
-    { k: 'test', part: 'home', name: 'TEST', say: 'Try here, move across.',
+    { k: 'test', part: 'home', name: 'TEST', say: 'A copy of your island to try changes on first.',
       show: function (p, own, isle) { return own && !isle && ('test' in p || !!p.testOf); }, set: function (p) { return !!(p.test || p.testOf); }, badge: ikNo,
       pane: function (p) { return testKeep(p).replace(/^<p class="hm-h"[^>]*>TEST<\/p>/, ''); } }
   ];
@@ -1705,14 +1705,14 @@
         '<div class="ik-top">' + (has('name') ? '<button type="button" class="ik-nm" data-rn title="Rename">' + nm + '</button>' : '<b class="ik-nm">' + nm + '</b>') +
           (p.number ? '<small title="Its number">' + (+p.number) + '</small>' : '') + '<i class="ik-led" title="' + (p.ready ? 'Its printer is on' : 'Its printer is asleep') + '"></i>' +
           '<button type="button" class="ik-q" data-ikt aria-pressed="' + (tk ? 'true' : 'false') + '" title="Guide">?</button></div>' +
-        (own ? '<div class="ik-way"><p class="ik-man">' + (p.testOf ? 'Your test island. Try things here, then move them across.' : gh ? 'Your ghost island: an island with no printer yet. Its set-up is on the bench.' : 'Your island. Its paper, bench and printer are on the twin.') + ' Tap a spot on the island to change that part.</p>' +
+        (own ? '<div class="ik-way"><p class="ik-man">' + (p.testOf ? 'Your test island: try changes here before your real one.' : gh ? 'Your island has no printer yet: tap SET UP to build one.' : 'Your island: tap TWIN to see its printer.') + ' Tap a spot on the island to change it.</p>' +
           '<button type="button" class="ik-bench" data-twin>' + (gh ? 'SET UP' : 'TWIN') + '</button></div>' : '') +
         (own && !p.testOf ? '<div class="ik-keep"><p class="ik-man">' + esc(KEYSAY) + ' ' + esc(KEEPSAY) + '</p><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button></div>' : '') +
         '<div class="ik-map' + (p.ghost || p.testOf ? ' gh' : '') + (p.ready ? ' up' : '') + '"><svg class="isle-h" role="img" aria-label="' + nm + '"></svg>' + L.map(mk).join('') + '</div>' +
         (tk ? '<div class="ik-tour"><p><b>' + cur.name + '</b><span>' + esc(cur.say) + '</span></p><div class="ik-dots" aria-hidden="true">' + go.map(function (l, i) { return '<i' + (i === HK.tour ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
           '<button type="button" data-ikx aria-label="End the guide">×</button><button type="button" class="ik-nx" data-ikn>' + (HK.tour < go.length - 1 ? 'NEXT' : 'DONE') + '</button></div>'
          : at ? '<div class="ik-pane" data-pane="' + at + '"><p class="ik-ph"><b>' + cur.name + '</b><button type="button" data-ikc aria-label="Close">×</button></p>' + cur.pane(p, own, isle) + '</div>' : '') +
-        (own && !p.testOf ? '<p class="ik-ft"><button type="button" data-out title="Forget this island’s key on this phone">FORGET</button></p>' : '') + '</div>';
+        (own && !p.testOf ? '<p class="ik-ft"><button type="button" data-out title="Remove this island from this phone">FORGET</button></p>' : '') + '</div>';
       needIsle(function () { var sv = $('.isle-h', box); if (!sv || !sv.isConnected) return; var sh = {}; L.forEach(function (l) { sh[l.k] = has(l.part); });
         var lab = (p.home || {}).label || {}, j0 = p.joins || {};
         window.ISLE.home(sv, { seed: Math.floor(ikSeed(p.id || p.name)() * 40), show: sh, links: (p.all || []).map(function (k) { return (p.links || []).indexOf(k) >= 0; }),
@@ -1993,28 +1993,28 @@
       hk = store.get('da.who.home', ''); an = window.NG && NG.animalOf ? NG.animalOf() : null; mods = store.get('da.who.mods', null) || []; ikey = store.get('da.hm.key', ''); };
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
     var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
-    var MAN = { code: 'Your code is you here. It comes with your first print, and with its animal it opens this home on another phone.', print: 'Today’s print pass, and what you have printed.',
-      admin: 'Which cards show, in what order, and how big.', isles: 'Your home island, the islands you help run, and your own island.', man: 'What each part of the home does.' };
+    var MAN = { code: 'Your code is your name on the site, and it opens your home on another phone.', print: 'Your print pass for today.',
+      admin: 'Choose which cards show and in what order.', isles: 'The islands you belong to.', man: 'What each part of the home does.' };
     var sec = function (id, label, sum, inner) { return '<details class="mn-sec" data-s="' + id + '"' + (SEC[id] ? ' open' : '') + '><summary><b>' + label + '</b><span>' + sum + '</span><i class="mn-man">' + MAN[id] + '</i></summary><div class="mn-in">' + inner + '</div></details>'; };
     /* the manual: each thing on the home, its own mark beside one plain line */
     var manPart = function () { var ic = function (s) { var e = $(s); return e ? (e.querySelector('svg') || {}).outerHTML || '' : ''; };
-      return '<dl class="mn-mnl">' + [[ic('#hm-mine'), 'HOME', 'This menu.'], [ic('#hm-snd'), 'SOUNDS', 'Sounds on or off, and how loud.'], [ic('#hm-theme'), 'LIGHT', 'The home in light or dark.'],
-        ['', 'REEF', 'The sea along the top. Tap it to dive in and look after the reef; the snorkel brings you back up. Hold the jellyfish to print a photo.'],
-        ['', 'CARDS', 'Scroll down through them. Tap one to open it; the arrow at its top brings you back.'], ['', 'SWITCHBOARD', 'The panel at the bottom. Plug a cable from one card to another to join them.'],
-        ['', 'ISLANDS', 'Places with a printer. Each keeps its own cards, passes and prints. A ghost is an island before its printer.']].map(function (r) {
+      return '<dl class="mn-mnl">' + [[ic('#hm-mine'), 'HOME', 'Opens this menu.'], [ic('#hm-snd'), 'SOUNDS', 'Turns sound on or off.'], [ic('#hm-theme'), 'LIGHT', 'Switches between light and dark.'],
+        ['', 'REEF', 'The sea at the top: tap it to look after the reef.'],
+        ['', 'CARDS', 'Tap a card to open it.'], ['', 'SWITCHBOARD', 'Plug a cable between two cards to join them.'],
+        ['', 'ISLANDS', 'An island is a place with a printer.']].map(function (r) {
           return '<div><dt>' + (r[0] ? '<span aria-hidden="true">' + r[0] + '</span>' : '') + r[1] + '</dt><dd>' + r[2] + '</dd></div>'; }).join('') + '</dl>'; };
     var opts = function (first) { return '<option value="">' + first + '</option>' + A.map(function (n, i) { return '<option value="' + i + '">' + esc(n) + '</option>'; }).join(''); };
     var codePart = function () {
       return '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? (via === 'ghost' ? '<i class="mn-bdg mn-gh" title="Made real by building a ghost island">GHOST</i>' : '<i class="mn-bdg" title="Made real at a printer">PRINTED</i>') : '') + '</dd></div>' +
-        '<div title="Your second key: with your code it opens this home on another phone. Only you see it"><dt>ANIMAL</dt><dd class="mn-an' + (an == null ? ' no' : '') + '">' + (an == null ? '—' : SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' +
-        (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Joined: islands where you kept a pass' : 'Keep a pass from a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
+        '<div title="With your code, your animal opens your home on another phone"><dt>ANIMAL</dt><dd class="mn-an' + (an == null ? ' no' : '') + '">' + (an == null ? '—' : SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' +
+        (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Islands you have a pass for' : 'Get a pass at a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
           return '<span' + (u ? ' title="' + (u.kind === 'shop' ? 'Card' + (full ? ', ' + full + ' full' : '') : 'Class') + '"' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (e ? '<i class="mn-card">' + Array(k + 1).join('●') + Array(e - k + 1).join('○') + '</i>' : p.n > 1 ? '<i>×' + (+p.n) + '</i>' : '') + '</span>'; }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
         (who ? '<div class="mn-keep"><p class="mn-say mn-plain">' + esc(KEEPSAY) + '</p><button type="button" data-a="keepc">DOWNLOAD</button></div>' : '') +
-        (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="An animal given at random: remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
-          : who ? '<p class="mn-say" title="This phone does not hold this code\'s key: open it below with its animal">LOCKED</p>' : '') +
-        '<details class="mn-sub"><summary title="Your code and its animal, from another phone">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
+        (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="Get a random animal and remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
+          : who ? '<p class="mn-say" title="Open your code on this phone with its animal, below">LOCKED</p>' : '') +
+        '<details class="mn-sub"><summary title="Open your home with your code and animal">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
     var printPart = function () {
-      return '<dl class="mn-id"><div class="mn-wide" title="' + (ps ? 'A print pass for today: your next print there goes straight out' : 'A print pass comes from a printer, for the day') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
+      return '<dl class="mn-id"><div class="mn-wide" title="' + (ps ? 'Your pass for today: your prints there go straight out' : 'You get a pass for the day at a printer') + '"><dt>PASS</dt><dd' + (ps ? '' : ' class="no"') + '>' + (ps ? esc(ps.code) + '<i>TODAY' + (ps.island ? ' · ' + esc(String(ps.island).toUpperCase()) : '') + '</i>' : '—') + '</dd></div></dl>' +
         (who ? '<ol class="mn-pl">' + (PRINTS == null ? '<li class="no">· · ·</li>' : PRINTS.length ? PRINTS.slice(0, 12).map(function (m) { return '<li><b>' + esc(m.code) + '</b><span>' + (m.shown ? 'SHOWN' : 'WAITING') + '</span></li>'; }).join('') : '<li class="no">—</li>') + '</ol>' : ''); };
     var adminPart = function () { var l = rows(), P = perPage();
       return '<p class="mn-per" role="group" aria-label="Main cards to a screen" title="Main cards to a screen"><span>MAIN</span>' + [2, 3].map(function (n) { return '<button type="button" data-main="' + n + '" aria-pressed="' + (mainPer() === n) + '">' + n + '</button>'; }).join('') + '</p>' +
@@ -2022,16 +2022,16 @@
         '<ol class="mn-l">' + l.map(function (c, i) { var off = MINE && MINE.hide && MINE.hide.indexOf(c.id) >= 0, sz = ownSize(c), t = c.id === 'intro' ? 'Opener' : SMALL_T[c.id] || (c.title.charAt(0) + c.title.slice(1).toLowerCase()).replace(/\blan\b/gi, 'LAN');
         var js = setOf(c), jp = js && i > 0 && setOf(l[i - 1]) === js, jn = js && i < l.length - 1 && setOf(l[i + 1]) === js, jc = jp || jn ? ' jn' + (jp ? '' : ' jn-a') + (jn ? '' : ' jn-z') : '';
         return '<li data-id="' + esc(c.id) + '"' + (off || jc ? ' class="' + (off ? 'off' : '') + jc + '"' : '') + (jc ? ' title="Joined: one size for the set"' : '') + '><button type="button" data-mv="-1" aria-label="Earlier" title="Earlier"' + (i ? '' : ' disabled') + '>↑</button><button type="button" data-mv="1" aria-label="Later" title="Later"' + (i < l.length - 1 ? '' : ' disabled') + '>↓</button><b>' + esc(t) + '</b>' +
-          '<button type="button" class="mn-sz" data-sz title="Big fills the screen; small shares it">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
-        '</ol><p class="mn-ft"><button type="button" data-reset title="The home as the site sets it">RESET</button></p>'; };
+          '<button type="button" class="mn-sz" data-sz title="Card size">' + (sz === 'small' ? 'SMALL' : 'BIG') + '</button><button type="button" class="mn-on" data-on role="switch" aria-checked="' + !off + '" aria-label="Shown" title="Shown"><i></i></button></li>'; }).join('') +
+        '</ol><p class="mn-ft"><button type="button" data-reset title="Put the home back to how it started">RESET</button></p>'; };
     var homeIsle = function () { var h = store.get('da.pop.home', null); return h && h.pick ? { id: h.isle, name: h.name } : pl.length ? { id: pl[0].id, name: pl[0].name } : { id: 'novelglobal', name: 'novel.global' }; };
     var islePart = function () { var hi = homeIsle();
       return '<dl class="mn-id"><div class="mn-wide" title="Your home island: the one you set in the finder, else the first you joined"><dt>HOME ISLAND</dt><dd>' + esc(String(hi.name || hi.id).toUpperCase()) + '</dd></div></dl>' +
-        '<p class="mn-row"><button type="button" data-find="' + esc(hi.id) + '" title="The islands: find one, or set your home island">FIND</button></p>' + 
+        '<p class="mn-row"><button type="button" data-find="' + esc(hi.id) + '" title="Find an island">FIND</button></p>' + 
         mods.map(function (m) { return '<button type="button" class="mn-isl" data-isle="' + esc(m.id) + '" aria-pressed="' + (ISLE === m.id) + '" title="In this island\'s gang: you help run it">GANG · ' + esc(String(m.name || m.id).toUpperCase()) + (m.number ? ' · ' + (+m.number) : '') + '</button>'; }).join('') +
-        (!ikey && !mods.length ? '<p class="mn-say" title="The keeper\'s key comes on an island\'s welcome slip; a keeper adds your code to their gang">NO KEEPER · NO GANG</p>' : '') +
+        (!ikey && !mods.length ? '<p class="mn-say" title="You don\'t run or help run an island yet">NONE</p>' : '') +
         '<div class="mn-keeper"></div>' +
-        (ikey ? '' : '<button type="button" class="mn-isl" data-ghost title="An island with no printer yet: learn, play and build on its twin, then add a printer">GHOST</button>') +
+        (ikey ? '' : '<button type="button" class="mn-isl" data-ghost title="Start an island without a printer">GHOST</button>') +
         (ikey ? '' : '<p class="mn-say mn-plain">Have an island already? Type its key from its slip, or paste the slip’s link.</p><form class="mn-row" data-f="key"><input name="k" maxlength="300" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="KEY" aria-label="Island key"><button>OPEN</button></form>'); };
     var draw = function () { load();
       var isN = (ikey ? 1 : 0) + mods.length;
