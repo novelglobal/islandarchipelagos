@@ -287,18 +287,17 @@
   #roll .slip:not(.open) { max-height: 26px; margin-top: 5px; opacity: .8; } #roll .slip:not(.open)::after { display: none; } #roll .slip.open { max-height: none; opacity: 1; } #roll .slip.open:not(:first-child) { margin-top: 10px; } #roll .slip:nth-child(n+4) { display: none; } #roll.all .slip:nth-child(n+4) { display: block; }
   .rall { display: block; appearance: none; margin: 10px auto 0; min-width: 44px; height: 24px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: none; color: var(--grey); font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; cursor: pointer; } .rall[hidden] { display: none; }
   html.in .sea { display: none; } html.in main { padding-top: 6px; }
-  /* the plate: the archipelagos card's own face (card-art.js), the island's name on it as a card's title */
-  .face { position: relative; margin: 0 0 14px; height: 132px; border-radius: 6px; overflow: hidden; background: #0C2546; color: #F4F1E8; }
+  /* the plate: the archipelagos' own print (card-art.js), potato stamps on paper, the island's name pasted on as a strip */
+  .face { position: relative; margin: 0 0 14px; height: 132px; border-radius: 3px; overflow: hidden; background: #EEEAE0; color: #241B45; }
   .face canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .face .pm { position: absolute; left: 14px; top: 14px; width: 40px; height: auto; }
-  .face b { position: absolute; left: 14px; right: 14px; bottom: 12px; font: 700 34px/.92 Poppins, sans-serif; letter-spacing: -.045em; overflow-wrap: anywhere; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
+  .face b { position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px); padding: 5px 9px 6px; background: #F6F3EA; box-shadow: 0 1px 0 rgba(36, 27, 69, .18); transform: rotate(-.6deg); font: 700 28px/.95 Poppins, sans-serif; letter-spacing: -.04em; overflow-wrap: anywhere; }
   .face b:empty { display: none; }
   /* keep it: a code or a key to screenshot or download, and the set-up's reward note */
-  .keep { margin: 0 0 16px; padding: 16px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); color: #0C2546; }
+  .keep { margin: 0 0 16px; padding: 16px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); color: #241B45; }
   .keep .kh { margin: 0; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .22em; }
   .keep .kb { display: block; margin: 10px 0 8px; font: 700 64px/.95 Poppins, sans-serif; letter-spacing: -.02em; overflow-wrap: anywhere; } .keep.long .kb { font-size: 17px; line-height: 1.3; letter-spacing: .02em; font-family: 'IBM Plex Mono', monospace; }
   .keep .kt { margin: 0 0 8px; font: 500 12.5px/1.5 'IBM Plex Mono', monospace; letter-spacing: .01em; } .keep .kk { opacity: .7; }
-  .keep .row { display: flex; gap: 8px; margin-top: 12px; } .keep button { color: #0C2546; border-color: rgba(12, 37, 70, .3); } .keep button.on { background: #0C2546; color: #F4F1E8; border-color: #0C2546; }
+  .keep .row { display: flex; gap: 8px; margin-top: 12px; } .keep button { color: #241B45; border-color: rgba(36, 27, 69, .3); } .keep button.on { background: #241B45; color: #EEEAE0; border-color: #241B45; }
   @media (prefers-reduced-motion: reduce) { .dev.turn { animation: none; } }
   .so, #bnsay:not(.err) { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .pw { font-size: 0; gap: 0; padding: 0 9px; min-width: 30px; justify-content: center; } .pw::before { width: 8px; height: 13px; } .tray .th { display: none !important; }
@@ -310,7 +309,7 @@
 <header class="sea" id="sea"><nav class="sn"><a class="sk mk" href="/" title="novel.global" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg></a><span class="sp"></span><a class="nk" href="/#keeper" id="tohome" title="Its home: connections, cards, what it makes" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6" class="f"/><circle cx="14" cy="17" r="1.6" class="f"/></svg></a><button type="button" class="nk" id="theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav>
   <svg class="isle" id="isle" viewBox="0 0 320 92" role="img" aria-label="The island"></svg><i class="tear" aria-hidden="true"></i></header>
 <main>
-<figure class="face" id="face" aria-hidden="true"><canvas></canvas><svg class="pm" viewBox="0 0 237 112"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg><b id="ptn"></b></figure>
+<figure class="face" id="face" aria-hidden="true"><canvas></canvas><b id="ptn"></b></figure>
 <section class="keep" id="keep" hidden aria-live="polite"><p class="kh" id="kh"></p><b class="kb" id="kb"></b><p class="kt" id="kt"></p><p class="kt kk" id="kk"></p>
   <div class="row"><button type="button" class="on" id="kdl">DOWNLOAD</button><button type="button" id="kx">DONE</button></div></section>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter></svg>
