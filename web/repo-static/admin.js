@@ -785,7 +785,7 @@
   }
 
   async function printers() { const r = await api('printers'); const { printers: list } = await r.json(); try { const st0 = await (await api('settings')).json(); BUILD = st0.builds ? JSON.parse(st0.builds) : {}; } catch (e) { BUILD = {}; }
-    main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await welcomeCard(), buildsCard(), ...list.map(printerCard)); }
+    main.replaceChildren(...head("Printers"), pairCard(list), await joinCard(), await codesCard(), await welcomeCard(), buildsCard(), ...list.map(printerCard)); }
   /* ───────── builds: what an island's keeper can change from their home. One choice an island (and one for islands with none of their
      own); CUSTOM opens the parts. A keeper only ever sees what is in theirs, and the site refuses the rest ───────── */
   const BPARTS = [['name', 'NAME'], ['pics', 'PICTURES'], ['links', 'CONNECTIONS'], ['cards', 'CARDS'], ['picks', 'PICKS'], ['passes', 'PASSES'], ['use', 'STAMPS'], ['gap', 'GAP'], ['gang', 'GANG'], ['joins', 'JOINS'], ['home', 'HOME']];
@@ -834,6 +834,28 @@
       el('label', { class: 'check' }, on, 'SHOWN'), ...F.map(([, t, x, fm]) => el('div', { style: 'display:grid;gap:10px;margin:0 0 22px' }, el('label', {}, t, x), el('label', {}, 'FILM (EMPTY: NONE)', fm))),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: save }), say)); }
 
+  /* CODES: whether a ghost island's set-up makes a code real (OPEN, as built), or only a print does (PRESENCE: proof of presence);
+     the codes made real so far, by a print or by a ghost, and wiping them; and the words shown with a code or a key and with the reward */
+  async function codesCard() { const st = await (await api('settings')).json(); let n = { print: 0, ghost: 0 }; try { n = await (await api('codes')).json(); } catch (e) { /* none */ }
+    let w = {}; try { w = JSON.parse(st.codeNotes || '{}') || {}; } catch (e) { w = {}; }
+    const acc = el('select', {}, ...[['open', 'OPEN: A GHOST ISLAND’S CODE COUNTS'], ['pop', 'PRESENCE: ONLY A PRINT COUNTS']].map(([v, t]) => el('option', { value: v, text: t, ...((st.access || 'open') === v ? { selected: '' } : {}) })));
+    const say = el('small', { class: 'hint' });
+    const wipe = async (what, sure) => { if (!confirm(sure)) return; const j = await (await api('makers', { method: 'POST', body: JSON.stringify({ wipe: what }) })).json(); say.textContent = (j.wiped || 0) + ' WIPED'; setTimeout(() => show('printers'), 900); };
+    const ky = el('input', { maxlength: '200', placeholder: 'Your island’s key opens it on any phone.' }); ky.value = w.key || '';
+    const kp = el('input', { maxlength: '200', placeholder: 'Keep it safe: take a screenshot, or download it.' }); kp.value = w.keep || '';
+    const rw = el('textarea', { rows: '4', maxlength: '900', placeholder: 'Your island is on. Your reward is this code, and it’s yours. With it you can save what you make, talk on the board, keep passes and open your home on another phone.' }); rw.value = w.reward || '';
+    const pp = el('input', { maxlength: '200', placeholder: 'Bring this code to a printer to make it yours.' }); pp.value = w.pop || '';
+    return el('section', { class: 'ed' }, el('h3', { text: 'CODES' }),
+      el('small', { class: 'hint', text: `MADE REAL BY A PRINT: ${n.print || 0} · BY A GHOST ISLAND: ${n.ghost || 0}. Both open everything (saving, talking, passes, the home); a ghost’s carries a GHOST badge, and a print later makes it PRINTED.` }),
+      el('label', { class: 'row' }, el('span', { text: 'ACCESS' }), acc),
+      el('small', { class: 'hint', text: 'OPEN (as built): someone who builds a ghost island, switches it on and pairs it gets their code made real, without coming to a printer. PRESENCE: only a print at a real printer makes a code real; codes already made stay unless wiped below.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ access: acc.value }) }); say.textContent = 'SAVED'; } }),
+        el('button', { type: 'button', text: 'WIPE GHOST CODES', onclick: () => wipe('ghost', 'Wipe every code a ghost island made real? Those codes go back to waiting for a print. Printed codes stay.') }),
+        el('button', { type: 'button', text: 'WIPE ALL CODES', onclick: () => wipe('all', 'Wipe every code, printed and ghost? Everyone has to print at a printer again to save and talk. This cannot be undone.') }), say),
+      el('h3', { text: 'CODE WORDS' }), el('small', { class: 'hint', text: 'Shown with a code or an island’s key, and when a ghost island is switched on. Empty: the words shown in grey.' }),
+      el('label', {}, 'WITH AN ISLAND’S KEY', ky), el('label', {}, 'KEEP IT (WITH A CODE AND A KEY)', kp), el('label', {}, 'THE REWARD, WHEN A GHOST IS SWITCHED ON', rw), el('label', {}, 'WITH PRESENCE ON', pp),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE WORDS', onclick: async () => { const o = {}; [['key', ky], ['keep', kp], ['reward', rw], ['pop', pp]].forEach(([k, e]) => { const v = e.value.trim(); if (v) o[k] = v; });
+        await api('settings', { method: 'POST', body: JSON.stringify({ codeNotes: Object.keys(o).length ? JSON.stringify(o) : '' }) }); say.textContent = 'SAVED'; } }))); }
   async function welcomeCard() {
     let w = {}; try { w = await (await fetch('/api/welcome', { cache: 'no-store' })).json(); } catch (e) { w = {}; }
     const on = el('input', { type: 'checkbox' }); on.checked = w.on !== false;

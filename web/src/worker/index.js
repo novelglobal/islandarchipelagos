@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 22;
+const SCHEMA_V = 23;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -169,6 +169,9 @@ async function upgrade(db, was = 0) {
     for (const q of ['ALTER TABLE printers ADD COLUMN joins TEXT', 'ALTER TABLE printers ADD COLUMN ghost INTEGER DEFAULT 0']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 18. home: an island's own home (its main cards in order, which nines stand and which of their cards, and its label) */
     try { await db.prepare('ALTER TABLE printers ADD COLUMN home TEXT').run(); } catch (e) { /* already there */ }
+    /* version 23. via: how a code was made real, 'ghost' when a ghost island's set-up gave it (else by a print); gave: the code a ghost
+       gave, once it was switched on and paired */
+    for (const q of ['ALTER TABLE makers ADD COLUMN via TEXT', 'ALTER TABLE printers ADD COLUMN gave TEXT']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 22. test_of: a TEST, the ghost a real island keeps beside it (that island's id); moves: the real island's last five MOVEs, each with what it took the place of, for UNDO */
     for (const q of ['ALTER TABLE printers ADD COLUMN test_of TEXT', 'ALTER TABLE printers ADD COLUMN moves TEXT']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 21. GREY 16 ORDER 2 is every photograph's default (photo test 2, B): the saved print settings let go of their dots, their
@@ -301,8 +304,8 @@ async function photo(db, env, id, any) {
    Taken down is off the site only: the approval page keeps it as it was. Asked too often from one place, it waits */
 /* a maker's kin, given if they have none yet (makers from before kin, or one only known by a code typed) */
 async function kinOf(db, who) {
-  let mk = await db.prepare('SELECT lv, kin, printed FROM makers WHERE who = ?').bind(who).first(); if (!mk) return null;
-  if (mk.kin == null) { await db.prepare('UPDATE makers SET kin = (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers) WHERE who = ? AND kin IS NULL').bind(who).run(); mk = await db.prepare('SELECT lv, kin, printed FROM makers WHERE who = ?').bind(who).first(); }
+  let mk = await db.prepare('SELECT lv, kin, printed, via FROM makers WHERE who = ?').bind(who).first(); if (!mk) return null;
+  if (mk.kin == null) { await db.prepare('UPDATE makers SET kin = (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers) WHERE who = ? AND kin IS NULL').bind(who).run(); mk = await db.prepare('SELECT lv, kin, printed, via FROM makers WHERE who = ?').bind(who).first(); }
   return mk;
 }
 /* the board: the latest of a section (or all), each by its maker's kin; written only with a code a print gave (a maker the site knows) */
@@ -414,7 +417,7 @@ async function mine(db, env, req, who, id) {
   const mk = await kinOf(db, who), kp = await db.prepare('SELECT COALESCE(keep, first + ?) AS k FROM makers WHERE who = ?').bind(KEEP.fresh, who).first();
   const hk = new URL(req.url).searchParams.get('k'), st = hk && codeKey(env) && await same(hk, await homeKey(env, who)) ? await stampsOf(db, who) : null;
   const own = st ? { stamps: st, animal: ((await db.prepare('SELECT animal FROM makers WHERE who = ?').bind(who).first()) || {}).animal != null, mods: (await db.prepare('SELECT id, name, number FROM printers WHERE mods LIKE ?').bind('%"' + who + '"%').all()).results.map(p => ({ id: p.id, name: p.name || p.id, number: p.number || null })) } : null;
-  return json({ ...(own || {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
+  return json({ ...(own || {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), ...(mk && mk.printed ? { via: mk.via === 'ghost' ? 'ghost' : 'print' } : {}), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
 /* a story sent: it waits for approval. A job for the partner's printer waits with it, unless that printer prints without approval.
    dest 'mesh': no print, only its mesh line, to every paired printer whose radio is on (MESH), to go out over the local mesh */
@@ -537,7 +540,7 @@ async function learnKinds(db, env, req) {
    is the only thing that opens the devices, either way */
 const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false, ghostOn: true };
 /* choices, one of a few: how long a new code is (3 or 6), and what an island's touch screen does with passes (nothing, shows one, takes one typed) */
-const CHOICES = { codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600] };
+const CHOICES = { access: ['open', 'pop'], codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600] };
 /* what an island may set for itself: its cards (a pack), how its passes are given, the gap between one person's prints, and who helps run it */
 const PACKS = { full: null, builder: ['intro', 'wish', 'research', 'zine', 'kit', 'space', 'slot-3'], utilities: ['intro', 'weather', 'news', 'events', 'fiction', 'nonfiction', 'survival', 'cards', 'tarot'] };
 const WAYS = ['touch', 'print', 'intro', 'random'];
@@ -614,7 +617,7 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { builds: 4000, template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000 };
+const TEXTS = { builds: 4000, template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000, codeNotes: 3000 };
 /* texts the public settings never show: the pop-up's private link */
 const HIDDEN_TEXTS = ['builds', 'popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
@@ -795,7 +798,7 @@ async function report(db, req, id, job) {
   if (!(await printerAuth(db, req, id))) return fail(401, 'token');
   const b = await body(req); const ok = b.status === 'printed'; if (!ok && b.status !== 'failed') return fail(400, 'status');
   await db.prepare(`UPDATE jobs SET status = ?, error = ?, done = ?, escpos = NULL, mesh = NULL WHERE id = ? AND printer = ? AND status = 'printing'`).bind(ok ? 'printed' : 'failed', ok ? null : String(b.error || '').slice(0, 200), now(), job, id).run();
-  if (ok) await db.prepare('UPDATE makers SET printed = ? WHERE printed IS NULL AND who = (SELECT s.who FROM jobs j JOIN stories s ON s.id = j.story WHERE j.id = ?)').bind(now(), job).run();
+  if (ok) await db.prepare("UPDATE makers SET printed = ?, via = NULL WHERE (printed IS NULL OR via = 'ghost') AND who = (SELECT s.who FROM jobs j JOIN stories s ON s.id = j.story WHERE j.id = ?)").bind(now(), job).run();
   return json({ ok: true });
 }
 
@@ -997,10 +1000,11 @@ async function cardDrop(env, id, m) { if (m.w !== 'card' || !env.MEDIA || !m.was
 async function twin(db, env, req, url) {
   if (await tooMany(db, env, req, 'twin', 300, 10 * 60e3)) return fail(429, 'too many');
   const k = await keyOf(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
-  const p = await db.prepare('SELECT id, name, number, paper, ghost, mesh, links, joins, seen, bench, test_of, token IS NOT NULL AS paired FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal') return fail(401, 'key');
+  const p = await db.prepare('SELECT id, name, number, paper, ghost, mesh, links, joins, seen, bench, test_of, gave, token IS NOT NULL AS paired FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal') return fail(401, 'key');
   const t = now();
   if (req.method === 'POST') { const b = await body(req, 8192);
     if (typeof b.pair === 'string') return ghostAdopt(db, p, b.pair);
+    if (typeof b.reward === 'string') return ghostReward(db, env, req, p, b.reward);
     if (b.bench && typeof b.bench === 'object') { if (!p.ghost) return fail(400, 'not a ghost'); const v = benchIn(b.bench); if (!v) return fail(400, 'bench');
       /* a radio on the bench joined to a Pi or a supply is the ghost's MESH: what is sent to it carries its mesh line */
       const kindOf = iid => PART_KIND[(v.p.find(x => x[0] === iid) || [])[1]], feeds = { pi: 1, power: 1, converter: 1, battery: 1 };
@@ -1041,6 +1045,18 @@ async function osNow() { let o = null; try { const r = await fetch('https://gith
   const v = o && (/\/download\/(v\d+\.\d+\.\d+)\//.exec(o.url || '') || [])[1];
   if (!v) return new Response(JSON.stringify({ os: null }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=300' } });
   return new Response(JSON.stringify({ os: { version: v, download: +o.image_download_size || 0, size: +o.extract_size || 0, sha: String(o.extract_sha256 || '').slice(0, 12), devices: Array.isArray(o.devices) ? o.devices.slice(0, 8) : [] } }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } }); }
+/* the set-up's reward: a ghost built, switched on and paired on its bench gives its maker's code, made real as a print would make it
+   (via 'ghost', for its badge). One code to a ghost. With proof of presence on (access 'pop'), only a print makes a code real */
+async function ghostReward(db, env, req, p, who) {
+  if (!p.ghost || p.test_of) return fail(400, 'not a ghost'); if (!WHO.test(who)) return fail(400, 'who');
+  const o = benchOf(p.bench).o; if (!o || o[2] !== 3) return fail(409, 'not on');
+  if (p.gave && p.gave !== who) return fail(409, 'given');
+  if ((await settingsOf(db)).access === 'pop') return fail(403, 'presence');
+  const t = now();
+  await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
+  await db.batch([db.prepare("UPDATE makers SET printed = ?, via = 'ghost' WHERE who = ? AND printed IS NULL").bind(t, who), keepMade(db, who), db.prepare('UPDATE printers SET gave = ? WHERE id = ?').bind(who, p.id)]);
+  const mk = await db.prepare('SELECT via, kin FROM makers WHERE who = ?').bind(who).first(), home = await homeGive(db, env, req, who, { home: 1 });
+  return json({ ok: true, who, via: mk && mk.via === 'ghost' ? 'ghost' : 'print', kin: mk ? mk.kin : null, ...(home ? { home } : {}) }, 201); }
 async function ghostAdopt(db, p, code) {
   if (!p.ghost) return fail(400, 'not a ghost');
   if (p.test_of) return fail(400, 'test');   /* a TEST is never given a printer: what works moves to its real island */
@@ -1087,7 +1103,12 @@ async function admin(db, env, req, parts) {
   const no = await adminAuth(db, env, req); if (no) return no;
   const [what, id] = parts;
   /* the owner marks a code as printed (their own phone, or a maker they know) */
-  if (what === 'makers' && !id && req.method === 'POST') { const b = await body(req); if (typeof b.who !== 'string' || !WHO.test(b.who)) return fail(400, 'who'); await makerPrinted(db, b.who); return json({ ok: true }); }
+  if (what === 'codes' && !id && req.method === 'GET') { const r = await db.prepare("SELECT sum(CASE WHEN printed IS NOT NULL AND via IS NOT 'ghost' THEN 1 ELSE 0 END) AS print, sum(CASE WHEN printed IS NOT NULL AND via = 'ghost' THEN 1 ELSE 0 END) AS ghost FROM makers").first(); return json({ print: (r && r.print) || 0, ghost: (r && r.ghost) || 0 }); }
+  if (what === 'makers' && !id && req.method === 'POST') { const b = await body(req);
+    if (b.wipe != null) { if (b.wipe !== 'ghost' && b.wipe !== 'all') return fail(400, 'wipe');
+      const r = await db.prepare(b.wipe === 'ghost' ? "UPDATE makers SET printed = NULL, via = NULL WHERE printed IS NOT NULL AND via = 'ghost'" : 'UPDATE makers SET printed = NULL, via = NULL WHERE printed IS NOT NULL').run();
+      return json({ ok: true, wiped: (r.meta && r.meta.changes) || 0 }); }
+    if (typeof b.who !== 'string' || !WHO.test(b.who)) return fail(400, 'who'); await makerPrinted(db, b.who); return json({ ok: true }); }
   if (what === 'links' && !id && req.method === 'GET') { await linkTable(db); const { results } = await db.prepare('SELECT who, k, v, at FROM links ORDER BY at DESC LIMIT 500').all(); return json({ links: results }); }
   if (what === 'links' && id && parts[2] && req.method === 'DELETE') { await linkTable(db); await db.prepare('DELETE FROM links WHERE who = ? AND k = ?').bind(id, parts[2]).run(); return json({ ok: true }); }
   if (what === 'cards' && id && CARD_ID.test(id)) { if (parts[2] != null && !parts[3] && (req.method === 'PUT' || req.method === 'DELETE')) return cardPut(db, env, req, id, parts[2]); if (!parts[2] && req.method === 'POST') { const b = await body(req, 1024); return json(await cardSet(db, id, b)); } }
@@ -1670,7 +1691,7 @@ async function stampsOf(db, who) { await stampTable(db);
   return results.map(x => { const u = useOf(x); return { id: x.id, name: x.name || x.id, number: x.number || null, n: x.n, ...(u ? { use: u } : {}) }; }); }
 async function makerPrinted(db, who) { const t = now();
   await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
-  await db.prepare('UPDATE makers SET printed = COALESCE(printed, ?) WHERE who = ?').bind(t, who).run(); }
+  await db.prepare("UPDATE makers SET printed = CASE WHEN printed IS NULL OR via = 'ghost' THEN ? ELSE printed END, via = NULL WHERE who = ?").bind(t, who).run(); }
 /* a printed code, linked by its maker to a way back to them: mesh, email, mobile or Steam. Optional; seen only on the admin page */
 const LINK_K = { mesh: /^[!A-Za-z0-9 ._-]{2,40}$/, email: /^[^\s@<>"]{1,64}@[^\s@<>"]{1,120}\.[a-z]{2,24}$/i, mobile: /^\+?[0-9 ()-]{6,22}$/, steam: /^[A-Za-z0-9_:/.-]{2,80}$/ };
 const linksReady = new WeakMap();

@@ -520,6 +520,19 @@ try {
       /* a radio on the bench, joined, is the ghost's MESH; off the bench, it is not */
       const bnR1 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [['p1.usb2', 'p2.usb']] }), twR = await tw(KB), bnR0 = await bnS(KB, { p: [['p1', 'pi-3-b-plus'], ['p2', 't-beam']], j: [] }), twR0 = await tw(KB), bnRw = await bnS(KB, { p: [['p1', 'tm-t88v'], ['p2', 't-beam']], j: [['p1.usb', 'p2.usb']] });
       check('a T-Beam joined on a ghost\'s bench makes it MESH (its twin says so); unjoined, or joined only to a printer, not', bnR1.json.mesh === true && twR.json.mesh === true && bnR0.json.mesh === false && twR0.json.mesh === false && bnRw.json.mesh === false, JSON.stringify({ w: bnRw.json.mesh, a: bnR1.json.mesh, b: twR.json.mesh, c: bnR0.json.mesh, d: twR0.json.mesh }));
+      /* the set-up's reward: a ghost built, switched on and paired gives its maker's code, made real (a ghost badge); one code a ghost;
+         proof of presence closes it; the owner wipes the ghosts' codes; a print makes a ghost's code a printed one */
+      { const was = (await tw(KB)).json.bench, rw = (who, ip) => call('/api/twin', { method: 'POST', token: KB, ip, body: { reward: who } }), mineOf = w => call('/api/mine/' + w);
+        const r0 = await rw('GH7'); await bnS(KB, { p: [['p1', 'tm-t88v'], ['p2', 'sd-32']], j: [], f: [['p2', 'v1.1.1', 'reef']], o: ['p2', 'v1.1.1', 3] });
+        const r1 = await rw('GH7'), m1 = await mineOf('GH7'), tk = await call('/api/talk?s=notice&who=GH7', { ip: '198.51.100.77' }), r2 = await rw('GH8'), c1 = await call('/api/admin/codes', { key: KEY });
+        await call('/api/admin/settings', { method: 'POST', key: KEY, body: { access: 'pop' } }); const r3 = await rw('GH7'), st = (await call('/api/settings')).json.access;
+        await call('/api/admin/settings', { method: 'POST', key: KEY, body: { access: 'open' } }); const wp = await call('/api/admin/makers', { method: 'POST', key: KEY, body: { wipe: 'ghost' } }), m2 = await mineOf('GH7');
+        const r4 = await rw('GH7'); await call('/api/admin/makers', { method: 'POST', key: KEY, body: { who: 'GH7' } }); const m3 = await mineOf('GH7'), bad = await call('/api/admin/makers', { method: 'POST', key: KEY, body: { wipe: 'some' } });
+        await bnS(KB, was);
+        check('a ghost switched on and paired gives its maker’s code, made real with a ghost badge (it talks); one code to a ghost; proof of presence closes it; the ghosts’ codes can be wiped; a print makes it a printed code',
+          r0.status === 409 && r1.status === 201 && r1.json.via === 'ghost' && /^[0-9a-f]{16}$/.test(r1.json.home || '') && m1.json.printed === true && m1.json.via === 'ghost' && tk.status === 200 && r2.status === 409 && c1.json.ghost >= 1 &&
+          r3.status === 403 && st === 'pop' && wp.json.wiped >= 1 && m2.json.printed === false && !m2.json.via && r4.status === 201 && m3.json.via === 'print' && bad.status === 400,
+          JSON.stringify({ r: [r0.status, r1.status, r1.json, r2.status, r3.status, r4.status], m: [m1.json.via, m2.json.printed, m3.json.via], tk: tk.status, c1: c1.json, wp: wp.json, st, bad: bad.status })); }
       const bnReal = await bnS(KA, { p: [], j: [] }); check('a real island\'s twin keeps no bench (a ghost\'s only)', bnReal.status === 400 && !('bench' in tA4.json), JSON.stringify({ s: bnReal.status, t: Object.keys(tA4.json) }));
       /* stage L2: prints made on the island's own Wi-Fi with no internet come home once it is back: each id once, printed, on its twin's roll as OFFLINE */
       { const PT = pp.json.token, PI = pp.json.printer, th = '8,2,' + Buffer.from([0xF0, 0x0F]).toString('base64'), at = Math.floor(Date.now() / 1000) - 600;

@@ -293,6 +293,12 @@
   .face .pm { position: absolute; left: 14px; top: 14px; width: 40px; height: auto; }
   .face b { position: absolute; left: 14px; right: 14px; bottom: 12px; font: 700 34px/.92 Poppins, sans-serif; letter-spacing: -.045em; overflow-wrap: anywhere; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
   .face b:empty { display: none; }
+  /* keep it: a code or a key to screenshot or download, and the set-up's reward note */
+  .keep { margin: 0 0 16px; padding: 16px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); color: #0C2546; }
+  .keep .kh { margin: 0; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .22em; }
+  .keep .kb { display: block; margin: 10px 0 8px; font: 700 64px/.95 Poppins, sans-serif; letter-spacing: -.02em; overflow-wrap: anywhere; } .keep.long .kb { font-size: 17px; line-height: 1.3; letter-spacing: .02em; font-family: 'IBM Plex Mono', monospace; }
+  .keep .kt { margin: 0 0 8px; font: 500 12.5px/1.5 'IBM Plex Mono', monospace; letter-spacing: .01em; } .keep .kk { opacity: .7; }
+  .keep .row { display: flex; gap: 8px; margin-top: 12px; } .keep button { color: #0C2546; border-color: rgba(12, 37, 70, .3); } .keep button.on { background: #0C2546; color: #F4F1E8; border-color: #0C2546; }
   @media (prefers-reduced-motion: reduce) { .dev.turn { animation: none; } }
   .so, #bnsay:not(.err) { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .pw { font-size: 0; gap: 0; padding: 0 9px; min-width: 30px; justify-content: center; } .pw::before { width: 8px; height: 13px; } .tray .th { display: none !important; }
@@ -305,6 +311,8 @@
   <svg class="isle" id="isle" viewBox="0 0 320 92" role="img" aria-label="The island"></svg><i class="tear" aria-hidden="true"></i></header>
 <main>
 <figure class="face" id="face" aria-hidden="true"><canvas></canvas><svg class="pm" viewBox="0 0 237 112"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg><b id="ptn"></b></figure>
+<section class="keep" id="keep" hidden aria-live="polite"><p class="kh" id="kh"></p><b class="kb" id="kb"></b><p class="kt" id="kt"></p><p class="kt kk" id="kk"></p>
+  <div class="row"><button type="button" class="on" id="kdl">DOWNLOAD</button><button type="button" id="kx">DONE</button></div></section>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter></svg>
 <section id="gate" hidden>
   <ol class="rite" aria-hidden="true"><li class="st now"><button type="button" tabindex="-1"><i></i><b>PARTS</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>SD</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>POWER</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>START</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>HOME</b></button></li></ol>

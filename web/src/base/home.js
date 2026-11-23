@@ -1672,6 +1672,12 @@
   /* where each thing stands on the island drawing (isle-art.js, ISLE.AT), as a share of the scene, so the keys sit on the things */
   var IK_AT = { use: [125, 7, 1], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36, 1], pics: [229, 47], gang: [171, 52], passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84] };
   var ikPos = function (k) { var a = IK_AT[k] || [160, 40]; return 'left:' + ((a[0] - 20) / 2.8).toFixed(2) + '%;top:' + ((a[1] + 30) / 1.4).toFixed(2) + '%'; };
+  /* the cards' own painter (card-art.js), for a code or a key kept as a picture; fetched when the menu opens */
+  var ARTQ = null; function needArt(cb) { if (window.CARDART) return cb && cb(); if (ARTQ) { if (cb) ARTQ.push(cb); return; } ARTQ = cb ? [cb] : [];
+    var s = D.createElement('script'); s.src = '/card-art.js'; s.onload = function () { var q = ARTQ; ARTQ = null; q.forEach(function (f) { try { f(); } catch (e) { /* next tap */ } }); }; s.onerror = function () { ARTQ = null; }; D.head.appendChild(s); }
+  var KEEPSAY = 'Keep it safe: take a screenshot, or download it.', KEYSAY = 'Your island’s key opens it on any phone.';
+  if (window.NG && NG.siteOf) NG.siteOf().then(function (s) { try { var o = JSON.parse((s && s.codeNotes) || '{}') || {}; if (o.keep) KEEPSAY = String(o.keep); if (o.key) KEYSAY = String(o.key); } catch (e) { /* the site's own */ } });
+  var keepSave = function (o) { needArt(function () { window.CARDART.save(o); }); };
   /* the island drawing and its pencil are fetched the first time an island is opened */
   var ISQ = null;
   function needIsle(cb) { if (window.ISLE && window.ISLE.home && window.rough) return cb(); if (ISQ) return ISQ.push(cb); ISQ = [cb];
@@ -1701,6 +1707,7 @@
           '<button type="button" class="ik-q" data-ikt aria-pressed="' + (tk ? 'true' : 'false') + '" title="Guide">?</button></div>' +
         (own ? '<div class="ik-way"><p class="ik-man">' + (p.testOf ? 'Your test island. Try things here, then move them across.' : gh ? 'Your ghost island: an island with no printer yet. Its set-up is on the bench.' : 'Your island. Its paper, bench and printer are on the twin.') + ' Tap a spot on the island to change that part.</p>' +
           '<button type="button" class="ik-bench" data-twin>' + (gh ? 'SET UP' : 'TWIN') + '</button></div>' : '') +
+        (own && !p.testOf ? '<div class="ik-keep"><p class="ik-man">' + esc(KEYSAY) + ' ' + esc(KEEPSAY) + '</p><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button></div>' : '') +
         '<div class="ik-map' + (p.ghost || p.testOf ? ' gh' : '') + (p.ready ? ' up' : '') + '"><svg class="isle-h" role="img" aria-label="' + nm + '"></svg>' + L.map(mk).join('') + '</div>' +
         (tk ? '<div class="ik-tour"><p><b>' + cur.name + '</b><span>' + esc(cur.say) + '</span></p><div class="ik-dots" aria-hidden="true">' + go.map(function (l, i) { return '<i' + (i === HK.tour ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
           '<button type="button" data-ikx aria-label="End the guide">×</button><button type="button" class="ik-nx" data-ikn>' + (HK.tour < go.length - 1 ? 'NEXT' : 'DONE') + '</button></div>'
@@ -1738,6 +1745,7 @@
       var mb = $('[data-move]', box); if (mb) mb.addEventListener('click', function () { tdo(mb, { action: 'move', what: HK.mv }); });
       var ub = $('[data-undo]', box); if (ub) ub.addEventListener('click', function () { tdo(ub, { action: 'undo' }); });
       $$('[data-twin]', box).forEach(function (tw) { tw.addEventListener('click', function () { beep(660, 0.05); sheet(p.ghost && !p.testOf ? 'GHOST' : 'TWIN', inFrame('twin?in=1' + (p.testOf ? '&isle=test' : '') + '#bench')); }); });
+      var kk = $('[data-keepk]', box); if (kk) kk.addEventListener('click', function () { beep(660, 0.05); keepSave({ label: 'Island key', big: key, sub: [String(p.name || p.id).toUpperCase() + (p.number ? ' · ' + p.number : ''), 'Opens the island on novel.global'], file: 'novel-global-key-' + String(p.id).slice(0, 24) }); });
       var pb = $('[data-pass]', box); if (pb) pb.addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       /* PICKS: what this island holds up, and a search through everything made to add to it */
       var pkl = $('.hm-pkl', box), mine = [], found = [];
@@ -1980,8 +1988,8 @@
   function mineIn(body) { body.classList.add('mn');
     var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
     if (KEEPGO) { KEEPGO = false; SEC = {}; }
-    var who, ok, pl, ps, hk, an, mods, ikey;
-    var load = function () { who = store.get('da.who', ''); ok = !!store.get('da.who.ok', 0); pl = store.get('da.who.places', null) || []; ps = store.get('da.pass', null); if (ps && (ps.day !== cartDay() || !ps.code)) ps = null;
+    var who, ok, via, pl, ps, hk, an, mods, ikey; needArt();
+    var load = function () { who = store.get('da.who', ''); ok = !!store.get('da.who.ok', 0); via = store.get('da.who.via', ''); pl = store.get('da.who.places', null) || []; ps = store.get('da.pass', null); if (ps && (ps.day !== cartDay() || !ps.code)) ps = null;
       hk = store.get('da.who.home', ''); an = window.NG && NG.animalOf ? NG.animalOf() : null; mods = store.get('da.who.mods', null) || []; ikey = store.get('da.hm.key', ''); };
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
     var keep = function (l) { MINE = MINE || {}; if (l) MINE.order = l.map(function (c) { return c.id; }); store.set('da.hm.mine', MINE); applyCards(null); draw(); };
@@ -1997,10 +2005,11 @@
           return '<div><dt>' + (r[0] ? '<span aria-hidden="true">' + r[0] + '</span>' : '') + r[1] + '</dt><dd>' + r[2] + '</dd></div>'; }).join('') + '</dl>'; };
     var opts = function (first) { return '<option value="">' + first + '</option>' + A.map(function (n, i) { return '<option value="' + i + '">' + esc(n) + '</option>'; }).join(''); };
     var codePart = function () {
-      return '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? '<i>PRINTED</i>' : '') + '</dd></div>' +
+      return '<dl class="mn-id"><div title="' + (who ? (ok ? 'Your code, printed at a printer' : 'Your code: it becomes yours for good once a print carries it') : 'A code comes with your first print') + '"><dt>CODE</dt><dd' + (who ? '' : ' class="no"') + '>' + (who ? esc(who) : '—') + (who && ok ? (via === 'ghost' ? '<i class="mn-bdg mn-gh" title="Made real by building a ghost island">GHOST</i>' : '<i class="mn-bdg" title="Made real at a printer">PRINTED</i>') : '') + '</dd></div>' +
         '<div title="Your second key: with your code it opens this home on another phone. Only you see it"><dt>ANIMAL</dt><dd class="mn-an' + (an == null ? ' no' : '') + '">' + (an == null ? '—' : SHOWA ? esc(String(A[an] || '').toUpperCase()) : '• • •') + '</dd></div>' +
         (who ? '<div class="mn-wide mn-places" title="' + (pl.length ? 'Joined: islands where you kept a pass' : 'Keep a pass from a printer to join its island') + '"><dt>JOINED</dt><dd' + (pl.length ? '' : ' class="no"') + '>' + (pl.length ? pl.map(function (p) { var u = p.use, e = u && u.kind === 'shop' ? +u.every : 0, k = e ? (+p.n % e || e) : 0, full = e ? Math.floor(+p.n / e) : 0;
           return '<span' + (u ? ' title="' + (u.kind === 'shop' ? 'Card' + (full ? ', ' + full + ' full' : '') : 'Class') + '"' : '') + '>' + esc(String(p.name || p.id).toUpperCase()) + (e ? '<i class="mn-card">' + Array(k + 1).join('●') + Array(e - k + 1).join('○') + '</i>' : p.n > 1 ? '<i>×' + (+p.n) + '</i>' : '') + '</span>'; }).join(' · ') : '—') + '</dd></div>' : '') + '</dl>' +
+        (who ? '<div class="mn-keep"><p class="mn-say mn-plain">' + esc(KEEPSAY) + '</p><button type="button" data-a="keepc">DOWNLOAD</button></div>' : '') +
         (who && hk ? '<div class="mn-row">' + (an != null ? '<button type="button" data-a="show" aria-pressed="' + SHOWA + '">' + (SHOWA ? 'HIDE' : 'SHOW') + '</button>' : '') + '<button type="button" data-a="rand" title="An animal given at random: remember it">RANDOM</button><select data-a="pick" aria-label="Choose your animal" title="Choose your animal">' + opts(an == null ? 'CHOOSE' : 'CHANGE') + '</select></div>'
           : who ? '<p class="mn-say" title="This phone does not hold this code\'s key: open it below with its animal">LOCKED</p>' : '') +
         '<details class="mn-sub"><summary title="Your code and its animal, from another phone">ANOTHER</summary><form class="mn-row" data-f="open"><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code"><select name="a" aria-label="Its animal">' + opts('ANIMAL') + '</select><button>OPEN</button></form><p class="mn-say" data-say="open">' + esc(OPENSAY) + '</p></details>'; };
@@ -2040,6 +2049,7 @@
     body.onclick = function (e) { var b = e.target.closest('button'); if (!b || b.closest('.mn-keeper')) return;
       if (b.dataset.find != null) { e.stopPropagation(); SH.swap = true; finder(b.dataset.find); return; }
       if (b.dataset.a === 'show') { SHOWA = !SHOWA; return draw(); }
+      if (b.dataset.a === 'keepc') { beep(660, 0.05); keepSave({ label: 'Your code', big: who, sub: [ok ? (via === 'ghost' ? 'GHOST' : 'PRINTED') : 'NOT PRINTED YET', 'Opens your home on novel.global'], file: 'novel-global-code-' + who }); return; }
       if (b.dataset.a === 'rand') { if (an != null && !confirm('Give this code a new animal?')) return; beep(660, 0.05); NG.animalSet(crypto.getRandomValues(new Uint8Array(1))[0] % A.length).then(function () { SHOWA = true; draw(); }, function () { draw(); }); return; }
       if (b.dataset.isle) { ISLE = ISLE === b.dataset.isle ? null : b.dataset.isle; beep(520, 0.05); return draw(); }
       if (b.hasAttribute('data-ghost')) { ghostOpen(); return; }

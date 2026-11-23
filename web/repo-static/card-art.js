@@ -21,12 +21,33 @@
       g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x + rx * 0.12, y + ry * 0.9, rx * 0.9, ry * 0.25, 0, 0, 7); g.fill();
       g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, (r() - 0.5) * 0.6, 0, 7); g.fill(); } }
   function plate(cv, seed) { var k = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
-    cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); seed = seed || 61;
+    cv.width = Math.round(w * k); cv.height = Math.round(h * k); var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); paint(g, w, h, seed || 61); return true; }
+  function paint(g, w, h, seed) {
     g.fillStyle = '#0C2546'; g.fillRect(0, 0, w, h); grain(g, w, h, Math.round(w * h / 70), 'rgba(255,255,255,.06)', seed);
     forms(g, w, h, seed + 3); tube(g, w, h, seed + 7);
     g.save(); g.globalCompositeOperation = 'source-atop'; grain(g, w, h, Math.round(w * h / 180), 'rgba(255,255,255,.18)', seed + 9, 1.4); grain(g, w, h, Math.round(w * h / 320), 'rgba(4,14,30,.35)', seed + 11, 1.6); g.restore();
-    flaws(g, w, h, seed + 13, 0.3); return true; }
+    flaws(g, w, h, seed + 13, 0.3); }
+  /* the words to keep a code or a key, and the reward's note: the owner's own from the approval page (codeNotes), else these */
+  var NOTES = { key: 'Your island’s key opens it on any phone.', keep: 'Keep it safe: take a screenshot, or download it.', reward: 'Your island is on. Your reward is this code, and it’s yours. With it you can save what you make, talk on the board, keep passes and open your home on another phone.', pop: 'Bring this code to a printer to make it yours.' };
+  function notes(set) { var o = {}; try { o = JSON.parse((set && set.codeNotes) || '{}') || {}; } catch (e) { o = {}; } return { key: o.key || NOTES.key, keep: o.keep || NOTES.keep, reward: o.reward || NOTES.reward, pop: o.pop || NOTES.pop }; }
+  /* a code or a key as a picture to keep: the card's face, its label, the thing itself large, a line under it */
+  function keepCard(o) { var W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d');
+    paint(g, W, H * 0.46, seedOf(o.big)); g.fillStyle = '#F4F1E8'; g.fillRect(0, H * 0.46, W, H * 0.54); g.fillStyle = '#0C2546';
+    g.fillStyle = '#F4F1E8'; g.fillRect(72, 72, 92, 92); g.fillStyle = '#E2552E'; g.beginPath(); g.arc(240, 118, 47, 0, 7); g.fill();
+    g.fillStyle = '#0C2546'; g.font = '600 34px "IBM Plex Mono", ui-monospace, monospace'; g.textBaseline = 'alphabetic'; g.fillText(String(o.label || '').toUpperCase().split('').join(String.fromCharCode(8202)), 72, H * 0.46 + 110);
+    var big = String(o.big || ''), fs = big.length <= 6 ? 300 : 62; g.font = big.length <= 6 ? '700 ' + fs + 'px Poppins, Arial, sans-serif' : '500 ' + fs + 'px "IBM Plex Mono", ui-monospace, monospace';
+    var y = H * 0.46 + 140 + fs * 0.9, line = '', lines = []; big.split('').forEach(function (ch) { if (g.measureText(line + ch).width > W - 144) { lines.push(line); line = ch; } else line += ch; }); lines.push(line);
+    lines.forEach(function (l, i) { g.fillText(l, 72, y + i * fs * 1.02); }); y += (lines.length - 1) * fs * 1.02 + 90;
+    g.font = '500 32px "IBM Plex Mono", ui-monospace, monospace'; g.fillStyle = 'rgba(12,37,70,.7)'; (o.sub || []).forEach(function (l, i) { g.fillText(String(l), 72, y + i * 46); });
+    g.fillText('novel.global', 72, H - 72); return c; }
+  /* saved to the phone: shared as a picture where the phone can (to Photos), else downloaded */
+  function save(o) { var c = keepCard(o), name = (o.file || 'novel-global') + '.png', d = c.toDataURL('image/png'), b = atob(d.split(',')[1]), u8 = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) u8[i] = b.charCodeAt(i); var bl = new Blob([u8], { type: 'image/png' }), f = null; try { f = new File([bl], name, { type: 'image/png' }); } catch (e) { f = null; }
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f] }).then(function () { return true; }, function () { return false; });
+    var a = document.createElement('a'), u = URL.createObjectURL(bl); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); return Promise.resolve(true); }
   /* a seed from a name, so each island keeps its own plate */
   function seedOf(s) { var h = 7; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 2147483646; return h + 1; }
-  window.CARDART = { plate: plate, seedOf: seedOf, CORAL: CORAL, BLUE: BLUE };
+  /* the title type, asked for early so a picture made on a tap has it */
+  try { if (document.fonts && document.fonts.load) { document.fonts.load('700 40px Poppins'); document.fonts.load('500 40px "IBM Plex Mono"'); } } catch (e) { /* drawn in the fallback */ }
+  window.CARDART = { plate: plate, seedOf: seedOf, keepCard: keepCard, save: save, notes: notes, CORAL: CORAL, BLUE: BLUE };
 })();

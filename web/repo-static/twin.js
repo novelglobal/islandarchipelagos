@@ -168,7 +168,9 @@
         shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false, x.code || ''); });
       if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
       /* the birth slip once, on the first open after START; a ghost seen real at last prints its REAL slip once */
-      var gk = 'da.twin.g.' + j.id; if (j.ghost && !TESTQ) { if (!store.get(gk, false)) store.set(gk, true); if (first && store.get('da.twin.born', '') === j.id) { store.set('da.twin.born', ''); bootSlip('born'); } }
+      var gk = 'da.twin.g.' + j.id; if (j.ghost && !TESTQ) { if (!store.get(gk, false)) store.set(gk, true); if (first && store.get('da.twin.born', '') === j.id) { store.set('da.twin.born', ''); bootSlip('born'); keepShow('key'); }
+        /* a ghost switched on and paired before (here or on another phone) still gives its code, once */
+        if (first && j.bench && j.bench.o && j.bench.o[2] === 3 && !store.get('da.twin.rw.' + j.id, '')) setTimeout(reward, 900); }
       else if (j.paired && store.get(gk, false)) { store.set(gk, false); bootSlip('real'); }
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
       .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
@@ -568,10 +570,35 @@
     paired: function () { return Slip().head(isleNm()).t('PAIRED').t(String(T.id).toUpperCase() + ' ON NOVEL.GLOBAL').t('READY TO PRINT').cut(); },
     /* the birth: the first slip a ghost prints, its name, its number and its key (the key opens it on any screen; the site keeps only its hash) */
     born: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).t('GHOST' + (T.number ? ' ' + T.number : '')).b(false).rule(6).feed(1).qr(location.origin + '/twin#k=' + KEY, 6).feed(1).t(KEY).cut(); },
+    /* the set-up's reward: this phone's code, now its own */
+    reward: function (who) { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).t('YOUR CODE').b(true).big(true).t(who).big(false).b(false).t(isleNm().slice(0, 20).toUpperCase() + ' IS ON').rule(6).cut(); },
     /* a ghost become real: its printer took over */
     real: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).t('ISLAND' + (T.number ? ' ' + T.number : '')).b(false).rule(6).feed(1).t('REAL').cut(); } };
-  var SAY = { strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print', born: function () { return isleNm() + ' · ghost' + (T.number ? ' ' + T.number : ''); }, real: function () { return isleNm() + ' · real'; } };
+  var SAY = { reward: function (w) { return 'Your code ' + w; }, strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print', born: function () { return isleNm() + ' · ghost' + (T.number ? ' ' + T.number : ''); }, real: function () { return isleNm() + ' · real'; } };
   var TICKED = { born: 1, strip: 1, welcome: 1, pair: 1 };
+  /* ───────── the reward: a ghost built, switched on and paired gives this phone's code, made real (the site says GHOST beside it). With
+     proof of presence on, the code waits for a printer. Either way it is shown to keep: a screenshot, or a picture downloaded ───────── */
+  var SITE = null; function site() { return SITE || (SITE = fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })); }
+  var WHO_RE = /^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/, RWB = false;
+  function whoNew(n) { var C = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', c = '', r = new Uint8Array(n);
+    for (var t = 0; t < 50; t++) { crypto.getRandomValues(r); c = ''; for (var i = 0; i < n; i++) c += C[r[i] % 30]; if (/[A-Z]/.test(c) && /[2-9]/.test(c) && c !== '888') break; } return c; }
+  function reward(again) { if (!T || !T.ghost || TESTQ || RWB) return; RWB = true;
+    site().then(function (st) { var who = store.get('da.who', ''); if (!WHO_RE.test(who) || who === '888') { who = whoNew(+st.codeLen === 6 ? 6 : 3); store.set('da.who', who); store.set('da.who.at', Date.now()); }
+      return api('/api/twin', { method: 'POST', body: JSON.stringify({ reward: who }) }).then(function (j) { RWB = false; store.set('da.twin.rw.' + T.id, who);
+        store.set('da.who.ok', 1); store.set('da.who.via', j.via || 'ghost'); if (j.home) store.set('da.who.home', j.home); if (j.kin != null) store.set('da.kin', j.kin);
+        bootSlip('reward', who); keepShow('code', who, j.via); }, function (e) { RWB = false;
+        if (e.status === 409 && e.message === 'not on' && !again) { setTimeout(function () { reward(true); }, 2500); return; }
+        if (e.status === 403) { store.set('da.twin.rw.' + T.id, who); keepShow('pop', who); }
+        if (e.status === 409 && e.message === 'given') store.set('da.twin.rw.' + T.id, '-'); }); }); }
+  function keepShow(k, who, via) { var box = $('#keep'); if (!box || !T) return;
+    site().then(function (st) { var N = window.CARDART ? CARDART.notes(st) : { key: '', keep: '', reward: '', pop: '' }, key = k === 'key';
+      box.classList.toggle('long', key); $('#kh').textContent = key ? 'YOUR ISLAND’S KEY' : 'YOUR CODE' + (k === 'code' ? ' · ' + (via === 'print' ? 'PRINTED' : 'GHOST') : '');
+      $('#kb').textContent = key ? KEY : who; $('#kt').textContent = key ? N.key : k === 'pop' ? N.pop : N.reward; $('#kk').textContent = N.keep;
+      box.hidden = false; box.dataset.k = k; box._o = key ? { label: 'Island key', big: KEY, sub: [isleNm().toUpperCase() + (T.number ? ' · GHOST ' + T.number : ''), 'Opens the island on novel.global'], file: 'novel-global-key-' + String(T.id).slice(0, 24) }
+        : { label: 'Your code', big: who, sub: [k === 'pop' ? 'BRING IT TO A PRINTER' : 'GHOST · ' + isleNm().toUpperCase(), 'Opens your home on novel.global'], file: 'novel-global-code-' + who };
+      setTimeout(function () { look(box, 'start'); }, 300); }); }
+  $('#kdl').addEventListener('click', function () { var o = $('#keep')._o; if (o && window.CARDART) CARDART.save(o); });
+  $('#kx').addEventListener('click', function () { $('#keep').hidden = true; });
   function bootSlip(name) { var a = [].slice.call(arguments, 1), u = SLIPS[name].apply(null, a), cv = draw(u, paperOf()), tk = TICKED[name] && tickOver(cv), say = typeof SAY[name] === 'function' ? SAY[name].apply(null, a) : SAY[name];
     shown('b' + name + Date.now(), cv, '', true, true, say); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   /* the log: the last five lines, like the island's own journal */
@@ -587,7 +614,7 @@
   function bootBad() { var P = power(), pi = ofKind('pi')[0], sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0];
     return !pi || !P.on[pi[0]] ? 'power lost' : !sd || !flashedOf(sd[0]) ? 'no SD in the slot' : ''; }
   function bootStep(k) { if (BT.run || !BN) return; FLOPEN = false; var P = power(), sd = ofKind('sd').filter(function (y) { return portIds(y, 'card').some(inUse); })[0], f = sd && flashedOf(sd[0]), nm = f ? f[2] : slug(T && T.name), ver = f ? f[1] : '';
-    var keep = function (n) { BN.o = [sd[0], ver, n]; benchSave(n === 3 ? 'ON' : ''); };
+    var keep = function (n) { BN.o = [sd[0], ver, n]; benchSave(n === 3 ? 'ON' : ''); if (n === 3) setTimeout(reward, 1400); };
     if (k === 'boot') { BT.lines = []; BT.t0 = 0; var bad = P.J.filter(function (r, i) { return !r.ok && [BN.j[i][0], BN.j[i][1]].some(function (e) { var q = portOf(e); return q && /^(pi|printer)$/.test(q.part.kind); }); })[0];
       var S = [[200, 'K:Booting Linux on physical CPU 0x0'], [700, 'K:mmc0: new high speed SDHC card at address aaaa'], [600, 'K:EXT4-fs (mmcblk0p2): mounted filesystem']];
       /* what is wrong on the bench stops it here, as it would stop the real one */
