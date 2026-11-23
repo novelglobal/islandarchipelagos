@@ -37,20 +37,14 @@
   .stages button { padding: 4px 0; border: 0; background: none; color: var(--mid); font-size: clamp(8px, 2.6vw, 10px); letter-spacing: .06em; transition: color .2s ease; }
   .stages button + button::before { content: '·'; display: inline-block; margin: 0 6px; color: var(--low); }
   .stages button:hover, .stages button:focus-visible { color: var(--acc); outline: none; }
-  .top .st { margin-left: auto; color: var(--low); letter-spacing: .12em; }
   .ways { display: grid; gap: 12px; }
   .way { position: relative; display: grid; grid-template-columns: 38% 1fr; align-items: center; gap: 14px; min-height: 148px; padding: 14px 16px 14px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); text-align: left; transition: transform .25s ease, border-color .25s ease; }
   .way:hover, .way:focus-visible { transform: translateY(-2px); border-color: var(--acc); outline: none; }
   .way .pic { height: 120px; }
   .way .im { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .way .stg { color: var(--low); font-size: 8.5px; letter-spacing: .1em; white-space: nowrap; }
-  .way .k { color: var(--low); }
   .way h2 { margin: 6px 0 6px; font: 600 clamp(18px, 5.2vw, 23px)/1.05 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .01em; }
-  .way p { margin: 0; color: var(--mid); font-size: clamp(10px, 2.75vw, 11.5px); max-width: 24em; }
   .way .go { position: absolute; right: 12px; bottom: 10px; color: var(--low); transition: color .25s ease, transform .25s ease; }
   .way:hover .go { color: var(--acc); transform: translateX(3px); }
-  .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 18px 0 0; padding: 0; list-style: none; }
-  .tags li { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 99px; color: var(--mid); cursor: default; }
   @media (min-width: 760px) {
     .ways { grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .way { grid-template-columns: 1fr; align-content: start; min-height: 0; padding: 18px 20px 44px; }
@@ -68,8 +62,6 @@
   .hd { display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: center; margin: 0 0 18px; }
   .hd .pic { height: 92px; }
   .hd h2 { margin: 4px 0 4px; font: 600 clamp(22px, 6.4vw, 30px)/1.05 'Poppins', 'Helvetica Neue', Arial, sans-serif; }
-  .hd p { margin: 0; color: var(--mid); }
-  .hd .k { color: var(--low); }
   .act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 99px; background: var(--ink); color: var(--bg); }
   .act:hover, .act:focus-visible { background: var(--acc); color: #fff; outline: none; }
   .act.soft { background: none; color: var(--ink); border: 1px solid var(--rule); }
@@ -80,7 +72,6 @@
   /* the hardware, as plates in a drawer */
   .waste { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 10px 12px; border: 1px dashed var(--acc); border-radius: 6px; }
   .waste b { flex: 0 0 auto; padding: 4px 8px 3px; border: 1.5px solid var(--acc); border-radius: 3px; color: var(--acc); transform: rotate(-3deg); }
-  .waste span { color: var(--mid); font-size: 12px; }
   .tabs { display: flex; gap: 4px; margin: 0 0 10px; }
   .tabs button { padding: 7px 12px; border: 1px solid var(--rule); border-radius: 99px; background: none; color: var(--mid); }
   .tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
@@ -181,21 +172,16 @@
   <section id="pick" aria-label="Island Archipelagos">
     <h1>island archipelagos</h1>
     <div class="ways">
-      <button type="button" class="way" data-go="hardware"><span class="im"><span class="pic" data-sk="basket"></span><span class="stg mono">MAKE IT RIGHT</span></span><span><span class="mono k">HARDWARE</span><h2>ISLAND</h2><p>Unearth a thermal printer island. Get a parts list.</p></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="software"><span class="im"><span class="pic" data-sk="rope"></span><span class="stg mono">MAKE IT WORK</span></span><span><span class="mono k">SOFTWARE</span><h2>ARCHIPELAGOS</h2><p>Download Island Archipelagos OS.</p></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="stories"><span class="im"><span class="pic" data-sk="web"></span><span class="stg mono">MAKE IT BEAUTIFUL</span></span><span><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="hardware" title="Unearth a thermal printer island. Get a parts list."><span class="im"><span class="pic" data-sk="basket"></span></span><span><h2>ISLAND</h2></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="software" title="Download Island Archipelagos OS."><span class="im"><span class="pic" data-sk="rope"></span></span><span><h2>ARCHIPELAGOS</h2></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="stories" title="Build your own card and deploy it on novel.global."><span class="im"><span class="pic" data-sk="web"></span></span><span><h2>STORIES</h2></span><span class="go mono">→</span></button>
     </div>
-    <ul class="tags mono">
-      <li title="All the code and blueprints, free: AGPL-3.0 and MIT">OPEN SOURCE</li>
-      <li title="An island runs on its own network, no internet needed">OFFLINE</li>
-      <li title="Islands talk over LoRa with a Meshtastic node">MESH</li>
-    </ul>
   </section>
 
   <section id="hardware" hidden aria-label="Hardware">
-    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button><span class="st mono">MAKE IT RIGHT</span></div>
-    <div class="hd"><span class="pic" data-sk="basket"></span><div><span class="mono k">HARDWARE</span><h2>ISLAND</h2><p>Unearth a thermal printer island. Get a parts list.</p></div></div>
-    <div class="waste"><b class="mono">E-WASTE ONLY</b><span>No new hardware from the last 5–10 years.</span></div>
+    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button></div>
+    <div class="hd"><span class="pic" data-sk="basket"></span><div title="Unearth a thermal printer island. Get a parts list."><h2>ISLAND</h2></div></div>
+    <div class="waste" title="No new hardware from the last 5–10 years"><b class="mono">E-WASTE ONLY</b></div>
     <div class="tabs mono" role="tablist">
       <button type="button" role="tab" data-tab="printers" aria-selected="true">PRINTERS</button>
       <button type="button" role="tab" data-tab="pi" aria-selected="false">PI</button>
@@ -211,11 +197,11 @@
   </section>
 
   <section id="software" hidden aria-label="Software">
-    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button><span class="st mono">MAKE IT WORK</span></div>
-    <div class="hd"><span class="pic" data-sk="rope"></span><div><span class="mono k">SOFTWARE</span><h2>ARCHIPELAGOS</h2><p>Download Island Archipelagos OS.</p></div></div>
+    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button></div>
+    <div class="hd"><span class="pic" data-sk="rope"></span><div title="Download Island Archipelagos OS."><h2>ARCHIPELAGOS</h2></div></div>
     <div class="row">
       <a class="act mono r-only" href="https://github.com/novelglobal/islandarchipelagos/releases/latest" target="_blank" rel="noopener">DOWNLOAD OS ↓</a>
-      <span class="act soft mono g-only" title="The imager, mimicked, for a ghost SD">FLASH · SOON</span>
+      <button type="button" class="act mono g-only" data-gopen title="The imager, mimicked, on the twin">FLASH</button>
       <a class="act soft mono" href="https://www.raspberrypi.com/software/" target="_blank" rel="noopener">IMAGER</a>
     </div>
     <ol class="steps">
@@ -225,16 +211,11 @@
     </ol>
     <p class="lab mono">FILES</p>
     <ul class="files mono" id="files"></ul>
-    <ul class="tags mono">
-      <li title="All the code and blueprints, free: AGPL-3.0 and MIT">OPEN SOURCE</li>
-      <li title="An island runs on its own network, no internet needed">OFFLINE</li>
-      <li title="Islands talk over LoRa with a Meshtastic node">MESH</li>
-    </ul>
   </section>
 
   <section id="stories" hidden aria-label="Developer">
-    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button><span class="st mono">MAKE IT BEAUTIFUL</span></div>
-    <div class="hd"><span class="pic" data-sk="web"></span><div><span class="mono k">DEVELOPER</span><h2>STORIES</h2><p>Build your own card and deploy it on novel.global.</p></div></div>
+    <div class="top"><button type="button" class="back mono" data-go="">← BACK</button></div>
+    <div class="hd"><span class="pic" data-sk="web"></span><div title="Build your own card and deploy it on novel.global."><h2>STORIES</h2></div></div>
     <p class="lab mono">PROJECTS</p>
     <div class="projs" id="projs"></div>
     <div class="bases">

@@ -2406,17 +2406,17 @@ for (const HD of [false, true]) if (run('home')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section home: ${e.message.split('\n')[0]}`); }
 
-// ───────── keeper: an island's own home as a chart of it. Its coast from its id, a landmark for each thing it can do, the guide once,
-// one landmark opened at a time (ONLY=keeper) ─────────
+// ───────── keeper: an island's own home is the island itself, the same drawing as its twin, first in the drawer; each thing it can do
+// stands on it; a ghost in pencil; the guide once; one thing opened at a time (ONLY=keeper) ─────────
 let KKEY = null;
 for (const [tag, vp, dark] of [['phone', { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, false], ['phone-night', { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, true], ['desk', { width: 1280, height: 900 }, false], ['desk-night', { width: 1280, height: 900 }, true]]) if (run('keeper')) try {
   const ctx = await newCtx({ viewport: { width: vp.width, height: vp.height }, ...vp }); await wire(ctx, { dark }); const page = await ctx.newPage(); watch(page, 'keeper');
-  await page.goto('https://oan.test/archipelagos.html');
+  await page.goto('https://oan.test/archipelagos.html'); const arc = await page.evaluate(() => ({ engine: /MAKE IT (RIGHT|WORK|BEAUTIFUL)/.test(document.body.innerText), tags: document.querySelectorAll('ul.tags').length, soon: /SOON/.test(document.body.innerHTML.replace(/<!--[^]*?-->/g, '')) }));
   const made = KKEY ? { s: 201 } : await page.evaluate(async n => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: n }) }), j = await r.json(); return { s: r.status, key: j.key }; }, 'Keep Island');
   if (!KKEY) KKEY = made.key; await page.evaluate(k => localStorage.setItem('da.hm.key', JSON.stringify(k)), KKEY);
   await page.evaluate(n => localStorage.setItem('da.hm.night', JSON.stringify(n)), dark);   /* the home's own night */
-  await page.goto('https://oan.test/#keeper'); await page.waitForSelector('.ik-map', { timeout: 20000 }); await sleep(900);
-  const k0 = await page.evaluate(() => { const q = s => document.querySelector(s); return { marks: [...document.querySelectorAll('.ik-m')].map(m => m.dataset.ik + (m.disabled ? '-' : '')).join(), tour: (q('.ik-tour b') || {}).textContent, lit: (q('.ik-m.tour') || { dataset: {} }).dataset.ik, coast: !!q('.ik-land'), name: (q('.ik-nm') || {}).textContent,
+  await page.goto('https://oan.test/#keeper'); await page.waitForSelector('.ik-map .isle-h .sand', { timeout: 20000 }); await sleep(900);
+  const k0 = await page.evaluate(() => { const q = s => document.querySelector(s); return { marks: [...document.querySelectorAll('.ik-m')].map(m => m.dataset.ik + (m.disabled ? '-' : '')).join(), tour: (q('.ik-tour b') || {}).textContent, lit: (q('.ik-m.tour') || { dataset: {} }).dataset.ik, coast: !!q('.isle-h .sand') && !!q('.isle-h .th-pics') && !!window.ISLE, pencil: !!q('.ik-map.gh'), first: !!q('.mn-own .ik') && !!(q('.mn-own').compareDocumentPosition(q('.mn-secs')) & 4), icons: document.querySelectorAll('.ik-m svg').length, name: (q('.ik-nm') || {}).textContent,
     over: [...document.querySelectorAll('.ik-m')].some(m => { const r = m.getBoundingClientRect(), b = q('.ik-map').getBoundingClientRect(); return r.left < b.left - 1 || r.right > b.right + 1; }) }; });
   await page.locator('.ik').scrollIntoViewIfNeeded(); await shot(page, `keeper-${tag}-guide.png`);
   for (let i = 0; i < 12 && await page.$('[data-ikn]'); i++) await page.click('[data-ikn]');
@@ -2426,9 +2426,9 @@ for (const [tag, vp, dark] of [['phone', { width: 390, height: 844, isMobile: tr
   await page.click('.ik-m[data-ik="links"]'); await sleep(300); await page.locator('.ik').scrollIntoViewIfNeeded(); await shot(page, `keeper-${tag}-open.png`);
   const k3 = await page.evaluate(() => ({ pane: (document.querySelector('.ik-pane') || { dataset: {} }).dataset.pane, plugs: document.querySelectorAll('.ik-pane .ik-plug').length, panes: document.querySelectorAll('.ik-pane').length }));
   for (const k of ['printer', 'home', 'passes']) { await page.click(`.ik-m[data-ik="${k}"]`); await sleep(300); await page.locator('.ik').screenshot({ path: `${SHOTS}/keeper-${tag}-${k}.png`, animations: 'disabled' }).catch(() => {}); }
-  check(`keeper (${tag}): an island's home is a chart of it, its coast its own; the guide walks each landmark once, then opens the next good thing; one landmark opens at a time and a change shows on the chart`,
-    made.s === 201 && /printer,home,pics/.test(k0.marks) && k0.coast && k0.tour === 'PRINTER' && k0.lit === 'printer' && !k0.over && /KEEP/i.test(k0.name || '') && !k1.tour && k1.pane === 'pics' && k1.seen === '1' && k2.pane === 'gap' && k2.on === '60' && k2.set && k3.pane === 'links' && k3.plugs > 3 && k3.panes === 1,
-    JSON.stringify({ made, k0, k1, k2, k3 }));
+  check(`keeper (${tag}): an island's home is the island itself, the twin's drawing, first in the drawer, a ghost in pencil, no icons; the guide walks each thing once, then opens the next good thing; one thing opens at a time and a change shows on it; the island page keeps its engine words and tags to itself`,
+    made.s === 201 && /printer,home,pics/.test(k0.marks) && k0.coast && k0.pencil && k0.first && !k0.icons && !arc.engine && !arc.tags && !arc.soon && k0.tour === 'PRINTER' && k0.lit === 'printer' && !k0.over && /KEEP/i.test(k0.name || '') && !k1.tour && k1.pane === 'pics' && k1.seen === '1' && k2.pane === 'gap' && k2.on === '60' && k2.set && k3.pane === 'links' && k3.plugs > 3 && k3.panes === 1,
+    JSON.stringify({ arc, made, k0, k1, k2, k3 }));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section keeper: ${e.message.split('\n')[0]}`); }
 

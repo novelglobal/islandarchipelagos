@@ -222,10 +222,10 @@
     if (ISL.none) { gs.set('da.hm.key', ''); ISL = null; return gkey(); }
     var nm = String(ISL.name || '').toUpperCase(), e = D.createElement('b'); e.textContent = nm;
     if (ISL.ghost) say('<span class="say mono">● ' + e.innerHTML + '</span><button type="button" class="act mono" data-gopen>OPEN</button>');
-    else say('<span class="say mono">' + e.innerHTML + '</span><span class="act soft mono" title="A ghost beside this island, for testing">TEST · SOON</span>'); }
+    else say('<span class="say mono">' + e.innerHTML + '</span><a class="act mono" href="/#keeper" target="_top" title="A ghost beside this island, for testing: on its home">TEST</a>'); }
   function ghostDraw() { H.classList.toggle('ghost', GHOST); $('#gsw').setAttribute('aria-checked', String(GHOST)); $('#gbox').hidden = !GHOST;
-    $$('.way').forEach(function (w) { var p = $('p', w); if (!p) return; if (p.dataset.r == null) p.dataset.r = p.textContent; p.textContent = GHOST ? GW[w.dataset.go] : p.dataset.r; });
-    $$('.hd p').forEach(function (p) { var s = p.closest('section'); if (p.dataset.r == null) p.dataset.r = p.textContent; p.textContent = GHOST && s ? GW[s.id] : p.dataset.r; });
+    $$('.way').forEach(function (w) { if (w.dataset.r == null) w.dataset.r = w.title; w.title = GHOST ? GW[w.dataset.go] : w.dataset.r; });
+    $$('.hd > div[title]').forEach(function (p) { var s = p.closest('section'); if (p.dataset.r == null) p.dataset.r = p.title; p.title = GHOST && s ? GW[s.id] : p.dataset.r; });
     tray(); if (GHOST) gkey(); if (!$('#hardware').hidden) plates(($('.tabs [aria-selected="true"]') || { dataset: { tab: 'printers' } }).dataset.tab); }
   $('#gsw').addEventListener('click', function () { GHOST = !GHOST; gs.set('da.ghost.on', GHOST); ghostDraw(); });
   D.addEventListener('click', function (e) {
@@ -240,7 +240,7 @@
       fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: PART[GB.printers] && PART[GB.printers].paper === 58 ? '58' : '80' }) })
         .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
         .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); twinGo(); return; }
-          sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; st.disabled = false; },
+          sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; sy.title = { 202: 'Every ghost place is taken', 403: 'Ghost islands are closed for now', 429: 'Too many ghosts started from here: try again later' }[o.s] || ''; st.disabled = false; },
           function () { sy.textContent = 'OFFLINE'; st.disabled = false; }); } });
   D.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.plate[data-take]')) { e.preventDefault(); e.target.click(); }
     if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-gkey] input')) { var b = $('[data-gstart]', e.target.closest('[data-gkey]')); if (b) b.click(); } });
@@ -256,6 +256,6 @@
   $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go); }); });
   show(location.hash.slice(1)); ghostDraw();
   /* opened again from the front page: back to the start */
-  addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+  addEventListener('hashchange', function () { var g = !!gs.get('da.ghost.on', false); if (g !== GHOST) { GHOST = g; ghostDraw(); } show(location.hash.slice(1)); });
   addEventListener('pageshow', function (e) { if (e.persisted) projs(); });
 })();
