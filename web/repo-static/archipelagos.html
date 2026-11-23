@@ -43,6 +43,7 @@
   .way .pic { height: 120px; }
   .way .im { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .way h2 { margin: 6px 0 6px; font: 600 clamp(18px, 5.2vw, 23px)/1.05 'Poppins', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .01em; }
+  .way .sub { display: block; font: 500 12px/1.4 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; color: var(--mid); }
   .way .go { position: absolute; right: 12px; bottom: 10px; color: var(--low); transition: color .25s ease, transform .25s ease; }
   .way:hover .go { color: var(--acc); transform: translateX(3px); }
   @media (min-width: 760px) {
@@ -176,9 +177,9 @@
   <section id="pick" aria-label="Island Archipelagos">
     <figure class="face" id="face"><canvas aria-hidden="true"></canvas><h1>island archipelagos</h1></figure>
     <div class="ways">
-      <button type="button" class="way" data-go="hardware" title="Unearth a thermal printer island. Get a parts list."><span class="im"><span class="pic" data-sk="basket"></span></span><span><h2>ISLAND</h2></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="software" title="Download Island Archipelagos OS."><span class="im"><span class="pic" data-sk="rope"></span></span><span><h2>ARCHIPELAGOS</h2></span><span class="go mono">→</span></button>
-      <button type="button" class="way" data-go="stories" title="Build your own card and deploy it on novel.global."><span class="im"><span class="pic" data-sk="web"></span></span><span><h2>STORIES</h2></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="hardware" title="Unearth a thermal printer island. Get a parts list."><span class="im"><span class="pic" data-sk="basket"></span></span><span><h2>ISLAND</h2><span class="sub">your thermal printer</span></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="software" title="Download Island Archipelagos OS."><span class="im"><span class="pic" data-sk="rope"></span></span><span><h2>ARCHIPELAGOS</h2><span class="sub">networked operating system</span></span><span class="go mono">→</span></button>
+      <button type="button" class="way" data-go="stories" title="Build your own card and deploy it on novel.global."><span class="im"><span class="pic" data-sk="web"></span></span><span><h2>STORIES</h2><span class="sub">direct action</span></span><span class="go mono">→</span></button>
     </div>
   </section>
 
