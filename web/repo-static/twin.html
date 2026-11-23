@@ -287,6 +287,12 @@
   #roll .slip:not(.open) { max-height: 26px; margin-top: 5px; opacity: .8; } #roll .slip:not(.open)::after { display: none; } #roll .slip.open { max-height: none; opacity: 1; } #roll .slip.open:not(:first-child) { margin-top: 10px; } #roll .slip:nth-child(n+4) { display: none; } #roll.all .slip:nth-child(n+4) { display: block; }
   .rall { display: block; appearance: none; margin: 10px auto 0; min-width: 44px; height: 24px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: none; color: var(--grey); font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; cursor: pointer; } .rall[hidden] { display: none; }
   html.in .sea { display: none; } html.in main { padding-top: 6px; }
+  /* the plate: the archipelagos card's own face (card-art.js), the island's name on it as a card's title */
+  .face { position: relative; margin: 0 0 14px; height: 132px; border-radius: 6px; overflow: hidden; background: #0C2546; color: #F4F1E8; }
+  .face canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .face .pm { position: absolute; left: 14px; top: 14px; width: 40px; height: auto; }
+  .face b { position: absolute; left: 14px; right: 14px; bottom: 12px; font: 700 34px/.92 Poppins, sans-serif; letter-spacing: -.045em; overflow-wrap: anywhere; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
+  .face b:empty { display: none; }
   @media (prefers-reduced-motion: reduce) { .dev.turn { animation: none; } }
   .so, #bnsay:not(.err) { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .pw { font-size: 0; gap: 0; padding: 0 9px; min-width: 30px; justify-content: center; } .pw::before { width: 8px; height: 13px; } .tray .th { display: none !important; }
@@ -298,6 +304,7 @@
 <header class="sea" id="sea"><nav class="sn"><a class="sk mk" href="/" title="novel.global" aria-label="novel.global"><svg viewBox="0 0 237 112" aria-hidden="true"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg></a><span class="sp"></span><a class="nk" href="/#keeper" id="tohome" title="Its home: connections, cards, what it makes" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M5 7h9M5 12h14M5 17h6"/><circle cx="17" cy="7" r="1.6" class="f"/><circle cx="14" cy="17" r="1.6" class="f"/></svg></a><button type="button" class="nk" id="theme" aria-label="Light or dark" title="Light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button></nav>
   <svg class="isle" id="isle" viewBox="0 0 320 92" role="img" aria-label="The island"></svg><i class="tear" aria-hidden="true"></i></header>
 <main>
+<figure class="face" id="face" aria-hidden="true"><canvas></canvas><svg class="pm" viewBox="0 0 237 112"><rect x="10" y="10" width="91.6" height="92" fill="#F4F1E8" transform="rotate(-0.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8" fill="#E2552E"/></svg><b id="ptn"></b></figure>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter></svg>
 <section id="gate" hidden>
   <ol class="rite" aria-hidden="true"><li class="st now"><button type="button" tabindex="-1"><i></i><b>PARTS</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>SD</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>POWER</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>START</b></button></li><li class="st"><button type="button" tabindex="-1"><i></i><b>HOME</b></button></li></ol>
@@ -366,6 +373,7 @@
 <script src="vendor/qrcode.js"></script>
 <script src="vendor/rough.js"></script>
 <script src="isle-art.js"></script>
+<script src="card-art.js"></script>
 <script src="parts.js"></script>
 <script src="mesh.js"></script>
 <script src="twin.js"></script>

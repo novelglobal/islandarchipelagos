@@ -942,9 +942,10 @@ function stepS(n, boardArt, art) {
 var SITE = null;
 function siteOf() { return SITE || (SITE = fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })); }
 /* a fresh start, when the site says so (its epoch changed on the approval page): everything this phone kept (posters, songs,
-   tapes, drafts, its code) let go once, then the site opened again clean. A showcase code stays */
-siteOf().then(function (s) { var e = s && s.epoch; if (!e) return; try { var had = localStorage.getItem('da.epoch'); if (had === e) return; var ks = [];
-  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^(da\.|novelglobal)/.test(k) && k !== 'da.showcase') ks.push(k); } ks.forEach(function (k) { localStorage.removeItem(k); });
+   tapes, drafts, its code) let go once, then the site opened again clean. A showcase code and an island's key stay; a phone meeting the
+   site for the first time has nothing older to let go, so it only learns the epoch */
+siteOf().then(function (s) { var e = s && s.epoch; if (!e) return; try { var had = localStorage.getItem('da.epoch'); if (had === e) return; if (had == null) { localStorage.setItem('da.epoch', e); return; } var ks = [];
+  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/^(da\.|novelglobal)/.test(k) && k !== 'da.showcase' && k !== 'da.hm.key') ks.push(k); } ks.forEach(function (k) { localStorage.removeItem(k); });
   try { sessionStorage.clear(); indexedDB.deleteDatabase('novelglobal-kept'); } catch (er) { /* none kept */ } localStorage.setItem('da.epoch', e); if (ks.length) location.reload(); } catch (er) { /* as it was */ } });
 function human() {
   return siteOf().then(function (s) { var k = s && s.cfsite; if (!k) return '';

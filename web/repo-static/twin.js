@@ -17,7 +17,7 @@
 
   /* ───────── ESC/POS to dots: what a TM-T88V would put on paper ───────── */
   var b64 = function (s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
-  function run(u, W, g) {
+  function run(u, W, g, qrs) {
     var y = 0, i = 0, align = 0, bold = false, under = false, rev = false, sw = 1, sh = 1, lsp = 30, line = '', qrData = null, qrMod = 3, tone = [], lineH = function () { return Math.max(lsp, 24 * sh + 6); };
     var flush = function (nl) { if (line || nl) { if (g && line) { var cw = 12 * sw, w = line.length * cw, x0 = align === 1 ? (W - w) / 2 : align === 2 ? W - w : 0, base = y + 22 * sh;
         g.save(); g.font = (bold ? '700 ' : '600 ') + (22 * sh) + "px 'IBM Plex Mono', ui-monospace, monospace"; var m = g.measureText(line).width || 1;
@@ -52,7 +52,7 @@
           if (fn === 0x6B && u[a] === 0x31) { var op = u[a + 1]; if (op === 0x43) qrMod = u[a + 2] || 3; if (op === 0x50) qrData = String.fromCharCode.apply(null, u.subarray(a + 3, a + len));
             if (op === 0x51 && qrData != null) { flush(false); var Q = null; try { if (window.qrcode) { Q = window.qrcode(0, 'L'); Q.addData(qrData); Q.make(); } } catch (e) { Q = null; }
               var mc = Q ? Q.getModuleCount() : 25, sz = mc * qrMod, qx = align === 1 ? (W - sz) >> 1 : align === 2 ? W - sz : 0;
-              if (g) { g.fillStyle = '#1B1B19'; for (var my = 0; my < mc; my++) for (var mx = 0; mx < mc; mx++) if (Q ? Q.isDark(my, mx) : (mx * 7 + my * 3) % 5 < 2) g.fillRect(qx + mx * qrMod, y + my * qrMod, qrMod, qrMod); }
+              if (g && qrs) qrs.push([qx, y, sz]); if (g) { g.fillStyle = '#1B1B19'; for (var my = 0; my < mc; my++) for (var mx = 0; mx < mc; mx++) if (Q ? Q.isDark(my, mx) : (mx * 7 + my * 3) % 5 < 2) g.fillRect(qx + mx * qrMod, y + my * qrMod, qrMod, qrMod); }
               y += sz + 6; } }
           /* the sixteen greys: four one-bit layers stored (colours 1 to 4, read here as the low bit first), then printed as one */
           if (fn === 0x4C && u[a] === 0x30 && u[a + 1] === 0x70 && len > 10) { var tc = u[a + 5] - 0x31; if (tc >= 0 && tc < 4) tone[tc] = { w: u[a + 6] | u[a + 7] << 8, h: u[a + 8] | u[a + 9] << 8, p: a + 10 }; }
@@ -75,7 +75,16 @@
     flush(false); return y; }
   /* bytes to a canvas the width of the paper: 512 dots on 80 mm, 384 on 58 */
   function draw(bytes, paper) { var W = String(paper) === '58' ? 384 : 512, u = typeof bytes === 'string' ? b64(bytes) : bytes, H = Math.min(30000, Math.max(40, run(u, W, null) + 18));
-    var c = D.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d'); g.fillStyle = '#FAF9F4'; g.fillRect(0, 0, W, H); g.fillStyle = '#1B1B19'; run(u, W, g); return c; }
+    var c = D.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d'); g.fillStyle = '#FAF9F4'; g.fillRect(0, 0, W, H); g.fillStyle = '#1B1B19'; c.qrs = []; run(u, W, g, c.qrs); return c; }
+  /* a set-up slip's code is done, not a way anywhere: a thick tick painted over it, dry-brushed */
+  function tickOver(cv) { var g = cv.getContext('2d'), qs = cv.qrs || [], sd = 9, r = function () { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+    qs.forEach(function (q) { var x = q[0], y = q[1], s = q[2], P = [[.1, .56], [.4, .86], [.94, .08]], j = function (v) { return v + (r() - .5) * s * .03; };
+      g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#1B1B19';
+      for (var p = 0; p < 4; p++) { g.globalAlpha = p ? .8 : 1; g.lineWidth = s * (.19 - p * .025); g.beginPath(); g.moveTo(j(x + P[0][0] * s), j(y + P[0][1] * s));
+        g.quadraticCurveTo(j(x + .27 * s), j(y + .76 * s), j(x + P[1][0] * s), j(y + P[1][1] * s)); g.quadraticCurveTo(j(x + .6 * s), j(y + .44 * s), j(x + P[2][0] * s), j(y + P[2][1] * s)); g.stroke(); }
+      g.strokeStyle = '#FAF9F4'; for (var b = 0; b < 7; b++) { var o = (r() - .5) * s * .13, t0 = .1 + r() * .3, t1 = t0 + .25 + r() * .4; g.globalAlpha = .35 + r() * .45; g.lineWidth = .8 + r() * 1.4; g.beginPath();
+        for (var t = t0; t <= Math.min(1, t1); t += .04) { var a = t < .35 ? t / .35 : (t - .35) / .65, A = t < .35 ? P[0] : P[1], B = t < .35 ? P[1] : P[2], px = x + (A[0] + (B[0] - A[0]) * a) * s + o * .7, py = y + (A[1] + (B[1] - A[1]) * a) * s + o; if (t === t0) g.moveTo(px, py); else g.lineTo(px, py); } g.stroke(); }
+      g.restore(); }); cv.dataset.tick = String(qs.length); }
   /* a print's small picture, kept by the site once its bytes are wiped */
   function thumb(t) { var m = /^(\d+),(\d+),(.+)$/.exec(t || ''); if (!m) return null; var w = +m[1], h = +m[2], bin = atob(m[3]), rb = Math.ceil(w / 8), c = D.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d'), im = x.createImageData(w, h);
     for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var on = bin.charCodeAt(yy * rb + (xx >> 3)) & (0x80 >> (xx & 7)), i = (yy * w + xx) * 4; im.data[i] = im.data[i + 1] = im.data[i + 2] = on ? 27 : 250; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); return c; }
@@ -91,7 +100,10 @@
     var roll = $('#roll'); roll.insertBefore(s, roll.firstChild); $('#none').hidden = true; $('#stage').hidden = false;
     if (feed && !matchMedia('(prefers-reduced-motion: reduce)').matches) { var h = s.getBoundingClientRect().height, ms = Math.max(500, Math.min(4000, cv.height / 0.6)); s.style.transitionDuration = ms + 'ms'; s.style.height = '0px'; lamp(true);
       requestAnimationFrame(function () { requestAnimationFrame(function () { s.style.height = h + 'px'; }); }); setTimeout(function () { s.style.height = ''; lamp(false); }, ms + 60); }
-    [].forEach.call(roll.children, function (c) { c.classList.toggle('open', c === s); }); while (roll.children.length > 24) roll.removeChild(roll.lastChild); rollMore(); return s; }
+    [].forEach.call(roll.children, function (c) { c.classList.toggle('open', c === s); }); while (roll.children.length > 24) roll.removeChild(roll.lastChild);
+    /* past the last three, a slip is kept as a picture and its canvas let go: a phone holds only so much canvas */
+    [].slice.call(roll.children, 3).forEach(function (c) { var v = c.querySelector('canvas'); if (!v) return; var im = new Image(); im.alt = ''; try { im.src = v.toDataURL('image/png'); } catch (e) { return; } c.replaceChild(im, v); v.width = 0; v.height = 0; });
+    rollMore(); return s; }
   function rollMore() { var r = $('#roll'), b = $('#rall'), n = r.children.length, all = r.classList.contains('all'); if (!b) return; b.hidden = n <= 3; b.textContent = all ? 'FEWER' : (n - 3) + ' MORE'; b.title = all ? 'Only the last three' : 'Every print'; b.setAttribute('aria-expanded', String(all)); }
   function keep(id, cv, tag, cap) { var u = ''; try { u = cv.toDataURL('image/png'); } catch (e) { u = ''; } if (!u) return; ROLL.unshift({ id: id, u: u, tag: tag || '', cap: cap || '' }); ROLL = ROLL.slice(0, 12);
     while (!store.set('da.twin.roll' + TS, ROLL) && ROLL.length > 1) ROLL.pop(); }
@@ -138,13 +150,17 @@
     $('#bodyw').textContent = $('#twin').classList.contains('dv') ? (T.paired && !T.ready ? 'ASLEEP' : '') : w + (T.number ? ' · ' + T.number : '') + ' · ' + paperOf() + ' MM'; $('#led').className = 'led' + (on ? ' on' : '');
     $('#body').title = T.paired ? (T.ready ? 'Its Raspberry Pi is listening' : 'Its Raspberry Pi has not asked lately') : OUT ? 'Prints here and on the printer beside this screen' : 'Prints come out on this page';
     $('#bs').textContent = w + (T.paired ? (T.ready ? ' · ON' : ' · QUIET') : ''); $('#body').disabled = !T.ghost; $('#body').classList.toggle('gh', !!T.ghost); if (T.ghost) $('#body').title = 'Prints come out on this page · tap: offline, as when its Wi-Fi drops'; $('#pf').hidden = !T.ghost; $('#test').hidden = !!T.ghost; $('#usb').hidden = !hasUsb || !T.ghost; $('#ser').hidden = !hasSer || !T.ghost; }
+  /* the plate at the top, painted by the cards' own hand; again only when its width or its island changes */
+  function plateDraw() { var cv = D.querySelector('#face canvas'); if (!cv || !window.CARDART) return; var s = CARDART.seedOf(T ? T.id : 'island'), k = s + 'x' + cv.clientWidth;
+    if (cv.dataset.k !== k && CARDART.plate(cv, s)) cv.dataset.k = k; }
+  addEventListener('resize', function () { clearTimeout(plateDraw.t); plateDraw.t = setTimeout(plateDraw, 200); }); setTimeout(plateDraw, 0);
   function take(j) { var cv = j.escpos ? draw(j.escpos, paperOf()) : j.mesh != null ? draw(textSlip(['DIRECT ACTION', j.code || '', j.mesh || '']), paperOf()) : null;
     if (j.mesh && !MSEEN[j.id]) { MSEEN[j.id] = 1; meshOut(j.mesh); }
     if (cv) { shown(j.id, cv, j.code === 'DA-PASS' ? 'PASS' : '', true, true, j.code || ''); paperUse(cv); }
     if (OUT) return (j.escpos ? OUT.write(b64(j.escpos)) : Promise.resolve()).then(function () { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: true }) }); }, function (e) { return api('/api/twin', { method: 'POST', body: JSON.stringify({ job: j.id, ok: false, error: String(e && e.message || e) }) }); });
     return Promise.resolve(); }
   function tick() { clearTimeout(timer); if (!KEY || (OFF && T)) return;
-    api('/api/twin' + (OUT ? '?usb=1' : '')).then(function (j) { var first = !T; T = j; if (first) RADIO = (store.get(rkey(), []) || []).concat(RADIO.filter(function (r) { return r.f === 'in'; })).slice(0, 40); $('#nm').textContent = j.name; D.title = j.name + ' · Twin'; benchLoad(j); bodyDraw(); joinsDraw(); radioDraw();
+    api('/api/twin' + (OUT ? '?usb=1' : '')).then(function (j) { var first = !T; T = j; if (first) RADIO = (store.get(rkey(), []) || []).concat(RADIO.filter(function (r) { return r.f === 'in'; })).slice(0, 40); $('#nm').textContent = j.name; $('#ptn').textContent = j.name; plateDraw(); D.title = j.name + ' · Twin'; benchLoad(j); bodyDraw(); joinsDraw(); radioDraw();
       var p = Promise.resolve(); (j.took || []).forEach(function (x) { p = p.then(function () { return take(x); }); });
       /* the rest of the roll, oldest first: a print still waiting is drawn from its bytes, one already out from its small picture */
       (j.roll || []).slice().reverse().forEach(function (x) { if (SEEN[x.id] || (j.took || []).some(function (y) { return y.id === x.id; })) return;
@@ -555,7 +571,8 @@
     /* a ghost become real: its printer took over */
     real: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).t('ISLAND' + (T.number ? ' ' + T.number : '')).b(false).rule(6).feed(1).t('REAL').cut(); } };
   var SAY = { strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print', born: function () { return isleNm() + ' · ghost' + (T.number ? ' ' + T.number : ''); }, real: function () { return isleNm() + ' · real'; } };
-  function bootSlip(name) { var a = [].slice.call(arguments, 1), u = SLIPS[name].apply(null, a), cv = draw(u, paperOf()), say = typeof SAY[name] === 'function' ? SAY[name].apply(null, a) : SAY[name];
+  var TICKED = { born: 1, strip: 1, welcome: 1, pair: 1 };
+  function bootSlip(name) { var a = [].slice.call(arguments, 1), u = SLIPS[name].apply(null, a), cv = draw(u, paperOf()), tk = TICKED[name] && tickOver(cv), say = typeof SAY[name] === 'function' ? SAY[name].apply(null, a) : SAY[name];
     shown('b' + name + Date.now(), cv, '', true, true, say); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   /* the log: the last five lines, like the island's own journal */
   var stamp = function (s) { return s; };

@@ -218,8 +218,10 @@
     var say = function (h) { boxes.forEach(function (b) { b.innerHTML = h; }); };
     if (!k) { say('<input name="gn" maxlength="40" autocomplete="off" placeholder="NAME" aria-label="The ghost island’s name"><button type="button" class="act mono" data-gstart>START</button><span class="say mono" data-gsay></span>'); return; }
     if (!ISL || Date.now() - ISL_AT > 60e3) { say('<span class="say mono">· · ·</span>');
-      fetch('/api/island', { headers: { authorization: 'Bearer ' + k } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { ISL = j ? { ghost: !!j.ghost, name: j.name || j.id } : { none: true }; ISL_AT = Date.now(); gkey(); }, function () { ISL = { none: true }; ISL_AT = Date.now(); gkey(); }); return; }
+      /* only a key the site turns away is forgotten; no signal or a busy site keeps it, and asks again soon */
+      fetch('/api/island', { headers: { authorization: 'Bearer ' + k } }).then(function (r) { return r.status === 401 ? { none: 1 } : r.ok ? r.json() : { off: 1 }; }).then(function (j) { ISL = j.none ? { none: true } : j.off ? { off: true } : { ghost: !!j.ghost, name: j.name || j.id }; ISL_AT = j.off ? Date.now() - 50e3 : Date.now(); gkey(); }, function () { ISL = { off: true }; ISL_AT = Date.now() - 50e3; gkey(); }); return; }
     if (ISL.none) { gs.set('da.hm.key', ''); ISL = null; return gkey(); }
+    if (ISL.off) { say('<span class="say mono" title="No answer from novel.global: the key is kept">OFFLINE</span><button type="button" class="act mono" data-gopen>OPEN</button>'); return; }
     var nm = String(ISL.name || '').toUpperCase(), e = D.createElement('b'); e.textContent = nm;
     if (ISL.ghost) say('<span class="say mono">● ' + e.innerHTML + '</span><button type="button" class="act mono" data-gopen>OPEN</button>');
     else say('<span class="say mono">' + e.innerHTML + '</span><a class="act mono" href="/#keeper" target="_top" title="A ghost beside this island, for testing: on its home">TEST</a>'); }
@@ -259,3 +261,7 @@
   addEventListener('hashchange', function () { var g = !!gs.get('da.ghost.on', false); if (g !== GHOST) { GHOST = g; ghostDraw(); } show(location.hash.slice(1)); });
   addEventListener('pageshow', function (e) { if (e.persisted) projs(); });
 })();
+/* the plate: the archipelagos card's face, painted again when the page's width changes */
+(function () { var cv = document.querySelector('#face canvas'), w = 0; if (!cv || !window.CARDART) return;
+  var go = function () { if (cv.clientWidth && cv.clientWidth !== w && CARDART.plate(cv, 61)) w = cv.clientWidth; }; go(); var t = 0;
+  addEventListener('resize', function () { clearTimeout(t); t = setTimeout(go, 200); }); if (document.fonts && document.fonts.ready) document.fonts.ready.then(go); })();

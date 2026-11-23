@@ -160,6 +160,10 @@
   .plate { position: relative; }
   @media (prefers-reduced-motion: reduce) { .gbox { animation: none; } .gsw .gt, .gsw .gt i { transition: none; } }
   @media (min-width: 760px) { .bases { grid-template-columns: repeat(4, 1fr); } .base .pic { height: 170px; } .hd { grid-template-columns: 170px 1fr; } .hd .pic { height: 130px; } }
+  /* the card's own face over the page it opens (card-art.js) */
+  .face { position: relative; margin: 0 0 16px; min-height: 150px; border-radius: 6px; overflow: hidden; background: #0C2546; display: flex; align-items: flex-end; }
+  .face canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #pick .face h1 { position: relative; margin: 0; padding: 16px; text-align: left; font: 600 34px/.92 Poppins, sans-serif; letter-spacing: -.045em; text-transform: none; color: #F4F1E8; text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
 </style>
 </head>
 <body>
@@ -170,7 +174,7 @@
     <div class="gkey" data-gkey></div>
   </div>
   <section id="pick" aria-label="Island Archipelagos">
-    <h1>island archipelagos</h1>
+    <figure class="face" id="face"><canvas aria-hidden="true"></canvas><h1>island archipelagos</h1></figure>
     <div class="ways">
       <button type="button" class="way" data-go="hardware" title="Unearth a thermal printer island. Get a parts list."><span class="im"><span class="pic" data-sk="basket"></span></span><span><h2>ISLAND</h2></span><span class="go mono">→</span></button>
       <button type="button" class="way" data-go="software" title="Download Island Archipelagos OS."><span class="im"><span class="pic" data-sk="rope"></span></span><span><h2>ARCHIPELAGOS</h2></span><span class="go mono">→</span></button>
@@ -230,5 +234,6 @@
 </main>
 <script src="vendor/rough.js"></script>
 <script src="parts.js"></script>
+<script src="card-art.js"></script>
 <script src="archipelagos.js"></script>
 </body></html>
