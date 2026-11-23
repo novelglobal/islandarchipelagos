@@ -765,7 +765,7 @@
       mu.addEventListener('click', function () { if (!vid) return; vid.muted = !vid.muted; mu.classList.toggle('off', vid.muted); }); v.vid = vid; return v; }
   function isleLabel() { var L = Object.assign({}, IH.label); L.on = true; if (!L.top) L.top = PLACE.name || PLACE.isle; if (!L.fold && String(L.body || '').trim().split(/\n\s*\n/).length > 1) L.fold = 1; L.key = '.' + PLACE.isle; L.fk = 'i-' + PLACE.isle; return L; }
   var LBT = '';
-  function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || (HASHGO && !force)) return;
+  function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || ((HASHGO || (xv.classList.contains('on') && /^(TWIN|GHOST)$/.test(xv.getAttribute('aria-label') || ''))) && !force)) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
     if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
@@ -1176,9 +1176,12 @@
   /* a printed receipt's code (#x=…): opened in DESIGN PRINT, the card that prints it */
   /* /#home: the code's own home, opened */
   /* #keeper (from a ghost's twin): the home opens straight on the island's own keeper section, and no label covers it */
-  var KEEPGO = false, HASHGO = /^#(home|keeper)$/i.test(location.hash);
+  var KEEPGO = false, HASHGO = /^#(home|keeper|twin(=test)?)$/i.test(location.hash);   // an island's own pages: no label over them
   var homeHash = function () { if (!/^#(home|keeper)$/i.test(location.hash)) return; KEEPGO = /keeper/i.test(location.hash); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} setTimeout(function () { var b = $('#hm-mine'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); }, 0); };
   homeHash(); window.addEventListener('hashchange', homeHash);
+  /* #twin (a twin opened on its own): it opens here as a card would, under the top bar; #twin=test, a real island's TEST */
+  var twinHash = function () { var m = /^#twin(=test)?$/i.exec(location.hash); if (!m) return; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} setTimeout(function () { sheet('TWIN', inFrame('twin?in=1' + (m[1] ? '&isle=test' : '') + '#bench')); }, 0); };
+  twinHash(); window.addEventListener('hashchange', twinHash);
   if (/^#x=/i.test(location.hash)) { var XIN = location.hash; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ } setTimeout(function () { var c = byId('zine'); if (!c) return; IN.id = 'zine'; sheet(c.title, inFrame('studio?from=aura&only=print' + XIN)); }, 0); }
   setTimeout(function () { var a = AU(); if ((location.hash || (a && a.linked)) && a && a.wake) { away = true; H.classList.add('hm-away'); } else if (a && a.sleep) a.sleep(); }, 0);
 
@@ -1730,7 +1733,7 @@
       $$('[data-mvw]', box).forEach(function (b) { b.addEventListener('click', function () { HK.mv = HK.mv === b.dataset.mvw ? null : b.dataset.mvw; beep(550, 0.05); fill(p); }); });
       var mb = $('[data-move]', box); if (mb) mb.addEventListener('click', function () { tdo(mb, { action: 'move', what: HK.mv }); });
       var ub = $('[data-undo]', box); if (ub) ub.addEventListener('click', function () { tdo(ub, { action: 'undo' }); });
-      var tw = $('[data-twin]', box); if (tw) tw.addEventListener('click', function () { if (p.ghost && !p.testOf) sheet('GHOST', inFrame('twin?in=1#bench')); else location.href = p.testOf ? '/twin?isle=test' : '/twin'; });
+      var tw = $('[data-twin]', box); if (tw) tw.addEventListener('click', function () { sheet(p.ghost && !p.testOf ? 'GHOST' : 'TWIN', inFrame('twin?in=1' + (p.testOf ? '&isle=test' : '') + '#bench')); });
       var pb = $('[data-pass]', box); if (pb) pb.addEventListener('click', function () { sheet('PASS', function (b) { stackIn(b, 'pass'); }); });
       /* PICKS: what this island holds up, and a search through everything made to add to it */
       var pkl = $('.hm-pkl', box), mine = [], found = [];

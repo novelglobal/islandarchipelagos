@@ -2569,7 +2569,7 @@ var ORB = (function () {
 function route() {
   var h = decodeURIComponent(location.hash.slice(1));
   if (/^me=/i.test(h)) { history.replaceState(null, '', location.pathname + location.search); return; }   // an old pass link: dropped (a code is typed from a print, never taken from a link)
-  if (/^songs?=/i.test(h) || /^(home|keeper)$/i.test(h)) return;   // a song's link: the aura's own (aura.js)
+  if (/^songs?=/i.test(h) || /^(home|keeper|twin(=test)?)$/i.test(h)) return;   // a song's link: the aura's own (aura.js); the home's own
   if (/^mix=/i.test(h)) { if (!AURA_ON) location.replace('studio' + location.search + location.hash); return; }   // the radio's song: in the aura's radio window
   if (!/^(radio|wish|shop|print|showcase|pixel|search|guide|now|booth(=[a-z0-9-]+)?|n=[A-Z0-9-]+)$/i.test(h)) { if (/^x=/i.test(h)) { if (!AURA_ON) location.replace('/' + location.hash); return; } else history.replaceState(null, '', location.pathname + location.search); return; }
   if (/^booth/i.test(h)) { if (!BTH) boothOn(h.split('=')[1]); return; }

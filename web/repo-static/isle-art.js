@@ -10,16 +10,8 @@
         n = shape === 'path' ? rc.path(a[0], o2) : shape === 'ellipse' ? rc.ellipse(a[0] + dx, a[1] + dy, a[2] * (1 - i * .1), a[3] * (1 + i * .06), o2) : rc.rectangle(a[0] + dx, a[1] + dy, a[2] * (1 - i * .07), a[3] * (1 + i * .05), o2);
       if (shape === 'path' && i) n.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')'); n.setAttribute('opacity', ((op || .4) * (1 - i * .25)).toFixed(2)); [].forEach.call(n.querySelectorAll('path'), function (q) { q.style.fill = tn[i]; q.style.stroke = 'none'; }); g.appendChild(n); }
     return g; }
-  function IRK(tl) { var w = 15, h = 25, top = -h * .55, bot = top + h, TL = h * tl, B = [], o = '', f = function (n) { return n.toFixed(1); }, ln = function (a) { return 'M' + a.map(function (q) { return f(q[0]) + ' ' + f(q[1]); }).join(' L'); };
-    for (var k = 0; k < 48; k++) { var u = k / 48, X, Y; if (u < .8) { var an = Math.PI * (1 - u / .8), cu = Math.cos(an), su = Math.sin(an); X = Math.pow(Math.abs(cu), .55) * (cu < 0 ? -1 : 1) * w; Y = bot - Math.pow(su, .42) * h * (.94 + .06 * su); } else { var q2 = (u - .8) / .2; X = w - 2 * w * q2; Y = bot - Math.sin(q2 * Math.PI) * h * .09; } B.push([X, Y]); }
-    for (var i = 0; i < 4; i++) { var rx = (i - 1.5) / 1.5 * w * .82, T = []; for (var j = 0; j < 24; j++) { var s = j / 23, env = Math.min(1, j / 4); T.push([rx + (i - 1.5) * s * TL * .05 + (Math.sin(s * (6 + i) + i * 1.7) * h * .3 + Math.sin(s * 3.1 + i * 2.3) * h * .2) * s * env, bot - 1 + s * TL]); }
-      o += '<path class="tn" d="' + ln(T) + '"/>'; for (var b = 1; b < 5; b++) o += '<circle class="ey" cx="' + f(T[b][0]) + '" cy="' + f(T[b][1]) + '" r="' + (b % 3 === 0 ? 1.6 : 1.05) + '"/>'; }
-    o += '<path class="bl" d="' + ln(B) + 'Z"/>'; var ew = w * .74, eh = h * .27, ey = top + h * .52;
-    for (var e = 0; e < 26; e++) { var ue = e / 26 * Math.PI * 2, se = Math.sin(ue); o += '<circle class="ey" cx="' + f(Math.cos(ue) * ew) + '" cy="' + f(ey + se * eh * (.35 + .65 * Math.abs(se))) + '" r=".85"/>'; }
-    o += '<circle class="pu" cx="0" cy="' + f(ey) + '" r="' + f(h * .25) + '"/><circle class="ey" cx="0" cy="' + f(ey) + '" r="' + f(h * .1) + '"/>';
-    [-.62, -.22, .22, .62].forEach(function (q) { o += '<circle class="ey" cx="' + f(q * w) + '" cy="' + f(bot - h * .1) + '" r="1.3"/>'; }); return o; }
   /* the island, drawn as it is made: a sandbank in murky water with the sea's rubbish on it. Each stage lit cleans a piece away and
-     raises something found and mended (a mast, a hut, a panel), until the lamp is lit, the water clears and the Irukandji comes */
+     raises something found and mended (a mast, a hut, a panel), until the lamp is lit and the water clears */
   function draw(s, n, sd) { if (!s || !window.rough || s.dataset.n === String(n)) return; sd = sd || 0; var was = s.dataset.n == null ? n : +s.dataset.n; s.dataset.n = n; s.innerHTML = '';
     var rc = rough.svg(s), o = function (x) { var b = { stroke: 'currentColor', strokeWidth: 1, roughness: 1.3, seed: 5 }; for (var k in x) b[k] = x[k]; b.seed += sd; return b; },
       put = function (k, cls, nodes) { var g = el('g', { 'class': cls + (k > was ? ' grow' : '') }); nodes.forEach(function (q) { g.appendChild(q); }); s.appendChild(g); return g; };
@@ -38,8 +30,7 @@
     if (n >= 3) { s.appendChild(wash(rc, 'path', ['M184 25 L203 15 L211 22 L192 32 Z'], 'sky', 63, .65)); s.appendChild(wash(rc, 'ellipse', [284, 18, 19, 18], 'yellow', 64, .6)); }
     if (n >= 3) put(3, 'relic', [rc.path('M184 25 L203 15 L211 22 L192 32 Z', o({ seed: 47, fill: 'currentColor', fillStyle: 'cross-hatch', hachureGap: 3, fillWeight: .35 }))]).appendChild(el('circle', { 'class': 'sun', cx: 284, cy: 18, r: 8.5 }));
     if (n >= 4) { s.appendChild(wash(rc, 'ellipse', [124.5, 12, 12, 11], 'orange', 65, .55)); put(4, 'relic', [rc.rectangle(91, 46, 15, 8, o({ seed: 51 })), rc.path('M95 46 q3.5 -4 7 0', o({ seed: 52, strokeWidth: .8 }))]);
-      put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]);
-      put(4, 'jl', []).innerHTML = '<g transform="translate(54 76) rotate(-96) scale(.5)">' + IRK(1.6) + '</g>'; }
+      put(4, 'live', [rc.arc(125, 12, 16, 16, Math.PI * 1.1, Math.PI * 1.9, false, o({ seed: 48, strokeWidth: .8 })), rc.arc(125, 12, 30, 30, Math.PI * 1.15, Math.PI * 1.85, false, o({ seed: 49, strokeWidth: .7 })), el('rect', { 'class': 'flag', x: 116, y: 22, width: 8, height: 11, transform: 'rotate(4 120 22)' }), el('circle', { 'class': 'lamp', cx: 124.5, cy: 12, r: 2.4 })]); }
     if (n >= 4) put(4, 'live', [rc.path('M282 58 Q292 52 304 58', o({ seed: 50 })), el('path', { 'class': 'tie', d: 'M126 14 Q210 -2 293 54' })]);
     /* alive, its two ends are dots: the lamp here, the island it can reach there */
     if (n >= 4) put(4, 'live', [el('circle', { 'class': 'node hot', cx: 124.5, cy: 12, r: 1.4 }), el('circle', { 'class': 'node', cx: 293, cy: 54, r: 2 })]); }
@@ -76,5 +67,5 @@
     if (jn) g('joins', true, jl);
     s.classList.toggle('lamp-off', !has.use); s.classList.toggle('flag-off', !has.home);
     return AT; }
-  window.ISLE = { el: el, wash: wash, WC: WC, IRK: IRK, draw: draw, home: home, AT: AT };
+  window.ISLE = { el: el, wash: wash, WC: WC, draw: draw, home: home, AT: AT };
 })();

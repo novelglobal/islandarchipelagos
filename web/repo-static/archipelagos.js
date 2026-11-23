@@ -207,7 +207,7 @@
   function key() { var k = gs.get('da.hm.key', ''); return /^[A-Za-z0-9_-]{16,64}$/.test(k) ? k : ''; }
   var top = function (u) { try { (window.top || window).location.href = u; } catch (e) { location.href = u; } };
   /* the ghost's twin: in the home's sheet it opens in the sheet (back comes back here); on its own page, as a page */
-  var twinGo = function () { var inn = /[?&]in=1/.test(location.search) && window.top !== window, nt = /[?&]night=([01])/.exec(location.search); if (inn) location.href = '/twin?in=1' + (nt ? '&night=' + nt[1] : '') + '#bench'; else top('/twin#bench'); };
+  var twinGo = function () { var inn = /[?&]in=1/.test(location.search) && window.top !== window, nt = /[?&]night=([01])/.exec(location.search); if (inn) location.href = '/twin?in=1' + (nt ? '&night=' + nt[1] : '') + '#bench'; else top('/#twin'); };
   function tray() { var t = $('#tray'); if (!t) return; t.hidden = !GHOST;
     var nm = function (v) { return (Array.isArray(v) ? v : v ? [v] : []).map(function (id) { return PART[id] ? PART[id].name : id; }).join(' + '); };
     t.innerHTML = [['printers', 'PRINTER'], ['pi', 'PI'], ['power', 'POWER']].map(function (x) { var s = nm(GB[x[0]]);

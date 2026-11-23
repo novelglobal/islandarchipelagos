@@ -1906,12 +1906,11 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .isle-h .lamp { fill: #F06A40; filter: drop-shadow(0 0 4px #F06A40); animation: ik-pulse 2.6s ease-in-out infinite; } #hm .isle-h.lamp-off .lamp { fill: currentColor; opacity: .3; filter: none; animation: none; }
 #hm .isle-h .tie, #hm .isle-h .lane { fill: none; stroke: currentColor; opacity: .75; stroke-width: .9; stroke-dasharray: .1 4; stroke-linecap: round; }
 #hm .isle-h .node { fill: currentColor; } #hm .isle-h .node.hot { fill: #E2552E; } #hm .isle-h .hd { fill: currentColor; }
-#hm .isle-h .jl { color: currentColor; opacity: .85; animation: ik-bob 7s ease-in-out infinite alternate; } #hm .isle-h .jl .bl { fill: currentColor; fill-opacity: .07; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; } #hm .isle-h .jl .tn { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; } #hm .isle-h .jl .ey, #hm .isle-h .jl .pu { fill: currentColor; }
 #hm .isle-h .sea path { animation: ik-tide 9s ease-in-out infinite alternate; }
 #hm .isle-h .th.maybe { opacity: .42; } #hm .isle-h .th.maybe path { stroke-dasharray: 1.4 2.2; } #hm .isle-h .th.maybe .hd { fill: none; stroke: currentColor; stroke-width: .5; }
 #hm .isle-h .th-links path { opacity: .5; } #hm .isle-h .th-links path.lit, #hm .isle-h .th-links .lit path { opacity: 1; stroke: #F2C94C; }
 /* a ghost's pencil: no colour, the sea still, the lamp unlit */
-#hm .gh .isle-h .wc, #hm .gh .isle-h .deep { display: none; } #hm .gh .isle-h .sea path, #hm .gh .isle-h .jl, #hm .gh .isle-h .sun { animation: none; }
+#hm .gh .isle-h .wc, #hm .gh .isle-h .deep { display: none; } #hm .gh .isle-h .sea path, #hm .gh .isle-h .sun { animation: none; }
 #hm .gh .isle-h .flag { fill: none; stroke: currentColor; stroke-width: .6; } #hm .gh .isle-h .lamp { fill: currentColor; opacity: .35; filter: none; animation: none; }
 #hm .gh .isle-h .sun { stroke: currentColor; opacity: .5; } #hm .gh .isle-h .node.hot { fill: currentColor; } #hm .gh .isle-h .th-links .lit path, #hm .gh .isle-h .th-links path.lit { stroke: currentColor; }
 /* the keys: the thing on the island is the key; a small dot marks it, its word under it */
@@ -1929,7 +1928,7 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .ik-m em { position: absolute; left: 9px; top: -11px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: #F4F1E8; color: #17457F; font: 600 8.5px/14px 'IBM Plex Mono', ui-monospace, monospace; font-style: normal; letter-spacing: 0; text-align: center; }
 #hm .gh .ik-m em { background: #2E3A4E; color: #ECEAE2; }
 #hm .ik-m.nx i::after { content: ''; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 1.5px dotted #F2C94C; animation: ik-turn 6s linear infinite; }
-@keyframes ik-turn { to { transform: rotate(360deg); } } @keyframes ik-bob { to { transform: translate(10px, -3px); } } @keyframes ik-tide { to { transform: translateX(4px); } }
+@keyframes ik-turn { to { transform: rotate(360deg); } } @keyframes ik-tide { to { transform: translateX(4px); } }
 #hm .ik-tour { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px 8px; margin-top: 10px; padding: 14px 12px 12px 14px; border-radius: 6px; background: var(--hm-ink); color: var(--hm-bg); animation: ik-in .22s ease-out; }
 #hm .ik-tour p { grid-column: 1 / -1; margin: 0; display: grid; gap: 7px; }
 #hm .ik-tour p b { color: var(--ik-acc); font-size: 11px; letter-spacing: .2em; }
