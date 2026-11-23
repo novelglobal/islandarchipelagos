@@ -239,7 +239,7 @@
       st.disabled = true; sy.textContent = '· · ·';
       fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: nm || 'ghost', paper: PART[GB.printers] && PART[GB.printers].paper === 58 ? '58' : '80' }) })
         .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
-        .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); twinGo(); return; }
+        .then(function (o) { if (o.s === 201 && o.j.key) { gs.set('da.hm.key', o.j.key); gs.set('da.ghost.id', o.j.id); gs.set('da.twin.born', o.j.id); twinGo(); return; }
           sy.textContent = o.s === 202 ? 'FULL' : o.s === 403 ? 'CLOSED' : o.s === 429 ? 'WAIT' : 'AGAIN'; sy.title = { 202: 'Every ghost place is taken', 403: 'Ghost islands are closed for now', 429: 'Too many ghosts started from here: try again later' }[o.s] || ''; st.disabled = false; },
           function () { sy.textContent = 'OFFLINE'; st.disabled = false; }); } });
   D.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.plate[data-take]')) { e.preventDefault(); e.target.click(); }

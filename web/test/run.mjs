@@ -2196,7 +2196,7 @@ if (run('bench')) try {
   const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await wire(ctx, { plain: true }); await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('bn')) { sessionStorage.setItem('bn', '1'); localStorage.setItem('da.ghost.build', JSON.stringify({ pi: 'Pi 3 A+', printers: 'TM-T88V', power: ['Solar'] })); localStorage.removeItem('da.ghost.seeded'); } } catch (e) { /* private */ } });
   const page = await ctx.newPage(); watch(page, 'bench'); await page.goto('https://oan.test/archipelagos.html');
-  const made = await page.evaluate(async () => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bench Bb' }) }), j = await r.json(); if (j.key) localStorage.setItem('da.hm.key', JSON.stringify(j.key)); return { s: r.status, id: j.id }; });
+  const made = await page.evaluate(async () => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bench Bb' }) }), j = await r.json(); if (j.key) { localStorage.setItem('da.hm.key', JSON.stringify(j.key)); localStorage.setItem('da.twin.born', JSON.stringify(j.id)); } return { s: r.status, id: j.id }; });
   const pl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s); q('[data-go="hardware"]').click(); await z(200);
     const pr = [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), tested = [...document.querySelectorAll('.plate .t')].map(t => t.closest('.plate').dataset.pn);
     q('[data-tab="power"]').click(); await z(100); return { pr, tested, power: [...document.querySelectorAll('.plate')].map(p => p.dataset.pn), drawn: document.querySelectorAll('.plate .pic svg').length }; });
@@ -2205,10 +2205,13 @@ if (run('bench')) try {
   await page.goto('https://oan.test/twin#bench'); await page.waitForSelector('#bnd:not([hidden]) .bench .pt'); await sleep(900);
   const b0 = await page.evaluate(() => ({ open: !document.querySelector('#bnd').hidden, nw: document.querySelector('#nw').textContent, rite: [...document.querySelectorAll('#rite .st')].map(g => g.classList.contains('lit') ? 'L' : g.classList.contains('now') ? 'N' : '-').join(''), pwHidden: document.querySelector('#bnp').hidden,
     wantPorts: [...document.querySelectorAll('.bench .po.want')].map(e => e.getAttribute('aria-label')).sort().join(), panels: [...document.querySelectorAll('#twin > details')].map(d => d.id).join(), testHidden: document.querySelector('#test').hidden, parts: [...document.querySelectorAll('.bench .pt text.md')].map(t => t.textContent), jobs: [...document.querySelectorAll('.bench .pt text.jb')].map(t => t.textContent).sort().join(), word: document.querySelector('#bnp').textContent, why: document.querySelector('#bnp').title,
+    born: (() => { const sl = document.querySelector('#roll .slip'), cv = sl && sl.querySelector('canvas, img'); return { label: sl && sl.getAttribute('aria-label'), h: cv ? cv.height : 0, kept: (JSON.parse(localStorage.getItem('da.twin.roll') || '[]')[0] || {}).cap || '', left: localStorage.getItem('da.twin.born') }; })(),
     ghost: (document.querySelector('.bench .gh') || { getAttribute: () => '' }).getAttribute('aria-label'), menus: document.querySelectorAll('#bnk, [data-kind]').length, tray: document.querySelector('#bnl').hidden, fl: document.querySelector('#fl').hidden }));
-  check('bench: a ghost opened from START lands on its bench with the tray\'s printer, Pi and solar; five stages with PARTS now; the dock says what it wants first in plain words (the cable from the brain to the printer, its two ends glowing); power kept out of it until POWER; the rest behind one MORE',
+  const bornQR = await qrIn(await page.evaluate(() => { const c = document.querySelector('#roll .slip canvas'); return c ? c.toDataURL('image/png') : ''; })), bornKey = await page.evaluate(() => JSON.parse(localStorage.getItem('da.hm.key') || '""'));
+  b0.born.qr = bornQR === 'https://oan.test/twin#k=' + bornKey; await sleep(2600);   // the paper fed, the page back on the bench
+  check('bench: a ghost opened from START prints its birth slip first (its name, GHOST, the key and a QR that opens it), kept on the roll, once; then lands on its bench with the tray\'s printer, Pi and solar; five stages with PARTS now; the dock says what it wants first in plain words (the cable from the brain to the printer, its two ends glowing); power kept out of it until POWER; the rest behind one MORE',
     made.s === 201 && b0.open && b0.parts.slice().sort().join() === 'PI 3 A+,SOLAR,TM-T88V' && b0.jobs === 'BRAIN,PRINTER,SUN' && !b0.ghost && b0.nw === 'CABLE BRAIN TO PRINTER' && b0.wantPorts === 'Pi 3 A+ USB,TM-T88V USB' && b0.rite === 'N----'
-    && !b0.menus && b0.tray && b0.fl && b0.pwHidden && b0.word === 'SHORT' && b0.why === 'TM-T88V, Pi 3 A+ have no power in' && b0.panels === 'xd' && b0.testHidden, JSON.stringify({ made, b0 }));
+    && b0.born.label === 'BENCH BB · ghost' && b0.born.qr && b0.born.h > 500 && /^BENCH BB/.test(b0.born.kept) && b0.born.left === '""' && !b0.menus && b0.tray && b0.fl && b0.pwHidden && b0.word === 'SHORT' && b0.why === 'TM-T88V, Pi 3 A+ have no power in' && b0.panels === 'xd' && b0.testHidden, JSON.stringify({ made, b0 }));
   /* on a phone nothing hovers: the word that says more is tapped; a port chosen marks the ports a cable would fit */
   const u0 = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s);
     q('.bench [data-port][aria-label="Pi 3 A+ USB"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); await z(50);
@@ -2348,6 +2351,14 @@ if (run('bench')) try {
   check('bench: with no power it asks for POWER, a choice of PLUG, SUN or BANK; the wall brings the printer its own 24 V supply and reads ENOUGH; a bank reads CHARGED, what it holds and how long it lasts; every part that draws power wears a bolt, hollow when cold',
     W.w.includes('power') && W.ghost === 'power?' && W.tray.head === 'POWER' && W.tray.jobs === 'PLUG,SUN,BANK' && /PS-180/.test(W.parts) && /POWER STRIP/.test(W.parts) && W.word === 'ENOUGH' && W.why === 'From the wall' && !W.cold && W.bolts >= 2
     && B.w.includes('power') && /POWER BANK/.test(B.parts) && B.word === 'CHARGED' && /the bank holds 84 Wh: about \d+ h/.test(B.why) && !B.cold, JSON.stringify(pw));
+  /* becoming real: the server says the ghost's Pi took over; the twin prints REAL with the island's new number, once */
+  const tj = await page.evaluate(async () => (await fetch('/api/twin', { headers: { authorization: 'Bearer ' + JSON.parse(localStorage.getItem('da.hm.key')) } })).json());
+  Object.assign(tj, { ghost: false, paired: true, ready: true, number: 9, took: [] }); delete tj.bench;
+  await page.route('**/api/twin', r => r.request().method() !== 'GET' ? r.fallback() : r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tj) }));
+  const realOf = async () => { await page.goto('https://oan.test/twin'); await page.waitForSelector('#roll .slip'); await sleep(2500); return page.evaluate(() => ({ first: document.querySelector('#roll .slip').getAttribute('aria-label'), n: [...document.querySelectorAll('#roll .slip')].filter(s => /· real$/.test(s.getAttribute('aria-label') || '') || /^BENCH BB +REAL$/.test(s.dataset.cap || '')).length })); };
+  const re1 = await realOf(), re2 = await realOf();
+  check('bench: a ghost seen real at last prints REAL with its island number on its twin, once',
+    re1.first === 'BENCH BB · real' && re1.n === 1 && re2.n === 1, JSON.stringify({ re1, re2 }));
   await ctx.close();
 } catch (e) { check('bench ran', false, String(e && e.stack || e)); }
 

@@ -152,6 +152,9 @@
         var cv = x.escpos ? draw(x.escpos, j.paper) : thumb(x.thumb); if (!cv && x.off) cv = draw(textSlip([x.code || 'PRINT', 'OFFLINE']), j.paper); if (!cv) return;
         shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false, x.code || ''); });
       if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
+      /* the birth slip once, on the first open after START; a ghost seen real at last prints its REAL slip once */
+      var gk = 'da.twin.g.' + j.id; if (j.ghost && !TESTQ) { if (!store.get(gk, false)) store.set(gk, true); if (first && store.get('da.twin.born', '') === j.id) { store.set('da.twin.born', ''); bootSlip('born'); } }
+      else if (j.paired && store.get(gk, false)) { store.set(gk, false); bootSlip('real'); }
       if (first && !ISLE) island(); }, function (e) { if (e && e.message === 'key') return; $('#led').className = 'led'; $('#bodyw').textContent = 'OFFLINE'; })
       .then(function () { if (!OFF) timer = setTimeout(tick, D.hidden ? 30e3 : T && T.ghost ? 4e3 : 15e3); else offDraw(); }); }
   D.addEventListener('visibilitychange', function () { if (!D.hidden && T) tick(); });
@@ -547,8 +550,12 @@
     welcome: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).b(false).rule(6).feed(2).b(true).big(true).t(setupPass()).big(false).b(false).feed(1).t('IP: 10.42.0.1').qr('GHOST ' + setupSSID(), 7).rule(2).feed(1).cut(); },
     wifi: function (net) { return Slip().head(isleNm()).t('ON WI-FI').t(net).cut(); },
     pair: function () { return Slip().head(isleNm()).big(true).t(showCode(pairCode())).big(false).feed(1).t('SCAN TO APPROVE ON NOVEL.GLOBAL').feed(1).qr('GHOST ' + showCode(pairCode()), 6).cut(); },
-    paired: function () { return Slip().head(isleNm()).t('PAIRED').t(String(T.id).toUpperCase() + ' ON NOVEL.GLOBAL').t('READY TO PRINT').cut(); } };
-  var SAY = { strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print' };
+    paired: function () { return Slip().head(isleNm()).t('PAIRED').t(String(T.id).toUpperCase() + ' ON NOVEL.GLOBAL').t('READY TO PRINT').cut(); },
+    /* the birth: the first slip a ghost prints, its name, its number and its key (the key opens it on any screen; the site keeps only its hash) */
+    born: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).t('GHOST' + (T.number ? ' ' + T.number : '')).b(false).rule(6).feed(1).qr(location.origin + '/twin#k=' + KEY, 6).feed(1).t(KEY).cut(); },
+    /* a ghost become real: its printer took over */
+    real: function () { return Slip().feed(1).c().t('novel.global').feed(1).rule(6).b(true).big(true).t(isleNm().slice(0, 20)).big(false).t('ISLAND' + (T.number ? ' ' + T.number : '')).b(false).rule(6).feed(1).t('REAL').cut(); } };
+  var SAY = { strip: 'Test strip', welcome: function () { return 'Setup Wi-Fi ' + setupSSID() + ', slip key ' + setupPass(); }, wifi: function (n) { return 'On Wi-Fi ' + n; }, pair: function () { return 'Pair code ' + showCode(pairCode()); }, paired: 'Paired, ready to print', born: function () { return isleNm() + ' · ghost' + (T.number ? ' ' + T.number : ''); }, real: function () { return isleNm() + ' · real'; } };
   function bootSlip(name) { var a = [].slice.call(arguments, 1), u = SLIPS[name].apply(null, a), cv = draw(u, paperOf()), say = typeof SAY[name] === 'function' ? SAY[name].apply(null, a) : SAY[name];
     shown('b' + name + Date.now(), cv, '', true, true, say); paperUse(cv); seen(cv); if (OUT) OUT.write(u).catch(function () { /* the screen keeps it */ }); }
   /* the log: the last five lines, like the island's own journal */
@@ -655,7 +662,7 @@
   function gate(say) { $('#twin').hidden = true; $('#gate').hidden = false; if (say) $('#gsay').textContent = say; clearTimeout(timer); }
   $('#gf').addEventListener('submit', function (e) { e.preventDefault(); var n = $('#gn').value.trim(); if (!n) { $('#gn').focus(); return; } $('#gsay').textContent = '· · ·';
     fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: n }) }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); }).then(function (x) {
-      if (x.s === 201 && x.j.key) { KEY = x.j.key; store.set('da.hm.key', KEY); open(); } else $('#gsay').textContent = x.s === 202 ? 'WAIT LIST' : x.s === 429 ? 'LATER' : x.s === 403 ? 'CLOSED' : '×'; }, function () { $('#gsay').textContent = 'OFFLINE'; }); });
+      if (x.s === 201 && x.j.key) { KEY = x.j.key; store.set('da.hm.key', KEY); store.set('da.twin.born', x.j.id); open(); } else $('#gsay').textContent = x.s === 202 ? 'WAIT LIST' : x.s === 429 ? 'LATER' : x.s === 403 ? 'CLOSED' : '×'; }, function () { $('#gsay').textContent = 'OFFLINE'; }); });
   $('#kf').addEventListener('submit', function (e) { e.preventDefault(); var k = $('#kk').value.trim(); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return; KEY = k; store.set('da.hm.key', k); open(); });
   function themeSet(on) { var h = D.documentElement; h.classList.toggle('night', on); store.set('da.hm.night', on); var m = $('meta[name="theme-color"]'); if (m) m.content = on ? '#06152A' : '#17457F'; }
   themeSet(D.documentElement.classList.contains('night'));
