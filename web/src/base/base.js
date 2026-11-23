@@ -1080,10 +1080,14 @@ function homeKept(j) { if (!j || !Array.isArray(j.stamps)) return; store.set('da
 function homeTake(j) { if (!j || typeof j !== 'object') return; if (typeof j.home === 'string' && /^[0-9a-f]{16}$/.test(j.home)) store.set('da.who.home', j.home);
   if (j.gift && j.gift.code) store.set('da.pass', { code: j.gift.code, island: j.gift.island, day: j.gift.day }); }
 /* the animal: the code's second key, never shown to anyone else. Chosen (or given at random) where the home key is; a code and its animal open the home on any phone */
+/* the islands a code made (ghosts kept with it): the first comes to this phone when it has none, so a code finds its island again */
+function islesTake(j) { var l = j && Array.isArray(j.isles) ? j.isles.filter(function (x) { return x && /^[A-Za-z0-9_-]{16,64}$/.test(x.key || ''); }) : []; if (!l.length) return false;
+  if (!store.get('da.hm.key', '')) { store.set('da.hm.key', l[0].key); try { window.dispatchEvent(new Event('ng-isle')); } catch (e) { /* old */ } return true; } return false; }
+function islesFind() { var k = store.get('da.who.home', ''), w = me(); if (!k || !w || store.get('da.hm.key', '')) return Promise.resolve(false); return api('/home', { method: 'POST', body: JSON.stringify({ who: w, k: k }) }).then(islesTake, function () { return false; }); }
 function animalOf() { var a = store.get('da.who.animal', null); return a == null || !isFinite(+a) ? null : +a; }
-function animalSet(a) { var k = store.get('da.who.home', ''); if (!k) return Promise.reject(new Error('key')); return api('/home', { method: 'POST', body: JSON.stringify({ who: me(), k: k, animal: a == null ? undefined : +a }) }).then(function (j) { if (j && j.animal != null) store.set('da.who.animal', +j.animal); return j && j.animal; }); }
+function animalSet(a) { var k = store.get('da.who.home', ''); if (!k) return Promise.reject(new Error('key')); return api('/home', { method: 'POST', body: JSON.stringify({ who: me(), k: k, animal: a == null ? undefined : +a }) }).then(function (j) { if (j && j.animal != null) store.set('da.who.animal', +j.animal); islesTake(j); return j && j.animal; }); }
 function homeOpen(c, a) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return Promise.reject(new Error('code'));
-  return api('/home', { method: 'POST', body: JSON.stringify({ who: c, animal: +a }) }).then(function (j) { return useCode(c).then(function () { store.set('da.who.home', j.home); store.set('da.who.animal', +a); proofAt = 0; return proof(); }); }); }
+  return api('/home', { method: 'POST', body: JSON.stringify({ who: c, animal: +a }) }).then(function (j) { islesTake(j); return useCode(c).then(function () { store.set('da.who.home', j.home); store.set('da.who.animal', +a); proofAt = 0; return proof(); }); }); }
 /* a pass for finishing an island's intro, where the island gives them so */
 function giftIntro(island) { if (!island) return Promise.resolve(null); return api('/gift', { method: 'POST', body: JSON.stringify({ who: me(), island: island, why: 'intro' }) }).then(function (j) { if (j && j.code) store.set('da.pass', { code: j.code, island: j.island, day: j.day }); return j; }, function () { return null; }); }
 function setMe(c) { c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!WHO_RE.test(c)) return false; if (c !== store.get('da.who', '')) homeGo(); store.set('da.who', c); store.set('da.who.pass', 1); meUsed(); return true; }
@@ -2620,7 +2624,7 @@ function wipeAll() {
   if (navigator.serviceWorker) gone.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () {}));
   var go = function () { location.replace(location.origin + '/'); }; Promise.all(gone).then(go, go); setTimeout(go, 2500);
 }
-window.NG = { siteOf: siteOf, animals: KIN, animalOf: animalOf, animalSet: animalSet, homeOpen: homeOpen, giftIntro: giftIntro, wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
+window.NG = { siteOf: siteOf, animals: KIN, animalOf: animalOf, animalSet: animalSet, homeOpen: homeOpen, islesFind: islesFind, giftIntro: giftIntro, wipe: wipeAll, usedAt: function () { return USED; }, $: $, $$: $$, esc: esc, store: store, when: when, ll: ll, toast: toast, sureTap: sureTap, exif: exif, lib: lib, loadImg: loadImg, shrink: shrink,
   read: read, wishOptions: wishOptions, wishLines: wishLines, context: context, weather: weather, db: db, DB: function () { return DB; }, outlookNow: outlookNow, nowItems: nowItems, seasonNow: seasonNow,
   reveal: reveal, far: far, dist: dist, code: code, SIGN: SIGN, actions: actions, PHOTOS: PHOTOS, notes: function () { return NOTES; }, saveNotes: saveNotes, attend: attend,
   place: function (c) { cur = c; place(); var n = cur.note; cur = null; return n; },

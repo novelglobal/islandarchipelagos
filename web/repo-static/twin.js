@@ -168,7 +168,7 @@
         shown(x.id, cv, x.status === 'held' || x.status === 'queued' ? 'WAITING' : x.off ? 'OFFLINE' : '', !first, false, x.code || ''); });
       if (!$('#roll').children.length && !j.ghost) $('#none').hidden = false;
       /* the birth slip once, on the first open after START; a ghost seen real at last prints its REAL slip once */
-      var gk = 'da.twin.g.' + j.id; if (j.ghost && !TESTQ) { if (!store.get(gk, false)) store.set(gk, true); if (first && store.get('da.twin.born', '') === j.id) { store.set('da.twin.born', ''); bootSlip('born'); keepShow('key'); }
+      var gk = 'da.twin.g.' + j.id; if (j.ghost && !TESTQ) { if (!store.get(gk, false)) store.set(gk, true); if (first && store.get('da.twin.born', '') === j.id) { store.set('da.twin.born', ''); bootSlip('born'); }
         /* a ghost switched on and paired before (here or on another phone) still gives its code, once */
         if (first && j.bench && j.bench.o && j.bench.o[2] === 3 && !store.get('da.twin.rw.' + j.id, '')) setTimeout(reward, 900); }
       else if (j.paired && store.get(gk, false)) { store.set(gk, false); bootSlip('real'); }
@@ -386,7 +386,7 @@
       var ps = p.ports || [], tops = ps.filter(function (o) { return topSide(p, o); }), bots = ps.filter(function (o) { return !topSide(p, o); });
       [[tops, Y, -1], [bots, Y + TH, 1]].forEach(function (side) { side[0].forEach(function (o, k) { var px = X + cw * (k + 1) / (side[0].length + 1), py = side[1], id = x[0] + '.' + o.id; at[id] = [px, py, side[2]];
         var fit = SEL && SEL !== id && SEL.split('.')[0] !== x[0] && joinOf(SEL, id).ok, no = SEL && SEL !== id && !fit;
-        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (no ? ' no' : '') + (NOPE === id ? ' nope' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 12 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
+        var po = el('g', { 'class': 'po' + (SEL === id ? ' sel' : used[id] ? ' used' : '') + (fit ? ' fit' : '') + (no ? ' no' : '') + (NOPE === id ? ' nope' : '') + (want[id] && !SEL ? ' want' : ''), 'data-port': id, tabindex: '0', role: 'button', 'aria-label': nameN(x) + ' ' + o.label }, [tt(o.label + ' · ' + PLUG[o.plug] + ' · ' + o.role.toUpperCase() + (o.volts != null ? ' · ' + vs(o.volts) + ' V' : '')), el('circle', { 'class': 'ph', cx: px, cy: py + side[2] * 4, r: 17 }), el('circle', { cx: px, cy: py, r: 5.5 })]);
         var lb = el('text', { 'class': 'pl', x: px, y: side[2] < 0 ? py - 9 : py + 15, 'text-anchor': 'middle' }); lb.textContent = o.label; po.appendChild(lb); g.appendChild(po); }); });
       svg.appendChild(g); });
     /* the cables behind the parts, from what gives to what takes. Power that is there runs along its cable; power that is not stays grey */
@@ -483,15 +483,19 @@
     var k = ['port', 'body', 'want'].filter(function (a) { return t.dataset[a]; })[0], v = k && t.dataset[k]; t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     if (k && !D.activeElement.closest('#bnd .bench')) { var n = D.querySelector('#bnv [data-' + k + '="' + v + '"]') || D.querySelector('#bnv .gh') || D.querySelector('#bnv .pt.want'); if (n) n.focus(); } });
   /* a cable drawn by hand: press on a port, pull to another, let go */
-  var DRAG = null;
+  var DRAG = null, SNAPPX = 48;
+  var nearPort = function (x, y, from) { var best = null, bd = SNAPPX; $$('#bnv [data-port]').forEach(function (t) { if (t.dataset.port.split('.')[0] === from.split('.')[0]) return; var c = t.querySelector('circle:not(.ph)'), r = c && c.getBoundingClientRect(); if (!r || !r.width) return;
+      var d = Math.hypot(r.left + r.width / 2 - x, r.top + r.height / 2 - y); if (d < bd) { bd = d; best = t; } }); return best; };
   $('#bnv').addEventListener('pointerdown', function (e) { var t = e.target.closest('[data-port]'); if (!t || !BN) return; var svg = $('#bnv'), m = svg.getScreenCTM(); if (!m) return; var c = t.querySelector('circle:not(.ph)');
     DRAG = { from: t.dataset.port, x0: e.clientX, y0: e.clientY, moved: false, a: [+c.getAttribute('cx'), +c.getAttribute('cy')], line: null, id: e.pointerId }; });
   $('#bnv').addEventListener('pointermove', function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; if (!DRAG.moved && Math.hypot(e.clientX - DRAG.x0, e.clientY - DRAG.y0) < 8) return;
     var svg = $('#bnv'), m = svg.getScreenCTM().inverse(), p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; p = p.matrixTransform(m);
     if (!DRAG.moved) { DRAG.moved = true; try { svg.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } SEL = DRAG.from; benchDraw(); DRAG.line = el('path', { 'class': 'cbd' }); svg.appendChild(DRAG.line); }
+    var nt = nearPort(e.clientX, e.clientY, DRAG.from), nc = nt && nt.querySelector('circle:not(.ph)'); if (nc) { p = { x: +nc.getAttribute('cx'), y: +nc.getAttribute('cy') }; }
+    if (DRAG.near !== nt) { if (DRAG.near) DRAG.near.classList.remove('near'); if (nt) nt.classList.add('near'); DRAG.near = nt; }
     DRAG.line.setAttribute('d', 'M' + DRAG.a[0] + ' ' + DRAG.a[1] + ' Q' + DRAG.a[0] + ' ' + ((DRAG.a[1] + p.y) / 2 + 20) + ' ' + p.x + ' ' + p.y); e.preventDefault(); });
   var dragEnd = function (e) { if (!DRAG || e.pointerId !== DRAG.id) return; var d = DRAG; if (d.line) d.line.remove();
-    if (d.moved) { var over = D.elementFromPoint(e.clientX, e.clientY), t = over && over.closest && over.closest('[data-port]'); SEL = null; if (t && t.dataset.port.split('.')[0] !== d.from.split('.')[0]) { joinTo(d.from, t.dataset.port); if (SEL) { SEL = null; benchDraw(); } } else benchDraw(); setTimeout(function () { DRAG = null; }, 0); }
+    if (d.moved) { var over = D.elementFromPoint(e.clientX, e.clientY), t = (over && over.closest && over.closest('[data-port]')) || nearPort(e.clientX, e.clientY, d.from); SEL = null; if (d.near) d.near.classList.remove('near'); if (t && t.dataset.port.split('.')[0] !== d.from.split('.')[0]) { joinTo(d.from, t.dataset.port); if (SEL) { SEL = null; benchDraw(); } } else benchDraw(); setTimeout(function () { DRAG = null; }, 0); }
     else DRAG = null; };
   $('#bnv').addEventListener('pointerup', dragEnd); $('#bnv').addEventListener('pointercancel', function (e) { if (DRAG && DRAG.line) DRAG.line.remove(); DRAG = null; SEL = null; benchDraw(); });
 

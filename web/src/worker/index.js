@@ -66,7 +66,7 @@ const SCHEMA = [
 ];
 /* SCHEMA_V: the database's version. Raise it by one whenever a table or a column is added below: each database (the live one and the
    preview's) then makes the changes once and keeps the number, and every start after is one read */
-const SCHEMA_V = 23;
+const SCHEMA_V = 24;
 const readied = new WeakMap();
 function ready(db) {
   if (!readied.has(db)) readied.set(db, (async () => {
@@ -171,7 +171,7 @@ async function upgrade(db, was = 0) {
     try { await db.prepare('ALTER TABLE printers ADD COLUMN home TEXT').run(); } catch (e) { /* already there */ }
     /* version 23. via: how a code was made real, 'ghost' when a ghost island's set-up gave it (else by a print); gave: the code a ghost
        gave, once it was switched on and paired */
-    for (const q of ['ALTER TABLE makers ADD COLUMN via TEXT', 'ALTER TABLE printers ADD COLUMN gave TEXT']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
+    for (const q of ['ALTER TABLE makers ADD COLUMN via TEXT', 'ALTER TABLE printers ADD COLUMN gave TEXT', 'ALTER TABLE printers ADD COLUMN kept TEXT']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 22. test_of: a TEST, the ghost a real island keeps beside it (that island's id); moves: the real island's last five MOVEs, each with what it took the place of, for UNDO */
     for (const q of ['ALTER TABLE printers ADD COLUMN test_of TEXT', 'ALTER TABLE printers ADD COLUMN moves TEXT']) { try { await db.prepare(q).run(); } catch (e) { /* already there */ } }
     /* version 21. GREY 16 ORDER 2 is every photograph's default (photo test 2, B): the saved print settings let go of their dots, their
@@ -902,6 +902,7 @@ async function keeper(db, env, req) {
     const want = new URL(req.url).searchParams.get('id') || ''; p = (await db.prepare(`SELECT ${cols} WHERE mods LIKE ? ORDER BY number`).bind('%"' + w + '"%').all()).results.find(x => !want || x.id === want) || null;
   } else { if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key'); p = await db.prepare(`SELECT ${cols} WHERE owner = ?`).bind(await sha256(k)).first(); }
   if (!p || p.id === 'novelglobal') return fail(401, 'key');
+  if (!mod && p.ghost && !p.test_of) await keptSeal(db, env, k, p.id);
   const can = buildOf(await settingsOf(db), p.id), has = x => can.includes(x);
   if (req.method === 'POST') { const b = await body(req, LIMIT.escpos + 4096);
     /* TEST, MOVE, UNDO: the keeper's own key on the real island only; a gang code or the TEST itself never moves anything */
@@ -925,7 +926,7 @@ async function keeper(db, env, req) {
   let jn = null; if (has('joins')) { const J = joinsOf(p), { results: os } = await db.prepare('SELECT id, name, number, links, ghost, test_of FROM printers WHERE id != ? AND (token IS NOT NULL OR ghost = 1) ORDER BY ghost, number, created LIMIT 200').bind(p.id).all();
     jn = { ...J, isles: os.map(o => { const l = linksAt(o); return { id: o.id, name: o.name || o.id, number: o.number || null, ghost: !!o.ghost, test_of: o.test_of, takes: l.includes('wish'), cards: l.includes('cards'), art: l.includes('art') }; }).filter(o => (o.ghost ? J.to.includes(o.id) || J.mirror === o.id || o.test_of === p.id : !p.ghost) && (o.takes || o.cards || o.art || J.to.includes(o.id) || J.mirror === o.id)).map(({ test_of, ...o }) => test_of ? { ...o, test: true } : o) }; }   /* ghosts are listed to no one, but a real island its own TEST; a ghost is offered no real island */
   const tst = !mod && !p.ghost && p.paired && has('home') ? await testOut(db, env, p) : {};
-  return json({ id: p.id, build: can, ...(jn ? { joins: jn } : {}), ...(has('home') ? { home: homeOfIsle(p.home) } : {}), ...(p.ghost ? { ghost: true } : {}), ...(p.test_of && !mod ? { testOf: p.test_of } : {}), ...tst, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: await Promise.all(cps.map(async r => ({ slot: r.slot, url: await picUrl(env, p.id, r.slot, r.at, p.ghost) }))), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
+  return json({ id: p.id, build: can, ...(jn ? { joins: jn } : {}), ...(has('home') ? { home: homeOfIsle(p.home) } : {}), ...(p.ghost ? { ghost: true, built: (benchOf(p.bench).o || [])[2] === 3 } : {}), ...(p.test_of && !mod ? { testOf: p.test_of } : {}), ...tst, name: p.name, paper: p.paper, number: p.number, two: !!p.two, links: linksOf(p.links), all: LINKS, ...isleOut(p), ...(roll ? { roll } : {}), ...(mod ? { mod: true } : { mods: modsOf(p) }), pics: await Promise.all(cps.map(async r => ({ slot: r.slot, url: await picUrl(env, p.id, r.slot, r.at, p.ghost) }))), speed: cst.speed == null ? null : cst.speed, mark: codeKey(env) ? await markOf(env, p.id) : null, ready: !!p.seen && now() - p.seen < 120e3, queued: p.queued, printed: p.printed });
 }
 /* ───────── a ghost island: an island with no printer yet. Its keeper gets its key once; its paper is the twin, a page that takes its
    prints and draws them. ADD A PRINTER on the twin takes the pair code a Pi prints, and the Pi pairs as this same island ───────── */
@@ -1001,10 +1002,11 @@ async function twin(db, env, req, url) {
   if (await tooMany(db, env, req, 'twin', 300, 10 * 60e3)) return fail(429, 'too many');
   const k = await keyOf(req); if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) return fail(401, 'key');
   const p = await db.prepare('SELECT id, name, number, paper, ghost, mesh, links, joins, seen, bench, test_of, gave, token IS NOT NULL AS paired FROM printers WHERE owner = ?').bind(await sha256(k)).first(); if (!p || p.id === 'novelglobal') return fail(401, 'key');
+  if (p.ghost && p.gave && !p.test_of) await keptSeal(db, env, k, p.id);
   const t = now();
   if (req.method === 'POST') { const b = await body(req, 8192);
     if (typeof b.pair === 'string') return ghostAdopt(db, p, b.pair);
-    if (typeof b.reward === 'string') return ghostReward(db, env, req, p, b.reward);
+    if (typeof b.reward === 'string') return ghostReward(db, env, req, p, b.reward, k);
     if (b.bench && typeof b.bench === 'object') { if (!p.ghost) return fail(400, 'not a ghost'); const v = benchIn(b.bench); if (!v) return fail(400, 'bench');
       /* a radio on the bench joined to a Pi or a supply is the ghost's MESH: what is sent to it carries its mesh line */
       const kindOf = iid => PART_KIND[(v.p.find(x => x[0] === iid) || [])[1]], feeds = { pi: 1, power: 1, converter: 1, battery: 1 };
@@ -1047,14 +1049,23 @@ async function osNow() { let o = null; try { const r = await fetch('https://gith
   return new Response(JSON.stringify({ os: { version: v, download: +o.image_download_size || 0, size: +o.extract_size || 0, sha: String(o.extract_sha256 || '').slice(0, 12), devices: Array.isArray(o.devices) ? o.devices.slice(0, 8) : [] } }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=1800' } }); }
 /* the set-up's reward: a ghost built, switched on and paired on its bench gives its maker's code, made real as a print would make it
    (via 'ghost', for its badge). One code to a ghost. With proof of presence on (access 'pop'), only a print makes a code real */
-async function ghostReward(db, env, req, p, who) {
+/* a ghost kept with its maker's code: its key sealed with the site's secret, so the code (with its home key here, or its animal on
+   another phone) brings the island back. The key itself is never needed by the person */
+async function keySeal(env, id, k) { const p = await mac(codeKey(env), 'kept:' + id), b = enc.encode(k); if (b.length > 32) return null; let o = ''; for (let i = 0; i < b.length; i++) o += (b[i] ^ p[i]).toString(16).padStart(2, '0'); return o; }
+async function keyOpen(env, id, s) { const p = await mac(codeKey(env), 'kept:' + id); let o = ''; for (let i = 0; i < s.length / 2; i++) o += String.fromCharCode(parseInt(s.substr(i * 2, 2), 16) ^ p[i]); return o; }
+async function keptSeal(db, env, k, id) { if (!codeKey(env) || !/^[A-Za-z0-9_-]{16,32}$/.test(k)) return;
+  const r = await db.prepare('SELECT gave, kept FROM printers WHERE id = ? AND ghost = 1 AND test_of IS NULL').bind(id).first(); if (!r || !r.gave || r.kept) return;
+  const s = await keySeal(env, id, k); if (s) await db.prepare('UPDATE printers SET kept = ? WHERE id = ?').bind(s, id).run(); }
+async function islesOf(db, env, who) { const { results } = await db.prepare('SELECT id, name, kept FROM printers WHERE gave = ? AND ghost = 1 AND test_of IS NULL AND kept IS NOT NULL ORDER BY created').bind(who).all();
+  const out = []; for (const r of results) out.push({ id: r.id, name: r.name || r.id, key: await keyOpen(env, r.id, r.kept) }); return out; }
+async function ghostReward(db, env, req, p, who, k) {
   if (!p.ghost || p.test_of) return fail(400, 'not a ghost'); if (!WHO.test(who)) return fail(400, 'who');
   const o = benchOf(p.bench).o; if (!o || o[2] !== 3) return fail(409, 'not on');
   if (p.gave && p.gave !== who) return fail(409, 'given');
   if ((await settingsOf(db)).access === 'pop') return fail(403, 'presence');
   const t = now();
   await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
-  await db.batch([db.prepare("UPDATE makers SET printed = ?, via = 'ghost' WHERE who = ? AND printed IS NULL").bind(t, who), keepMade(db, who), db.prepare('UPDATE printers SET gave = ? WHERE id = ?').bind(who, p.id)]);
+  await db.batch([db.prepare("UPDATE makers SET printed = ?, via = 'ghost' WHERE who = ? AND printed IS NULL").bind(t, who), keepMade(db, who), db.prepare('UPDATE printers SET gave = ? WHERE id = ?').bind(who, p.id)]); await keptSeal(db, env, k, p.id);
   const mk = await db.prepare('SELECT via, kin FROM makers WHERE who = ?').bind(who).first(), home = await homeGive(db, env, req, who, { home: 1 });
   return json({ ok: true, who, via: mk && mk.via === 'ghost' ? 'ghost' : 'print', kin: mk ? mk.kin : null, ...(home ? { home } : {}) }, 201); }
 async function ghostAdopt(db, p, code) {
@@ -1658,12 +1669,12 @@ async function homePost(db, env, req) {
   const key = await homeKey(env, who), a = Number.isInteger(b.animal) && b.animal >= 0 && b.animal < ANIMALS ? b.animal : null;
   if (b.k != null) { if (b.k !== key) return fail(401, 'key');
     if (a != null) await db.prepare('UPDATE makers SET animal = ? WHERE who = ?').bind(a, who).run();
-    return json({ ok: true, animal: a != null ? a : mk.animal }); }
+    return json({ ok: true, animal: a != null ? a : mk.animal, isles: await islesOf(db, env, who) }); }
   await giftTable(db); const tk = 'try:' + who, t = now(), tr = await db.prepare('SELECT n, at FROM gifts WHERE k = ?').bind(tk).first(), live = tr && t - tr.at < TRIES.for;
   if (live && tr.n >= TRIES.n) return fail(423, 'locked');
   if (a == null || mk.animal == null || a !== mk.animal) { await db.prepare('INSERT INTO gifts (k, n, at) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = CASE WHEN ? - at < ? THEN n + 1 ELSE 1 END, at = CASE WHEN ? - at < ? THEN at ELSE ? END').bind(tk, t, t, TRIES.for, t, TRIES.for, t).run(); return fail(403, 'no'); }
   await db.prepare('DELETE FROM gifts WHERE k = ?').bind(tk).run(); await db.prepare('UPDATE makers SET last = ? WHERE who = ?').bind(t, who).run();
-  return json({ ok: true, home: key, animal: a }); }
+  return json({ ok: true, home: key, animal: a, isles: await islesOf(db, env, who) }); }
 /* a pass for finishing an island's intro, where the island gives them so: once for each code at each island */
 async function giftPost(db, env, req) {
   if (await tooMany(db, env, req, 'gift', 6, 60 * 60e3)) return fail(429, 'too many');

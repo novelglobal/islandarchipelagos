@@ -673,7 +673,7 @@
   function idleWatch() { if (!('IntersectionObserver' in window)) { $$('.hm-pics img[data-src]', col).forEach(function (im) { im.src = im.dataset.src; im.removeAttribute('data-src'); }); return; } if (IDLE) IDLE.disconnect(); if (WAKE) WAKE.disconnect();
     WAKE = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) return; var bx = e.target.querySelector('.hm-pics'); if (bx && bx._wake) { bx._wake.splice(0).forEach(function (f) { f(); }); } }); }, { threshold: 0.2 }); IDLE = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle('hm-idle', !e.isIntersecting); }); }, { rootMargin: '120px 0px' }); $$('.hm-card', col).forEach(function (c) { IDLE.observe(c); WAKE.observe(c); }); }
   idleWatch(); wxCard();
-  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (IH && IH.label && IH.label.on !== false) labelShow(JSON.stringify(isleLabel())); else if (j.label) labelShow(j.label); if (j.notes) noteSet(j.notes); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
+  fetch('/api/settings').then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { if (j.noteK) ethLink(j.noteK); if (IH && IH.label && IH.label.on !== false) labelShow(JSON.stringify(isleLabel())); else if (j.label && !(ENV === 'isle' && ENVI)) labelShow(j.label); if (j.notes) noteSet(j.notes); if (j.opener) introCopy(j.opener); if (j.photos) { photoLinks(j.photos); var rr = col.querySelector('.rb-refs'); if (rr) rr.outerHTML = refs(); } CARDS_TXT = j.cards || ''; if (CARDS_TXT) applyCards(CARDS_TXT); EVT = j.events || ''; $$('.sk-wx[data-id="events"]', col).forEach(function (el) { cartFace(el, 'events'); }); RS.scrap = j.buoyScrap !== false; RS.drawn = false;
     var o2 = { talk: j.smallTalk === true, find: j.smallFind === true, one: j.oneIsland !== false, stamp: j.jellyStamp === true, carts: j.cartridges === true }, re = o2.talk !== OPT.talk || o2.find !== OPT.find || o2.one !== OPT.one || o2.carts !== OPT.carts; OPT = o2; if (re) applyCards(null); }).catch(function () { /* the cards as they started */ });
 
   /* a label-maker strip: each letter pressed a little off its line */
@@ -689,7 +689,7 @@
     for (k = 0; k < 5; k++) { var b = -Math.PI / 2 + k * Math.PI * 2 / 5; d += '<circle cx="' + (50 + 38.5 * Math.cos(b)).toFixed(1) + '" cy="' + (50 + 38.5 * Math.sin(b)).toFixed(1) + '" r="2.6"/>'; }
     return '<svg class="in-seal" viewBox="0 0 100 100" aria-hidden="true"><circle class="o" cx="50" cy="50" r="47"/><circle class="o" cx="50" cy="50" r="43.5"/><circle class="o t" cx="50" cy="50" r="33"/><path class="ry" d="' + r + '"/><circle class="sn" cx="50" cy="50" r="10"/>' + d + '</svg>'; }
   function introMark() { return '<svg class="in-mk" viewBox="0 0 237 112" role="img" aria-label="novel.global"><defs><pattern id="in-dot" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.9" fill="#161514"/></pattern></defs><rect x="10" y="10" width="91.6" height="92" transform="rotate(-.34 56 56)"/><circle cx="178.3" cy="56.5" r="48.8"/></svg>'; }
-  function introHTML(c, i, g1) {
+  function introHTML(c, i, g1) { if (ENV === 'isle' && ENVI && ENVI.id !== 'novelglobal') return isleHero(c, i, g1);
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="Island Archipelagos">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
       '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>novel.global</b></p><p class="in-ln">These cards turn thermal printer e-waste into a new medium for creating and sharing stories.</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"><img alt="" src="/cards/ref-moa.jpg"></span></span></div><p class="in-pp">Printed on Blue4est® 80mm thermal paper. BPA‑free, BPS‑free, phenol‑free, recyclable and designed to remain legible for 35+ years.</p>' + introFlip('Turn over') + '</div>' +
@@ -698,6 +698,15 @@
       '<div class="in-b">' + introP().map(function (q) { return '<p>' + q + '</p>'; }).join('') + '<p class="in-ia"><a class="in-go" href="/islands" data-find="" title="Find a thermal printer near you"><span>Island Archipelagos</span><i>: Find a thermal printer</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div>' +
       '<p class="in-s"><strong>novel.global provides the operating system, software and blueprints to build your own.</strong></p>' +
       (ETH && ETH.k ? '<p class="in-eth"><a target="_blank" rel="noopener" href="/note#' + esc(ETH.k) + '">Ethics and AI disclosure</a></p>' : '') +
+      '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
+      '</article></section>'; }
+  function isleHero(c, i, g1) { var L = (IH && IH.label) || {}, nm = String(ENVI.name || ENVI.id), ti = String(L.title || '').trim(), bd = String(L.body || '').trim();
+    return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro in-isle' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="' + esc(nm) + '">' +
+      '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
+      '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>' + esc(nm) + '</b></p><p class="in-ln">' + esc(ti || 'An island with a printer.') + '</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' + introFlip('Turn over') + '</div>' +
+      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead(ti || nm) + '</h2>' +
+      '<div class="in-b">' + (bd ? bd.split(/\n\s*\n/).map(function (q) { return '<p>' + esc(q) + '</p>'; }).join('') : '<p>' + esc(nm) + ' is an island: a place with a printer.</p>') +
+      '<p class="in-ia"><a class="in-go" href="/islands" data-find="" title="Find a thermal printer near you"><span>Island Archipelagos</span><i>: Find a thermal printer</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div>' +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
       '</article></section>'; }
   /* the headline in two lines, one size: broken where it is written broken, or else at its comma; the comma and the full stop are left off */
@@ -853,7 +862,7 @@
     if (full && fv) { var pb = fv.querySelector('.lb-vp'); if (pb) pb.click(); } if (full) setTimeout(function () { try { (fv ? fv.querySelector('.lb-vp') : c).focus({ preventScroll: true }); } catch (e) { /* no focus */ } }, 60);
     /* all of it on one screen: the type steps down until nothing is cut off */
     fit(); addEventListener('resize', fit); if (D.fonts && D.fonts.ready) D.fonts.ready.then(fit); }
-  function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object') return;
+  function introCopy(txt) { var o; try { o = JSON.parse(txt); } catch (e) { return; } if (!o || typeof o !== 'object' || (ENV === 'isle' && ENVI)) return;
     $$('.sk-intro', col).forEach(function (cd) { var put = function (q, v) { var e = cd.querySelector(q); if (e && typeof v === 'string' && v.trim()) e.textContent = v.trim(); };
       (function (e, v) { if (e && typeof v === 'string' && v.trim()) e.innerHTML = introHead(v); })(cd.querySelector('.in-t'), o.head); put('.in-l', o.lede); put('.in-ia span', o.sign); put('.in-s strong', o.bar);
       if (typeof o.body === 'string' && o.body.trim()) { var b = cd.querySelector('.in-b'), ia = b && b.querySelector('.in-ia'); if (b) { $$('p:not(.in-ia)', b).forEach(function (p) { p.remove(); });
@@ -1135,6 +1144,11 @@
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
+    if (ENV === 'isle' && ENVI) { var wl = el.querySelector('.rc-wall'); if (!wl) { wl = D.createElement('div'); wl.className = 'rc-wall'; (el.querySelector('.hm-rc') || el).appendChild(wl); } el.classList.add('own-wall');
+      (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = (l || []).filter(function (x) { return x && x.src; });
+        wl.innerHTML = l.length ? '<div class="rw-g n' + Math.min(l.length, 9) + '">' + l.slice(0, 9).map(function (x) { return '<img alt="" decoding="async" src="' + esc(x.src) + '">'; }).join('') + '</div><b class="rw-n">' + l.length + '</b>' : '<p class="rw-0">Your prints show here.</p>'; }).catch(function () { wl.innerHTML = '<p class="rw-0">Your prints show here.</p>'; });
+      return; }
+    el.classList.remove('own-wall');
     var st = store.get('da.hm.stories', 'tap'), k = el.querySelector('.rc-kept'), rc = el.querySelector('.hm-rc'); k.hidden = true; rc.classList.remove('kept'); el.querySelector('.rc-code').textContent = 'DA-ISL1';
     var keep = function (u) { k.src = u; k.hidden = false; rc.classList.add('kept'); };
     if (/^data:image\//.test(st)) keep(st);
@@ -1146,7 +1160,7 @@
   }
   /* the last print, hanging from ISLAND's slot */
   function lastPrint() { var el = col.querySelector('.hm-prn:not(.in-prn) .paper'); if (!el) return; var pt = store.get('da.pt.v1', null), a = AU(), put = function (u) { if (u) el.innerHTML = '<img alt="" src="' + esc(u) + '">'; };
-    if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put((l && l[0] && l[0].src) || '/cards/portfolio.webp'); }).catch(function () { put('/cards/portfolio.webp'); }); }
+    if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put((l && l[0] && l[0].src) || (ENV === 'isle' && ENVI ? '' : '/cards/portfolio.webp')); }).catch(function () { if (!(ENV === 'isle' && ENVI)) put('/cards/portfolio.webp'); }); }
   fetch('/api/cards').then(function (r) { return r.ok ? r.json() : { cards: {} }; }).then(function (j) { CPICS = j.cards || {}; pics(); partners().then(isleCards); }).catch(function () { /* none yet */ });
 
   var byId = function (id) { return CARDS.filter(function (c) { return c.id === id; })[0]; };
@@ -1586,20 +1600,23 @@
   var cardName = function (c) { var t = SMALL_T[c.id] || c.title || c.id; return String(t).toUpperCase(); };
   function homeKeep(p) { var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); }), on = h.main || mains, ns = h.nines || ['utils', 'soon', 'dev'];
     var grid = function (k) { var cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<svg viewBox="0 0 24 24" aria-hidden="true">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var c = cs[i], off = !c || (h.off || []).indexOf(c.id) >= 0; return '<rect x="' + (3 + (i % 3) * 6.5) + '" y="' + (3 + Math.floor(i / 3) * 6.5) + '" width="5" height="5" rx=".8"' + (off ? ' fill="none" stroke="currentColor" stroke-width="1"' : '') + '/>'; }).join('') + '</svg>'; };
-    var L = h.label || {}, ln = L.links || [], o9 = HK.open && ns.indexOf(HK.open) >= 0 && HK.open !== 'dev' ? HK.open : null;
-    return '<p class="hm-h" title="Tap the big cards in the order you want them; the first one leads">HOME</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k === 0 ? '<i class="hm-first" aria-label="Main"></i>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
-      '<div class="hm-row hm-nines">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<button class="hm-btn hm-nine' + (i >= 0 ? ' on' : '') + (o9 === k ? ' open' : '') + '" data-hnine="' + k + '" aria-pressed="' + (i >= 0) + '" title="' + esc(cs.slice(0, 9).map(cardName).join(' · ')) + '">' + grid(k) + (i >= 0 ? '<b>' + (i + 1) + '</b>' : '') + '</button>'; }).join('') +
-      (h.main || h.nines || (h.off || []).length ? '<button class="hm-btn" data-hreset title="Put the cards back in the site’s order">RESET</button>' : '') + '</div>' +
+    var L = h.label || {}, ln = L.links || [], o9 = HK.open && ns.indexOf(HK.open) >= 0 ? HK.open : null, NINE_N = { utils: 'TOOLS', soon: 'SOON', dev: 'LAB' }, NINE_S = { utils: 'Tools for every day.', soon: 'Cards on their way.', dev: 'Experiments in progress.' };
+    return '<p class="hm-h">BIG CARDS</p><p class="ik-hint">Tap to show or hide. The numbers are their order.</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k >= 0 ? '<b class="hm-ord">' + (k + 1) + '</b>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
+      '<p class="hm-h">SMALL CARDS</p><p class="ik-hint">Each set of nine holds its own kind of card.</p><div class="hm-sets">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<div class="hm-set' + (i >= 0 ? ' on' : '') + '">' +
+        '<button class="hm-btn' + (i >= 0 ? ' on' : '') + '" data-hnine="' + k + '" aria-pressed="' + (i >= 0) + '">' + grid(k) + NINE_N[k] + '</button><span class="hm-sw">' + esc(NINE_S[k]) + '<i>' + esc(cs.slice(0, 9).map(cardName).join(' · ')) + '</i></span>' +
+        (i >= 0 ? '<button class="hm-btn hm-more" data-hopen="' + k + '" aria-expanded="' + (o9 === k) + '" title="Choose its cards">' + (o9 === k ? '▴' : '▾') + '</button>' : '') + '</div>'; }).join('') + '</div>' +
+      (h.main || h.nines || (h.off || []).length ? '<div class="hm-row"><button class="hm-btn" data-hreset title="Put the cards back in the site’s order">RESET</button></div>' : '') +
       (o9 ? '<div class="hm-row hm-n9">' + CARDS.filter(function (c) { return nineOf(c) === o9; }).map(function (c) { var off = (h.off || []).indexOf(c.id) >= 0; return '<button class="hm-btn' + (off ? '' : ' on') + '" data-hoff="' + c.id + '" aria-pressed="' + !off + '">' + esc(cardName(c)) + '</button>'; }).join('') + '</div>' : '') +
-      '<form class="hm-lnf" title="One line under your island’s name in the list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
-      '<p class="hm-h" title="The welcome note a first-time visitor reads">LABEL</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
+      '<p class="hm-h">LIST LINE</p><form class="hm-lnf" title="One line under your island’s name in the list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
+      '<p class="hm-h">WELCOME</p><p class="ik-hint">A note for first-time visitors.</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
       [0, 1, 2].filter(function (i) { return i <= ln.length; }).map(function (i) { var k = ln[i] || {}; return '<div class="hm-row hm-lbl"><input name="lt' + i + '" maxlength="60" autocomplete="off" placeholder="LINK" aria-label="A link’s words" value="' + esc(k.t || '') + '"><input name="lu' + i + '" type="url" maxlength="300" autocomplete="off" placeholder="https://" aria-label="Where it goes" value="' + esc(k.u || '') + '"></div>'; }).join('') +
       '<div class="hm-row"><button class="hm-btn">SAVE</button>' + (L.title || L.body ? '<label class="hm-say" title="Shown to first-time visitors"><input type="checkbox" name="on"' + (L.on !== false ? ' checked' : '') + '> ON</label>' : '') + (L.film ? '<span class="hm-say" title="A film from novel.global">FILM</span>' : '') + '<span class="hm-say" data-lbs></span></div></form>'; }
   function homeWire(box, p, post) { if (p.home === undefined) return; var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); });
     var set = function (o) { beep(550, 0.05); post({ home: o }); };
     $$('[data-hmain]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.main || mains).slice(), i = l.indexOf(b.dataset.hmain); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hmain); set({ main: l }); }); });
     $$('[data-hnine]', box).forEach(function (b) { b.addEventListener('click', function () { var k = b.dataset.hnine, l = (h.nines || ['utils', 'soon', 'dev']).slice(), i = l.indexOf(k);
-      if (i < 0) { l.push(k); HK.open = k; return set({ nines: l }); } if (HK.open !== k && k !== 'dev') { HK.open = k; return post({}); } l.splice(i, 1); HK.open = null; set({ nines: l }); }); });
+      if (i < 0) l.push(k); else { l.splice(i, 1); if (HK.open === k) HK.open = null; } set({ nines: l }); }); });
+    $$('[data-hopen]', box).forEach(function (b) { b.addEventListener('click', function () { HK.open = HK.open === b.dataset.hopen ? null : b.dataset.hopen; beep(550, 0.04); post({}); }); });
     $$('[data-hoff]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.off || []).slice(), i = l.indexOf(b.dataset.hoff); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hoff); set({ off: l }); }); });
     var rs = $('[data-hreset]', box); if (rs) rs.addEventListener('click', function () { HK.open = null; set({ main: null, nines: null, off: [] }); });
     var lf = $('.hm-lnf', box); if (lf) lf.addEventListener('submit', function (e) { e.preventDefault(); set({ line: lf.l.value.replace(/\s+/g, ' ').trim() }); });
@@ -1634,7 +1651,7 @@
   var ikNo = function () { return ''; }, ikYes = function () { return true; };
   var IKL = [
     { k: 'build', part: null, name: 'BUILD', say: 'Build your printer, part by part.',
-      show: function (p, own, isle) { return own && !isle && p.ghost && !p.testOf; }, set: function (p) { return !!p.ready; }, badge: ikNo,
+      show: function (p, own, isle) { return own && !isle && p.ghost && !p.testOf; }, set: function (p) { return !!(p.built || p.ready); }, badge: ikNo,
       pane: function () { return '<div class="hm-row"><button class="hm-btn ik-go" data-twin>SET UP</button></div>'; } },
     { k: 'name', part: 'name', name: 'NAME', say: 'Name your island.',
       show: function (p, own) { return own; }, set: function (p) { return !!p.name; }, badge: ikNo,
@@ -1680,6 +1697,7 @@
       show: function (p, own, isle) { return own && !isle && ('test' in p || !!p.testOf); }, set: function (p) { return !!(p.test || p.testOf); }, badge: ikNo,
       pane: function (p) { return testKeep(p).replace(/^<p class="hm-h"[^>]*>TEST<\/p>/, ''); } }
   ];
+  var MYCODE = function () { return store.get('da.who.ok', 0) ? store.get('da.who', '') : ''; };
   var IK_ORD = ['build', 'name', 'pics', 'home', 'passes', 'cards', 'use', 'picks', 'gang', 'links', 'gap', 'printer', 'test'];
   /* the next good thing to do on it, shown as a small sun */
   function ikNext(p, has) { var l = (p.home || {}).label || {};
@@ -1717,9 +1735,9 @@
       if (HK.at && !go.some(function (l) { return l.k === HK.at; })) HK.at = null;
       go.sort(function (a, b) { return IK_ORD.indexOf(a.k) - IK_ORD.indexOf(b.k); });
       if (!HK.at) { var f0 = go.filter(function (l) { return !l.set(p); })[0]; HK.at = (f0 || go[0] || {}).k || null; }
-      var tk = null, at = HK.at, si = go.map(function (l) { return l.k; }).indexOf(at), cur = go[si], nx = at;
+      var tk = null, at = HK.at, si = go.map(function (l) { return l.k; }).indexOf(at), cur = go[si], nx = at, nd = go.filter(function (l) { return l.set(p); }).length;
       /* this phone's own island, kept for the home's switch */
-      if (own && !isle && !p.testOf && p.id) envKeep({ id: p.id, name: p.name || p.id, home: p.home || null });
+      if (own && !isle && !p.testOf && p.id) { envKeep({ id: p.id, name: p.name || p.id, home: p.home || null }); if ((!p.ghost || p.built || p.ready) && ENV !== 'isle') envGo('isle'); }
       var mk = function (l) { var ok = has(l.part), st = ok && l.set(p), b = ok ? l.badge(p) : '';
         return '<button type="button" class="ik-m' + (l.sea ? ' sea' : '') + (ok ? '' : ' lock') + (st ? ' set' : '') + (l.k === at ? ' at' : '') + (l.k === tk ? ' tour' : '') + (ok && !tk && l.k === nx ? ' nx' : '') + ((IK_AT[l.k] || [])[2] ? ' up' : '') + '" data-ik="' + l.k + '" style="' + ikPos(l.k) + '"' +
           (ok ? ' aria-expanded="' + (l.k === at) + '"' : ' disabled') + ' aria-label="' + l.name + '" title="' + l.name + ': ' + esc(l.say) + '"><i>' + (b ? '<em>' + b + '</em>' : '') + '</i></button>'; };
@@ -1728,15 +1746,16 @@
         '<div class="ik-top">' + (has('name') ? '<button type="button" class="ik-nm" data-rn title="Rename">' + nm + '</button>' : '<b class="ik-nm">' + nm + '</b>') +
           (p.number ? '<small title="Its number">' + (+p.number) + '</small>' : '') + '<i class="ik-led" title="' + (p.ready ? 'Its printer is on' : 'Its printer is asleep') + '"></i></div>' +
         (own && p.testOf ? '<p class="ik-man">A copy to try changes on.</p>' : '') +
-        (own && !p.testOf ? '<div class="ik-keep"><p class="ik-man">' + esc(KEYSAY) + ' ' + esc(KEEPSAY) + '</p><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button></div>' : '') +
+        (own && !p.testOf ? (MYCODE() ? '<div class="ik-code"><p class="ik-man">This code helps you find your island if you get lost.</p><b>' + esc(MYCODE()) + '</b></div>' : '<p class="ik-man">Finish BUILD to get your code.</p>') : '') +
         '<div class="ik-map' + (p.ghost || p.testOf ? ' gh' : '') + (p.ready ? ' up' : '') + '"><svg class="isle-h" role="img" aria-label="' + nm + '"></svg>' + L.filter(function (l) { return IK_AT[l.k]; }).map(mk).join('') + '</div>' +
-        (cur ? '<section class="ik-step" data-pane="' + cur.k + '" aria-label="Step ' + (si + 1) + ' of ' + go.length + '"><p class="ik-sn">STEP ' + (si + 1) + ' OF ' + go.length + (cur.set(p) ? '<i>DONE</i>' : '') + '</p>' +
-          '<h3 class="ik-st">' + cur.name + '</h3><p class="ik-ss">' + esc(cur.say) + '</p><div class="ik-pane">' + cur.pane(p, own, isle) + '</div>' +
-          '<div class="ik-nav"><button type="button" class="ik-bk" data-ikb' + (si > 0 ? '' : ' disabled') + '>BACK</button>' +
-          '<button type="button" class="ik-nx" data-ikn>' + (si < go.length - 1 ? 'NEXT' : 'DONE') + '</button></div>' +
-          '<ol class="ik-steps" aria-label="All steps">' + go.map(function (l, i) { var ok = l.set(p);
-            return '<li><button type="button" data-ikj="' + i + '" class="' + (i === si ? 'on' : '') + (ok ? ' ok' : '') + '"' + (i === si ? ' aria-current="step"' : '') + ' title="' + (ok ? 'Done: tap to change' : 'To do') + '"><b>' + (i + 1) + '</b>' + l.name + (ok ? '<i aria-label="done">✓</i>' : '') + '</button></li>'; }).join('') + '</ol></section>' : '') +
-        (own && !p.testOf ? '<p class="ik-ft"><button type="button" data-out title="Remove this island from this phone">FORGET</button></p>' : '') + '</div>';
+        (cur ? '<section class="ik-step' + (nd === go.length ? ' all' : '') + '" data-pane="' + cur.k + '">' +
+          (nd === go.length ? '<p class="ik-all">All set. Your island is ready.' + (own && !p.testOf ? ' <button type="button" class="ik-dl" data-envgo>SEE IT</button>' : '') + '</p>' : '') +
+          '<div class="ik-prog"><p class="ik-sn">' + nd + ' OF ' + go.length + ' DONE</p><ol aria-label="Steps">' + go.map(function (l, i) { var ok = l.set(p);
+            return '<li><button type="button" data-ikj="' + i + '" class="' + (i === si ? 'on' : '') + (ok ? ' ok' : '') + '"' + (i === si ? ' aria-current="step"' : '') + ' aria-label="' + (i + 1) + ' ' + l.name + (ok ? ', done' : '') + '" title="' + l.name + (ok ? ' ✓' : '') + '"></button></li>'; }).join('') + '</ol></div>' +
+          '<h3 class="ik-st">' + cur.name + (cur.set(p) ? '<i title="Done">✓</i>' : '') + '</h3><p class="ik-ss">' + esc(cur.say) + '</p><div class="ik-pane">' + cur.pane(p, own, isle) + '</div>' +
+          '<div class="ik-nav"><button type="button" class="ik-bk" data-ikb' + (si > 0 ? '>← ' + go[si - 1].name : ' disabled>←') + '</button>' +
+          '<button type="button" class="ik-nx" data-ikn>' + (si < go.length - 1 ? go[si + 1].name + ' →' : 'DONE') + '</button></div></section>' : '') +
+        (own && !p.testOf ? '<details class="ik-eng"><summary>ENGINE</summary><p>The island’s own key, under your code. You never need it; it is here for reference.</p><code>' + esc(key) + '</code><div class="ik-engr"><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button><button type="button" class="ik-dl" data-out title="Remove this island from this phone">FORGET</button></div></details>' : '') + '</div>';
       needIsle(function () { var sv = $('.isle-h', box); if (!sv || !sv.isConnected) return; var sh = {}; L.forEach(function (l) { sh[l.k] = has(l.part); });
         var lab = (p.home || {}).label || {}, j0 = p.joins || {};
         window.ISLE.home(sv, { seed: Math.floor(ikSeed(p.id || p.name)() * 40), show: sh, links: (p.all || []).map(function (k) { return (p.links || []).indexOf(k) >= 0; }),
@@ -1746,7 +1765,8 @@
       var step = function (i) { if (i < 0 || i >= go.length) return; HK.at = go[i].k; beep(660, 0.04); fill(p); var st = $('.ik-step', box); if (st && st.scrollIntoView) st.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
       $$('[data-ik]', box).forEach(function (b) { b.addEventListener('click', function () { step(go.map(function (l) { return l.k; }).indexOf(b.dataset.ik)); }); });
       var bk = $('[data-ikb]', box); if (bk) bk.addEventListener('click', function () { step(si - 1); });
-      var tn = $('[data-ikn]', box); if (tn) tn.addEventListener('click', function () { if (si < go.length - 1) return step(si + 1); var f1 = go.filter(function (l) { return !l.set(p); })[0]; step(f1 ? go.indexOf(f1) : 0); });
+      var tn = $('[data-ikn]', box); if (tn) tn.addEventListener('click', function () { if (si < go.length - 1) return step(si + 1); var f1 = go.filter(function (l) { return !l.set(p); })[0]; if (f1) return step(go.indexOf(f1)); if (own && !p.testOf) { envGo('isle'); var ai = $('.ik-all', box); if (ai && ai.scrollIntoView) ai.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } else step(0); });
+      var eg = $('[data-envgo]', box); if (eg) eg.addEventListener('click', function () { beep(660, 0.05); envGo('isle'); scrollTo({ top: 0, behavior: 'smooth' }); });
       $$('[data-ikj]', box).forEach(function (b) { b.addEventListener('click', function () { step(+b.dataset.ikj); }); });
       var nmf = $('.ik-nmf', box); if (nmf) nmf.addEventListener('submit', function (e) { e.preventDefault(); var v = $('input', nmf).value.trim(); if (!v) return; beep(660, 0.05); call({ method: 'POST', body: JSON.stringify({ name: v }) }).then(fill); });
       $$('[data-pack]', box).forEach(function (b) { b.addEventListener('click', function () { post({ pack: b.dataset.pack }); beep(550, 0.05); }); });
@@ -2015,6 +2035,7 @@
     var SEC = store.get('da.hm.secs', null) || { code: 1 }, SHOWA = false, PICKA = false, PRINTS = null, ISLE = null, A = (window.NG && NG.animals) || [];
     if (KEEPGO) { KEEPGO = false; SEC = {}; }
     var who, ok, via, pl, ps, hk, an, mods, ikey; needArt();
+    if (window.NG && NG.islesFind) NG.islesFind().then(function (got) { if (got && body.isConnected) draw(); });
     var load = function () { who = store.get('da.who', ''); ok = !!store.get('da.who.ok', 0); via = store.get('da.who.via', ''); pl = store.get('da.who.places', null) || []; ps = store.get('da.pass', null); if (ps && (ps.day !== cartDay() || !ps.code)) ps = null;
       hk = store.get('da.who.home', ''); an = window.NG && NG.animalOf ? NG.animalOf() : null; mods = store.get('da.who.mods', null) || []; ikey = store.get('da.hm.key', ''); };
     var rows = function () { var h = MINE && MINE.hide; if (h) MINE.hide = null; var l = view().map(function (x) { return x[0]; }).filter(function (c) { return !c.ph; }); if (h) MINE.hide = h; return l; };
