@@ -95,15 +95,21 @@
      cards, and its label. Kept with the pick, and fresh from the islands each visit */
   /* two homes on one phone: novel.global as everyone sees it, and your island's own (yours by its key, else the one you picked on the islands
      page). The switch in the top bar swaps them; each keeps its own layout */
-  var ENVI = store.get('da.hm.isle', null) || (PLACE && PLACE.pick && PLACE.isle && PLACE.isle !== 'novelglobal' ? { id: PLACE.isle, name: PLACE.name, home: PLACE.ihome || null } : null);
+  var ENVI = store.get('da.hm.visit', null) || store.get('da.hm.isle', null) || (PLACE && PLACE.pick && PLACE.isle && PLACE.isle !== 'novelglobal' ? { id: PLACE.isle, name: PLACE.name, home: PLACE.ihome || null } : null);
   var ENV = ENVI ? store.get('da.hm.env', PLACE && PLACE.pick && PLACE.isle === ENVI.id ? 'isle' : 'ng') : 'ng';
   function mineKey() { return ENV === 'isle' && ENVI ? 'da.hm.mine.' + ENVI.id : 'da.hm.mine'; }
   var MINE = store.get(mineKey(), null);
   var IH = ENV === 'isle' && ENVI ? ENVI.home || null : null;
+  function envAt(id) { var g = D.getElementById('hm-env'); if (g) g.classList.toggle('away', id !== 'intro'); }
+  /* a link to an island (?visit=its id): that island's home on this phone, novel.global a tap away; a ghost only while its keeper shares it */
+  (function () { var m = /[?&]visit=([a-z0-9-]{1,40})\b/.exec(location.search); if (!m) return; try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* kept */ }
+    fetch('/api/visit/' + m[1]).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (!j || !j.id) { if (window.NG && NG.toast) NG.toast('THAT ISLAND IS NOT SHARED'); return; }
+      var o = { id: j.id, name: j.name, home: j.home || null, pics: j.pics || [], visit: 1 }; store.set('da.hm.visit', o); ENVI = o; envGo('isle'); }).catch(function () { /* offline */ }); })();
   function envDraw() { var g = D.getElementById('hm-env'); if (!g) return; g.hidden = !ENVI; if (!ENVI) return; var b = g.querySelectorAll('button');
     b[1].textContent = String(ENVI.name || ENVI.id).toUpperCase(); b[0].setAttribute('aria-pressed', String(ENV !== 'isle')); b[1].setAttribute('aria-pressed', String(ENV === 'isle')); }
   function envGo(e) { ENV = e === 'isle' && ENVI ? 'isle' : 'ng'; store.set('da.hm.env', ENV); MINE = store.get(mineKey(), null); IH = ENV === 'isle' ? ENVI.home || null : null; applyCards(null); envDraw(); }
-  function envKeep(o) { if (!o) { store.set('da.hm.isle', null); ENVI = null; if (ENV === 'isle') envGo('ng'); envDraw(); return; }
+  function envKeep(o) { if (!o) { store.set('da.hm.isle', null); ENVI = store.get('da.hm.visit', null); if (ENV === 'isle' && !ENVI) envGo('ng'); envDraw(); return; }
+    if (store.get('da.hm.visit', null)) store.set('da.hm.visit', null);
     var was = JSON.stringify(ENVI); ENVI = o; store.set('da.hm.isle', o); envDraw(); if (was !== JSON.stringify(o) && ENV === 'isle') { IH = o.home || null; applyCards(null); } }
   var NINE_G = { utils: ['week', 'read', 'deck'], soon: ['soon'], dev: ['dev'] }, MAINS = ['radio', 'wish', 'research', 'zine', 'kit', 'space', 'portfolio'];
   function nineOf(c) { for (var k in NINE_G) if (NINE_G[k].indexOf(c.g) >= 0) return k; return null; }
@@ -700,11 +706,12 @@
       (ETH && ETH.k ? '<p class="in-eth"><a target="_blank" rel="noopener" href="/note#' + esc(ETH.k) + '">Ethics and AI disclosure</a></p>' : '') +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
       '</article></section>'; }
-  function isleHero(c, i, g1) { var L = (IH && IH.label) || {}, nm = String(ENVI.name || ENVI.id), ti = String(L.title || '').trim(), bd = String(L.body || '').trim();
+  function isleHero(c, i, g1) { var L = (IH && IH.label) || {}, Hh = (IH && IH.hero) || {}, nm = String(ENVI.name || ENVI.id), ti = String(Hh.title || L.title || '').trim(), bd = String(Hh.body || L.body || '').trim(),
+      pu = Hh.pic != null ? ((ENVI.pics || []).filter(function (x) { return x.slot === Hh.pic; })[0] || {}).url : '';
     return '<section class="hm-slot su-intro"><div class="hm-sur" aria-hidden="true"></div><article class="hm-card ' + sizeOf(c) + ' shadow sk-intro in-isle' + (g1 ? ' g1' : '') + '" data-id="intro" data-i="' + i + '" aria-label="' + esc(nm) + '">' +
       '<div class="hm-art"><div class="hm-l b"><canvas></canvas></div><div class="hm-l m"><canvas></canvas></div><div class="hm-l t"><canvas></canvas></div></div>' +
-      '<div class="in-front"><div class="in-top"><p class="in-nm">' + MARK + '<b>' + esc(nm) + '</b></p><p class="in-ln">' + esc(ti || 'An island with a printer.') + '</p></div><div class="hm-prn in-prn" aria-hidden="true"><div class="ph"></div><i class="led l-pwr"></i><i class="led l-act"></i><i class="led l-prn"></i><span class="slot"><span class="paper"></span></span></div>' + introFlip('Turn over') + '</div>' +
-      '<div class="in-f"><div class="in-hd">' + introMark() + '</div><h2 class="in-t">' + introHead(ti || nm) + '</h2>' +
+      '<div class="in-front"><div class="in-top"><p class="in-nm"><b>' + esc(nm) + '</b></p><p class="in-ln">' + esc(ti || 'An island with a printer.') + '</p></div>' + (pu ? '<figure class="in-ph"><img alt="" decoding="async" src="' + esc(pu) + '"></figure>' : '') + introFlip('Turn over') + '</div>' +
+      '<div class="in-f"><h2 class="in-t">' + introHead(ti || nm) + '</h2>' +
       '<div class="in-b">' + (bd ? bd.split(/\n\s*\n/).map(function (q) { return '<p>' + esc(q) + '</p>'; }).join('') : '<p>' + esc(nm) + ' is an island: a place with a printer.</p>') +
       '<p class="in-ia"><a class="in-go" href="/islands" data-find="" title="Find a thermal printer near you"><span>Island Archipelagos</span><i>: Find a thermal printer</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div>' +
       '<div class="in-ft"><canvas class="in-arc" aria-hidden="true"></canvas></div>' + introFlip('Turn back') + '</div>' +
@@ -731,7 +738,7 @@
   /* the opener's words from admin (HOME, OPENER): headline, lede, paragraphs (a blank line between), signature, closing line; an empty field keeps its own */
   /* the link to the private page, where novel.global chose to show it: under the closing line, above the map */
   var ETH = { k: '' };
-  function ethLink(k) { if (!/^[a-z0-9]{12,40}$/.test(k || '')) return; ETH.k = k; $$('.sk-intro .in-f', col).forEach(function (f) { var p = f.querySelector('.in-eth'), ft = f.querySelector('.in-ft'); if (!p) { p = D.createElement('p'); p.className = 'in-eth'; var a = D.createElement('a'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ethics and AI disclosure'; p.appendChild(a); f.insertBefore(p, ft); } p.querySelector('a').href = '/note#' + k; }); requestAnimationFrame(introFit); }
+  function ethLink(k) { if (!/^[a-z0-9]{12,40}$/.test(k || '')) return; ETH.k = k; $$('.sk-intro:not(.in-isle) .in-f', col).forEach(function (f) { var p = f.querySelector('.in-eth'), ft = f.querySelector('.in-ft'); if (!p) { p = D.createElement('p'); p.className = 'in-eth'; var a = D.createElement('a'); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ethics and AI disclosure'; p.appendChild(a); f.insertBefore(p, ft); } p.querySelector('a').href = '/note#' + k; }); requestAnimationFrame(introFit); }
   /* THE LABEL: what a first visit meets, set like the label beside a work in a gallery, a film under it. Every word of it comes from the approval
      page (LABEL). It is a part of this page, never a new window, so nothing can block it. It goes when it has been read: a long press or a
      double tap on it. Shown once each visit until the visitor says never again */
@@ -749,7 +756,7 @@
   function noteWait(hv) { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(function () { noteShow(hv); }, hv ? 600 : 900); }
   /* each note once a visit as its page arrives; on a desk, with three cards to a page, the card the pointer rests on shows its own */
   var NT_SEEN = {};
-  function noteShow(hv) { var id = hv ? NT.hov : CUR, k = noteKey(id), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '';
+  function noteShow(hv) { if (ENV === 'isle' && ENVI) return; var id = hv ? NT.hov : CUR, k = noteKey(id), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '';
     if (!t || (!hv && NT_SEEN[k]) || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
     NT_SEEN[k] = 1; NT.hv = !!hv;
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
@@ -1144,9 +1151,9 @@
   /* PORTFOLIO: the last print kept on this phone, its code, how many; a QR to the portfolio */
   function receipt() {
     var el = col.querySelector('[data-id="portfolio"]'); if (!el) return; var a = AU();
-    if (ENV === 'isle' && ENVI) { var wl = el.querySelector('.rc-wall'); if (!wl) { wl = D.createElement('div'); wl.className = 'rc-wall'; (el.querySelector('.hm-rc') || el).appendChild(wl); } el.classList.add('own-wall');
+    { var wl = el.querySelector('.rc-wall'); if (!wl) { wl = D.createElement('div'); wl.className = 'rc-wall'; (el.querySelector('.hm-rc') || el).appendChild(wl); } el.classList.add('own-wall');
       (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { l = (l || []).filter(function (x) { return x && x.src; });
-        wl.innerHTML = l.length ? '<div class="rw-g n' + Math.min(l.length, 9) + '">' + l.slice(0, 9).map(function (x) { return '<img alt="" decoding="async" src="' + esc(x.src) + '">'; }).join('') + '</div><b class="rw-n">' + l.length + '</b>' : '<p class="rw-0">Your prints show here.</p>'; }).catch(function () { wl.innerHTML = '<p class="rw-0">Your prints show here.</p>'; });
+        wl.innerHTML = l.length ? '<div class="rw-g n' + Math.min(l.length, 9) + '">' + l.slice(0, 9).map(function (x) { return '<img alt="" decoding="async" src="' + esc(x.src) + '">'; }).join('') + '</div><b class="rw-n">' + l.length + '</b>' : '<p class="rw-0">Created art is shown here.</p>'; }).catch(function () { wl.innerHTML = '<p class="rw-0">Created art is shown here.</p>'; });
       return; }
     el.classList.remove('own-wall');
     var st = store.get('da.hm.stories', 'tap'), k = el.querySelector('.rc-kept'), rc = el.querySelector('.hm-rc'); k.hidden = true; rc.classList.remove('kept'); el.querySelector('.rc-code').textContent = 'DA-ISL1';
@@ -1160,7 +1167,7 @@
   }
   /* the last print, hanging from ISLAND's slot */
   function lastPrint() { var el = col.querySelector('.hm-prn:not(.in-prn) .paper'); if (!el) return; var pt = store.get('da.pt.v1', null), a = AU(), put = function (u) { if (u) el.innerHTML = '<img alt="" src="' + esc(u) + '">'; };
-    if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put((l && l[0] && l[0].src) || (ENV === 'isle' && ENVI ? '' : '/cards/portfolio.webp')); }).catch(function () { if (!(ENV === 'isle' && ENVI)) put('/cards/portfolio.webp'); }); }
+    if (pt && pt.img) put(pt.img); else (a && a.folio ? a.folio() : Promise.resolve([])).then(function (l) { put(l && l[0] && l[0].src); }).catch(function () { /* nothing made yet */ }); }
   fetch('/api/cards').then(function (r) { return r.ok ? r.json() : { cards: {} }; }).then(function (j) { CPICS = j.cards || {}; pics(); partners().then(isleCards); }).catch(function () { /* none yet */ });
 
   var byId = function (id) { return CARDS.filter(function (c) { return c.id === id; })[0]; };
@@ -1177,7 +1184,7 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
-    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); } lbmAt(n);
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); envAt(nc); } lbmAt(n);
     if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || nr.bottom < vh * 0.4 || nr.top > vh * 0.6) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
@@ -1601,12 +1608,15 @@
   function homeKeep(p) { var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); }), on = h.main || mains, ns = h.nines || ['utils', 'soon', 'dev'];
     var grid = function (k) { var cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<svg viewBox="0 0 24 24" aria-hidden="true">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var c = cs[i], off = !c || (h.off || []).indexOf(c.id) >= 0; return '<rect x="' + (3 + (i % 3) * 6.5) + '" y="' + (3 + Math.floor(i / 3) * 6.5) + '" width="5" height="5" rx=".8"' + (off ? ' fill="none" stroke="currentColor" stroke-width="1"' : '') + '/>'; }).join('') + '</svg>'; };
     var L = h.label || {}, ln = L.links || [], o9 = HK.open && ns.indexOf(HK.open) >= 0 ? HK.open : null, NINE_N = { utils: 'TOOLS', soon: 'SOON', dev: 'LAB' }, NINE_S = { utils: 'Tools for every day.', soon: 'Cards on their way.', dev: 'Experiments in progress.' };
-    return '<p class="hm-h">BIG CARDS</p><p class="ik-hint">Tap to show or hide. The numbers are their order.</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k >= 0 ? '<b class="hm-ord">' + (k + 1) + '</b>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
-      '<p class="hm-h">SMALL CARDS</p><p class="ik-hint">Each set of nine holds its own kind of card.</p><div class="hm-sets">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<div class="hm-set' + (i >= 0 ? ' on' : '') + '">' +
+    var Hh = h.hero || {}, ps = p.pics || [];
+    return '<p class="hm-h">FRONT CARD</p><p class="ik-hint">The first card people see on your island.</p><form class="hm-hrf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(Hh.title || '') + '"><textarea name="b" maxlength="800" rows="3" placeholder="WORDS" aria-label="Its words">' + esc(Hh.body || '') + '</textarea>' +
+      '<div class="hm-hpics" role="radiogroup" aria-label="Its photo"><label><input type="radio" name="pic" value=""' + (Hh.pic == null ? ' checked' : '') + '><span>NO PHOTO</span></label>' + ps.map(function (x) { return '<label><input type="radio" name="pic" value="' + x.slot + '"' + (Hh.pic === x.slot ? ' checked' : '') + '><img alt="Photo ' + (x.slot + 1) + '" src="' + esc(x.url) + '"></label>'; }).join('') + '</div>' +
+      (ps.length ? '' : '<p class="ik-hint">Add photos in PICTURES to use one here.</p>') + '<div class="hm-row"><button class="hm-btn">SAVE</button></div></form>' +
+      '<p class="hm-h">BIG CARDS</p><p class="ik-hint">Tap to show or hide. The numbers are their order.</p><div class="hm-row hm-mains">' + mains.map(function (id) { var k = on.indexOf(id); return '<button class="hm-btn' + (k >= 0 ? ' on' : '') + '" data-hmain="' + id + '" aria-pressed="' + (k >= 0) + '">' + (k >= 0 ? '<b class="hm-ord">' + (k + 1) + '</b>' : '') + esc(cardName(byId(id))) + '</button>'; }).join('') + '</div>' +
+      '<p class="hm-h">SMALL CARDS</p><p class="ik-hint">Each set of nine holds its own kind of card. Tap a card to show or hide it.</p><div class="hm-sets">' + ['utils', 'soon', 'dev'].map(function (k) { var i = ns.indexOf(k), cs = CARDS.filter(function (c) { return nineOf(c) === k; }); return '<div class="hm-set' + (i >= 0 ? ' on' : '') + '">' +
         '<button class="hm-btn' + (i >= 0 ? ' on' : '') + '" data-hnine="' + k + '" aria-pressed="' + (i >= 0) + '">' + grid(k) + NINE_N[k] + '</button><span class="hm-sw">' + esc(NINE_S[k]) + '<i>' + esc(cs.slice(0, 9).map(cardName).join(' · ')) + '</i></span>' +
-        (i >= 0 ? '<button class="hm-btn hm-more" data-hopen="' + k + '" aria-expanded="' + (o9 === k) + '" title="Choose its cards">' + (o9 === k ? '▴' : '▾') + '</button>' : '') + '</div>'; }).join('') + '</div>' +
+        '</div>' + (i >= 0 ? '<div class="hm-row hm-n9" aria-label="Its cards">' + cs.map(function (c) { var off = (h.off || []).indexOf(c.id) >= 0; return '<button class="hm-btn' + (off ? '' : ' on') + '" data-hoff="' + c.id + '" aria-pressed="' + !off + '">' + esc(cardName(c)) + '</button>'; }).join('') + '</div>' : ''); }).join('') + '</div>' +
       (h.main || h.nines || (h.off || []).length ? '<div class="hm-row"><button class="hm-btn" data-hreset title="Put the cards back in the site’s order">RESET</button></div>' : '') +
-      (o9 ? '<div class="hm-row hm-n9">' + CARDS.filter(function (c) { return nineOf(c) === o9; }).map(function (c) { var off = (h.off || []).indexOf(c.id) >= 0; return '<button class="hm-btn' + (off ? '' : ' on') + '" data-hoff="' + c.id + '" aria-pressed="' + !off + '">' + esc(cardName(c)) + '</button>'; }).join('') + '</div>' : '') +
       '<p class="hm-h">LIST LINE</p><form class="hm-lnf" title="One line under your island’s name in the list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
       '<p class="hm-h">WELCOME</p><p class="ik-hint">A note for first-time visitors.</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
       [0, 1, 2].filter(function (i) { return i <= ln.length; }).map(function (i) { var k = ln[i] || {}; return '<div class="hm-row hm-lbl"><input name="lt' + i + '" maxlength="60" autocomplete="off" placeholder="LINK" aria-label="A link’s words" value="' + esc(k.t || '') + '"><input name="lu' + i + '" type="url" maxlength="300" autocomplete="off" placeholder="https://" aria-label="Where it goes" value="' + esc(k.u || '') + '"></div>'; }).join('') +
@@ -1619,6 +1629,7 @@
     $$('[data-hopen]', box).forEach(function (b) { b.addEventListener('click', function () { HK.open = HK.open === b.dataset.hopen ? null : b.dataset.hopen; beep(550, 0.04); post({}); }); });
     $$('[data-hoff]', box).forEach(function (b) { b.addEventListener('click', function () { var l = (h.off || []).slice(), i = l.indexOf(b.dataset.hoff); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.hoff); set({ off: l }); }); });
     var rs = $('[data-hreset]', box); if (rs) rs.addEventListener('click', function () { HK.open = null; set({ main: null, nines: null, off: [] }); });
+    var hf = $('.hm-hrf', box); if (hf) hf.addEventListener('submit', function (e) { e.preventDefault(); var pk = hf.querySelector('input[name="pic"]:checked'); set({ hero: { title: hf.t.value.trim(), body: hf.b.value.trim(), pic: pk && pk.value !== '' ? +pk.value : null } }); });
     var lf = $('.hm-lnf', box); if (lf) lf.addEventListener('submit', function (e) { e.preventDefault(); set({ line: lf.l.value.replace(/\s+/g, ' ').trim() }); });
     var f = $('.hm-lbf', box); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); var links = [0, 1, 2].filter(function (i) { return f['lt' + i]; }).map(function (i) { return { t: f['lt' + i].value.trim(), u: f['lu' + i].value.trim() }; }).filter(function (k) { return k.t && /^https:\/\//.test(k.u); });
       $('[data-lbs]', f).textContent = '· · ·'; post({ home: { label: { on: f.on ? f.on.checked : true, title: f.t.value.trim(), body: f.b.value.trim(), links: links } } }); }); }
@@ -1737,7 +1748,7 @@
       if (!HK.at) { var f0 = go.filter(function (l) { return !l.set(p); })[0]; HK.at = (f0 || go[0] || {}).k || null; }
       var tk = null, at = HK.at, si = go.map(function (l) { return l.k; }).indexOf(at), cur = go[si], nx = at, nd = go.filter(function (l) { return l.set(p); }).length;
       /* this phone's own island, kept for the home's switch */
-      if (own && !isle && !p.testOf && p.id) { envKeep({ id: p.id, name: p.name || p.id, home: p.home || null }); if ((!p.ghost || p.built || p.ready) && ENV !== 'isle') envGo('isle'); }
+      if (own && !isle && !p.testOf && p.id) { envKeep({ id: p.id, name: p.name || p.id, home: p.home || null, pics: p.pics || [] }); if ((!p.ghost || p.built || p.ready) && ENV !== 'isle') envGo('isle'); }
       var mk = function (l) { var ok = has(l.part), st = ok && l.set(p), b = ok ? l.badge(p) : '';
         return '<button type="button" class="ik-m' + (l.sea ? ' sea' : '') + (ok ? '' : ' lock') + (st ? ' set' : '') + (l.k === at ? ' at' : '') + (l.k === tk ? ' tour' : '') + (ok && !tk && l.k === nx ? ' nx' : '') + ((IK_AT[l.k] || [])[2] ? ' up' : '') + '" data-ik="' + l.k + '" style="' + ikPos(l.k) + '"' +
           (ok ? ' aria-expanded="' + (l.k === at) + '"' : ' disabled') + ' aria-label="' + l.name + '" title="' + l.name + ': ' + esc(l.say) + '"><i>' + (b ? '<em>' + b + '</em>' : '') + '</i></button>'; };
@@ -1755,6 +1766,8 @@
           '<h3 class="ik-st">' + cur.name + (cur.set(p) ? '<i title="Done">✓</i>' : '') + '</h3><p class="ik-ss">' + esc(cur.say) + '</p><div class="ik-pane">' + cur.pane(p, own, isle) + '</div>' +
           '<div class="ik-nav"><button type="button" class="ik-bk" data-ikb' + (si > 0 ? '>← ' + go[si - 1].name : ' disabled>←') + '</button>' +
           '<button type="button" class="ik-nx" data-ikn>' + (si < go.length - 1 ? go[si + 1].name + ' →' : 'DONE') + '</button></div></section>' : '') +
+        (own && !p.testOf && p.home !== undefined ? '<div class="ik-share">' + ((p.home || {}).share ? '<p class="ik-man">Anyone with this link can visit your island. Your code stays private. To run it with others, add their codes in GANG.</p><div class="ik-shr"><input readonly value="' + esc(location.origin + '/?visit=' + p.id) + '" aria-label="Share link"><button type="button" class="ik-dl" data-shcopy>COPY</button><button type="button" class="ik-dl" data-shoff>STOP</button></div>'
+          : '<p class="ik-man">Share a link so people can visit your island. Your code stays private.</p><button type="button" class="ik-dl" data-shon>SHARE</button>') + '</div>' : '') +
         (own && !p.testOf ? '<details class="ik-eng"><summary>ENGINE</summary><p>The island’s own key, under your code. You never need it; it is here for reference.</p><code>' + esc(key) + '</code><div class="ik-engr"><button type="button" class="ik-dl" data-keepk>DOWNLOAD</button><button type="button" class="ik-dl" data-out title="Remove this island from this phone">FORGET</button></div></details>' : '') + '</div>';
       needIsle(function () { var sv = $('.isle-h', box); if (!sv || !sv.isConnected) return; var sh = {}; L.forEach(function (l) { sh[l.k] = has(l.part); });
         var lab = (p.home || {}).label || {}, j0 = p.joins || {};
@@ -1766,6 +1779,10 @@
       $$('[data-ik]', box).forEach(function (b) { b.addEventListener('click', function () { step(go.map(function (l) { return l.k; }).indexOf(b.dataset.ik)); }); });
       var bk = $('[data-ikb]', box); if (bk) bk.addEventListener('click', function () { step(si - 1); });
       var tn = $('[data-ikn]', box); if (tn) tn.addEventListener('click', function () { if (si < go.length - 1) return step(si + 1); var f1 = go.filter(function (l) { return !l.set(p); })[0]; if (f1) return step(go.indexOf(f1)); if (own && !p.testOf) { envGo('isle'); var ai = $('.ik-all', box); if (ai && ai.scrollIntoView) ai.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } else step(0); });
+      var so = $('[data-shon]', box), sf = $('[data-shoff]', box), sc = $('[data-shcopy]', box);
+      if (so) so.addEventListener('click', function () { beep(660, 0.05); post({ home: { share: true } }); });
+      if (sf) sf.addEventListener('click', function () { beep(440, 0.05); post({ home: { share: false } }); });
+      if (sc) sc.addEventListener('click', function () { var u = sc.parentNode.querySelector('input').value; (navigator.share ? navigator.share({ url: u }) : navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { sc.textContent = 'DONE'; }, function () { var i = sc.parentNode.querySelector('input'); i.select(); }); });
       var eg = $('[data-envgo]', box); if (eg) eg.addEventListener('click', function () { beep(660, 0.05); envGo('isle'); scrollTo({ top: 0, behavior: 'smooth' }); });
       $$('[data-ikj]', box).forEach(function (b) { b.addEventListener('click', function () { step(+b.dataset.ikj); }); });
       var nmf = $('.ik-nmf', box); if (nmf) nmf.addEventListener('submit', function (e) { e.preventDefault(); var v = $('input', nmf).value.trim(); if (!v) return; beep(660, 0.05); call({ method: 'POST', body: JSON.stringify({ name: v }) }).then(fill); });

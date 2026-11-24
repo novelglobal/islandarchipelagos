@@ -1880,8 +1880,8 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 .hm-nine { min-width: 52px; padding: 0 10px; } .hm-nine svg { width: 22px; height: 22px; fill: currentColor; } .hm-nine b { font: 600 10px/1 'IBM Plex Mono', ui-monospace, monospace; }
 .hm-nine:not(.on) { opacity: .5; } .hm-nine.open { outline: 2px solid #E25C40; outline-offset: 2px; }
 .hm-lbf { display: grid; gap: 6px; margin-bottom: 6px; }
-.hm-lbf input:not([type=checkbox]), .hm-lbf textarea { width: 100%; min-width: 0; min-height: 36px; padding: 7px 11px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: var(--hm-ink); font: 500 16px/1.35 'IBM Plex Mono', ui-monospace, monospace; }
-.hm-lbf textarea { resize: vertical; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.hm-lbf input:not([type=checkbox]), .hm-lbf textarea, .hm-hrf input:not([type=radio]), .hm-hrf textarea { width: 100%; min-width: 0; min-height: 36px; padding: 7px 11px; border: 1px solid var(--hm-line); border-radius: 6px; background: none; color: var(--hm-ink); font: 500 16px/1.35 'IBM Plex Mono', ui-monospace, monospace; }
+.hm-lbf textarea, .hm-hrf textarea { resize: vertical; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 .hm-lbl { display: grid !important; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 6px; }
 .hm-lbf label.hm-say { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
 /* TEST: before and after a MOVE, side by side */
@@ -1963,6 +1963,16 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .ik-tour .ik-nx { background: var(--hm-bg); color: var(--hm-ink); }
 #hm .ik-pane { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ik-acc); animation: ik-in .22s ease-out; }
 /* the island, set up a step at a time */
+#hm-top nav #hm-env.away { display: none; } html.hm-sheet #hm-top nav #hm-env { display: none; }
+#hm .sk-intro.in-isle .hm-art { display: none; }
+#hm .sk-intro.in-isle .in-ph { margin: 14px 0 0; flex: 1; min-height: 0; display: grid; place-items: center; } #hm .sk-intro.in-isle .in-ph img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+#hm .hm-hrf { display: grid; gap: 8px; margin: 0 0 14px; }
+#hm .hm-hpics { display: flex; flex-wrap: wrap; gap: 6px; } #hm .hm-hpics label { position: relative; cursor: pointer; } #hm .hm-hpics input { position: absolute; opacity: 0; }
+#hm .hm-hpics img, #hm .hm-hpics span { display: grid; place-items: center; height: 44px; min-width: 44px; max-width: 90px; object-fit: contain; border-radius: 4px; outline: 1px solid var(--hm-line); font: 600 9px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .1em; padding: 0 6px; box-sizing: border-box; }
+#hm .hm-hpics img { padding: 0; background: var(--hm-line); } #hm .hm-hpics input:checked + * { outline: 2px solid var(--hm-ink); outline-offset: 2px; }
+#hm .ik-share { margin: 14px 0 0; display: grid; gap: 8px; justify-items: start; } #hm .ik-shr { display: flex; gap: 6px; width: 100%; }
+#hm .ik-shr input { flex: 1; min-width: 0; min-height: 36px; padding: 0 10px; border: 1px solid var(--hm-line); border-radius: 18px; background: none; color: var(--hm-ink); font: 400 11px/1 'IBM Plex Mono', ui-monospace, monospace; }
+#hm .hm-sets > * { min-width: 0; } #hm .hm-n9 { margin: -2px 0 8px 102px; gap: 6px; } #hm .hm-set.on .hm-sw i { display: none; } @media (max-width: 420px) { #hm .hm-n9 { margin-left: 0; } }
 #hm .hm-sets { display: grid; gap: 6px; margin: 0 0 12px; } #hm .hm-set { display: flex; align-items: center; gap: 10px; }
 #hm .hm-set > [data-hnine] { flex: none; min-width: 92px; gap: 6px; } #hm .hm-set > [data-hnine] svg { width: 14px; height: 14px; }
 #hm .hm-sw { flex: 1; min-width: 0; font: 400 11.5px/1.35 'IBM Plex Mono', ui-monospace, monospace; color: var(--hm-ink); }

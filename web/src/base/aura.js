@@ -2240,7 +2240,7 @@
       var p0 = NG.prnPick(list), dest = p0 ? p0.id : (B.master ? B.master.id : 'novelglobal'), paper2 = p0 ? p0.paper : (B.master && B.master.paper) || 80;
       var Pp = (B.printers || {})[String(paper2 || 80)] || { dots: 512 }, W = Pp.dots - Pp.dots % 8;
       return posterPrint(W).then(function (c) { return c || NG.slip(n, photo, { lines: [], rel: [], call: null }, { art: photo ? 'photo' : art, wish: n.wish, show: show2 }, W); }).then(function (c) { return NG.sendNote(n, c, dest, n.wish, S.pmode === 'mesh' ? sigOf(P) : null, fullOf(P), posterJPEG(P)); });
-    })).then(function (s) {
+    })).catch(function () { return 'failed'; }).then(function (s) {
       st.innerHTML = toWall ? '' : NG.pips(s, n.sent && n.sent.why); btn.classList.remove('going');
       if (toSend && s !== 'failed') { squirt(); NG.toast && NG.toast(s === 'shown' ? 'LIVE · EVERYONE ON NOVEL.GLOBAL' : s === 'outbox' ? 'SENDS WHEN THERE IS SIGNAL' : 'SENT · WAITING'); }
       if (!toWall && !toSend && s !== 'failed') { squirt(); lvUp((P.adds || []).length ? 4 : 3); store.set('da.aura.printed', 1); if (S.pmode === 'mesh') store.set('da.aura.mesh', 1); } if (!toWall && n.sent && n.sent.id) NG.follow(n, st); harp([0, 2, 4, 7]);

@@ -445,7 +445,10 @@ async function send(db, env, req) {
   const dest = typeof b.dest === 'string' && b.dest ? b.dest : ''; const toMesh = dest === 'mesh';
   const P = dest && !toMesh ? await db.prepare('SELECT * FROM printers WHERE id = ?').bind(dest).first() : null;
   if (dest && !toMesh && !P) return fail(400, 'dest');
-  if (P && P.id !== 'novelglobal' && b.stage !== 'stack' && !linksOf(P.links).includes('wish')) return refuse(403, 'this island has not switched on W.I.S.H.');
+  if (P && P.id !== 'novelglobal' && !P.ghost && b.stage !== 'stack' && !linksOf(P.links).includes('wish')) return refuse(403, 'this island has not switched on W.I.S.H.');
+  /* sent from a ghost island to novel.global's own printer: as the approval page says (GHOST PRINTS) */
+  const fromG = P && P.id === 'novelglobal' && typeof b.isle === 'string' && JOIN_ID.test(b.isle) ? await db.prepare('SELECT id FROM printers WHERE id = ? AND ghost = 1').bind(b.isle).first() : null, gp = fromG ? (await settingsOf(db)).ghostPrint : '';
+  if (gp === 'off') return refuse(403, 'novel.global is not taking prints from ghost islands');
   if (toMesh && !(typeof b.mesh === 'string' && b.mesh)) return fail(400, 'mesh');
   if (dest && b.escpos != null && !b64ok(b.escpos, LIMIT.escpos)) return refuse(400, 'the print is too long');
   /* a private pop-up (as each is, until its place chooses to keep its prints): the print waits for its printer and nothing else is written:
@@ -481,7 +484,7 @@ async function send(db, env, req) {
     /* held for the touch screen only while it is there: a screen not heard from for two and a half minutes is passed by */
     /* touch screens are off unless the owner turns them on (touchOn): then nothing waits on one */
     const touchOn = !!(await settingsOf(db)).touchOn, screenGone = P.touch && (!touchOn || !P.touch_seen || t - P.touch_seen > 150e3);
-    job = { id: rid(), status: free || P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
+    job = { id: rid(), status: P.ghost ? 'queued' : gp === 'approve' ? 'held' : gp === 'straight' || free || P.auto || screenGone || passed || popAuto ? 'queued' : 'held' };
     const thumb = typeof b.thumb === 'string' && /^\d{1,3},\d{1,3},[A-Za-z0-9+/=]{1,2400}$/.test(b.thumb) ? b.thumb : null;
     /* joins: the same print at the islands this one echoes to; sent only there, nothing prints here and the receipt follows it there */
     const J = joinsOf(P), R = J.to.length && b.escpos ? await relayTo(db, J.to, P.id, !!P.ghost) : []; only = J.only && R.length > 0;
@@ -540,7 +543,7 @@ async function learnKinds(db, env, req) {
    is the only thing that opens the devices, either way */
 const SETTINGS = { openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false, ghostOn: true };
 /* choices, one of a few: how long a new code is (3 or 6), and what an island's touch screen does with passes (nothing, shows one, takes one typed) */
-const CHOICES = { access: ['open', 'pop'], codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600] };
+const CHOICES = { access: ['open', 'pop'], codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600], ghostPrint: ['approve', 'straight', 'off'] };
 /* what an island may set for itself: its cards (a pack), how its passes are given, the gap between one person's prints, and who helps run it */
 const PACKS = { full: null, builder: ['intro', 'wish', 'research', 'zine', 'kit', 'space', 'slot-3'], utilities: ['intro', 'weather', 'news', 'events', 'fiction', 'nonfiction', 'survival', 'cards', 'tarot'] };
 const WAYS = ['touch', 'print', 'intro', 'random'];
@@ -573,14 +576,21 @@ const homeOfIsle = v => { const h = jsonOf(v); if (!h || typeof h !== 'object') 
   const label = L ? { on: L.on !== false, top: txt(L.top, 60), title: txt(L.title, 80), body: txt(L.body, 1500), fold: Math.max(0, Math.min(6, Math.round(+L.fold) || 0)),
     links: (Array.isArray(L.links) ? L.links : []).filter(k => k && typeof k.t === 'string' && k.t.trim() && /^https:\/\/[^\s"<>]{1,300}$/.test(k.u || '')).slice(0, 4).map(k => ({ t: k.t.trim().slice(0, 60), to: 'url', u: k.u })),
     ...(L.film && FILM.file.test(L.film.file || '') ? { film: { on: true, file: L.film.file } } : {}) } : null;
-  return { ...(txt(h.line, 60).trim() ? { line: txt(h.line, 60).replace(/\s+/g, ' ').trim() } : {}), main: ids(h.main, x => MAINS.includes(x), MAINS.length), nines: ids(h.nines, x => NINES.includes(x), 3), off: ids(h.off, x => /^[a-z0-9-]{1,24}$/.test(x), 40) || [],
+  const Hh = h.hero && typeof h.hero === 'object' ? h.hero : null, hero = Hh ? { title: txt(Hh.title, 80).trim(), body: txt(Hh.body, 800).trim(), ...(/^\d$/.test(String(Hh.pic)) ? { pic: +Hh.pic } : {}) } : null;
+  return { ...(txt(h.line, 60).trim() ? { line: txt(h.line, 60).replace(/\s+/g, ' ').trim() } : {}), ...(hero && (hero.title || hero.body || hero.pic != null) ? { hero } : {}), ...(h.share ? { share: true } : {}), main: ids(h.main, x => MAINS.includes(x), MAINS.length), nines: ids(h.nines, x => NINES.includes(x), 3), off: ids(h.off, x => /^[a-z0-9-]{1,24}$/.test(x), 40) || [],
     ...(label && (label.top || label.title || label.body || label.film) ? { label } : {}) }; };
 /* a keeper's change laid over what is there; a label's film is the approval page's to give (film: true keeps it) */
 const homeIn = (was, b, film) => { const o = homeOfIsle(JSON.stringify(was || {})) || {}, n = b && typeof b === 'object' ? b : {};
-  ['main', 'nines', 'off', 'line'].forEach(k => { if (k in n) o[k] = n[k]; });
+  ['main', 'nines', 'off', 'line', 'hero', 'share'].forEach(k => { if (k in n) o[k] = n[k]; });
   if ('label' in n) { const f = o.label && o.label.film; o.label = n.label && typeof n.label === 'object' ? { ...n.label } : null; if (o.label) { if (film === true) { if (f) o.label.film = f; else delete o.label.film; } else if (film !== undefined) o.label.film = film ? { file: film } : null; } }
   else if (film !== undefined && film !== true) o.label = { ...(o.label || {}), film: film ? { file: film } : null };
-  const h = homeOfIsle(JSON.stringify(o)); return h && (h.main || h.nines || h.off.length || h.label || h.line) ? JSON.stringify(h) : null; };
+  const h = homeOfIsle(JSON.stringify(o)); return h && (h.main || h.nines || h.off.length || h.label || h.line || h.hero || h.share) ? JSON.stringify(h) : null; };
+/* an island shown by its link: a real island always, a ghost only while its keeper shares it. Its name, its home and its pictures; never its key or code */
+async function visit(db, env, id) { if (!JOIN_ID.test(id || '')) return fail(404, 'not found');
+  const p = await db.prepare('SELECT id, name, ghost, home, test_of, token IS NOT NULL AS paired FROM printers WHERE id = ?').bind(id).first(), h = p && homeOfIsle(p.home);
+  if (!p || p.id === 'novelglobal' || p.test_of || (p.ghost ? !(h && h.share) : !p.paired)) return fail(404, 'not found');
+  const { results: cps } = await db.prepare('SELECT slot, at FROM cardpics WHERE card = ? ORDER BY slot').bind(p.id).all();
+  return json({ id: p.id, name: p.name || p.id, ghost: !!p.ghost, home: h || null, pics: await Promise.all(cps.map(async r => ({ slot: r.slot, url: await picUrl(env, p.id, r.slot, r.at, p.ghost) }))) }); }
 /* joins: { to: up to three islands that print what prints here, only: what prints here goes only to them (the sender keeps the story),
    mirror: one island whose card pictures and picks show here }. A target takes prints only with W.I.S.H. on in its connections; a
    mirror shows pictures only with ART on and picks only with CARDS on. One hop: a print relayed is never relayed again */
@@ -1980,6 +1990,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'mine' && p[1] && !p[3] && (m === 'GET' && !p[2] || m === 'POST' && p[2])) return mine(db, env, req, p[1], p[2]);
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
   if (p[0] === 'partners' && m === 'GET') return partners(db, req);
+  if (p[0] === 'visit' && p[1] && m === 'GET') return visit(db, env, p[1]);
   if (p[0] === 'isles' && m === 'GET') return isles(db, req);
   /* the joined slip's words, for a printer that has just joined a Wi-Fi: plain lines a receipt can print */
   if (p[0] === 'welcome' && m === 'GET') { let w = null; try { w = JSON.parse((await settingsOf(db)).welcome || 'null'); } catch (e) { w = null; } w = w && typeof w === 'object' ? w : WELCOME;
