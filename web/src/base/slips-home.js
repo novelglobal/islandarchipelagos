@@ -65,24 +65,13 @@
 
   /* ───────── the quick photo print ─────────
      img: an image, a canvas or a video frame. One photograph edge to edge, then the moon it was taken under and the code. Nothing else.
-     o: { code, t (when), lat (the moon as seen from there), cal (the measured curve; else the site's) } */
+     o: { code, t (when), lat (the moon as seen from there) } */
   S.quick = function (img, W, o) {
     o = o || {}; var g = T.grid(W), D = g.dots, u = D / 512, sz = function (n) { return Math.max(1, Math.round(n * u)); };
     var iw = img.naturalWidth || img.videoWidth || img.width, ih = img.naturalHeight || img.videoHeight || img.height; if (!iw || !ih) return null;
     var ph = Math.round(Math.min(D * 1.5, Math.max(D * 0.6, D * ih / iw))), s = Math.max(D / iw, ph / ih), dw = iw * s, dh = ih * s;
     var pc = canvas(D, ph), px = pc.getContext('2d'); px.imageSmoothingQuality = 'high'; px.drawImage(img, (D - dw) / 2, (ph - dh) / 2, dw, dh);
-    var im = px.getImageData(0, 0, D, ph), d = im.data, n = D * ph, L = new Float32Array(n), hist = new Uint32Array(256), i;
-    for (i = 0; i < n; i++) { L[i] = d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114; hist[L[i] | 0]++; }
-    /* the tones stretched to fill black to paper (the darkest and lightest 1% let go), a little sharpening for the edges, then the curve */
-    var lo = 0, hi = 255, acc = 0; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc > n * 0.01) { lo = i; break; } } acc = 0; for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc > n * 0.01) { hi = i; break; } }
-    var sp = Math.max(24, hi - lo), B = new Float32Array(n), xx, yy;
-    for (i = 0; i < n; i++) L[i] = Math.max(0, Math.min(255, (L[i] - lo) * 255 / sp));
-    for (yy = 0; yy < ph; yy++) for (xx = 0; xx < D; xx++) { i = yy * D + xx; var a = L[i], m = (L[i - (xx > 0)] + L[i + (xx < D - 1)] + L[i - (yy > 0) * D] + L[i + (yy < ph - 1) * D]) / 4; B[i] = Math.max(0, Math.min(255, a + (a - m) * 0.9)); }
-    var cal = o.cal || (window.NG && NG.pq && NG.pq().cal) || null, lut = T.curve(cal || T.CAL);
-    /* the curve, then the ends held: what was meant black prints solid, what was meant paper stays bare */
-    for (i = 0; i < n; i++) B[i] = B[i] < 10 ? 0 : B[i] > 245 ? 255 : lut[B[i] | 0];
-    T.dots(B, D, ph, T.pick(B, D, ph));
-    for (i = 0; i < n; i++) { d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = B[i]; d[i * 4 + 3] = 255; } px.putImageData(im, 0, 0);
+    /* the photograph goes as it is: the print step lays it once, through the site's own print settings (tone included), as every print is made */
     /* the foot: the moon as a disc and its light, the code beside it, both solid ink */
     var fh = sz(96), c = canvas(D, ph + fh + sz(40)), x = c.getContext('2d'), fc = canvas(D, fh), fx = fc.getContext('2d'), r = sz(26), cy = Math.round(fh / 2), mx = sz(18) + r;
     if (window.NG && NG.moon && NG.moonPath) { var mo = NG.moon(o.t || Date.now()), la = isFinite(+o.lat) ? +o.lat : -37.8;
