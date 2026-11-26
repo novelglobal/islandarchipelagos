@@ -2,6 +2,8 @@
 (function () {
   'use strict';
   var T = window.THERMAL, $ = function (s) { return document.querySelector(s); };
+  /* the site's own print settings (tone included), as every print uses them */
+  var XQ = T.settle(null, null); T.houseQ().then(function (q) { XQ = q; });
   var CROCK = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   var code = function () { var s = 'DA-'; var r = new Uint8Array(4); crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += CROCK[r[i] % 32]; return s; };
   var api = function (p, o) { return fetch('/api' + p, Object.assign({ headers: { 'content-type': 'application/json' } }, o || {})).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); }); };
@@ -33,11 +35,10 @@
     dcx.translate(W / 2 + (0.5 - S.ox) * f.ex, H / 2 + (0.5 - S.oy) * f.ey); dcx.rotate(S.turn * Math.PI / 2);
     dcx.drawImage(im, -im.width * f.s / 2, -im.height * f.s / 2, im.width * f.s, im.height * f.s); dcx.restore();
   }
-  /* the dots: the measured curve, then the dither the picture asks for */
+  /* the dots: the photograph through the site's own settings, as every print is made */
   function dots() {
-    var W = DW(), H = DH(), id = dcx.getImageData(0, 0, W, H), d = id.data, L = new Float32Array(W * H), lut = T.curve(T.CAL), i;
-    for (i = 0; i < W * H; i++) L[i] = lut[Math.round(d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114)];
-    T.dots(L, W, H, T.pick(L, W, H)); for (i = 0; i < W * H; i++) { d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = L[i]; d[i * 4 + 3] = 255; }
+    var W = DW(), H = DH(), id = dcx.getImageData(0, 0, W, H), d = id.data, L = T.luma(d, W * H), i;
+    S.grey = T.isGrey(T.ready(L, W, H, XQ)); for (i = 0; i < W * H; i++) { d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = L[i]; d[i * 4 + 3] = 255; }
     dcx.putImageData(id, 0, 0);
   }
   /* the words, one line across, solid ink over the dots */
@@ -90,7 +91,7 @@
     var go = $('#go'), st = $('#st'); if (!S.img || !S.to) return; go.disabled = true; draw(true);
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, text: S.words.trim().slice(0, 60), lat: w[0], lng: w[1] };
     st.textContent = '· · ·';
-    api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(pcv, 0), from: S.stack.id, stage: 'stack' }) })
+    api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: c, body: JSON.stringify(body), lat: w[0], lng: w[1], dest: S.to, escpos: T.raster(pcv, Object.assign(T.opts(XQ), { grey: !!S.grey })), from: S.stack.id, stage: 'stack' }) })
       .then(function () { st.textContent = c; }, function () { st.textContent = '×'; }).then(function () { go.disabled = false; });
   }
 

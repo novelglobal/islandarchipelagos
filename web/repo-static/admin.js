@@ -1052,11 +1052,12 @@
     const stripBox = el('div', { class: 'big' }), stripSay = el('p', { class: 'note' });
     /* the photo test: the test photograph (or one of the owner's own), laid the five ways on one slip, seen here or printed */
     const pps2 = el('select', { 'aria-label': 'Printer for the photo test' }, ...prs.map(p => el('option', { value: p.id, text: `${(p.name || p.id).toUpperCase()} · ${p.paper} MM${p.paired ? '' : ' · NOT PAIRED'}` })));
-    const testSay = el('p', { class: 'note' }), testBox = el('div', { class: 'big' }); let testImg = null;
-    const ownPick = el('button', { type: 'button', text: 'OWN PHOTO', title: 'Use one of your photographs instead of the dog', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = () => { if (!fi.files[0]) return; const im = new Image(); im.onload = () => { testImg = im; testSay.textContent = 'YOUR PHOTO · PRESS SEE OR PRINT'; }; im.src = URL.createObjectURL(fi.files[0]); }; fi.click(); } });
+    let testImg = null;
+    const ownPick = el('button', { type: 'button', text: 'OWN PHOTO', title: 'Use one of your photographs instead of the dog', onclick: () => { const fi = el('input', { type: 'file', accept: 'image/*' }); fi.onchange = () => { if (!fi.files[0]) return; const im = new Image(); im.onload = () => { testImg = im; toneSay.textContent = 'YOUR PHOTO · PRESS SEE OR PRINT'; }; im.src = URL.createObjectURL(fi.files[0]); }; fi.click(); } });
     const testPic = () => testImg ? Promise.resolve(testImg) : new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = '/cards/found-dog.jpg'; });
     /* what SAVE stores, from the page as it is now */
-    const pqForm = () => { const o = { preset: pqp.value }; if (pqd.value) o.dither = pqd.value; if (pqg.value === 'a') o.order = 'a'; pqRows.forEach(r => { if (r.on.checked && r.n.value !== '') o[r.k] = +r.n.value; }); if (calOn.checked) o.cal = calOf(); return o; };
+    let toneNow = ['light', 'dark'].includes(pqo.tone) ? pqo.tone : 'normal';
+    const pqForm = () => { const o = { preset: pqp.value }; if (toneNow !== 'normal') o.tone = toneNow; if (pqd.value) o.dither = pqd.value; if (pqg.value === 'a') o.order = 'a'; pqRows.forEach(r => { if (r.on.checked && r.n.value !== '') o[r.k] = +r.n.value; }); if (calOn.checked) o.cal = calOf(); return o; };
     let savedQ = JSON.stringify(pqo);
     /* TUNE: the settings as saved (read fresh, so the slip proves the save), clear steps either side of each, three speeds */
     /* the test log: every test printed from here numbered (TEST n at the top of the paper) and kept with its settings, what each letter was,
@@ -1067,21 +1068,17 @@
       logBox.replaceChildren(...(L.length ? L.map(x => { let o = {}; try { o = JSON.parse(x.note || '{}') || {}; } catch (e) { o = {}; }
         return el('details', {}, el('summary', { text: `TEST ${o.n || '?'} · ${o.kind || 'SLIP'} · ${String(x.status || '').toUpperCase()} · ${moonOf(x.done || x.created)} · ${String(x.name || x.printer || '').toUpperCase()}` }),
           ...(o.said || []).concat(o.keys || []).map(t => el('p', { class: 'mono', text: String(t) })), o.photo ? el('p', { class: 'note', text: 'PHOTO: ' + o.photo }) : '', thumbCanvas(o.pic) || ''); }) : [el('p', { class: 'note', text: 'NO TESTS PRINTED YET' })])); };
-    const tuneSay = el('p', { class: 'note' }), tuneBox = el('div', { class: 'big' });
-    const tuneDo = async go => { const p = prs.find(q => q.id === pps2.value) || { paper: '80' }, P2 = (window.DA_PRINTERS || {})[String(p.paper || 80)] || { dots: 512 };
-      tuneSay.textContent = 'LAYING THE DOTS…'; let q0 = {}; try { const st0 = await (await api('settings')).json(); q0 = st0.printq ? JSON.parse(st0.printq) : {}; } catch (e) { q0 = {}; }
-      const Q = THERMAL.settle(q0), unsaved = JSON.stringify(pqForm()) !== JSON.stringify(q0);
-      const n = go && pps2.value ? await nextTest() : 0; let t; try { t = THERMAL.tune(await testPic(), { dots: P2.dots, q: Q, n }); } catch (e) { tuneSay.textContent = 'THE PHOTO DID NOT LOAD'; return; }
-      tuneBox.replaceChildren(t.c); t.c.style.maxWidth = '100%'; const warn = unsaved ? 'THIS PAGE HAS CHANGES NOT SAVED: THE SLIP SHOWS WHAT IS SAVED. ' : '';
-      if (!go) { tuneSay.textContent = warn + 'AS IT WILL PRINT, DOT FOR DOT'; return; } if (!pps2.value) { tuneSay.textContent = 'NO PRINTER'; return; }
-      tuneSay.textContent = 'SENDING…'; const r = await sendTest(pps2.value, 'TUNE', n, t, t.c, THERMAL.raster(t.c, Object.assign(THERMAL.opts(Q), { grey: true }), t.steps)); logDraw();
-      tuneSay.textContent = warn + (r && r.ok ? 'TEST ' + n + ' ' + 'SENT. IT PRINTS THE NEXT TIME THE PI ASKS.' : 'NOT SENT. IS THE PRINTER PAIRED?'); };
-    const testDo = async go => { const p = prs.find(q => q.id === pps2.value) || { paper: '80' }, P2 = (window.DA_PRINTERS || {})[String(p.paper || 80)] || { dots: 512 }, op = THERMAL.opts(THERMAL.settle(pqForm()));
-      testSay.textContent = 'LAYING THE DOTS…'; await new Promise(r => setTimeout(r, 30));
-      const n = go && pps2.value ? await nextTest() : 0; let t; try { t = THERMAL.photoTest(await testPic(), { dots: P2.dots, q: THERMAL.settle(pqForm()), speed: op.speed, parts: op.parts, n }); } catch (e) { testSay.textContent = 'THE PHOTO DID NOT LOAD'; return; }
-      testBox.replaceChildren(t.c); t.c.style.maxWidth = '100%'; if (!go) { testSay.textContent = 'AS IT WILL PRINT, DOT FOR DOT'; return; } if (!pps2.value) { testSay.textContent = 'NO PRINTER'; return; }
-      testSay.textContent = 'SENDING…'; const r = await sendTest(pps2.value, 'PHOTO TEST', n, t, t.c, THERMAL.raster(t.c, Object.assign({}, op, { grey: true }), t.steps)); logDraw();
-      testSay.textContent = r && r.ok ? 'TEST ' + n + ' ' + 'SENT. IT PRINTS THE NEXT TIME THE PI ASKS.' : 'NOT SENT. IS THE PRINTER PAIRED?'; };
+    /* the tone test: the photograph (or one of the owner's own) as the site prints it now, light, normal and dark, each with its sixteen steps */
+    const toneSay = el('p', { class: 'note' }), toneBox = el('div', { class: 'big' });
+    const toneDo = async (go, only) => { const p = prs.find(q => q.id === pps2.value) || { paper: '80' }, P2 = (window.DA_PRINTERS || {})[String(p.paper || 80)] || { dots: 512 }, base = pqForm();
+      toneSay.textContent = 'LAYING THE DOTS…'; await new Promise(r => setTimeout(r, 30));
+      const n = go && pps2.value ? await nextTest() : 0; let t; try { t = THERMAL.toneTest(await testPic(), { dots: P2.dots, base, n, only }); } catch (e) { toneSay.textContent = 'THE PHOTO DID NOT LOAD'; return; }
+      toneBox.replaceChildren(t.c); t.c.style.maxWidth = '100%'; if (!go) { toneSay.textContent = 'AS IT WILL PRINT, DOT FOR DOT'; return; } if (!pps2.value) { toneSay.textContent = 'NO PRINTER'; return; }
+      toneSay.textContent = 'SENDING…'; const r = await sendTest(pps2.value, only ? 'TONE ' + only.toUpperCase() : 'TONE TEST', n, t, t.c, THERMAL.raster(t.c, Object.assign(THERMAL.opts(THERMAL.settle(base)), { grey: true }))); logDraw();
+      toneSay.textContent = r && r.ok ? 'TEST ' + n + ' SENT. IT PRINTS THE NEXT TIME THE PI ASKS.' : 'NOT SENT. IS THE PRINTER PAIRED?'; };
+    const toneBtns = ['light', 'normal', 'dark'].map(t => el('button', { type: 'button', class: t === toneNow ? 'on' : '', 'data-tone': t, text: t.toUpperCase(), onclick: async () => {
+      toneNow = t; toneBtns.forEach(b => b.classList.toggle('on', b.dataset.tone === t)); let q0 = {}; try { const st0 = await (await api('settings')).json(); q0 = st0.printq ? JSON.parse(st0.printq) : {}; } catch (e) { q0 = {}; }
+      if (t === 'normal') delete q0.tone; else q0.tone = t; await save({ printq: JSON.stringify(q0) }); savedQ = JSON.stringify(q0); toneDo(false); } }));
     /* the text test: the site's words four ways and the printer's own letters under them */
     const textSay = el('p', { class: 'note' }), textBox = el('div', { class: 'big' });
     const textDo = async go => { const p = prs.find(q => q.id === pps2.value) || { paper: '80' }, P2 = (window.DA_PRINTERS || {})[String(p.paper || 80)] || { dots: 512 }, op = THERMAL.opts(THERMAL.settle(pqForm())), n = go && pps2.value ? await nextTest() : 0, t = THERMAL.textTest({ dots: P2.dots, speed: op.speed, n });
@@ -1106,14 +1103,13 @@
       stripSay, stripBox,
       el('label', { class: 'check' }, calOn, 'USE THE CURVE'), el('div', { class: 'three' }, ...cals.map(c => c.row)),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = pqForm(); save({ printq: JSON.stringify(o) }); savedQ = JSON.stringify(o); } })),
-      ), tuneSec = el('section', { class: 'ed' }, el('h3', { text: 'TUNE' }),
-      hint('Shows that what you saved reaches the paper, and what a clear step either way does. Every setting is printed at the top, then the photograph as the site prints it now, then big close-ups, each with a letter and its number: MID-TONES A to D, CONTRAST E and F, EDGES G and H (SAVED marks yours), then the photograph at three speeds, I to K. 1. SAVE above. 2. Choose the printer and press PRINT TUNE. 3. Where a letter looks best, type its number above, SAVE, and print TUNE again.'),
-      el('div', { class: 'acts' }, pps2, ownPick, el('button', { type: 'button', text: 'SEE TUNE', onclick: () => tuneDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT TUNE', onclick: () => tuneDo(true) })),
-      tuneSay, tuneBox,
-      el('h3', { text: 'PHOTO TEST' }),
-      hint('Start here. At the top, the GREY CHECK: the printer\'s sixteen greys sent two ways; one steps evenly from black to paper, the other jumps about. Then the photograph laid six ways, each big, with its letter, its numbers and its steps under it: A and B are the printer\'s own greys (no dots) in order 1 and 2, C to F are dots. 1. Press PRINT PHOTO TEST (it uses the printer and photograph chosen under TUNE: the dog, or yours with OWN PHOTO). 2. Under GREY ORDER above, choose the order whose steps were even. 3. Under DOTS FOR PHOTOGRAPHS, choose the best letter and press SAVE. 4. Print TUNE to fine-tune it. If every grey and every black looks pale, slow PRINT SPEED, then try PRINTER DARKNESS below.'),
-      el('div', { class: 'acts' }, el('button', { type: 'button', text: 'SEE PHOTO TEST', onclick: () => testDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT PHOTO TEST', onclick: () => testDo(true) })),
-      testSay, testBox,
+      ), tuneSec = el('section', { class: 'ed' }, el('h3', { text: 'TONE' }),
+      hint('How dark every print is, wherever it is made: the site, the paper, the cards, the pop-ups and the islands. NORMAL is the settings above as saved; LIGHT lifts the middle tones; DARK deepens them. A choice is saved at once.'),
+      el('div', { class: 'acts' }, ...toneBtns),
+      hint('The tone test shows the photograph all three ways, each as it prints now, with its sixteen steps under it. Print it, or print one tone on its own at full size.'),
+      el('div', { class: 'acts' }, pps2, ownPick, el('button', { type: 'button', text: 'SEE TONE TEST', onclick: () => toneDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT TONE TEST', onclick: () => toneDo(true) })),
+      el('div', { class: 'acts' }, ...['light', 'normal', 'dark'].map(t => el('button', { type: 'button', text: 'PRINT ' + t.toUpperCase(), onclick: () => toneDo(true, t) }))),
+      toneSay, toneBox,
       el('h3', { text: 'TEXT TEST' }),
       hint('The site\'s words in its four paper fonts at six sizes (12 to 24 dots), set four ways: A and B two cuts, C and D the same a dot bolder. Under them lines one to three dots thick, then E to H in the printer\'s own letters. 1. Press PRINT TEXT TEST. 2. Choose the letter that reads best and set WORDS AND LINES CUT and BOLDER above to its numbers. 3. Find the smallest size that still reads easily and set SMALLEST WORDS ON A BOOTH SLIP to it. 4. SAVE.'),
       el('div', { class: 'acts' }, el('button', { type: 'button', text: 'SEE TEXT TEST', onclick: () => textDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT TEXT TEST', onclick: () => textDo(true) })),
@@ -1295,7 +1291,7 @@
     ['islands', 'ISLANDS', 'Printers, pop-ups and the finder', [P('printers', 'PRINTERS', printers, null, 'pair an island open joining joined slip token test print photo test passes turn off build keeper gang'), P('popups', 'POP-UPS', popups, null, 'new pop-up qr desk link logo templates'),
       P('finder', 'FINDER', [[label, ['THE ISLANDS']]], null, 'islands place map link how to find it')]],
     ['print', 'PRINT', 'How prints look, tested on paper', [P('quality', 'QUALITY', [[site, ['PRINT QUALITY']]], null, 'set dots grey photographs mid-tones contrast sharpen stretch words lines bolden speed darkness curve calibration strip text test photo test'),
-      P('tune', 'TUNE', [[site, ['TUNE']]], null, 'tune photo test five ways own photo'), P('styles', 'STYLES', [[site, ['STYLES · MOD PACKS']]], null, 'mod packs house press quiet loud'),
+      P('tune', 'TONE', [[site, ['TONE']]], null, 'tone light normal dark tone test photo test own photo text test darkness test log'), P('styles', 'STYLES', [[site, ['STYLES · MOD PACKS']]], null, 'mod packs house press quiet loud'),
       P('rules', 'RULES', [[site, ['PRINTING', 'SENT WITHOUT A PRINT', 'MAKING']]], null, 'codes gap touch maker free print approval')]],
     ['site', 'SITE', 'What the site shows and says', [P('home', 'HOME', home, null, 'opener business card species list showcase cards order size look'), P('label', 'LABEL', [[label, ['THE LABEL', 'THE FILM', 'ETHICS AND AI DISCLOSURE', 'CARD NOTES']]], null, 'label film ethics ai disclosure private page card notes'),
       P('words', 'WORDS', [[site, ['START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES']], [stations, ['INTENTION AND W.I.S.H. · THE WORDS']]], null, 'start booth notice country lan parties intention wish'),

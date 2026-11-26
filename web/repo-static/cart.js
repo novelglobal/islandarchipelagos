@@ -1,6 +1,8 @@
 /* carts */
 (function () {
   'use strict';
+  /* the site's own print settings (tone included): a person's own picture in card art is toned by them before its screen of dots */
+  var CQ = window.THERMAL ? window.THERMAL.settle(null, null) : null; if (window.THERMAL) window.THERMAL.houseQ().then(function (q) { CQ = q; });
   var T = window.THERMAL, $ = function (s) { return document.querySelector(s); };
   var SANS = 'Poppins, "Helvetica Neue", Arial, sans-serif', MONO = '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace', TTY = 'VT323, ui-monospace, monospace';
   var DAY = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -346,8 +348,9 @@
     var im = ART[key];
     if (im) { var c = document.createElement('canvas'); c.width = w; c.height = h; var q = c.getContext('2d', { willReadFrequently: true }), s = Math.max(w / im.width, h / im.height);
       q.fillStyle = '#fff'; q.fillRect(0, 0, w, h); q.drawImage(im, (w - im.width * s) / 2, (h - im.height * s) / 2, im.width * s, im.height * s);
-      var p = q.getImageData(0, 0, w, h).data; g.fillStyle = '#fff'; g.fillRect(x, y, w, h); g.fillStyle = '#000';
-      for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var i = (yy * w + xx) * 4, l = (p[i] * 0.3 + p[i + 1] * 0.59 + p[i + 2] * 0.11) / 255; if (l * 16 < BAYER[(yy % 4) * 4 + (xx % 4)] + 0.5) g.fillRect(x + xx, y + yy, 1, 1); }
+      var p = q.getImageData(0, 0, w, h).data, Lp = window.THERMAL.luma(p, w * h), cq = {}, kq; for (kq in CQ) cq[kq] = CQ[kq]; cq.dither = 'bayer'; window.THERMAL.tone(Lp, w, h, cq);
+      g.fillStyle = '#fff'; g.fillRect(x, y, w, h); g.fillStyle = '#000';
+      for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var l = Lp[yy * w + xx] / 255; if (l * 16 < BAYER[(yy % 4) * 4 + (xx % 4)] + 0.5) g.fillRect(x + xx, y + yy, 1, 1); }
       return true; }
     g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.translate(x, y); pattern(g, w, h, kind, '#000', '#fff', sd || 3); g.restore(); return false;
   }

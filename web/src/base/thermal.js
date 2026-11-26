@@ -146,7 +146,16 @@
     out.cal = o.cal ? T.cal(o.cal) : null; if (out.cal && !qw && !isGrey(out.dither) && photo.gamma == null) out.gamma = 1;
     for (k in b) if (k !== 'dither' && has(k) && isFinite(+o[k])) out[k] = +o[k];
     out.order = o.order === 'a' ? 'a' : 'b';
-    out.preset = T.SETS[o.preset] ? o.preset : 'crisp'; return out; };
+    out.preset = T.SETS[o.preset] ? o.preset : 'crisp';
+    /* the tone, last of all, so it reaches every print: light lifts the middle tones, dark deepens them, normal is as saved */
+    out.tone = Object.prototype.hasOwnProperty.call(T.TONES, o.tone) ? o.tone : 'normal'; if (T.TONES[out.tone]) T.dial(out, T.TONES[out.tone]); return out; };
+  /* the three tones the approval page chooses between, as moves of the dial (light, detail, contrast) */
+  T.TONES = { light: { light: 0.22 }, normal: null, dark: { light: -0.22, contrast: 0.08 } };
+  /* the site's own settings, as the approval page saved them, for any page that prints (asked once) */
+  T.houseQ = function () { if (!T._hq) T._hq = fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (j) { var o = null; try { o = j && j.printq ? JSON.parse(j.printq) : null; } catch (e) { o = null; } return T.settle(o, null); }, function () { return T.settle(null, null); }); return T._hq; };
+  /* a photograph's lightness made ready and laid as dots (or greys) with settled settings Q; gives back the way it was laid */
+  T.ready = function (L, W, H, Q) { Q = Q || T.settle(null, null); var how = T.tone(L, W, H, Q); T.dots(L, W, H, how); return how; };
   /* what the printer is told before a picture, from settled settings */
   T.opts = function (Q) { Q = Q || {}; return { speed: +Q.speed || 0, parts: +Q.parts || 0, order: Q.order === 'a' ? 'a' : 'b' }; };
   /* a photograph's tones made ready for the dots, in place (L: lightness 0 to 255): stretched to its own black and white, mid-tones,
@@ -188,6 +197,23 @@
   T.wedge = function (w, h, Q, n) { n = n || 16; var q = {}, k; for (k in Q) q[k] = Q[k]; q.clip = 0; q.sharpen = 0; var L = new Float32Array(w * h), x, y;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) L[y * w + x] = Math.min(255, Math.floor(x * n / w) * 255 / (n - 1)); var how = T.tone(L, w, h, q); if (q.dither === 'auto' || !q.dither) how = 'floyd'; T.dots(L, w, h, how);
     var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c, L); c.how = isGrey(how) ? 'grey' : how; return c; };
+  /* the tone test: one photograph as the site prints it now (the saved settings), light, normal and dark, each with the sixteen steps
+     under it and the saved tone marked. o: { dots, base (the saved printq), n (the test's number), only (one tone, larger) } */
+  T.toneTest = function (img, o) {
+    o = o || {}; var W = T.grid(o.dots).dots, u = W / 512, sz = function (n) { return Math.max(1, Math.round(n * u)); }, pad = sz(10), base = o.base || {};
+    var saved = Object.prototype.hasOwnProperty.call(T.TONES, base.tone) ? base.tone : 'normal', tones = o.only ? [o.only] : ['light', 'normal', 'dark'], parts = [], said = [], H = pad;
+    var label = function (t, px) { var c = document.createElement('canvas'); c.width = W; c.height = Math.ceil(px * 1.4); var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, c.height);
+      x.fillStyle = '#000'; x.textBaseline = 'top'; x.font = T.font(null, 'sans', px); x.fillText(t, pad, Math.round(px * 0.2)); return T.solid(c, 128); };
+    var put = function (c, gap) { parts.push({ c: c, y: H }); H += c.height + gap; };
+    put(label((o.n ? 'TEST ' + o.n + '  ·  ' : '') + 'TONE  ·  ' + W + ' DOTS', sz(16)), sz(6));
+    tones.forEach(function (t) { var q = {}, k; for (k in base) q[k] = base[k]; q.tone = t; var Q = T.settle(q, null);
+      put(label(t.toUpperCase() + (t === saved ? '  ·  SAVED' : ''), sz(24)), sz(4));
+      put(T.photo(img, W - pad * 2, Q, Math.round(W * (o.only ? 1.25 : 0.62))), sz(6));
+      put(T.wedge(W - pad * 2, sz(24), Q, 16), sz(18));
+      said.push(t.toUpperCase() + ': ' + T.dotName(Q.dither) + ' · MID ' + Q.gamma + ' · CONTRAST ' + Q.contrast + ' · LOCAL ' + Q.local + ' · EDGES ' + Q.sharpen); });
+    var c = document.createElement('canvas'); c.width = W; c.height = H + pad; var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, c.height);
+    parts.forEach(function (p) { x.drawImage(p.c, Math.round((W - p.c.width) / 2), p.y); });
+    return { c: c, said: said, keys: [] }; };
   /* the sixteen greys exactly, black (15) to paper (0), nothing done to them: the GREY CHECK */
   T.steps16 = function (w, h) { var L = new Float32Array(w * h), x, y; for (y = 0; y < h; y++) for (x = 0; x < w; x++) L[y * w + x] = Math.floor(x * 16 / w) * 17;
     var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c, L); c.how = 'grey'; return c; };

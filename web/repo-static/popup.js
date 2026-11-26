@@ -2,6 +2,8 @@
    or a pass that printer printed. Each pop-up's logos, printer, donation, tips and animals come from the POP-UPS page in admin; these defaults are Milk Bar's */
 (function () {
   'use strict';
+  /* the site's own print settings (tone included): the face takes their mid-tones, so LIGHT, NORMAL and DARK reach the pop-up too */
+  var PQ = window.THERMAL ? window.THERMAL.settle(null, null) : null; if (window.THERMAL) window.THERMAL.houseQ().then(function (q) { PQ = q; });
   var T = window.THERMAL, D = document, $ = function (s) { return D.querySelector(s); };
   var AW = 512, AH = 640, SC = 2, INK = '#161412', CREAM = '#F4EFE3', FACE = 250;
   var WHERE = [-37.7845, 144.9727];
@@ -70,7 +72,7 @@
     if (S.img && h) { var hist = new Uint32Array(256), cnt = 0, x0 = Math.max(0, h.x - h.rx | 0), x1 = Math.min(AW, h.x + h.rx | 0), y0 = Math.max(0, h.y - h.ry | 0), y1 = Math.min(AH, h.y + h.ry | 0), x, y;
       for (y = y0; y < y1; y++) for (x = x0; x < x1; x++) { i = y * AW + x; if (ad[i * 4 + 3] < 20) { hist[Lf[i] | 0]++; cnt++; } }
       var lo = 0, hi = 255, c = 0; for (v = 0; v < 256; v++) { c += hist[v]; if (c > cnt * 0.02) { lo = v; break; } } c = 0; for (v = 255; v >= 0; v--) { c += hist[v]; if (c > cnt * 0.02) { hi = v; break; } }
-      var k = 255 / Math.max(40, hi - lo); for (i = 0; i < n; i++) Lf[i] = Math.max(0, Math.min(255, Math.pow(Math.max(0, Math.min(1, (Lf[i] - lo) * k / 255)), 0.85) * 255)); }
+      var k = 255 / Math.max(40, hi - lo); for (i = 0; i < n; i++) Lf[i] = Math.max(0, Math.min(255, Math.pow(Math.max(0, Math.min(1, (Lf[i] - lo) * k / 255)), PQ ? PQ.gamma : 0.85) * 255)); }
     T.dots(Lf, AW, AH, 'atkinson'); var how = T.pick(La, AW, AH); T.dots(La, AW, AH, how === 'none' ? 'atkinson' : how);
     var cg = canvas(1), cc = cg[0], m = cg[1], d = m.createImageData(AW, AH);
     for (i = 0; i < n; i++) { v = (ad[i * 4 + 3] > 127 ? La[i] : Lf[i]) < 128 ? 0 : 255; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v; d.data[i * 4 + 3] = 255; } m.putImageData(d, 0, 0); if (S.lines.length) { lines(m); var e = m.getImageData(0, 0, AW, AH); for (i = 0; i < e.data.length; i += 4) { v = e.data[i] < 128 ? 0 : 255; e.data[i] = e.data[i + 1] = e.data[i + 2] = v; } m.putImageData(e, 0, 0); } return cc; }

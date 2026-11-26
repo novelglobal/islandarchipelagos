@@ -1,6 +1,8 @@
 /* ART: every published piece and the site's own art, one at a time, full size. Swipe, pinch, colour, remix, share, print */
 (function () {
   'use strict';
+  /* the site's own print settings (tone included), as every print uses them */
+  var AQ = window.THERMAL ? window.THERMAL.settle(null, null) : null; if (window.THERMAL) window.THERMAL.houseQ().then(function (q) { AQ = q; });
   var $ = function (s) { return document.querySelector(s); };
   var IN = /[?&]in=1/.test(location.search), ONE = /[?&]one=1/.test(location.search), H = document.documentElement;
   var OWN = ['ref-moa.jpg'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return 'chair-' + n + '.jpg'; }),
@@ -58,10 +60,11 @@
     var W = 512, h = Math.round(im.naturalHeight * W / im.naturalWidth), c = document.createElement('canvas'); c.width = W; c.height = Math.min(h, 2400);
     var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, c.height);
     g.filter = COLS[S.col] === 'night' ? 'grayscale(1) invert(1) contrast(1.1)' : 'grayscale(1) contrast(1.15)'; g.drawImage(im, 0, 0, W, c.height); g.filter = 'none';
+    /* then through the site's own print settings (tone included), as every print is made */
+    var T = window.THERMAL;
     var d = g.getImageData(0, 0, W, c.height), p = d.data, L = new Float32Array(W * c.height);
     for (var i = 0; i < L.length; i++) L[i] = p[i * 4];
-    for (var y = 0; y < c.height; y++) for (var x = 0; x < W; x++) { var k = y * W + x, o = L[k], n = o < 128 ? 0 : 255, e = o - n; L[k] = n;
-      if (x + 1 < W) L[k + 1] += e * 7 / 16; if (y + 1 < c.height) { if (x > 0) L[k + W - 1] += e * 3 / 16; L[k + W] += e * 5 / 16; if (x + 1 < W) L[k + W + 1] += e / 16; } }
+    c.grey = T.isGrey(T.ready(L, W, c.height, AQ));
     for (var j = 0; j < L.length; j++) { p[j * 4] = p[j * 4 + 1] = p[j * 4 + 2] = L[j]; p[j * 4 + 3] = 255; }
     g.putImageData(d, 0, 0); done(c);
   }
@@ -75,7 +78,7 @@
       if (!c) { S.busy = false; say('WAIT'); return; }
       var ps = null; try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== 'novelglobal' || ps.day !== today())) ps = null;
       var cd = code(), w = [-37.8136, 144.9631];
-      api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: cd, body: JSON.stringify({ type: 'stack', stack: 'art', lat: w[0], lng: w[1] }), lat: w[0], lng: w[1], dest: 'novelglobal', escpos: T.raster(c, 0), from: 'art', stage: 'stack', pass: ps ? ps.code : undefined }) })
+      api('/stories', { method: 'POST', body: JSON.stringify({ kind: 'record', code: cd, body: JSON.stringify({ type: 'stack', stack: 'art', lat: w[0], lng: w[1] }), lat: w[0], lng: w[1], dest: 'novelglobal', escpos: T.raster(c, Object.assign(T.opts(AQ), { grey: !!c.grey })), from: 'art', stage: 'stack', pass: ps ? ps.code : undefined }) })
         .then(function (j) { if (j && j.passed) try { localStorage.removeItem('da.pass'); } catch (e) { /* none */ } say((j && j.passed ? 'PRINTING · ' : 'SENT · ') + cd); },
           function (e) { say(e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'); })
         .then(function () { S.busy = false; });
