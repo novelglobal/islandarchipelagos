@@ -204,7 +204,8 @@ fs.appendFileSync(path.join(out, '_headers'), `
     const w = s.where || [-37.77, 144.96];
     if (s.kind === 'week') feeds.add(`/api/wx?at=${w[0]},${w[1]}` + (s.sea ? `&sea=${s.sea[0]},${s.sea[1]}` : ''));
     if (s.kind === 'news') feeds.add('/api/news');
-    if (s.kind === 'book') for (let p = 1; p <= 3; p++) feeds.add(`/api/book?b=1&p=${p}` + (s.shelf ? `&s=${s.shelf}` : ''));
+    /* the first three books, three pages each, kept on every island: a shelf that reads with no internet */
+    if (s.kind === 'book') for (let b = 1; b <= 3; b++) for (let p = 1; p <= 3; p++) feeds.add(`/api/book?b=${b}&p=${p}` + (s.shelf ? `&s=${s.shelf}` : ''));
   }
   /* the paper works on an island's own Wi-Fi with none: it asks only for /api/settings, /api/partners and /api/stories, which the island answers */
   const files = ['paper.html', 'paper.js', 'iruk.svg', 'cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]

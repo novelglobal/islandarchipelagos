@@ -1781,6 +1781,24 @@ if (run('cards')) try {
   check('a hundred made cards stay one nine, paged through with none missed, grouped by shelf and island, found by name', walk.seen === 100 && walk.star && walk.pages === 12 && walk.count === '12/12' && walk.sh === 5 && walk.isle === 3 && walk.found === 9 && walk.nine === 9, JSON.stringify(walk));
   await page.setViewportSize({ width: 375, height: 812 }); await sleep(400);
   check('both papers fit a phone', await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0);
+  /* BOOK: a book still being paged shows its title and line at once, PRINT held, then its page; each page read (and the next) is kept, so the
+     shelf opens with no internet; no adding a book, no text sizes; on a phone the choices and PRINT stand above the long page */
+  { const bx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(bx); const bp = await bx.newPage(); watch(bp, 'book'); let calls = 0;
+    await bp.route(u => new URL(u).pathname === '/api/book', r => { calls++; const u = new URL(r.request().url()), b = +u.searchParams.get('b') || 1, p = +u.searchParams.get('p') || 1;
+      const base = { b, books: 3, all: ['A · X', 'B · Y', 'C · Z'], title: 'Book ' + b, author: 'X', year: 1900, review: 'A line.', p };
+      return r.fulfill({ json: calls === 1 ? { ...base, p: 1, of: 1, text: '', warming: 1 } : { ...base, of: 5, text: 'Page ' + p + ' of book ' + b + '.' } }); });
+    const t0 = Date.now(); await bp.goto('https://oan.test/cart.html?c=book'); await bp.waitForFunction(() => document.querySelector('#paper.has'), null, { timeout: 8000 });
+    const first = await bp.evaluate(() => ({ ms: 0, go: document.querySelector('#go').disabled, opts: [...document.querySelectorAll('#opts [data-a]')].map(b => b.dataset.a), books: [...document.querySelectorAll('#pick select[data-a="pick"] option, #opts select[data-a="pick"] option')].map(o => o.textContent) })); first.ms = Date.now() - t0;
+    await bp.waitForFunction(() => /Page 1 of book 1/.test(localStorage.getItem('da.book.pages') || ''), null, { timeout: 12000 });
+    const lay = await bp.evaluate(() => { const go = document.querySelector('#go').getBoundingClientRect(), pp = document.querySelector('#paper').getBoundingClientRect(); return { goTop: go.top, paperTop: pp.top, go: document.querySelector('#go').disabled }; });
+    await bp.waitForTimeout(3500); const kept = await bp.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('da.book.pages') || '{}')));
+    check('BOOK: a book still being paged shows at once (its title, its line) with PRINT held, never a blank minute; no adding a book, no text sizes', first.ms < 4000 && first.go === true && !first.opts.includes('size') && !first.books.some(t => /ADD A BOOK/.test(t)), JSON.stringify(first));
+    check('BOOK: on a phone, PRINT stands above the page, and is free once the page is in', lay.goTop < lay.paperTop && lay.go === false, JSON.stringify(lay));
+    check('BOOK: the page read, the next, and the first of the other books are kept on the phone', kept.includes('all:1:1') && kept.includes('all:1:2') && kept.includes('all:2:1'), JSON.stringify(kept));
+    await bp.unroute(u => new URL(u).pathname === '/api/book'); await bp.route(u => new URL(u).pathname === '/api/book', r => r.abort());
+    await bp.reload(); await bp.waitForFunction(() => document.querySelector('#paper.has'), null, { timeout: 8000 }).catch(() => {});
+    const off = await bp.evaluate(() => ({ st: document.querySelector('#st').textContent, has: !!document.querySelector('#paper.has') }));
+    check('BOOK: with no internet, a kept page opens', off.has && off.st !== 'OFFLINE', JSON.stringify(off)); await bx.close(); }
   await ctx.close();
 } catch (e) { results.push(`FAIL  section cards: ${e.message.split('\n')[0]}`); }
 

@@ -139,10 +139,16 @@
   /* ───────── book: one page a day ───────── */
   var book = {
     feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1) + (s.shelf ? '&s=' + s.shelf : ''); },
-    opts: [['pick', 'BOOK', undefined, 'select'], ['go', 'PAGE', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›'], ['size', 'TEXT']],
-    init: function (o) { var z = 1; try { var zs = localStorage.getItem('da.book.sz'); z = zs == null ? 1 : +zs; } catch (e) { z = 1; } o.sz = z >= 0 && z < 3 ? z : 1; },
-    local: function (s, o) { return ownPage(s, o); },
-    mix: function (d, s, o) { o.srv = { n: d.books, all: d.all }; return MINE.all(s.shelf || 'all').then(function (l) { return bookLists(d, s, o, l); }); },
+    opts: [['pick', 'BOOK', undefined, 'select'], ['go', 'PAGE', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›']],
+    init: function (o) { o.sz = 1; },
+    /* a page read before, or kept ahead, opens at once and with no internet; a book added on this phone before reads as it did */
+    local: function (s, o) { var own = ownPage(s, o); if (own) return own; var d = pageKept(s, o); if (!d) return null;
+      o.srv = { n: d.books, all: d.all }; return MINE.all(s.shelf || 'all').then(function (l) { return bookLists(d, s, o, l); }); },
+    mix: function (d, s, o) { o.srv = { n: d.books, all: d.all };
+      /* a book still being paged on the site: its title and its line now, its page in a moment */
+      if (d.warming) { clearTimeout(book._w); book._w = setTimeout(function () { if (S.stack && S.stack.kind === 'book' && (S.o.b || 1) === d.b) load(); }, 4000); }
+      else { pageKeep(s, d); pagesAhead(s, d); }
+      return MINE.all(s.shelf || 'all').then(function (l) { return bookLists(d, s, o, l); }); },
     act: function (a, s, o) {
       var b = o.b || 1, p = o.p || 1;
       var nb = o.nb || 20;
@@ -158,6 +164,7 @@
       var y = 128; k.fit(String(d.title || '').toUpperCase(), M, y, '700', 28, W - 2 * M, SANS);
       k.txt([d.author, d.year].filter(Boolean).join(' · ').toUpperCase(), M, y + 26, '500 17px ' + MONO); y += 44; k.box(M, y, W - 2 * M, 3); y += 34;
       if (d.review) { y += k.wrap(d.review, M, y, 'italic 400 22px ' + SANS, W - 2 * M, 30) + 8; k.box(M, y, W - 2 * M, 1); y += 34; }
+      if (d.warming) { y += 10; k.txt('· · ·', M, y + 20, '700 26px ' + MONO); y += 44; }
       String(d.text || '').split(/\n\n+/).forEach(function (par) { y += k.wrap(par, M, y, '400 ' + z[0] + 'px ' + SANS, W - 2 * M, z[1]) + 10; });
       y += 4; k.box(M, y, W - 2 * M, 3);
       return k.foot(y, 'https://novel.global/x#' + s.id, '', d.own ? 'ADDED BY A READER' : 'PROJECT GUTENBERG · PUBLIC DOMAIN');
@@ -230,11 +237,20 @@
       bits.forEach(function (x) { if (cur && cur.length + x.length > max) push(); if (!cur) from = i; cur = cur ? cur + '\n\n' + x : x; }); });
     push(); return pg; }
   function bookLists(d, s, o, l) {
-    var n = o.srv ? o.srv.n : 0; d.all = (o.srv ? o.srv.all : []).concat(l.map(function (b) { return 'ADDED · ' + b.title; })).concat(['+ ADD A BOOK']).concat(d.own ? ['× TAKE IT OFF'] : []);
-    d.books = n + l.length; o.addAt = n + l.length + 1; o.dropAt = d.own ? o.addAt + 1 : 0; o.p = d.p;
+    var n = o.srv ? o.srv.n : 0; d.all = (o.srv ? o.srv.all : []).concat(l.map(function (b) { return 'ADDED · ' + b.title; })).concat(d.own ? ['× TAKE IT OFF'] : []);
+    d.books = n + l.length; o.addAt = -1; o.dropAt = d.own ? n + l.length + 1 : 0; o.p = d.p;
     if (!d.plist) d.plist = Array.apply(null, Array(Math.min(d.of || 1, 2000))).map(function (x, i) { return 'PAGE ' + (i + 1); });
-    var tb = document.querySelector('#opts [data-a="size"]'); if (tb) { tb.textContent = 'TEXT ' + BOOK_SZ[o.sz == null ? 1 : o.sz][2]; tb.title = 'Text size'; }
     return d; }
+  /* pages kept on this phone: each page read, the two after it, and the first page of the first three books, so the shelf opens
+     at once and reads with no internet (the forty last kept; an island keeps its own, the same pages, on its shelf) */
+  var PKEY = 'da.book.pages', pkAll = function () { try { return JSON.parse(localStorage.getItem(PKEY) || '{}') || {}; } catch (e) { return {}; } };
+  var pkId = function (s, b, p) { return (s.shelf || 'all') + ':' + b + ':' + p; };
+  function pageKept(s, o) { var d = pkAll()[pkId(s, o.b || 1, o.p || 1)]; return d && d.text ? JSON.parse(JSON.stringify(d)) : null; }
+  function pageKeep(s, d) { if (!d || d.own || d.warming || !d.text) return; var all = pkAll(), k = pkId(s, d.b, d.p); delete all[k];
+    all[k] = { b: d.b, books: d.books, all: d.all, title: d.title, author: d.author, year: d.year, review: d.review, p: d.p, of: d.of, text: d.text };
+    var ks = Object.keys(all); while (ks.length > 40) delete all[ks.shift()]; try { localStorage.setItem(PKEY, JSON.stringify(all)); } catch (e) { /* full: as it was */ } }
+  function pagesAhead(s, d) { var want = [[d.b, d.p + 1], [1, 1], [2, 1], [3, 1], [d.b, d.p + 2]].filter(function (w) { return w[0] <= d.books && (w[0] !== d.b || w[1] <= d.of) && !pkAll()[pkId(s, w[0], w[1])]; });
+    want.slice(0, 3).forEach(function (w, i) { setTimeout(function () { api(book.feed(s, { b: w[0], p: w[1] })).then(function (x) { pageKeep(s, x); }, function () {}); }, 600 + i * 900); }); }
   function ownPage(s, o) { var sh = s.shelf || 'all'; if (!o.srv || (o.b || 1) <= o.srv.n) return null;
     return MINE.all(sh).then(function (l) { var bk = l[(o.b || 1) - o.srv.n - 1]; if (!bk) { o.b = 1; o.p = 1; return api(book.feed(s, o)).then(function (d) { return bookLists(d, s, o, l); }); }
       var pg = pagesOf(bk.paras, BOOK_SZ[o.sz == null ? 1 : o.sz][3]), n = pg.length || 1, at = bk.at != null ? bk.at : bk.at0 || 0, p = o.p ? Math.max(1, Math.min(n, o.p)) : 1;
@@ -698,7 +714,7 @@
   var S = { stack: null, K: null, data: null, o: {}, to: null, prns: [], ready: false, code: '' }, cv = null, IN = /[?&]in=1/.test(location.search), QK = /[?&]quick=1/.test(location.search);
   var FONTS = ['400 40px VT323', '700 40px Poppins', '600 40px Poppins', '400 40px Poppins', '600 20px "IBM Plex Mono"', '500 20px "IBM Plex Mono"'];
 
-  function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to; [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
+  function keys() { var go = $('#go'); if (go) go.disabled = !S.ready || !S.to || !!(S.data && S.data.warming); [].forEach.call(document.querySelectorAll('#to button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === S.to)); });
     [].forEach.call(document.querySelectorAll('#opts button[data-t]'), function (b) { b.setAttribute('aria-pressed', String(!!S.o[b.dataset.t])); }); }
   function picks() { var d = S.data || {}; [].forEach.call(document.querySelectorAll('#pick select, #opts select'), function (s) { var pg = s.dataset.a === 'go', L = pg ? d.plist : d.all, v = String((pg ? d.p : d.b) || 1); if (!L || !L.length) return;
     var sig = L.length + '|' + L[0] + '|' + L[L.length - 1]; if (s._sig !== sig) { s.innerHTML = L.map(function (t, i) { return '<option value="' + (i + 1) + '">' + String(t).replace(/[<&"]/g, '') + '</option>'; }).join(''); s._sig = sig; } s.value = v; }); }
@@ -783,7 +799,7 @@
     cv = $('#paper canvas');
     var id = (location.hash.slice(1) || new URLSearchParams(location.search).get('c') || 'weather').replace(/[^a-z0-9-]/g, '');
     fetch('stacks/' + id + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (s) {
-      if (!KINDS[s.kind]) throw new Error('kind'); S.stack = s; S.K = KINDS[s.kind]; $('#nm').textContent = s.name || id;
+      if (!KINDS[s.kind]) throw new Error('kind'); S.stack = s; S.K = KINDS[s.kind]; document.documentElement.setAttribute('data-kind', s.kind); $('#nm').textContent = s.name || id;
       artLoad(s.id, function () { if (S.ready) paint(); }); cv.addEventListener('click', artTap);
       opts(); load(); printers();
       $('#to').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { S.to = b.dataset.p; keys(); } });

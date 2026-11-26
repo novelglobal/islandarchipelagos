@@ -1383,7 +1383,7 @@ BOOKS.push(
   [48929, 'Backwoods Surgery & Medicine', 'Charles Stuart Moody', 1910, 'Care far from a doctor, as it was done in 1910. Read it as history.', '']);
 const SHELF = { fic: [3261, 32, 18247, 21970, 1906, 10002, 8492, 201, 11438], how: [34607, 29558, 28255, 44215, 54138, 48929] };
 const shelfOf = s => s === 'fic' || s === 'how' ? BOOKS.filter(b => SHELF[s].includes(b[0])) : s === 'non' ? BOOKS.filter(b => !SHELF.fic.includes(b[0]) && !SHELF.how.includes(b[0])) : BOOKS;
-const BOOKP = new Map();
+const BOOKP = new Map(), BOOKW = new Map();
 /* Gutenberg, then its mirror (the id's digits as folders, all but the last), then the copy kept when either last answered */
 const gutDir = id => { const d = String(id); return d.length < 2 ? '0/' + d : d.slice(0, -1).split('').join('/') + '/' + d; };
 async function gutText(id) {
@@ -1395,8 +1395,10 @@ async function gutText(id) {
 }
 async function bookPages(bk, env) {
   if (BOOKP.has(bk[0])) return BOOKP.get(bk[0]);
-  const kept = 'books/' + bk[0] + '.json', t = await gutText(bk[0]);
-  if (!t) { try { const o = env && env.MEDIA ? await env.MEDIA.get(kept) : null; const pg = o ? await o.json() : null; if (Array.isArray(pg) && pg.length) { BOOKP.set(bk[0], pg); return pg; } } catch {} return null; }
+  const kept = 'books/' + bk[0] + '.json';
+  try { const o = env && env.MEDIA ? await env.MEDIA.get(kept) : null; const pg = o ? await o.json() : null; if (Array.isArray(pg) && pg.length) { BOOKP.set(bk[0], pg); return pg; } } catch {}
+  const t = await gutText(bk[0]);
+  if (!t) return null;
   const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return null;
   const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
   const paras = body.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').replace(/_/g, '').replace(/--/g, '\u2014').trim()).filter(p => p && !/^\[Illustration/.test(p));
@@ -1408,9 +1410,12 @@ async function bookPages(bk, env) {
   paras.forEach(p => { if (p.length <= 4800) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > 4000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
   if (cur) pages.push(cur); if (pages.length) { BOOKP.set(bk[0], pages); try { if (env && env.MEDIA && !(await env.MEDIA.head(kept))) { const js = JSON.stringify(pages); if (js.length < 4e6) await env.MEDIA.put(kept, js, { httpMetadata: { contentType: 'application/json' } }); } } catch {} } return pages;
 }
-async function bookThrough(url, env) {
+async function bookThrough(url, env, ctx) {
   const q = url.searchParams, L = shelfOf(q.get('s')), bi = Math.max(1, Math.min(L.length, Math.round(+q.get('b') || 1))), bk = L[bi - 1];
-  const pages = await bookPages(bk, env); if (!pages || !pages.length) return fail(502, 'book');
+  let work = BOOKW.get(bk[0]); if (!work && !BOOKP.has(bk[0])) { work = bookPages(bk, env).finally(() => BOOKW.delete(bk[0])); BOOKW.set(bk[0], work); if (ctx && ctx.waitUntil) ctx.waitUntil(work.catch(() => null)); }
+  const pages = BOOKP.get(bk[0]) || await Promise.race([work, new Promise(ok => setTimeout(() => ok('wait'), 3500))]);
+  if (pages === 'wait') return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: bk[4], p: 1, of: 1, text: '', warming: 1 });
+  if (!pages || !pages.length) return fail(502, 'book');
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
   return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
@@ -1972,7 +1977,7 @@ async function api(req, env, url, ctx) {
   if (url.pathname.startsWith('/api/inat/') && req.method === 'GET') return inatThrough(url);
   if (url.pathname === '/api/wx' && req.method === 'GET') return wxThrough(url);
   if (url.pathname === '/api/news' && req.method === 'GET') return newsThrough();
-  if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url, env);
+  if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url, env, ctx);
   if (url.pathname === '/api/c' && req.method === 'GET') return cartFor(env, url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);
