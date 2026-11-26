@@ -10,6 +10,8 @@
 :root { --ground: #17457F; --paper: #EEF1F1; --ink: #1A1E24; --line: #F4F1E8; --lit: #2FBF71; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ground); color: var(--ink); overscroll-behavior: none; }
+/* the page never scrolls: it is the paper, fixed to the screen */
+html, body { position: fixed; inset: 0; width: 100%; }
 body { font: 500 11px/1.4 var(--mono); touch-action: none; user-select: none; -webkit-user-select: none; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 button:focus-visible, a:focus-visible, .pull:focus-visible { outline: 1.5px solid currentColor; outline-offset: 3px; border-radius: 6px; }
@@ -42,6 +44,10 @@ body[data-at="1"] #floors { transform: translateY(-100%); } body[data-at="2"] #f
 .mk svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .mk .f { fill: currentColor; stroke: none; }
 #wipe.armed { color: #E2563F; opacity: 1; }
+#nib.on { opacity: 1; } #nib.on::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
+/* back to the cards: small, top left */
+#home { position: absolute; z-index: 3; top: calc(env(safe-area-inset-top) + 4px); left: max(4px, env(safe-area-inset-left)); width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink); opacity: .45; }
+#home:hover, #home:active { opacity: .9; } #home svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #tick { width: 50px; height: 50px; opacity: .85; }
 #tick svg { width: 26px; height: 26px; stroke-width: 2.2; }
 #tick .ring { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid currentColor; opacity: 0; transform: scale(.7); transition: opacity .2s, transform .2s; }
@@ -88,8 +94,9 @@ body.out #to, body.out #keep { opacity: .85; pointer-events: auto; transform: no
 <div id="floors">
   <section class="floor" aria-label="Paper">
     <div id="desk"><div id="strip" role="img" aria-label="The paper"><canvas id="pv"></canvas><textarea id="type" rows="1" spellcheck="false" aria-label="Words on the paper" hidden></textarea></div></div>
+    <a id="home" href="/" aria-label="Back to the cards"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
     <div class="bar" id="marks">
-      <button class="mk" id="nib" aria-label="Pen size"><svg viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="2"/></svg></button>
+      <button class="mk" id="nib" aria-label="Pen off" aria-pressed="false"><svg viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="2"/></svg></button>
       <button class="mk" id="back" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7L5 11l4 4"/><path d="M5 11h9a5 5 0 0 1 0 10h-3"/></svg></button>
       <button class="mk" id="wipe" aria-label="Clear the paper"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
     </div>

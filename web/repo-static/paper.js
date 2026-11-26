@@ -4,11 +4,11 @@
    approval page keeps), at the printer's own dots: photographs in the printer's greys, words and lines solid.
    Nothing to read on the page; everything has an aria-label.
 
-   On the paper: drag on empty paper draws; tap empty paper writes; long press empty paper picks photographs (or paste, or drop them);
-   drag a piece to move it; two fingers on a piece size and turn it; drag a piece off the paper to take it off.
-   The marks: the nib's dot is the pen's size (tap for the next, long press for white); the arrow undoes (long press redoes); the cross,
-   tapped twice, clears the paper. The tick: tap to open, tap again to print; the printer's name beside it changes printer; the arrow
-   saves. The bar at the foot, swiped up, goes to the wall; up again, the three cards. */
+   On the paper: tap empty paper writes; long press empty paper pastes a copied picture, or picks photographs (or paste or drop them
+   anywhere); drag a piece to move it; two fingers on a piece size and turn it; drag a piece off the paper to take it off.
+   The marks: the nib turns the pen on and off (on, a drag draws; long press for the next size, then white); the arrow undoes (long press
+   redoes); the cross, tapped twice, clears the paper. The tick: tap to open, tap again to print; the printer's name beside it changes
+   printer; the arrow saves. The bar at the foot, swiped up, goes to the wall; up again, the three cards. */
 (function () {
   'use strict';
   var D = document, T = window.THERMAL, $ = function (s) { return D.querySelector(s); };
@@ -22,7 +22,7 @@
   /* ───────── the paper, in dots: W across (80 mm at 180 dpi), L long ───────── */
   var W = 512, PAD = 20, MAXL = 4200, L = 600, Lmin = 600;
   var PEN = [3, 7, 14], TXT = [28, 40, 64];
-  var S = { items: [], pen: 0, white: false, done: [], undone: [], nid: 1 };
+  var S = { items: [], pen: 0, white: false, ink: false, done: [], undone: [], nid: 1 };
   var strip = $('#strip'), pv = $('#pv'), px = pv.getContext('2d'), type = $('#type');
   var Q = T.settle(null, null), scale = 1, IMGS = {};
 
@@ -46,7 +46,7 @@
     scale = L * s0 > vh ? vh / L : s0; var w = Math.round(W * scale), h = Math.round(L * scale);
     strip.style.width = w + 'px'; strip.style.height = h + 'px';
     /* the marks keep to the paper's own edges, wherever the paper stands on the screen */
-    var left = Math.round((vw - w) / 2); $('#marks').style.left = left ? left + 6 + 'px' : ''; $('#ends').style.right = left ? left + 6 + 'px' : ''; $('.pull').style.top = left ? (h - 22) + 'px' : '';
+    var left = Math.round((vw - w) / 2); $('#marks').style.left = left ? left + 6 + 'px' : ''; $('#home').style.left = left ? left + 4 + 'px' : ''; $('#ends').style.right = left ? left + 6 + 'px' : ''; $('.pull').style.top = left ? (h - 22) + 'px' : '';
     var dpr = Math.min(3, devicePixelRatio || 1); pv.width = Math.round(w * dpr); pv.height = Math.round(h * dpr); pv.k = dpr;
     if (editing) typeAt(); paint();
   }
@@ -106,11 +106,18 @@
     img.src = URL.createObjectURL(file); }
   function addFiles(list) { for (var i = 0; list && i < list.length; i++) addImage(list[i]); }
   $('#pick').addEventListener('change', function (e) { addFiles(e.target.files); e.target.value = ''; });
-  D.addEventListener('paste', function (e) { if (editing) return; var dt = e.clipboardData; if (!dt) return; var got = false;
-    for (var i = 0; i < dt.items.length; i++) if (dt.items[i].kind === 'file') { got = true; addImage(dt.items[i].getAsFile()); }
-    if (got) { e.preventDefault(); return; } var t = dt.getData('text/plain'); if (t && t.trim()) { e.preventDefault(); mark(); addText(t.trim(), PAD, S.items.length ? used() + PAD / 2 : PAD); } });
+  D.addEventListener('paste', function (e) { var dt = e.clipboardData; if (!dt) return; var got = false;
+    for (var i = 0; i < dt.items.length; i++) if (dt.items[i].kind === 'file' && /^image\//.test(dt.items[i].type)) { if (!got && editing) endType(); got = true; addImage(dt.items[i].getAsFile()); }
+    if (got) { e.preventDefault(); return; } if (editing) return; var t = dt.getData('text/plain'); if (t && t.trim()) { e.preventDefault(); mark(); addText(t.trim(), PAD, S.items.length ? used() + PAD / 2 : PAD); } });
   D.addEventListener('dragover', function (e) { e.preventDefault(); });
   D.addEventListener('drop', function (e) { e.preventDefault(); addFiles(e.dataTransfer && e.dataTransfer.files); });
+  /* what was copied, if it is a picture (the phone asks once to paste); else the photographs on the phone */
+  function pasteOrPick() {
+    var pick = function () { $('#pick').click(); };
+    if (!(navigator.clipboard && navigator.clipboard.read)) return pick();
+    navigator.clipboard.read().then(function (items) { var got = false;
+      items.forEach(function (it) { var t = (it.types || []).filter(function (x) { return /^image\//.test(x); })[0]; if (!t) return; got = true; it.getType(t).then(function (b) { addImage(new File([b], 'pasted', { type: t })); }); });
+      if (!got) pick(); }, pick); }
 
   /* ───────── words: typed where the paper was touched ───────── */
   var editing = null, mc = D.createElement('canvas').getContext('2d');
@@ -125,7 +132,7 @@
     if (!it.s) S.items.splice(S.items.indexOf(it), 1); else measure(it); draw(); }
   type.addEventListener('input', typeAt);
   type.addEventListener('keydown', function (e) { if (e.key === 'Escape' || (e.key === 'Enter' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); endType(); } });
-  type.addEventListener('blur', function () { setTimeout(endType, 0); });
+  type.addEventListener('blur', function () { setTimeout(function () { endType(); window.scrollTo(0, 0); }, 0); });
 
   /* ───────── touches on the paper ───────── */
   var P = {}, G = null, hold = 0;
@@ -136,8 +143,9 @@
     if (ids.length === 2 && G && G.it && G.it.k === 'im') { var a = P[ids[0]], b = P[ids[1]];
       G = { kind: 'pinch', it: G.it, d0: Math.hypot(b[0] - a[0], b[1] - a[1]), a0: Math.atan2(b[1] - a[1], b[0] - a[0]), w0: G.it.w, r0: G.it.r, moved: true }; cancelHold(); return; }
     if (ids.length > 1) return;
-    var it = hit(p); G = { kind: it ? 'move' : 'pen', it: it, p0: p, t0: Date.now(), moved: false, ox: it ? it.x - p[0] : 0, oy: it ? it.y - p[1] : 0 };
-    hold = setTimeout(function () { hold = 0; if (!G || G.moved || G.it) return; G.kind = 'none'; buzz(10); $('#pick').click(); }, 520);
+    var it = hit(p); G = { kind: it ? 'move' : S.ink ? 'pen' : 'idle', it: it, p0: p, t0: Date.now(), moved: false, ox: it ? it.x - p[0] : 0, oy: it ? it.y - p[1] : 0 };
+    /* a long press on empty paper: let go and it pastes a photograph, or picks one (done on the release, which phones count as a tap) */
+    hold = setTimeout(function () { hold = 0; if (!G || G.moved || G.it) return; G.kind = 'held'; buzz(12); }, 480);
   });
   strip.addEventListener('pointermove', function (e) {
     if (!P[e.pointerId] || !G) return; var p = spot(e); P[e.pointerId] = p;
@@ -145,6 +153,7 @@
       var it = G.it, w = Math.max(48, Math.min(W * 1.6, G.w0 * d / (G.d0 || 1))), r = G.r0 + ang - G.a0, sn = Math.round(r / (Math.PI / 2)) * (Math.PI / 2);
       if (Math.abs(r - sn) < 0.06) { if (it.r !== sn) buzz(4); r = sn; } if (Math.abs(w - (W - PAD * 2)) < 10) w = W - PAD * 2; else if (Math.abs(w - W) < 10) w = W; it.w = w; it.h = w * it.ar; it.r = r; draw(); return; }
     if (!G.moved && Math.hypot(p[0] - G.p0[0], p[1] - G.p0[1]) < 6 / scale) return;
+    if (G.kind === 'idle' || G.kind === 'held') { G.moved = true; G.kind = 'idle'; cancelHold(); return; }   /* a drag with the pen off is never a tap */
     if (!G.moved) { G.moved = true; cancelHold(); mark(); if (G.kind === 'pen') { G.st = { k: 'st', pts: [G.p0], w: PEN[S.pen], white: S.white }; S.items.push(G.st); } }
     if (G.kind === 'pen') { (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]).forEach(function (c) { var q = spot(c); G.st.pts.push([Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10]); }); draw(); }
     else if (G.kind === 'move') { G.it.x = Math.round(p[0] + G.ox); G.it.y = Math.round(p[1] + G.oy); strip.classList.toggle('off', !onPaper(p) || p[0] < 0 || p[0] > W); draw(); }
@@ -153,7 +162,8 @@
     if (!P[e.pointerId]) return; delete P[e.pointerId]; cancelHold(); if (Object.keys(P).length) return;
     var g = G; G = null; strip.classList.remove('off'); if (!g) return; var p = spot(e);
     if (g.kind === 'move' && g.moved && (p[0] < 0 || p[0] > W || p[1] < 0)) { S.items.splice(S.items.indexOf(g.it), 1); buzz(20); draw(); return; }
-    if (!g.moved && g.kind !== 'none' && g.kind !== 'pinch' && Date.now() - g.t0 < 400) {
+    if (g.kind === 'held') return pasteOrPick();
+    if (!g.moved && g.kind !== 'pinch' && Date.now() - g.t0 < 400) {
       if (g.it && g.it.k === 'tx') { mark(); return startType(g.it); }
       if (!g.it) { mark(); var sz = TXT[S.pen]; return startType(addText('', Math.min(W - PAD * 3, Math.max(PAD / 2, g.p0[0])), Math.max(PAD / 2, g.p0[1] - sz * 0.55))); } }
     draw();
@@ -166,8 +176,9 @@
     el.addEventListener('pointerup', function () { clearTimeout(t); if (!longed) tap(); });
     el.addEventListener('pointerleave', function () { clearTimeout(t); });
     el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(); } }); }
-  function nibDraw() { var c = $('#nib circle'); c.setAttribute('r', [1.8, 3.2, 5][S.pen]); c.style.fill = S.white ? 'none' : ''; c.style.stroke = S.white ? 'currentColor' : ''; c.style.strokeWidth = S.white ? '1.4' : ''; }
-  press($('#nib'), function () { S.pen = (S.pen + 1) % 3; buzz(6); nibDraw(); }, function () { S.white = !S.white; nibDraw(); });
+  function nibDraw() { var b = $('#nib'), c = b.querySelector('circle'); c.setAttribute('r', [1.8, 3.2, 5][S.pen]); c.style.fill = S.white ? 'none' : ''; c.style.stroke = S.white ? 'currentColor' : ''; c.style.strokeWidth = S.white ? '1.4' : '';
+    b.classList.toggle('on', S.ink); b.setAttribute('aria-pressed', String(S.ink)); b.setAttribute('aria-label', S.ink ? 'Pen on' : 'Pen off'); }
+  press($('#nib'), function () { S.ink = !S.ink; buzz(6); nibDraw(); }, function () { var k = S.pen + (S.white ? 3 : 0); k = (k + 1) % 4; S.white = k === 3; S.pen = S.white ? 0 : k; S.ink = true; nibDraw(); });
   press($('#back'), undo, redo);
   var armed = 0;
   function shiver() { strip.classList.remove('shiver'); void strip.offsetWidth; strip.classList.add('shiver'); }
@@ -201,20 +212,26 @@
   function me() { var c = store.get('da.who', ''); if (/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(c)) return c; var ch = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', r = new Uint8Array(3), s;
     do { crypto.getRandomValues(r); s = ''; for (var i = 0; i < 3; i++) s += ch[r[i] % 30]; } while (!(/[A-Z]/.test(s) && /[2-9]/.test(s))); store.set('da.who', s); store.set('da.who.at', Date.now()); return s; }
   function code() { var CR = '0123456789ABCDEFGHJKMNPQRSTVWXYZ', r = new Uint8Array(4), s = 'DA-'; crypto.getRandomValues(r); for (var i = 0; i < 4; i++) s += CR[r[i] % 32]; return s; }
+  /* the portfolio on the home (the same store the rest of the site keeps its art in) */
+  function folioAdd(c, codeT) { try { var src = c.toDataURL('image/jpeg', 0.86), item = { id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at: Date.now(), src: src, cap: '', code: codeT || '' };
+    var q = indexedDB.open('novelglobal', 2); q.onupgradeneeded = function () { var d0 = q.result; ['folio', 'piece'].forEach(function (n) { if (!d0.objectStoreNames.contains(n)) d0.createObjectStore(n, { keyPath: 'id' }); }); };
+    q.onsuccess = function () { try { q.result.transaction('folio', 'readwrite').objectStore('folio').put(item); } catch (e) { /* kept on the wall here */ } }; } catch (e) { /* kept on the wall here */ } }
   function wallAdd(c) { var w = store.get('da.paper.wall', []) || [], u; try { u = c.toDataURL('image/jpeg', 0.82); } catch (e) { return; } w.unshift(u); while (w.length && !store.set('da.paper.wall', w.slice(0, 24))) w.pop(); }
-  function away() { strip.classList.add('feed'); buzz([8, 30, 8]); setTimeout(function () { strip.classList.remove('feed'); S.items = []; S.done = []; S.undone = []; draw(); }, 720); }
+  function away() { strip.classList.add('feed'); buzz([8, 30, 8]); S.items = []; S.done = []; S.undone = []; editing = null; type.hidden = true; setTimeout(function () { strip.classList.remove('feed'); fit(); }, 720); }
 
   function print() {
-    open(false); var p = toNow(), dots = p && +p.paper === 58 ? 384 : 512, c = forPrinter(dots), isle = (store.get('da.hm.isle', null) || {}).id;
-    var body = { kind: 'record', code: code(), body: JSON.stringify({ type: 'paper', w: c.width, h: c.height }), lat: -37.8136, lng: 144.9631, dest: p ? p.id : 'novelglobal',
-      escpos: T.raster(c, Object.assign(T.opts(Q), { grey: !!c.grey })), thumb: T.thumb(c), who: me(), from: 'paper', stage: 'paper' };
-    if (isle && isle !== body.dest) body.isle = isle;
-    wallAdd(colour(W)); away();
+    open(false); var p = toNow(), dots = p && +p.paper === 58 ? 384 : 512, cd = code(), body = null, shot = null;
+    try { var c = forPrinter(dots), isle = (store.get('da.hm.isle', null) || {}).id; shot = colour(W);
+      body = { kind: 'record', code: cd, body: JSON.stringify({ type: 'paper', w: c.width, h: c.height }), lat: -37.8136, lng: 144.9631, dest: p ? p.id : 'novelglobal',
+        escpos: T.raster(c, Object.assign(T.opts(Q), { grey: !!c.grey })), thumb: T.thumb(c), who: me(), from: 'paper', stage: 'paper' };
+      if (isle && isle !== body.dest) body.isle = isle; } catch (e) { body = null; }
+    if (shot) { wallAdd(shot); folioAdd(shot, cd); } away();
+    if (!body) return say('×');
     fetch('/api/stories', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (r) { var st = r.j && (r.j.job ? r.j.job.status : r.j.status); say(!r.ok ? '×' : (p ? word(p) : 'novel.global') + (st === 'held' ? ' · ···' : ' · ✓')); }, function () { say('×'); });
   }
   /* saved: in colour, twice the dots across, as it looks */
-  function keep() { if (!S.items.length) { shiver(); return buzz(30); } open(false); var c = colour(W * 2); wallAdd(colour(W));
+  function keep() { if (!S.items.length) { shiver(); return buzz(30); } open(false); var c = colour(W * 2), sm = colour(W); wallAdd(sm); folioAdd(sm, '');
     c.toBlob(function (b) { if (!b) return; var a = D.createElement('a'), u = URL.createObjectURL(b); a.href = u; a.download = 'paper-' + new Date().toISOString().slice(0, 10) + '.png'; D.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); });
     away(); }
 
@@ -258,7 +275,9 @@
 
   /* ───────── start: the site's one print setting, the printers, the paper ───────── */
   fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { var o = null; try { o = j && j.printq ? JSON.parse(j.printq) : null; } catch (e) { o = null; } Q = T.settle(o, null); }).catch(function () { /* the house setting */ });
-  printers(); nibDraw(); addEventListener('resize', fit); fit();
+  printers(); nibDraw(); addEventListener('resize', fit); if (window.visualViewport) visualViewport.addEventListener('resize', function () { if (!editing) { window.scrollTo(0, 0); fit(); } }); fit();
+  /* back to the cards: where this came from on the site, else the home */
+  $('#home').addEventListener('click', function (e) { e.preventDefault(); try { if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) return history.back(); } catch (x) { /* home */ } location.href = '/'; });
   /* the first visit: the paper comes up and the tick nods, nothing more */
   if (!store.get('da.paper.seen', 0)) { store.set('da.paper.seen', 1); if (strip.animate) strip.animate([{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 600, easing: 'cubic-bezier(.2,.8,.2,1)' });
     setTimeout(function () { var t = $('#tick'); if (t.animate) t.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 520 }); }, 800); }
