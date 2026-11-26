@@ -3,12 +3,17 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to release, e.g. v1.4.0 (its tag is made from this commit)'
+        required: true
 permissions:
   contents: write
 env:
   PI_GEN: arm64
   INIT_FORMAT: cloudinit-rpi
   COUNTRY: AU
+  V: ${{ inputs.version || github.ref_name }}
 jobs:
   image:
     runs-on: ubuntu-24.04
@@ -23,7 +28,7 @@ jobs:
           cache: false
       - run: go test ./...
       - name: build
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" -o image/stage-island/00-island/files/island ./island
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=${V}" -o image/stage-island/00-island/files/island ./island
       - name: password
         id: pw
         run: |
@@ -50,20 +55,22 @@ jobs:
           verbose-output: true
       - name: list
         run: |
-          IMG="island-${GITHUB_REF_NAME}.img.xz"
+          IMG="island-${V}.img.xz"
           sudo cp "${{ steps.build.outputs.image-path }}" "$IMG"
           sudo chown "$USER" "$IMG"
-          python3 image/os-list.py "$IMG" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" > os-list.json
+          python3 image/os-list.py "$IMG" "$GITHUB_REPOSITORY" "$V" > os-list.json
           cat os-list.json
           echo "IMG=$IMG" >> "$GITHUB_ENV"
       - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.version != ''
         with:
+          tag_name: ${{ env.V }}
+          target_commitish: ${{ github.sha }}
           files: |
             kit/${{ env.IMG }}
             kit/os-list.json
       - uses: actions/upload-artifact@v4
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ !startsWith(github.ref, 'refs/tags/') && inputs.version == '' }}
         with:
           name: island-image
           path: |
