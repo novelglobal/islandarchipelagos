@@ -1063,6 +1063,7 @@ var WHO_CH = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', WHO_RE = /^(?:[A-HJ-NP-Z2-9]{3}|[
 /* how long a new code is (3 or 6), as set on the approval page; kept here from the site's settings */
 function codeLen() { return +store.get('da.codelen', 3) === 6 ? 6 : 3; }
 siteOf().then(function (j) { if (j && (j.codeLen === 3 || j.codeLen === 6)) store.set('da.codelen', j.codeLen); });
+siteOf().then(function () { isOpen(); });
 /* kept for one moon from its last use (a send, a print, a poster, a code typed or scanned); unused for longer, this phone lets it go
    and makes a new one. The pass brings an old one back */
 (function () { var old = store.get('da.me', ''); if (typeof old === 'string' && WHO_RE.test(old) && !store.get('da.who', '')) { store.set('da.who', old); store.set('da.who.at', +store.get('da.me.at', 0) || Date.now()); } })();
@@ -1098,7 +1099,10 @@ function mine() { meUsed(); return api('/mine/' + me()).then(function (j) { if (
 function useCode(c) { if (!setMe(c)) return Promise.resolve(false); return api('/mine/' + me() + homeQ()).then(function (j) { homeKept(j); var lv = Math.max(+store.get('da.lv', 0) || 0, (j && j.lv) || 0, 1); store.set('da.lv', lv); store.set('da.who.ok', j && j.printed ? 1 : 0); store.set('da.who.via', (j && j.via) || ''); store.set('da.who.keep', (j && +j.keep) || 0); if (j && j.kin != null) store.set('da.kin', j.kin); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }).catch(function () { if ((+store.get('da.lv', 0) || 0) < 1) store.set('da.lv', 1); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }); }
 /* is this phone's code one that was printed? asked of the island now and again (never makes a code); kept as da.who.ok */
 var proofAt = 0;
-function proof() { var c = store.get('da.who', ''); if (!c || !WHO_RE.test(c) || Date.now() - proofAt < 60e3) return Promise.resolve(!!store.get('da.who.ok', 0)); proofAt = Date.now();
+/* ALL OPEN on the approval page: every phone is as one whose code was printed (a code is made for it if it has none) */
+function isOpen() { return siteOf().then(function (j) { if (!(j && j.allOpen)) return false; me(); store.set('da.who.ok', 1); return true; }); }
+function proof() { return isOpen().then(function (o) { return o || proof0(); }); }
+function proof0() { var c = store.get('da.who', ''); if (!c || !WHO_RE.test(c) || Date.now() - proofAt < 60e3) return Promise.resolve(!!store.get('da.who.ok', 0)); proofAt = Date.now();
   return api('/mine/' + c + homeQ()).then(function (j) { homeKept(j); var ok = !!(j && j.printed); store.set('da.who.ok', ok ? 1 : 0); store.set('da.who.via', (j && j.via) || ''); if (j && j.keep) store.set('da.who.keep', +j.keep);
     /* what of theirs is already on the site, from whatever phone or the approval page: never offered to the island again */
     var sh = ((j && j.mine) || []).filter(function (m) { return m.shown; }).map(function (m) { return m.code; }); if (sh.length) { var L0 = store.get('da.live', []) || []; store.set('da.live', sh.concat(L0.filter(function (q) { return sh.indexOf(q) < 0; })).slice(0, 60)); } return ok; }).catch(function () { return !!store.get('da.who.ok', 0); }); }

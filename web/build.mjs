@@ -144,6 +144,7 @@ fs.writeFileSync(path.join(out, 'cart.js'), min(thermal + '\n' + read(path.join(
 fs.writeFileSync(path.join(out, 'art.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'art.js')), 'js'));
 fs.writeFileSync(path.join(out, 'popup.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'popup.js')), 'js'));
 fs.writeFileSync(path.join(out, 'desk.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'desk.js')), 'js'));
+fs.writeFileSync(path.join(out, 'paper.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'paper.js')), 'js'));
 fs.writeFileSync(path.join(out, 'aura.css'), min(read(path.join(src, 'base', 'aura.css')), 'css'));
 fs.writeFileSync(path.join(out, 'aura.js'), min(read(path.join(src, 'base', 'aura.js')), 'js'));
 fs.writeFileSync(path.join(out, 'home.css'), min(read(path.join(src, 'base', 'home.css')), 'css'));

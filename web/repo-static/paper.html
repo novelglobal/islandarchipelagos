@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#EEF1F1">
+<title>novel.global</title>
+<link rel="icon" href="/iruk.svg" type="image/svg+xml">
+<style>
+:root { --ground: #17457F; --paper: #EEF1F1; --ink: #1A1E24; --line: #F4F1E8; --lit: #2FBF71; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ground); color: var(--ink); overscroll-behavior: none; }
+body { font: 500 11px/1.4 var(--mono); touch-action: none; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, a:focus-visible, .pull:focus-visible { outline: 1.5px solid currentColor; outline-offset: 3px; border-radius: 6px; }
+
+/* three floors, one above the next: the paper, the wall, the three cards */
+#floors { position: fixed; inset: 0; transition: transform .42s cubic-bezier(.2, .8, .2, 1); }
+.floor { position: absolute; left: 0; right: 0; height: 100%; }
+.floor:nth-child(1) { top: 0; } .floor:nth-child(2) { top: 100%; } .floor:nth-child(3) { top: 200%; }
+body[data-at="1"] #floors { transform: translateY(-100%); } body[data-at="2"] #floors { transform: translateY(-200%); }
+
+/* the paper is the screen: 80 mm across it, as long as what is on it */
+#desk { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
+#strip { position: relative; flex: none; background: var(--paper); box-shadow: 0 0 40px rgba(0, 0, 0, .35); }
+#strip::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .6 0 0 0 0 .64 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23f)'/%3E%3C/svg%3E"); }
+#pv { position: absolute; inset: 0; width: 100%; height: 100%; }
+#strip.off { box-shadow: inset 0 0 0 3px #E2563F; }
+#strip.feed { animation: feed .7s cubic-bezier(.5, 0, .7, 1) forwards; }
+@keyframes feed { to { transform: translateY(-110vh); } }
+#strip.shiver { animation: shiver .18s linear 2; }
+@keyframes shiver { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+#type { position: absolute; z-index: 2; margin: 0; padding: 0; border: 0; outline: 0; resize: none; overflow: hidden; background: transparent; color: var(--ink); caret-color: var(--ink); font-weight: 700; line-height: 1.12; white-space: pre-wrap; }
+
+/* the marks: small and quiet, at the foot of the paper */
+.bar { position: absolute; z-index: 3; bottom: calc(env(safe-area-inset-bottom) + 6px); display: flex; align-items: center; }
+#marks { left: max(6px, env(safe-area-inset-left)); }
+#ends { right: max(6px, env(safe-area-inset-right)); }
+.mk { position: relative; width: 44px; height: 44px; display: grid; place-items: center; opacity: .5; transition: opacity .15s, transform .15s; }
+.mk:hover, .mk:active { opacity: .9; } .mk:active { transform: scale(.9); }
+.mk svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.mk .f { fill: currentColor; stroke: none; }
+#wipe.armed { color: #E2563F; opacity: 1; }
+#tick { width: 50px; height: 50px; opacity: .85; }
+#tick svg { width: 26px; height: 26px; stroke-width: 2.2; }
+#tick .ring { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid currentColor; opacity: 0; transform: scale(.7); transition: opacity .2s, transform .2s; }
+body.out #tick { opacity: 1; } body.out #tick .ring { opacity: .9; transform: none; }
+/* the tick, opened: the printer it goes to, and the file it keeps */
+#to, #keep { opacity: 0; pointer-events: none; transform: translateX(10px); transition: opacity .2s, transform .2s; }
+body.out #to, body.out #keep { opacity: .85; pointer-events: auto; transform: none; }
+#to { height: 44px; padding: 0 10px; display: flex; align-items: center; gap: 7px; letter-spacing: .1em; text-transform: uppercase; max-width: 44vw; }
+#to i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+#to.on i { background: var(--lit); border-color: var(--lit); box-shadow: 0 0 8px var(--lit); }
+#to b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#say { position: absolute; z-index: 3; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translateX(-50%); letter-spacing: .12em; text-transform: uppercase; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; }
+#say.on { opacity: .75; }
+.pull { position: absolute; z-index: 3; left: 50%; bottom: 0; width: 96px; height: calc(env(safe-area-inset-bottom) + 22px); margin-left: -48px; display: grid; place-items: center; cursor: ns-resize; }
+.pull::after { content: ""; width: 34px; height: 4px; border-radius: 2px; background: currentColor; opacity: .22; }
+
+/* the wall: each piece whole, one at a time */
+#wall { position: absolute; inset: 0; overflow: hidden; color: var(--line); }
+#wall .row { position: absolute; inset: 0; display: flex; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+#wall figure { flex: 0 0 100%; height: 100%; margin: 0; display: grid; place-items: center; padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 30px); }
+#wall img { display: block; max-width: 100%; max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 50px); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .55); transition: transform .3s; }
+#wall figure.near img { transform: scale(2.2); }
+#wall .none { position: absolute; inset: 0; display: grid; place-items: center; }
+#wall .none span { width: 110px; height: 170px; border: 1.5px dashed rgba(244, 241, 232, .35); }
+
+/* the three cards, a line each, and the small site each opens */
+#three { position: absolute; inset: 0; display: grid; align-content: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 24px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(16px, env(safe-area-inset-left)); }
+#three > button { display: block; width: 100%; max-width: 440px; justify-self: center; text-align: left; padding: 22px 20px; border-radius: 14px; background: var(--paper); color: var(--ink); font: 600 14px/1.45 var(--mono); box-shadow: 0 14px 30px -16px rgba(0, 0, 0, .5); transition: transform .15s; }
+#three > button:active { transform: scale(.98); }
+#site { position: fixed; inset: 0; z-index: 9; background: var(--paper); color: var(--ink); transform: translateY(100%); transition: transform .35s cubic-bezier(.2, .8, .2, 1); overflow: auto; touch-action: pan-y; user-select: text; -webkit-user-select: text; }
+#site.on { transform: none; }
+#site .in { max-width: 520px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 64px) max(20px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(20px, env(safe-area-inset-left)); display: grid; gap: 18px; }
+#site p { margin: 0; font: 600 15px/1.5 var(--mono); }
+#site ul { list-style: none; margin: 0; padding: 0; display: grid; border-top: 1px solid rgba(26, 30, 36, .15); }
+#site li { border-bottom: 1px solid rgba(26, 30, 36, .15); }
+#site li a, #site li span { display: flex; justify-content: space-between; gap: 12px; padding: 14px 2px; color: inherit; text-decoration: none; font: 500 13px/1.4 var(--mono); }
+#site li a::after { content: "→"; opacity: .5; }
+#site .x { position: fixed; top: calc(env(safe-area-inset-top) + 10px); right: max(10px, env(safe-area-inset-right)); width: 44px; height: 44px; display: grid; place-items: center; }
+#site .x svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+@media (prefers-reduced-motion: reduce) { #floors, #site, #wall .row { transition: none; } #strip.feed, #strip.shiver { animation: none; } }
+</style>
+</head>
+<body data-at="0">
+<div id="floors">
+  <section class="floor" aria-label="Paper">
+    <div id="desk"><div id="strip" role="img" aria-label="The paper"><canvas id="pv"></canvas><textarea id="type" rows="1" spellcheck="false" aria-label="Words on the paper" hidden></textarea></div></div>
+    <div class="bar" id="marks">
+      <button class="mk" id="nib" aria-label="Pen size"><svg viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="2"/></svg></button>
+      <button class="mk" id="back" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7L5 11l4 4"/><path d="M5 11h9a5 5 0 0 1 0 10h-3"/></svg></button>
+      <button class="mk" id="wipe" aria-label="Clear the paper"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+    </div>
+    <div class="bar" id="ends">
+      <button id="to" aria-label="Which printer"><i></i><b>&nbsp;</b></button>
+      <button class="mk" id="keep" aria-label="Save"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+      <button class="mk" id="tick" aria-label="Print or save"><span class="ring"></span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+    </div>
+    <p id="say" aria-live="polite"></p>
+    <span class="pull" role="button" tabindex="0" aria-label="The wall"></span>
+    <input id="pick" type="file" accept="image/*" multiple hidden>
+  </section>
+  <section class="floor" aria-label="The wall"><div id="wall"></div></section>
+  <section class="floor" aria-label="More"><div id="three"></div></section>
+</div>
+<section id="site" aria-modal="true" role="dialog" aria-label=""><button class="x" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="in"></div></section>
+<script src="/paper.js"></script>
+</body>
+</html>

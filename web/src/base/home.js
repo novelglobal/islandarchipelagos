@@ -42,6 +42,8 @@
      amber, the archipelagos' coral */
   var CARDS = [
     { id: 'intro', size: 'small', title: 'ISLAND ARCHIPELAGOS', skin: 'intro', opens: 'none', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
+    /* the paper (v0.8): a blank strip of receipt paper to paste, draw and write on, then print on an island or keep. Its own page, /paper */
+    { id: 'paper', size: 'small', title: 'PAPER', skin: 'paper', opens: 'paper', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'space', size: 'small', title: 'ISLAND ARCHIPELAGOS', hub: 'https://github.com/novelglobal/islandarchipelagos', opens: 'bench', island: 'novelglobal', art: 'forms', motion: 'shadow', where: [-37.8136, 144.9631] },
     { id: 'radio', size: 'small', title: 'DIRECT ACTION RADIO', opens: 'radio', island: 'novelglobal', art: 'blocks', motion: 'speed', where: [-37.8136, 144.9631] },
     { id: 'wish', size: 'small', title: 'BLUEPAPER', opens: 'aura', island: 'novelglobal', art: 'photos', motion: 'shadow', where: [-37.8136, 144.9631] },
@@ -82,7 +84,7 @@
   };
   var SMALL_T = { radio: 'Direct action radio', wish: 'bluepaper', research: 'Research board', zine: 'Design print', kit: 'Island', space: 'Island archipelagos', portfolio: 'Portfolio' };
   var JACKED = ['portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space'];
-  var SKINS = ['intro', 'portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play', 'wx'];
+  var SKINS = ['intro', 'paper', 'portfolio', 'wish', 'radio', 'zine', 'research', 'kit', 'space', 'slot', 'play', 'wx'];
   /* small cards stand three to a page; a page of them always ends in an open slot for the next printer */
   /* the owner's switches (Settings): keys on the small cards, ISLAND folded into ISLAND ARCHIPELAGOS, the second jellyfish's look */
   var OPT = { talk: false, find: false, one: true, stamp: false, carts: false };
@@ -104,9 +106,9 @@
   /* a link to an island (?visit=its id): that island's home on this phone, novel.global a tap away; a ghost only while its keeper shares it */
   (function () { var m = /[?&]visit=([a-z0-9-]{1,40})\b/.exec(location.search); if (!m) return; try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* kept */ }
     fetch('/api/visit/' + m[1]).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (!j || !j.id) { if (window.NG && NG.toast) NG.toast('THAT ISLAND IS NOT SHARED'); return; }
-      var o = { id: j.id, name: j.name, home: j.home || null, pics: j.pics || [], visit: 1 }; store.set('da.hm.visit', o); ENVI = o; envGo('isle'); }).catch(function () { /* offline */ }); })();
+      var o = { id: j.id, name: j.name, ghost: !!j.ghost, home: j.home || null, pics: j.pics || [], visit: 1 }; store.set('da.hm.visit', o); ENVI = o; envGo('isle'); }).catch(function () { /* offline */ }); })();
   function envDraw() { var g = D.getElementById('hm-env'); if (!g) return; g.hidden = !ENVI; if (!ENVI) return; var b = g.querySelectorAll('button');
-    b[1].textContent = String(ENVI.name || ENVI.id).toUpperCase(); b[0].setAttribute('aria-pressed', String(ENV !== 'isle')); b[1].setAttribute('aria-pressed', String(ENV === 'isle')); }
+    b[1].textContent = ENVI.ghost === false ? String(ENVI.name || ENVI.id).toUpperCase() : 'GHOST'; b[0].setAttribute('aria-pressed', String(ENV !== 'isle')); b[1].setAttribute('aria-pressed', String(ENV === 'isle')); }
   function envGo(e) { ENV = e === 'isle' && ENVI ? 'isle' : 'ng'; store.set('da.hm.env', ENV); MINE = store.get(mineKey(), null); IH = ENV === 'isle' ? ENVI.home || null : null; applyCards(null); envDraw(); }
   function envKeep(o) { if (!o) { store.set('da.hm.isle', null); ENVI = store.get('da.hm.visit', null); if (ENV === 'isle' && !ENVI) envGo('ng'); envDraw(); return; }
     if (store.get('da.hm.visit', null)) store.set('da.hm.visit', null);
@@ -575,7 +577,7 @@
   dotsAt(); addEventListener('resize', dotsAt);
   envDraw(); $('#hm-env').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.getAttribute('aria-pressed') === 'true') return; beep(660, 0.05); envGo(b.dataset.env); });
   /* the cards as novel.global writes them on the approval page (CARDS): # a card, then its lines; the order they are written in */
-  var OPENS = /^(aura|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
+  var OPENS = /^(aura|paper|radio|kit|panel|bench|portfolio|press|research|unlock|stack:[a-z0-9-]{1,24})$/, KEYS = ['title', 'line', 'tag', 'island', 'opens', 'where', 'motion', 'art', 'size', 'sea'];
   var SZN = 0;
   /* THE WALL: each artwork whole on the screen, never cropped; swipe for the next, pinch or double tap to look closer.
      The only thing over it is its keys, and only the ones it has: PLAY (sound or motion), PRINT, SAVE */
@@ -631,6 +633,8 @@
           else if (k === 'hub') { if (/^https:\/\/[^\s"<>]+$/.test(v)) c.hub = v; } else if (k === 'skin') { if (SKINS.indexOf(v) >= 0) c.skin = v; } else if (k === 'island') c.island = v.toLowerCase().replace(/[^a-z0-9-]/g, ''); else if (KEYS.indexOf(k) >= 0) c[k] = v; }); });
       /* a set stands at the size novel.global gave last to any of its cards */
       CARDS.forEach(function (c) { if (!c.szAt) return; kin(c).forEach(function (x) { if ((x.szAt || 0) < c.szAt) { x.size = c.size; x.trio = c.trio; x.lib = c.lib; } }); });
+      /* the paper keeps its place, first after the top card, wherever the approval page puts the rest */
+      if (order.indexOf('paper') < 0 && byId('paper')) order.splice(order.indexOf('intro') + 1, 0, 'paper');
       CARDS.sort(function (a, b) { var i = order.indexOf(a.id), j = order.indexOf(b.id); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
       for (var i = CARDS.length - 1; i >= 0; i--) if (hide[CARDS[i].id] && CARDS[i].id !== 'intro') CARDS.splice(i, 1);
       CARDS.forEach(function (c, k) { c.o0 = k; }); }
@@ -895,11 +899,12 @@
   addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-introx]'); if (!b) return; e.preventDefault(); e.stopPropagation(); MINE = MINE || {}; MINE.hide = (MINE.hide || []).concat(['intro']); store.set(mineKey(), MINE); applyCards(null); }, true);
   function cardHTML(c, i, g1) { if (c.skin === 'intro') return introHTML(c, i, g1);
     var mo = MOTION || c.motion || 'shadow', sk = c.skin || (SKINS.indexOf(c.id) >= 0 ? c.id : c.isle ? 'isle' : 'plain');
-    var sm = sizeOf(c) === 'small', noT = c.ph || (sm && !OPT.talk), noF = c.ph || (sm && !OPT.find);
+    var sm = sizeOf(c) === 'small', bare = sk === 'paper', noT = bare || c.ph || (sm && !OPT.talk), noF = bare || c.ph || (sm && !OPT.find);
     var keys = (noT ? '' : '<button class="hm-rk hm-tb" data-talk="' + c.id + '" aria-label="Talk" title="Talk about this"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-8.5L7 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button>') + (noF ? '' : '<button class="hm-rk" data-radar="' + c.id + '" aria-label="Find a printer" title="Find a printer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>') +
       (c.hub ? '<a class="hm-rk" href="' + esc(c.hub) + '" target="_blank" rel="noopener" aria-label="The building hub"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '');
     var t = esc(c.title), inner;
-    if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async">' + '' + '<img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-ISL1</b>' +
+    if (sk === 'paper') inner = '<h2 class="hm-t vh">' + t + '</h2><span class="pp-sheet" aria-hidden="true"><i></i></span><svg class="pp-tk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    else if (sk === 'portfolio') inner = '<div class="hm-rc"><img class="rc-art" alt="" src="/cards/portfolio.webp" decoding="async">' + '' + '<img class="rc-tap" alt="" src="/cards/found-tap.jpg" decoding="async"><img class="rc-kept" alt="" hidden><i class="rc-hide" aria-hidden="true"></i><b class="rc-code">DA-ISL1</b>' +
       '<div class="rc-tp"><span class="tp-pr"><small>ONLY</small><b>$15<sup>.90</sup></b></span><span class="tp-tx"><i>AD · bunnings.com.au</i><b>Brasshards Vandal Proof Tap 4 Way &amp; Belt Clip</b><em>I/N 0524216</em></span><a class="tp-go" href="https://www.bunnings.com.au/brasshards-vandal-proof-tap-4-way-belt-clip_p0524216" target="_blank" rel="noopener">SHOP NOW ↗</a></div>' +
       '<div class="rc-txt"><h2 class="hm-t vh">' + t + '</h2></div><b class="rc-ng" aria-hidden="true">' + MARK + '<span>novel.global</span></b>' + STICK888 + '<div class="rc-low"><img class="rc-art rc-art2" alt="" src="/cards/portfolio.webp" decoding="async">' + tape('stories', 'rc-lbl') + tape('WORK', 'rc-lbl rc-work') +
       '<a class="rc-eco" href="https://en.wikipedia.org/wiki/Deep_ecology" target="_blank" rel="noopener" aria-label="Deep ecology"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="rc-eco-r" d="M50 50m-37 0a37 37 0 1 1 74 0a37 37 0 1 1 -74 0"/></defs><circle cx="50" cy="50" r="48" class="bg"/><circle cx="50" cy="50" r="28" class="in"/><text><textPath href="#rc-eco-r">DEEP ECOLOGY · DEEP ECOLOGY ·</textPath></text><path class="lf" d="M50 70C38 60 38 42 50 30C62 42 62 60 50 70ZM50 74V40M50 52l-6-6M50 60l7-7"/></svg></a>' +
@@ -1245,6 +1250,7 @@
     if (c.opens === 'aura') { setTimeout(intro, 1600); return goAway(function () { var a = AU(); if (a && a.home) a.home(); }); }
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
+    if (c.opens === 'paper') { location.href = '/paper'; return; }
     if (c.opens === 'portfolio') { return sheet(c.title, inFrame('art?in=1&one=1')); }
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');
@@ -1494,7 +1500,7 @@
   function tkWho() { try { return window.NG && NG.me ? NG.me() : ''; } catch (e) { return ''; } }
   /* the talk is only for those who have a code already, one a printer gave: without one the rooms stay shut, a field for a code from a print */
   var TKOK = false;
-  function tkOk() { try { if (!store.get('da.who', '')) return Promise.resolve(TKOK = false); return (window.NG && NG.proof ? NG.proof() : Promise.resolve(false)).then(function (ok) { return (TKOK = !!ok); }); } catch (e) { return Promise.resolve(false); } }
+  function tkOk() { try { return (window.NG && NG.proof ? NG.proof() : Promise.resolve(false)).then(function (ok) { return (TKOK = !!ok); }); } catch (e) { return Promise.resolve(false); } }
   var KEY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3.6"/><path d="M11.6 12H21M17.5 12v3M20 12v2.2"/></svg>';
   function tkLock(on) { tkp.classList.toggle('locked', on); var i = tkp.querySelector('input'); i.maxLength = on ? 3 : 280; i.placeholder = on ? 'code' : 'say something'; i.setAttribute('aria-label', on ? 'Your code from a print' : 'Say something'); i.autocapitalize = on ? 'characters' : 'sentences';
     if (on) tkp.querySelector('.tk-l').innerHTML = '<li class="none lock">' + KEY_SVG + '</li>'; }
@@ -1748,7 +1754,7 @@
       if (!HK.at) { var f0 = go.filter(function (l) { return !l.set(p); })[0]; HK.at = (f0 || go[0] || {}).k || null; }
       var tk = null, at = HK.at, si = go.map(function (l) { return l.k; }).indexOf(at), cur = go[si], nx = at, nd = go.filter(function (l) { return l.set(p); }).length;
       /* this phone's own island, kept for the home's switch */
-      if (own && !isle && !p.testOf && p.id) { envKeep({ id: p.id, name: p.name || p.id, home: p.home || null, pics: p.pics || [] }); if ((!p.ghost || p.built || p.ready) && ENV !== 'isle') envGo('isle'); }
+      if (own && !isle && !p.testOf && p.id) { envKeep({ id: p.id, name: p.name || p.id, ghost: !!p.ghost, home: p.home || null, pics: p.pics || [] }); if ((!p.ghost || p.built || p.ready) && ENV !== 'isle') envGo('isle'); }
       var mk = function (l) { var ok = has(l.part), st = ok && l.set(p), b = ok ? l.badge(p) : '';
         return '<button type="button" class="ik-m' + (l.sea ? ' sea' : '') + (ok ? '' : ' lock') + (st ? ' set' : '') + (l.k === at ? ' at' : '') + (l.k === tk ? ' tour' : '') + (ok && !tk && l.k === nx ? ' nx' : '') + ((IK_AT[l.k] || [])[2] ? ' up' : '') + '" data-ik="' + l.k + '" style="' + ikPos(l.k) + '"' +
           (ok ? ' aria-expanded="' + (l.k === at) + '"' : ' disabled') + ' aria-label="' + l.name + '" title="' + l.name + ': ' + esc(l.say) + '"><i>' + (b ? '<em>' + b + '</em>' : '') + '</i></button>'; };

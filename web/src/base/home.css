@@ -26,15 +26,16 @@ html.hm-away #hm > :not(#hm-top) { display: none; }
 #hm-top canvas { position: absolute; left: 0; top: 0; width: 100%; display: block; }
 #hm-jf { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; pointer-events: none; }
 html.hm-away #hm-jf, html.hm-sheet.hm-nosea #hm-jf { visibility: hidden; }
-#hm-top nav { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 10px); display: flex; gap: 4px; z-index: 1; }
+#hm-top nav { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 10px); display: flex; align-items: center; gap: 4px; z-index: 1; }
 #hm-top nav button { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; opacity: .85; color: #F4F1E8; }
 #hm-top nav button[hidden] { display: none; }
 /* which home: novel.global or your island */
-#hm-top nav #hm-env { display: flex; align-items: center; gap: 2px; margin-right: 4px; padding: 2px; border-radius: 16px; background: rgba(244, 241, 232, .12); box-shadow: inset 0 0 0 1px rgba(244, 241, 232, .3); }
+#hm-top nav #hm-env { display: flex; align-items: center; gap: 0; height: 32px; margin-right: 2px; padding: 0; background: none; box-shadow: none; }
 #hm-top nav #hm-env[hidden] { display: none; }
-#hm-top nav #hm-env button { display: block; width: auto; height: 28px; max-width: 108px; padding: 0 8px; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 9px/28px 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; color: #F4F1E8; background: none; box-shadow: none; opacity: .8; }
-#hm-top nav #hm-env button[aria-pressed="true"] { background: #F4F1E8; color: #17457F; opacity: 1; box-shadow: none; }
-@media (max-width: 360px) { #hm-top nav #hm-env button { max-width: 80px; padding: 0 6px; } }
+#hm-top nav #hm-env button { display: block; width: auto; height: 32px; max-width: 108px; padding: 0 7px; border-radius: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 9px/32px 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .1em; color: #F4F1E8; background: none; box-shadow: none; opacity: .5; }
+#hm-top nav #hm-env button[aria-pressed="true"] { opacity: 1; background: none; color: #F4F1E8; box-shadow: inset 0 -1.5px 0 -0.5px currentColor; }
+#hm-top nav #hm-env button:hover { opacity: 1; }
+@media (max-width: 360px) { #hm-top nav #hm-env button { max-width: 80px; padding: 0 5px; } }
 #hm-top nav button:hover { opacity: 1; background: rgba(244, 241, 232, .1); }
 #hm-top nav svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 #hm-top nav .f { fill: currentColor; stroke: none; }
@@ -182,6 +183,12 @@ html.hm-away #hm-top::after { content: ''; position: absolute; left: 50%; top: 5
 
 /* ISLAND */
 .hm-card.sk-kit { --c-bg: #EEEDEA; --c-ink: #0A0A0A; }
+/* the paper: blank blue4est on blueprint blue, a tick at its foot */
+.hm-card.sk-paper { --c-bg: #17457F; --c-ink: #F4F1E8; background: #17457F; }
+.hm-card.sk-paper .hm-art, .hm-card.sk-paper .hm-keys, .hm-card.sk-paper .hm-lamps { display: none; }
+.hm-card.sk-paper .pp-sheet { position: absolute; left: 50%; top: 12%; bottom: 18%; width: 42%; transform: translateX(-50%); background: #EEF1F1; box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .6); }
+.hm-card.sk-paper .pp-sheet i { position: absolute; left: 0; right: 0; bottom: -4px; height: 4px; background: linear-gradient(-45deg, transparent 3px, #EEF1F1 0) 0 0 / 6px 4px, linear-gradient(45deg, transparent 3px, #EEF1F1 0) 0 0 / 6px 4px; }
+.hm-card.sk-paper .pp-tk { position: absolute; right: 9%; bottom: 7%; width: 18%; max-width: 30px; fill: none; stroke: #F4F1E8; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .sk-kit .hm-k { margin: 0; font: 500 3.6cqw/1 'Departure Mono', ui-monospace, monospace; letter-spacing: .08em; }
 .sk-kit .hm-t { font: 700 30cqw/.84 'Archivo Narrow', Arial, sans-serif; letter-spacing: -.03em; max-width: 92cqw; margin: 0; }
 .sk-kit .hm-soon { margin: 0; font: 400 3cqw/1.2 'Departure Mono', ui-monospace, monospace; letter-spacing: .04em; opacity: .6; }
