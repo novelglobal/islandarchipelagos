@@ -1104,9 +1104,9 @@
       el('label', { class: 'check' }, calOn, 'USE THE CURVE'), el('div', { class: 'three' }, ...cals.map(c => c.row)),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => { const o = pqForm(); save({ printq: JSON.stringify(o) }); savedQ = JSON.stringify(o); } })),
       ), tuneSec = el('section', { class: 'ed' }, el('h3', { text: 'TONE' }),
-      hint('How dark every print is, wherever it is made: the site, the paper, the cards, the pop-ups and the islands. NORMAL is the settings above as saved; LIGHT lifts the middle tones; DARK deepens them. A choice is saved at once.'),
+      hint('Every print. Saved at once.'),
       el('div', { class: 'acts' }, ...toneBtns),
-      hint('The tone test shows the photograph all three ways, each as it prints now, with its sixteen steps under it. Print it, or print one tone on its own at full size.'),
+      hint('All three, as each prints now.'),
       el('div', { class: 'acts' }, pps2, ownPick, el('button', { type: 'button', text: 'SEE TONE TEST', onclick: () => toneDo(false) }), el('button', { type: 'button', class: 'on', text: 'PRINT TONE TEST', onclick: () => toneDo(true) })),
       el('div', { class: 'acts' }, ...['light', 'normal', 'dark'].map(t => el('button', { type: 'button', text: 'PRINT ' + t.toUpperCase(), onclick: () => toneDo(true, t) }))),
       toneSay, toneBox,
@@ -1177,7 +1177,7 @@
     const mkSay = el('p', { class: 'hint' });
     const lkList = el('ol', { class: 'list' });
     const lkLoad = async () => { try { const j = await (await api('links')).json(); lkList.replaceChildren(...(j.links || []).map(l => el('li', {}, el('span', { text: l.who + ' · ' + l.k.toUpperCase() + ' · ' + l.v + ' · ' + when(l.at) }), el('button', { type: 'button', text: 'REMOVE', onclick: async () => { await api('links/' + encodeURIComponent(l.who) + '/' + l.k, { method: 'DELETE' }); lkLoad(); } })))); if (!(j.links || []).length) lkList.replaceChildren(el('li', { text: 'NONE YET' })); } catch (e) { /* locked */ } };
-    const printing = el('section', { class: 'ed' }, el('h3', { text: 'PRINTING' }), chk('ao-on', st.allOpen !== false, 'ALL OPEN'), hint('On: everything is open to everyone. Nothing waits on a code being printed first; with FREE PRINTING on too, no pass is asked for. Proof of presence is untouched: only a print or a pass at an island proves a code.'), chk('fp-on', st.freePrint !== false, 'FREE PRINTING'), hint('On: every print goes straight out to its printer, with no approval.'),
+    const printing = el('section', { class: 'ed' }, el('h3', { text: 'PRINTING' }), chk('ao-on', st.allOpen !== false, 'ALL OPEN'), hint('Open to all. Codes are proved only by a print or a pass.'), chk('fp-on', st.freePrint !== false, 'FREE PRINTING'), hint('On: every print goes straight out to its printer, with no approval.'),
       chk('pp-on', !!st.passOn, 'PRINT PASS'), hint('On: a pass printed at an island sends one print from a phone straight out that day. Off: passes are not asked for or used.'),
       el('label', { class: 'row' }, el('span', { text: 'CODES' }), el('select', { id: 'cl-n' }, ...[3, 6].map(n => el('option', { value: String(n), text: String(n), ...(+st.codeLen === n ? { selected: '' } : {}) })))), hint('How many letters and numbers in a new pass or a new code. 3 as built.'),
       el('label', { class: 'row' }, el('span', { text: 'GAP' }), el('select', { id: 'pg-n' }, ...[[0, 'OFF'], [30, '30 S'], [60, '1 MIN'], [120, '2 MIN'], [300, '5 MIN'], [600, '10 MIN']].map(([n, t]) => el('option', { value: String(n), text: t, ...(+st.printGap === n ? { selected: '' } : {}) })))), hint('Time between one person’s prints. OFF as built. An island’s keeper may set their own.'),
