@@ -1410,12 +1410,19 @@ async function bookPages(bk, env) {
   paras.forEach(p => { if (p.length <= 4800) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > 4000) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
   if (cur) pages.push(cur); if (pages.length) { BOOKP.set(bk[0], pages); try { if (env && env.MEDIA && !(await env.MEDIA.head(kept))) { const js = JSON.stringify(pages); if (js.length < 4e6) await env.MEDIA.put(kept, js, { httpMetadata: { contentType: 'application/json' } }); } } catch {} } return pages;
 }
+/* a book's pages laid again at a shorter length (SHORT, MEDIUM), paragraph by paragraph, a long one by its sentences; kept once each */
+const BOOKL = new Map();
+function bookLen(id, pages, max) { const k = id + ':' + max; if (BOOKL.has(k)) return BOOKL.get(k);
+  const out = []; let cur = ''; const add = x => { if (cur && cur.length + x.length > max) { out.push(cur); cur = ''; } cur = cur ? cur + '\n\n' + x : x; };
+  pages.join('\n\n').split(/\n\n+/).forEach(p => { if (p.length <= max) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > max * 0.8) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
+  if (cur) out.push(cur); if (BOOKL.size > 60) BOOKL.clear(); BOOKL.set(k, out); return out; }
 async function bookThrough(url, env, ctx) {
   const q = url.searchParams, L = shelfOf(q.get('s')), bi = Math.max(1, Math.min(L.length, Math.round(+q.get('b') || 1))), bk = L[bi - 1];
   let work = BOOKW.get(bk[0]); if (!work && !BOOKP.has(bk[0])) { work = bookPages(bk, env).finally(() => BOOKW.delete(bk[0])); BOOKW.set(bk[0], work); if (ctx && ctx.waitUntil) ctx.waitUntil(work.catch(() => null)); }
-  const pages = BOOKP.get(bk[0]) || await Promise.race([work, new Promise(ok => setTimeout(() => ok('wait'), 3500))]);
+  let pages = BOOKP.get(bk[0]) || await Promise.race([work, new Promise(ok => setTimeout(() => ok('wait'), 3500))]);
   if (pages === 'wait') return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: bk[4], p: 1, of: 1, text: '', warming: 1 });
   if (!pages || !pages.length) return fail(502, 'book');
+  const zl = { s: 1500, m: 3000 }[q.get('z')]; if (zl) pages = bookLen(bk[0], pages, zl);
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
   return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }

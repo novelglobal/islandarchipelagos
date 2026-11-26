@@ -40,6 +40,8 @@
   #paper { position: relative; }
   #opts button[data-a="art"] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; order: 9; margin-left: auto; background: #1D9A55; border-color: #1D9A55; color: #fff; border-radius: 18px; }
   #opts button[data-a="deck"], #opts button[data-a="biz"] { flex: 1 1 0; width: auto; }
+  /* the book: adding one's own stands on its own line, plain to see */
+  #opts button[data-a="add"] { flex: 1 1 100%; font-weight: 600; }
   /* on the cards, ART stands in the row as a third key of the same shape */
   #opts:has(button[data-a="deck"]) button[data-a="art"] { flex: 1 1 0; order: 0; margin-left: 0; border-radius: 0; }
   #opts button[data-a="biz"] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }

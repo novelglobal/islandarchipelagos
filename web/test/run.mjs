@@ -1832,13 +1832,26 @@ if (run('cards')) try {
     await bp.waitForFunction(() => /Page 1 of book 1/.test(localStorage.getItem('da.book.pages') || ''), null, { timeout: 12000 });
     const lay = await bp.evaluate(() => { const go = document.querySelector('#go').getBoundingClientRect(), pp = document.querySelector('#paper').getBoundingClientRect(); return { goTop: go.top, paperTop: pp.top, go: document.querySelector('#go').disabled }; });
     await bp.waitForTimeout(3500); const kept = await bp.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('da.book.pages') || '{}')));
-    check('BOOK: a book still being paged shows at once (its title, its line) with PRINT held, never a blank minute; no adding a book, no text sizes', first.ms < 4000 && first.go === true && !first.opts.includes('size') && !first.books.some(t => /ADD A BOOK/.test(t)), JSON.stringify(first));
+    check('BOOK: a book still being paged shows at once (its title, its line) with PRINT held, never a blank minute; adding one\'s own book, TEXT and PAGE length all there', first.ms < 4000 && first.go === true && ['len', 'size', 'add'].every(a => first.opts.includes(a)) && first.books.some(t => /ADD A BOOK/.test(t)), JSON.stringify(first));
     check('BOOK: on a phone, PRINT stands above the page, and is free once the page is in', lay.goTop < lay.paperTop && lay.go === false, JSON.stringify(lay));
     check('BOOK: the page read, the next, and the first of the other books are kept on the phone', kept.includes('all:1:1') && kept.includes('all:1:2') && kept.includes('all:2:1'), JSON.stringify(kept));
     await bp.unroute(u => new URL(u).pathname === '/api/book'); await bp.route(u => new URL(u).pathname === '/api/book', r => r.abort());
     await bp.reload(); await bp.waitForFunction(() => document.querySelector('#paper.has'), null, { timeout: 8000 }).catch(() => {});
     const off = await bp.evaluate(() => ({ st: document.querySelector('#st').textContent, has: !!document.querySelector('#paper.has') }));
-    check('BOOK: with no internet, a kept page opens', off.has && off.st !== 'OFFLINE', JSON.stringify(off)); await bx.close(); }
+    check('BOOK: with no internet, a kept page opens', off.has && off.st !== 'OFFLINE', JSON.stringify(off));
+    /* PAGE: SHORT asks the site for short pages (and keeps them apart); a reader's own book, any of the formats, is read on the phone and paged too */
+    await bp.unroute(u => new URL(u).pathname === '/api/book'); const zs = [];
+    await bp.route(u => new URL(u).pathname === '/api/book', r => { const u = new URL(r.request().url()); zs.push(u.searchParams.get('z') || 'l'); const b = +u.searchParams.get('b') || 1, p = +u.searchParams.get('p') || 1;
+      return r.fulfill({ json: { b, books: 3, all: ['A · X', 'B · Y', 'C · Z'], title: 'Book ' + b, author: 'X', year: 1900, review: '', p, of: 12, text: 'Short page ' + p + '.' } }); });
+    await bp.reload(); await bp.waitForSelector('#paper.has'); await bp.click('#opts [data-a="len"]'); await bp.waitForTimeout(800);
+    const len = await bp.evaluate(() => document.querySelector('#opts [data-a="len"]').textContent);
+    check('BOOK: PAGE cycles LONG, SHORT, MEDIUM; SHORT asks the site for short pages', len === 'PAGE SHORT' && zs.includes('s'), JSON.stringify({ len, zs }));
+    const [fc] = await Promise.all([bp.waitForEvent('filechooser'), bp.click('#opts [data-a="add"]')]);
+    await fc.setFiles({ name: 'my-zine.txt', mimeType: 'text/plain', buffer: Buffer.from(Array.from({ length: 30 }, (_, i) => 'Paragraph ' + (i + 1) + ' of my own book, long enough to read as a real paragraph of a real book on a real island today.').join('\n\n')) });
+    await bp.waitForFunction(() => /ADDED/.test(document.querySelector('#pick select[data-a="pick"]').selectedOptions[0].textContent), null, { timeout: 8000 });
+    const own = await bp.evaluate(() => ({ sel: document.querySelector('#pick select[data-a="pick"]').selectedOptions[0].textContent, pages: document.querySelectorAll('#pick select[data-a="go"] option').length }));
+    check('BOOK: + ADD A BOOK reads a reader\'s own file on the phone, adds it to the list and pages it at the length chosen', /ADDED · MY ZINE/i.test(own.sel) && own.pages >= 2, JSON.stringify(own));
+    await bx.close(); }
   await ctx.close();
 } catch (e) { results.push(`FAIL  section cards: ${e.message.split('\n')[0]}`); }
 
