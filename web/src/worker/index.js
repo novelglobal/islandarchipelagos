@@ -417,7 +417,7 @@ async function mine(db, env, req, who, id) {
   const mk = await kinOf(db, who), kp = await db.prepare('SELECT COALESCE(keep, first + ?) AS k FROM makers WHERE who = ?').bind(KEEP.fresh, who).first();
   const hk = new URL(req.url).searchParams.get('k'), st = hk && codeKey(env) && await same(hk, await homeKey(env, who)) ? await stampsOf(db, who) : null;
   const own = st ? { stamps: st, animal: ((await db.prepare('SELECT animal FROM makers WHERE who = ?').bind(who).first()) || {}).animal != null, mods: (await db.prepare('SELECT id, name, number FROM printers WHERE mods LIKE ?').bind('%"' + who + '"%').all()).results.map(p => ({ id: p.id, name: p.name || p.id, number: p.number || null })) } : null;
-  return json({ ...(own || {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed) || !!(await settingsOf(db)).allOpen, ...(mk && mk.printed ? { via: mk.via === 'ghost' ? 'ghost' : 'print' } : {}), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
+  return json({ ...(own || {}), keep: (kp && kp.k) || 0, lv: (mk && mk.lv) || 0, kin: mk ? mk.kin : null, printed: !!(mk && mk.printed), open: !!(await settingsOf(db)).allOpen, ...(mk && mk.printed ? { via: mk.via === 'ghost' ? 'ghost' : 'print' } : {}), mine: results.map(r => ({ id: r.id, code: r.code, kind: r.kind, shown: r.status === 'shown', at: r.created, photo: r.status === 'shown' && !!r.has_photo, body: r.status === 'shown' ? r.body : '' })) });
 }
 /* a story sent: it waits for approval. A job for the partner's printer waits with it, unless that printer prints without approval.
    dest 'mesh': no print, only its mesh line, to every paired printer whose radio is on (MESH), to go out over the local mesh */
@@ -541,7 +541,8 @@ async function learnKinds(db, env, req) {
 /* moonShow: the moon tonight beside SOUND in the dark, and the moon each thing was made under in the corner of every print and piece kept */
 /* sendLive: a piece sent to novel.global with no printer (and no mesh) shown on the site at once; off, it waits here for approval. A print
    is the only thing that opens the devices, either way */
-/* allOpen: everything open to everyone. No code needs a print first; with FREE PRINTING on (as built), no pass is asked for either */
+/* allOpen: everything open to everyone: nothing waits on a code having been printed (with FREE PRINTING on, as built, no pass is asked for
+   either). It opens, it never proves: a code is printed, and present, only by a print or a pass at an island (Proof of Presence) */
 const SETTINGS = { allOpen: true, openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false, ghostOn: true };
 /* choices, one of a few: how long a new code is (3 or 6), and what an island's touch screen does with passes (nothing, shows one, takes one typed) */
 const CHOICES = { access: ['open', 'pop'], codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600], ghostPrint: ['approve', 'straight', 'off'] };
@@ -1073,7 +1074,7 @@ async function ghostReward(db, env, req, p, who, k) {
   if (!p.ghost || p.test_of) return fail(400, 'not a ghost'); if (!WHO.test(who)) return fail(400, 'who');
   const o = benchOf(p.bench).o; if (!o || o[2] !== 3) return fail(409, 'not on');
   if (p.gave && p.gave !== who) return fail(409, 'given');
-  { const so = await settingsOf(db); if (so.access === 'pop' && !so.allOpen) return fail(403, 'presence'); }
+  if ((await settingsOf(db)).access === 'pop') return fail(403, 'presence');
   const t = now();
   await db.prepare('INSERT INTO makers (who, first, last, posts, kin) VALUES (?, ?, ?, 0, (SELECT COALESCE(MAX(kin), -1) + 1 FROM makers)) ON CONFLICT(who) DO NOTHING').bind(who, t, t).run();
   await db.batch([db.prepare("UPDATE makers SET printed = ?, via = 'ghost' WHERE who = ? AND printed IS NULL").bind(t, who), keepMade(db, who), db.prepare('UPDATE printers SET gave = ? WHERE id = ?').bind(who, p.id)]); await keptSeal(db, env, k, p.id);

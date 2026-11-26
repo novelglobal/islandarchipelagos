@@ -1099,8 +1099,9 @@ function mine() { meUsed(); return api('/mine/' + me()).then(function (j) { if (
 function useCode(c) { if (!setMe(c)) return Promise.resolve(false); return api('/mine/' + me() + homeQ()).then(function (j) { homeKept(j); var lv = Math.max(+store.get('da.lv', 0) || 0, (j && j.lv) || 0, 1); store.set('da.lv', lv); store.set('da.who.ok', j && j.printed ? 1 : 0); store.set('da.who.via', (j && j.via) || ''); store.set('da.who.keep', (j && +j.keep) || 0); if (j && j.kin != null) store.set('da.kin', j.kin); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }).catch(function () { if ((+store.get('da.lv', 0) || 0) < 1) store.set('da.lv', 1); try { window.dispatchEvent(new Event('ng-level')); } catch (e) { /* old */ } return true; }); }
 /* is this phone's code one that was printed? asked of the island now and again (never makes a code); kept as da.who.ok */
 var proofAt = 0;
-/* ALL OPEN on the approval page: every phone is as one whose code was printed (a code is made for it if it has none) */
-function isOpen() { return siteOf().then(function (j) { if (!(j && j.allOpen)) return false; me(); store.set('da.who.ok', 1); return true; }); }
+/* ALL OPEN on the approval page: every phone may use everything (a code is made for it if it has none). It is kept apart from da.who.ok,
+   which stays true only for a code a print or a pass proved: Proof of Presence is never given by ALL OPEN */
+function isOpen() { return siteOf().then(function (j) { var o = !!(j && j.allOpen); store.set('da.open', o ? 1 : 0); if (o) me(); return o; }); }
 function proof() { return isOpen().then(function (o) { return o || proof0(); }); }
 function proof0() { var c = store.get('da.who', ''); if (!c || !WHO_RE.test(c) || Date.now() - proofAt < 60e3) return Promise.resolve(!!store.get('da.who.ok', 0)); proofAt = Date.now();
   return api('/mine/' + c + homeQ()).then(function (j) { homeKept(j); var ok = !!(j && j.printed); store.set('da.who.ok', ok ? 1 : 0); store.set('da.who.via', (j && j.via) || ''); if (j && j.keep) store.set('da.who.keep', +j.keep);

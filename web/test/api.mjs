@@ -28,7 +28,7 @@ try {
   /* what is made is a draft until the approval page shows it on the site: these checks show it */
   { const st0 = await call('/api/settings'); check('what people make starts hidden from visitors, the example shown', st0.json.madeShow === false && st0.json.exampleShow === true, JSON.stringify(st0.json));
     check('free printing on and the print pass on, short codes, to begin with', st0.json.freePrint === true && st0.json.passOn === true && st0.json.codeLen === 3 && st0.json.touchPass === '', JSON.stringify([st0.json.freePrint, st0.json.passOn, st0.json.codeLen, st0.json.touchPass]));
-    check('everything open to begin with: a code nobody has printed counts as printed', st0.json.allOpen === true && (await call('/api/mine/AB3')).json.printed === true, JSON.stringify(st0.json.allOpen));
+    { const m3 = (await call('/api/mine/AB3')).json; check('everything open to begin with, and a code nobody has printed is still not a printed one (open never proves presence)', st0.json.allOpen === true && m3.open === true && m3.printed === false, JSON.stringify(m3)); }
     /* the checks below are of what codes and passes guard, so they run with ALL OPEN off */
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true, freePrint: false, passOn: true, allOpen: false } });
     check('with ALL OPEN off, a code nobody has printed is not a printed one', (await call('/api/mine/AB4')).json.printed === false, ''); }

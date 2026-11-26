@@ -1162,7 +1162,7 @@
   var DEV_K = ['radio', 'wish', 'design', 'folio'];
   /* proof of presence: the devices are seen as they are earned, but open only for a code printed at a printer (or 888); without one
      the whole journey still, El Niño and the SOUND desk. The lock is in the opening, not in what is hidden */
-  var keyed = function () { return SHOWN || !!store.get('da.who.ok', 0); };
+  var keyed = function () { return SHOWN || !!store.get('da.who.ok', 0) || !!store.get('da.open', 0); };
   var devK = [], devOpen = function (i) { return earned(DEV_K[i]); };
   function lockSay() { bell(1, 0.12); NG.toast && NG.toast('LOCKED · A PRINTED CODE OPENS IT'); }
   /* the steps and keys of what is not earned are not there at all */

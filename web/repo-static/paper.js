@@ -243,17 +243,15 @@
   /* ───────── the three cards, a line each, and the small site each opens ───────── */
   var THREE = [
     { line: 'A second-hand receipt printer and a Raspberry Pi, made into an island.', label: 'Island',
-      site: ['Bring an Epson receipt printer back from e-waste. Plug in a Raspberry Pi. It prints.',
-        [['TM-T88V or TM-T88VI', null], ['Raspberry Pi', null], ['SD card', null], ['Build it on the bench', '/twin#bench'], ['The island kit', '/kit'], ['The island software', 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit']]] },
+      site: [[['TM-T88V or TM-T88VI', null], ['Raspberry Pi', null], ['SD card', null], ['Build it on the bench', '/twin#bench'], ['The island kit', '/kit'], ['The island software', 'https://github.com/novelglobal/islandarchipelagos/tree/main/kit']]] },
     { line: 'Make a card, share it, and find every island that is open.', label: 'Archipelagos',
-      site: ['One simple system: a card runs on an island and prints on paper.',
-        [['Every open island', '/islands'], ['Make a card', '/play'], ['The archipelagos', '/archipelagos'], ['This paper', '/paper']]] },
+      site: [[['Every open island', '/islands'], ['Make a card', '/play'], ['The archipelagos', '/archipelagos'], ['This paper', '/paper']]] },
     { line: 'Stories, quests and workshops, told on paper.', label: 'novel.global',
-      site: ['What islands and cards can do, shown in the open.', [['novel.global', '/'], ['The wall', '/art'], ['Research', '/research']]] }
+      site: [[['novel.global', '/'], ['The wall', '/art'], ['Research', '/research']]] }
   ];
   var three = $('#three'); three.innerHTML = THREE.map(function (c, i) { return '<button data-i="' + i + '" aria-label="' + c.label + '">' + c.line + '</button>'; }).join('');
   three.addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (!b) return; var c = THREE[+b.dataset.i], s = $('#site');
-    s.setAttribute('aria-label', c.label); s.querySelector('.in').innerHTML = '<p>' + c.site[0] + '</p><ul>' + c.site[1].map(function (l) { return '<li>' + (l[1] ? '<a href="' + l[1] + '"' + (/^https:/.test(l[1]) ? ' target="_blank" rel="noopener"' : '') + '>' + l[0] + '</a>' : '<span>' + l[0] + '</span>') + '</li>'; }).join('') + '</ul>';
+    s.setAttribute('aria-label', c.label); s.querySelector('.in').innerHTML = '<ul>' + c.site[0].map(function (l) { return '<li>' + (l[1] ? '<a href="' + l[1] + '"' + (/^https:/.test(l[1]) ? ' target="_blank" rel="noopener"' : '') + '>' + l[0] + '</a>' : '<span>' + l[0] + '</span>') + '</li>'; }).join('') + '</ul>';
     s.classList.add('on'); buzz(6); s.querySelector('.x').focus(); });
   $('#site .x').addEventListener('click', function () { $('#site').classList.remove('on'); });
   addEventListener('keydown', function (e) { if (e.key === 'Escape') $('#site').classList.remove('on'); });
