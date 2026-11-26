@@ -5,7 +5,7 @@
   "description": "card, mod and slip schemas",
   "type": "module",
   "scripts": {
-    "test": "node tools/check.mjs && node tools/golden.mjs && node tools/engine.mjs",
+    "test": "node tools/check.mjs && node tools/golden.mjs && node tools/engine.mjs && node tools/entry.mjs",
     "golden": "node tools/golden.mjs --write",
     "export:front": "node tools/export-front.mjs",
     "engine": "node tools/engine.mjs --write"

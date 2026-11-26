@@ -120,6 +120,8 @@ func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("cache-control", "no-cache")
 		w.Header().Set("x-content-type-options", "nosniff")
 		w.Write(thermalJS)
+	case r.URL.Path == "/entry.json" && r.Method == "GET":
+		p.serveEntry(w)
 	case r.URL.Path == "/print" && r.Method == "POST" && !p.setup:
 		p.printWish(w, r)
 	case r.URL.Path == "/pass" && r.Method == "GET" && !p.setup:

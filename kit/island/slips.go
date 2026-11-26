@@ -3,6 +3,8 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -111,6 +113,14 @@ func statusSlip(a *App) []byte {
 	s.Text(fmt.Sprintf("PRINTED  %d", c.Printed))
 	s.Text("SETUP WI-FI  " + setupSSID(c)).Text("SLIP KEY  " + c.SetupPass)
 	s.Text("VERSION  " + version)
+	if k := c.privateKey(); k != nil {
+		s.Text("KEY  " + keyMark(k.Public().(ed25519.PublicKey)))
+		if e, err := a.entry(); err == nil {
+			if b, err := json.Marshal(e); err == nil {
+				s.Feed(1).Center().QR(string(b), 6).Left()
+			}
+		}
+	}
 	return s.Cut().Bytes()
 }
 

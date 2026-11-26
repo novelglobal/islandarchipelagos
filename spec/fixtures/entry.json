@@ -1,0 +1,54 @@
+{
+ "now": 1795703600,
+ "mark": "72AS-YEXT",
+ "cases": [
+  {
+   "name": "good",
+   "signed": {
+    "entry": "{\"v\":\"island/entry/0\",\"key\":\"6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw\",\"name\":\"BENCH\",\"printer\":\"TM-T88V\",\"greys\":16,\"paper\":\"80\",\"cards\":[\"paper\"],\"open\":true,\"at\":1795700000,\"until\":1798292000}",
+    "sig": "d0TanWpebt5qciGU9vO-HPEq4s6LtDoKA-gWfdFjrSLUHHeEKCcuWeQnt-xWIfFeq1Gh5kmdhSsJauDL5x5XAQ"
+   },
+   "want": "ok"
+  },
+  {
+   "name": "one letter changed",
+   "signed": {
+    "entry": "{\"v\":\"island/entry/0\",\"key\":\"6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw\",\"name\":\"BENCX\",\"printer\":\"TM-T88V\",\"greys\":16,\"paper\":\"80\",\"cards\":[\"paper\"],\"open\":true,\"at\":1795700000,\"until\":1798292000}",
+    "sig": "d0TanWpebt5qciGU9vO-HPEq4s6LtDoKA-gWfdFjrSLUHHeEKCcuWeQnt-xWIfFeq1Gh5kmdhSsJauDL5x5XAQ"
+   },
+   "want": "sig"
+  },
+  {
+   "name": "signed by another key",
+   "signed": {
+    "entry": "{\"v\":\"island/entry/0\",\"key\":\"6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw\",\"name\":\"BENCH\",\"printer\":\"TM-T88V\",\"greys\":16,\"paper\":\"80\",\"cards\":[\"paper\"],\"open\":true,\"at\":1795700000,\"until\":1798292000}",
+    "sig": "4xZEJAaEJxGij09-mEf4CUiTnfTJiNmoqoXI9I1q-3mTAlSYVn9hySf-wxK-7SAOPCmKr89ZLF5Tn-SVo1nIDA"
+   },
+   "want": "sig"
+  },
+  {
+   "name": "holds for over 90 days",
+   "signed": {
+    "entry": "{\"v\":\"island/entry/0\",\"key\":\"6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw\",\"name\":\"BENCH\",\"printer\":\"TM-T88V\",\"greys\":16,\"paper\":\"80\",\"cards\":[\"paper\"],\"open\":true,\"at\":1795700000,\"until\":1830260000}",
+    "sig": "TJhMuwiD3fnPKUhEhix8NLKgQvkxfkLoZz5yvXQfPf1JcbpERaGbtrEwrLapsZyksdOH8IuUSmj9bpVR4OLADA"
+   },
+   "want": "format"
+  },
+  {
+   "name": "not an entry",
+   "signed": {
+    "entry": "{\"v\":\"x\"}",
+    "sig": "d0TanWpebt5qciGU9vO-HPEq4s6LtDoKA-gWfdFjrSLUHHeEKCcuWeQnt-xWIfFeq1Gh5kmdhSsJauDL5x5XAQ"
+   },
+   "want": "format"
+  },
+  {
+   "name": "run out",
+   "signed": {
+    "entry": "{\"v\":\"island/entry/0\",\"key\":\"6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw\",\"name\":\"BENCH\",\"printer\":\"TM-T88V\",\"greys\":16,\"paper\":\"80\",\"cards\":[\"paper\"],\"open\":true,\"at\":1795700000,\"until\":1798292000}",
+    "sig": "d0TanWpebt5qciGU9vO-HPEq4s6LtDoKA-gWfdFjrSLUHHeEKCcuWeQnt-xWIfFeq1Gh5kmdhSsJauDL5x5XAQ"
+   },
+   "want": "expired"
+  }
+ ]
+}

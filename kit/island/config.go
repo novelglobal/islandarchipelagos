@@ -28,6 +28,8 @@ type Config struct {
 	Stamps     []string `json:"stamps,omitempty"` // "day pass code", kept with no internet, told to the site when it is back
 	IssueDay   string   `json:"issue_day,omitempty"`
 	IssueN     int      `json:"issue_n,omitempty"`
+	Ident      string   `json:"ident,omitempty"` // the island's own signing key (ident.go): made here, never sent
+	Open       bool     `json:"open,omitempty"`  // listed for every island browser; closed unless its keeper opens it
 }
 
 type Link struct {
@@ -81,6 +83,7 @@ func loadConfig(path string) (*Config, error) {
 	if len(c.SetupPass) < 8 {
 		c.SetupPass = randomWord(10)
 	}
+	c.ensureIdent()
 	return c, c.save(path)
 }
 
