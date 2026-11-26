@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3F0E8">
+<title>Book Club</title>
+<link rel="icon" href="/iruk.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: Plex; src: url(/vendor/fonts/ibm-plex-mono-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: Plex; src: url(/vendor/fonts/ibm-plex-mono-latin-600-normal.woff2) format('woff2'); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: Plex; src: url(/vendor/fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: Play; src: url(/vendor/fonts/playfair-display-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: Play; src: url(/vendor/fonts/playfair-display-latin-400-italic.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: Play; src: url(/vendor/fonts/playfair-display-latin-700-italic.woff2) format('woff2'); font-weight: 700; font-style: italic; font-display: swap; }
+/* two traditions held apart: the terminal (keys, a display, receipts: black on bone, square, mono) and the press (a catalogue set in a
+   serif, wide margins, numbers in the margin). Nothing else: no pictures, no marks */
+:root { --bone: #F3F0E8; --ink: #121212; --rule: rgba(18, 18, 18, .16); --dim: rgba(18, 18, 18, .55); --lcd: #CBD3C2; --lcd-ink: #17211A; --key: #121212;
+  --mono: Plex, ui-monospace, Menlo, Consolas, monospace; --serif: Play, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bone: #0F0F0E; --ink: #ECE8DE; --rule: rgba(236, 232, 222, .16); --dim: rgba(236, 232, 222, .55); --lcd: #18211A; --lcd-ink: #B9D2AE; --key: #ECE8DE; } }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bone); color: var(--ink); }
+body { margin: 0; font: 500 12px/1.45 var(--mono); letter-spacing: .04em; }
+button, input, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* the terminal's head: what it is, where it prints */
+.bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); background: var(--ink); color: var(--bone); }
+.bar a { color: inherit; text-decoration: none; opacity: .7; }
+.bar b { flex: 1; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#to { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid rgba(243, 240, 232, .4); background: none; color: inherit; text-transform: uppercase; max-width: 46vw; }
+#to i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+#to.on i { background: #7BE09A; border-color: #7BE09A; }
+#to span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wrap { display: grid; gap: 18px; padding: 16px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); max-width: 1180px; margin: 0 auto; }
+@media (min-width: 900px) { .wrap { grid-template-columns: 360px 1fr; align-items: start; gap: 32px; padding-top: 24px; } .side { position: sticky; top: 64px; } }
+.side { display: grid; gap: 12px; }
+
+/* the display: one line of what is in front of you, the way a terminal says the amount */
+.lcd { background: var(--lcd); color: var(--lcd-ink); padding: 12px 14px 10px; border: 2px solid var(--key); display: grid; gap: 2px; }
+.lcd small { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; opacity: .7; }
+.lcd strong { font-weight: 600; font-size: 22px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcd input { width: 100%; margin-top: 6px; padding: 6px 0 2px; border: 0; border-top: 1px solid currentColor; background: transparent; color: inherit; font-size: 13px; text-transform: uppercase; outline: 0; }
+.lcd input::placeholder { color: inherit; opacity: .55; }
+
+/* the keys: square, numbered, hard-edged; the one pressed is inverted */
+.modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+@media (max-width: 899px) { .keys { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(112px, 1fr); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; } .keys::-webkit-scrollbar { display: none; } }
+.k { position: relative; min-height: 54px; padding: 18px 8px 8px; text-align: left; background: var(--bone); border: 2px solid var(--key); border-radius: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; line-height: 1.15; transition: transform .06s; }
+.k::before { content: attr(data-n); position: absolute; top: 5px; left: 8px; font-size: 9px; font-weight: 500; opacity: .5; }
+.k:active { transform: translateY(1px); }
+.k[aria-pressed="true"] { background: var(--key); color: var(--bone); }
+.modes .k { min-height: 46px; padding-top: 16px; text-align: center; }
+.modes .k::before { left: 50%; transform: translateX(-50%); }
+.go { min-height: 56px; width: 100%; border: 2px solid var(--key); background: var(--key); color: var(--bone); font-weight: 700; font-size: 14px; letter-spacing: .2em; text-transform: uppercase; border-radius: 0; }
+.go:disabled { opacity: .35; cursor: default; }
+.row { display: flex; gap: 6px; } .row > * { flex: 1; }
+.thin { min-height: 44px; border: 2px solid var(--key); background: transparent; font-weight: 600; text-transform: uppercase; border-radius: 0; }
+#say { min-height: 1.45em; margin: 0; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+
+/* the catalogue: a press's list, numbers in the margin, titles in the serif */
+.cat { min-width: 0; }
+.cat h1 { margin: 6px 0 2px; font: italic 700 clamp(34px, 7vw, 64px)/1 var(--serif); letter-spacing: -.01em; }
+.cat .sub { margin: 0 0 18px; color: var(--dim); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+.list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.list > li { border-bottom: 1px solid var(--rule); }
+.it { display: grid; grid-template-columns: 44px 1fr auto; gap: 4px 12px; align-items: baseline; width: 100%; padding: 14px 0; background: none; border: 0; text-align: left; }
+.it .n { font-size: 11px; color: var(--dim); }
+.it .t { font: 400 21px/1.2 var(--serif); letter-spacing: 0; }
+.it .a { grid-column: 2; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.it .y { grid-row: 1; grid-column: 3; font-size: 11px; color: var(--dim); }
+.it .sel { grid-column: 3; justify-self: end; font-size: 10px; letter-spacing: .14em; }
+li.on > .it .t { font-style: italic; }
+.pre { display: grid; gap: 14px; padding: 2px 0 22px 56px; }
+@media (max-width: 600px) { .pre { padding-left: 0; } }
+.pre .note { margin: 0; font: italic 700 17px/1.45 var(--serif); }
+.pre .first { margin: 0; font: italic 400 20px/1.45 var(--serif); }
+.pre .first::before { content: '\201C'; } .pre .first::after { content: '\201D'; }
+.pre .desc { margin: 0; font: 400 15.5px/1.65 var(--serif); max-width: 62ch; white-space: pre-line; }
+.pre .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.pre .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.pre .acts > * { min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border: 2px solid var(--key); background: transparent; color: inherit; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+.pre .acts .print { background: var(--key); color: var(--bone); }
+.slip { justify-self: start; width: min(100%, 300px); background: #FBFAF7; box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 16px 30px -20px rgba(0, 0, 0, .5); padding: 8px 0 12px; }
+.slip canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.wait { padding: 18px 0; color: var(--dim); letter-spacing: .3em; }
+
+/* publishing: a few fields, the slip beside them as it prints */
+.pub { display: grid; gap: 12px; }
+@media (min-width: 900px) { .pub { grid-template-columns: 1fr 300px; align-items: start; gap: 28px; } }
+.pub label { display: grid; gap: 6px; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.pub input, .pub textarea { width: 100%; padding: 10px 12px; border: 2px solid var(--key); border-radius: 0; background: transparent; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.pub input { font: 400 18px/1.3 var(--serif); }
+.pub textarea { min-height: 260px; resize: vertical; font: 400 16px/1.6 var(--serif); }
+.kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+.none { padding: 26px 0; color: var(--dim); letter-spacing: .14em; text-transform: uppercase; font-size: 11px; }
+@media (prefers-reduced-motion: reduce) { .k { transition: none; } }
+</style>
+</head>
+<body>
+<header class="bar"><a href="/" aria-label="novel.global">←</a><b id="nm">Book Club</b><button id="to" type="button" aria-label="Which printer"><i></i><span>&nbsp;</span></button></header>
+<div class="wrap">
+  <aside class="side">
+    <div class="lcd" aria-live="polite"><small id="lcd1">&nbsp;</small><strong id="lcd2">&nbsp;</strong><input id="find" type="search" autocomplete="off" spellcheck="false" aria-label="Find"></div>
+    <div class="modes" id="modes"></div>
+    <div class="keys" id="keys"></div>
+    <button class="go" id="all" type="button" disabled>&nbsp;</button>
+    <p id="say" aria-live="polite"></p>
+  </aside>
+  <main class="cat" id="cat"></main>
+</div>
+<script src="/vendor/qrcode.js"></script>
+<script src="/bookclub.js"></script>
+</body>
+</html>

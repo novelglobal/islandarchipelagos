@@ -145,6 +145,7 @@ fs.writeFileSync(path.join(out, 'art.js'), min(thermal + '\n' + read(path.join(r
 fs.writeFileSync(path.join(out, 'popup.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'popup.js')), 'js'));
 fs.writeFileSync(path.join(out, 'desk.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'desk.js')), 'js'));
 fs.writeFileSync(path.join(out, 'paper.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'paper.js')), 'js'));
+fs.writeFileSync(path.join(out, 'bookclub.js'), min(thermal + '\n' + read(path.join(root, 'repo-static', 'bookclub.js')), 'js'));
 fs.writeFileSync(path.join(out, 'aura.css'), min(read(path.join(src, 'base', 'aura.css')), 'css'));
 fs.writeFileSync(path.join(out, 'aura.js'), min(read(path.join(src, 'base', 'aura.js')), 'js'));
 fs.writeFileSync(path.join(out, 'home.css'), min(read(path.join(src, 'base', 'home.css')), 'css'));
@@ -199,7 +200,8 @@ fs.appendFileSync(path.join(out, '_headers'), `
   const FONTS = ['ibm-plex-mono-latin-500-normal', 'ibm-plex-mono-latin-600-normal', 'poppins-latin-400-normal', 'poppins-latin-600-normal', 'poppins-latin-700-normal', 'vt323-latin-400-normal'].map(f => `vendor/fonts/${f}.woff2`);
   const OFFLINE = { week: 1, news: 1, events: 1, book: 1, tarot: 1, cards: 1, species: 1, tape: 1 };
   const carts = JSON.parse(read(path.join(out, 'stacks', 'index.json'))).map(c => ({ ...c, s: JSON.parse(read(path.join(out, 'stacks', c.id + '.json'))) })).filter(c => OFFLINE[c.s.kind]);
-  const feeds = new Set(['/api/settings']);
+  /* the book club's hundred a genre, kept on every island (the genres as in bookclub.js and the worker's CLUB) */
+  const feeds = new Set(['/api/settings', ...['fiction', 'crime', 'sf', 'fantasy', 'romance', 'horror', 'historical', 'short', 'poetry', 'drama', 'essays', 'biography', 'history', 'philosophy', 'art', 'nature', 'food', 'travel', 'young', 'children', 'graphic'].map(g => `/api/bookclub?g=${g}`)]);
   for (const { s } of carts) {
     const w = s.where || [-37.77, 144.96];
     if (s.kind === 'week') feeds.add(`/api/wx?at=${w[0]},${w[1]}` + (s.sea ? `&sea=${s.sea[0]},${s.sea[1]}` : ''));
@@ -208,7 +210,7 @@ fs.appendFileSync(path.join(out, '_headers'), `
     if (s.kind === 'book') for (let b = 1; b <= 3; b++) for (let p = 1; p <= 3; p++) feeds.add(`/api/book?b=${b}&p=${p}` + (s.shelf ? `&s=${s.shelf}` : ''));
   }
   /* the paper works on an island's own Wi-Fi with none: it asks only for /api/settings, /api/partners and /api/stories, which the island answers */
-  const files = ['paper.html', 'paper.js', 'iruk.svg', 'cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]
+  const files = ['paper.html', 'paper.js', 'bookclub.html', 'bookclub.js', 'vendor/fonts/ibm-plex-mono-latin-400-normal.woff2', 'vendor/fonts/playfair-display-latin-400-normal.woff2', 'vendor/fonts/playfair-display-latin-400-italic.woff2', 'vendor/fonts/playfair-display-latin-700-italic.woff2', 'iruk.svg', 'cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]
     .map(f => { const b = fs.readFileSync(path.join(out, f)); return { p: f, h: crypto.createHash('sha256').update(b).digest('hex'), n: b.length }; });
   fs.writeFileSync(path.join(out, 'shelf.json'), JSON.stringify({ v: sha, files, feeds: [...feeds], carts: carts.map(c => ({ id: c.id, name: c.name })) }));
 }

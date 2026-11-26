@@ -63,6 +63,10 @@ try {
     const three = pj.slice(pj.indexOf('var THREE = ['), pj.indexOf('];', pj.indexOf('var THREE = ['))), shown = [...three.matchAll(/(?:line|label): '([^']+)'|\['([^']+)', (?:null|'[^']*')\]/g)].map(m => m[1] || m[2]);
     check('every line of the paper\'s three cards is on the approval page\'s list, and only those', shown.every(t => L.PAPER.includes(t)) && L.PAPER.every(t => shown.includes(t)), JSON.stringify(shown.filter(t => !L.PAPER.includes(t))));
     check('the home\'s toggle word is on the list', L.HOME.every(t => hj.includes("'" + t + "'")), ''); }
+  /* the book club: a genre with nothing kept and Open Library out of reach still answers (the public-domain shelf); a bad ask is refused */
+  { const g = await call('/api/bookclub?g=fiction'); check('the book club never answers with nothing: with no list kept and none to fetch, the public-domain shelf', g.status === 200 && g.json.fallback === 1 && g.json.books.length > 10 && g.json.books[0][1], JSON.stringify(g.json).slice(0, 200));
+    const bad = await Promise.all(['g=nope', 'w=123', 'q=x'].map(q => call('/api/bookclub?' + q))); check('the book club refuses a genre it has not, a work id that is not one, a one-letter search', bad.every(r => r.status === 400), bad.map(r => r.status).join());
+    const l = await call('/api/bookclub'); check('the book club lists its genres', Array.isArray(l.json.genres) && l.json.genres.includes('essays') && l.json.genres.length === 21, JSON.stringify(l.json)); }
   const h = await call('/api/health');
   check('health answers ok with the build', h.status === 200 && /^ok \w+/.test(h.text), h.text);
   const pa = await call('/api/partners');

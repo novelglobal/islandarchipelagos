@@ -1079,6 +1079,8 @@
   function tapeArt(t) { var L = window.NGAWAY && NGAWAY.lib; if (!L) return ''; var ls = store.get('da.loops.v1', []) || [];
     return L.cover((t.ids || []).map(function (id) { var l = ls.filter(function (q) { return q && q.id === id; })[0]; return l && l.where ? l.where : null; }).filter(Boolean)); }
   function devLocals() { var l = [{ id: 'species', g: 'dev', size: 'small', title: 'SPECIES LIST', opens: 'stack:species', skin: 'play', art: 'slot', pal: 6, motion: 'shadow', where: [-37.77, 144.96] },
+      /* another island's hero card, as any island could build one on the archipelagos (bookclub.html) */
+      { id: 'bookclub', g: 'dev', size: 'small', title: 'EFTPOS BOOK CLUB', opens: 'bookclub', skin: 'play', art: 'slot', pal: 1, motion: 'shadow', where: [-37.8136, 144.9631] },
       { id: 'tape', g: 'dev', size: 'small', title: 'NIGHT FIELD', opens: 'stack:tape', skin: 'play', art: 'slot', pal: 6, pic: 'tapes/night-field.svg', motion: 'shadow', where: [-37.8136, 144.9631] }];
     (store.get('da.tapes.v1', []) || []).slice(0, 3).forEach(function (t) { if (!t || !/^[\w-]{1,40}$/.test(t.id || '')) return; var ph = String((t.sp || {}).ph || ''); l.push({ id: 'tp-' + t.id.toLowerCase().replace(/[^a-z0-9-]/g, ''), g: 'dev', size: 'small', title: String(t.name || 'MIXTAPE').toUpperCase().slice(0, 24), opens: 'stack:tape', tp: t.id, skin: 'play', art: 'slot', pal: 6, pic: /^(https:\/\/|\/[^/])/.test(ph) ? ph : tapeArt(t), motion: 'shadow', where: [-37.8136, 144.9631] }); });
     if (DEV.sh || DEV.isle) return []; var q = DEV.q.toUpperCase(); return l.filter(function (o) { return !q || o.title.indexOf(q) >= 0; }); }
@@ -1253,6 +1255,7 @@
     if (c.opens === 'radio' && AIR.fr && AIR.kept) return sheet(c.title, function (b) { b.hidden = true; AIR.kept = false; AIR.fr.classList.remove('hm-air'); });
     if (c.opens === 'radio') return sheet(c.title, inFrame('studio?from=aura&only=radio' + (wired('radio', 'wish') ? '' : '&solo=1') + '#radio'));
     if (c.opens === 'paper') { location.href = '/paper'; return; }
+    if (c.opens === 'bookclub') { location.href = '/bookclub'; return; }
     if (c.opens === 'portfolio') { return sheet(c.title, inFrame('art?in=1&one=1')); }
     if (c.opens === 'press') return sheet(c.title, inFrame('studio?from=aura&only=print#print'));
     if (c.opens === 'research') return sheet(c.title, function (b) { var w = wired('wish', 'research'); inFrame('research?in=1' + (w ? '&wish=1' : '') + '#b')(b); var fr = xv.querySelector('iframe:not(.hm-air):not(.hm-warm)');

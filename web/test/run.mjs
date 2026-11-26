@@ -1737,6 +1737,46 @@ if (run('guide')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section guide: ${e.message.split('\n')[0]}`); }
 
+// ───────── the book club: another island's hero card (ONLY=bookclub) ─────────
+if (run('bookclub')) try {
+  const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx); const page = await ctx.newPage(); watch(page, 'bookclub');
+  const titles = ['The Waves', 'Middlemarch', 'Beloved', 'The Rings of Saturn', 'Housekeeping', 'Austerlitz', 'Stoner', 'The Hours'];
+  const fake = { g: g => ({ g, books: Array.from({ length: 100 }, (_, i) => ['OL' + (1000 + i) + 'W', i < titles.length ? titles[i] : 'A Book ' + (i + 1), 'An Author ' + (i % 7), 1900 + i, 200 - i, i === 1 ? 'middlemarch00elio' : '']) }),
+    w: id => ({ w: id, d: 'A town, a marriage, a slow reckoning. Set in the years before the Reform Act, it follows a young idealist and a doctor whose ambitions meet the provinces.', f: 'Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress.', pp: 880, ia: '' }),
+    q: t => ({ book: ['OL9999W', t.split(' ').slice(0, 2).join(' '), 'Looked Up', 2021, 3, ''], f: 'A first line found.' }) };
+  let asks = 0, stories = [];
+  await page.route(u => new URL(u).pathname === '/api/bookclub', r => { asks++; const q = new URL(r.request().url()).searchParams; return r.fulfill({ json: q.has('g') ? fake.g(q.get('g')) : q.has('w') ? fake.w(q.get('w')) : fake.q(q.get('q')) }); });
+  await page.route(u => new URL(u).pathname === '/api/stories', r => { stories.push(JSON.parse(r.request().postData())); return r.fulfill({ json: { ok: true, job: { status: 'queued' } } }); });
+  await admin('settings', { bookclub: '# SUMMER GUIDE\nThe Bee Sting | Paul Murray | a family, a fall\nThe Covenant of Water | Abraham Verghese' });
+  const t0 = Date.now(); await page.goto('https://oan.test/bookclub'); await page.waitForSelector('.list li', { timeout: 8000 }); const ms = Date.now() - t0;
+  const s1 = await page.evaluate(() => ({ keys: document.querySelectorAll('#keys .k').length, modes: [...document.querySelectorAll('#modes .k')].map(k => k.textContent), rows: document.querySelectorAll('.list > li').length, h1: document.querySelector('.cat h1').textContent, lcd: document.querySelector('#lcd2').textContent, name: document.querySelector('#nm').textContent, wide: document.documentElement.scrollWidth - innerWidth }));
+  check('BOOK CLUB opens on a genre at once: twenty-one genre keys, four modes, a hundred titles, the name at the top, fitting a phone', ms < 5000 && s1.keys === 21 && s1.modes.length === 4 && s1.rows === 100 && s1.h1 === 'FICTION' && s1.name === 'EFTPOS BOOK CLUB' && s1.wide <= 0, JSON.stringify({ ms, ...s1 }));
+  await page.click('.list > li:nth-child(2) .it'); await page.waitForFunction(() => document.querySelector('#pre .desc') && document.querySelector('#pre canvas').height > 300, null, { timeout: 8000 });
+  const pv = await page.evaluate(() => ({ first: document.querySelector('#pre .first').textContent, read: !!document.querySelector('#pre a[href*="archive.org/details/middlemarch00elio"]'), more: !!document.querySelector('#pre a[href$="/works/OL1001W"]'), slip: [document.querySelector('#pre canvas').width, document.querySelector('#pre canvas').height] }));
+  check('a book opened shows its first line, its description, its sample slip at the printer\'s width, and READ where the book is free to read', /Miss Brooke/.test(pv.first) && pv.read && pv.more && pv.slip[0] === 512 && pv.slip[1] > 500, JSON.stringify(pv));
+  await shot(page, 'bookclub-phone.png');
+  await page.click('#pre [data-do="pick"]'); await page.click('.list > li:nth-child(3) .it'); await page.waitForSelector('#pre [data-do="pick"]'); await page.click('#pre [data-do="pick"]');
+  await page.click('#all'); await page.waitForFunction(() => /SENT · 2/.test(document.querySelector('#say').textContent), null, { timeout: 8000 });
+  const job = stories[0], raw = Buffer.from(job.escpos, 'base64'); let cuts = 0; for (let i = 0; i + 1 < raw.length; i++) if (raw[i] === 0x1D && raw[i + 1] === 0x56) cuts++;
+  check('PRINT SELECTED sends the two selected as one job, a cut after each, one-bit and plain (no stored settings)', stories.length === 1 && cuts === 2 && job.from === 'bookclub' && !raw.includes(Buffer.from([0x1D, 0x28, 0x45])) && !raw.includes(Buffer.from([0x1D, 0x28, 0x4C])), JSON.stringify({ n: stories.length, cuts, bytes: raw.length }));
+  await page.click('#modes [data-m="lists"]'); await page.waitForSelector('.list li'); const li = await page.evaluate(() => ({ h1: document.querySelector('.cat h1').textContent, rows: [...document.querySelectorAll('.list .t')].map(t => t.textContent) }));
+  await page.click('.list > li:nth-child(1) .it'); await page.waitForFunction(() => document.querySelector('#pre .first'), null, { timeout: 8000 });
+  await page.waitForFunction(() => document.querySelector('#pre .desc'), null, { timeout: 8000 }); const ln = await page.evaluate(() => ({ note: document.querySelector('#pre .note').textContent, first: document.querySelector('#pre .first').textContent }));
+  check('LISTS: the lists the approval page holds; a book looked up when opened, the keeper\'s note kept above its first line', li.h1 === 'SUMMER GUIDE' && li.rows.join() === 'The Bee Sting,The Covenant of Water' && ln.note === 'a family, a fall' && ln.first.length > 10, JSON.stringify({ li, ln }));
+  await page.click('#modes [data-m="publish"]'); await page.click('#keys [data-kind="POEM"]'); await page.fill('#p-t', 'Low Tide'); await page.fill('#p-by', 'A Reader'); await page.fill('#p-b', 'The water leaves\nwhat it was holding.');
+  await page.waitForTimeout(400); const pub = await page.evaluate(() => ({ h: document.querySelector('#p-c').height, all: document.querySelector('#all').disabled }));
+  await page.click('#p-keep'); await page.click('#all'); await page.waitForFunction(() => /SENT · 1/.test(document.querySelector('#say').textContent), null, { timeout: 8000 });
+  check('PUBLISH: a poem set as a slip as it is written, kept on the phone, and printed', pub.h > 300 && pub.all === false && stories.length === 2 && stories[1].from === 'bookclub' && JSON.parse(stories[1].body).type === 'publish' && (await page.evaluate(() => JSON.parse(localStorage.getItem('da.club.mine')).length)) === 1, JSON.stringify(pub));
+  await shot(page, 'bookclub-publish.png');
+  await page.unroute(u => new URL(u).pathname === '/api/bookclub'); await page.route(u => new URL(u).pathname === '/api/bookclub', r => r.abort());
+  await page.evaluate(() => localStorage.setItem('da.club.mode', 'genres')); await page.reload(); await page.waitForSelector('.list li', { timeout: 8000 }).catch(() => {});
+  check('with no internet, the genre read before opens from what the phone kept', (await page.evaluate(() => document.querySelectorAll('.list > li').length)) === 100);
+  await page.setViewportSize({ width: 1280, height: 860 }); await page.reload(); await page.waitForSelector('.list li'); await page.click('.list > li:nth-child(1) .it'); await page.waitForSelector('#pre canvas'); await page.waitForTimeout(500); await shot(page, 'bookclub-desk.png');
+  await page.goto('https://oan.test/'); await sleep(1500);
+  check('the card stands in the custom nine beside SPECIES LIST', await page.evaluate(() => !!document.querySelector('[data-id="bookclub"]') || (window.__da && JSON.stringify(window.__da).includes('bookclub'))));
+  await admin('settings', { bookclub: '' }); await ctx.close();
+} catch (e) { results.push(`FAIL  section bookclub: ${e.message.split('\n')[0]}`); }
+
 // ───────── the made cards: SPECIES LIST as a paper to tap, and a mixtape whose every sound leads back to where it was heard (ONLY=cards) ─────────
 if (run('cards')) try {
   const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'cards');

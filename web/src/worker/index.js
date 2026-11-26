@@ -629,7 +629,7 @@ const madeOn = async db => !!(await settingsOf(db)).madeShow;
 /* styles: the artists' mod packs added on the approval page (JSON: { packs: [{ name, by, styles: [...], off: [style ids not shown] }] };
    every style is checked again on each phone by thermal.js before it is used) */
 /* groups: the portfolio's groups a piece can be filed under on the approval page, one to a line (kept here; not on the site yet) */
-const TEXTS = { builds: 4000, template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000, codeNotes: 3000, say: 32000 };
+const TEXTS = { builds: 4000, template: 6000, words: 4000, cities: 40000, gates: 300, fx: 20, curations: 6000, start: 600, notice: 1500, country: 600, groups: 600, printq: 800, sources: 8000, epoch: 40, styles: 100000, cards: 8000, opener: 3000, bizcard: 2000, species: 2000, showcase: 600, photos: 3000, events: 3000, popKey: 40, pops: 600000, note: 80000, noteKey: 40, noteSlip: 700, notePub: 2, label: 8000, welcome: 3000, notes: 12000, isles: 400000, codeNotes: 3000, say: 32000, bookclub: 12000 };
 /* texts the public settings never show: the pop-up's private link */
 const HIDDEN_TEXTS = ['builds', 'popKey', 'pops', 'note', 'noteKey', 'noteSlip', 'notePub', 'isles'];
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
@@ -1419,6 +1419,45 @@ async function bookThrough(url, env, ctx) {
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
   return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
+/* ───────── the book club (another island's card, /bookclub): a hundred titles a genre from Open Library, most printed first (it changes
+   slowly, so each list is kept a month); a book's preview (its description and first line); a book a list names, looked up. Each answer
+   is kept (R2), so the club opens at once after the first ask, and an island keeps the lists on its shelf ───────── */
+const CLUB = [['fiction', 'fiction'], ['crime', 'mystery_and_detective_stories'], ['sf', 'science_fiction'], ['fantasy', 'fantasy'], ['romance', 'romance'], ['horror', 'horror'],
+  ['historical', 'historical_fiction'], ['short', 'short_stories'], ['poetry', 'poetry'], ['drama', 'drama'], ['essays', 'essays'], ['biography', 'biography'], ['history', 'history'],
+  ['philosophy', 'philosophy'], ['art', 'art'], ['nature', 'nature'], ['food', 'cooking'], ['travel', 'travel'], ['young', 'young_adult_fiction'], ['children', 'juvenile_fiction'], ['graphic', 'graphic_novels']];
+const CLUBM = new Map(), OL = 'https://openlibrary.org';
+const clubText = (v, n) => String(v && typeof v === 'object' ? v.value || '' : v || '').replace(/\r/g, '').replace(/\[\d+\]|\(\[source\]\[\d+\]\)|\[source\]\[\d+\]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, n);
+async function clubKept(env, ctx, key, age, make) {
+  const t = now(), m = CLUBM.get(key); if (m && t - m.at < age) return m;
+  let old = m || null; if (!old) try { const o = env.MEDIA ? await env.MEDIA.get(key) : null; old = o ? await o.json() : null; } catch { old = null; }
+  if (old && t - old.at < age) { CLUBM.set(key, old); return old; }
+  let fresh = null; try { fresh = await make(); } catch { fresh = null; }
+  if (!fresh) return old;
+  fresh.at = t; CLUBM.set(key, fresh); if (env.MEDIA) { const put = env.MEDIA.put(key, JSON.stringify(fresh), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put; }
+  return fresh;
+}
+const olGet = async u => { const r = await fetch(OL + u, { headers: UA, signal: AbortSignal.timeout(12000) }); if (!r.ok) throw new Error('ol ' + r.status); return r.json(); };
+async function clubThrough(req, env, url, db, ctx) {
+  const q = url.searchParams, out = o => new Response(JSON.stringify(o), { headers: { ...JSON_H, 'cache-control': 'public, max-age=3600' } });
+  const asked = async () => !(await tooMany(db, env, req, 'club', 60, 10 * 60e3));
+  if (q.has('g')) { const g = CLUB.find(x => x[0] === q.get('g')); if (!g) return fail(400, 'g'); const key = 'bookclub/g-' + g[0] + '.json';
+    const d = await clubKept(env, ctx, key, 30 * DAY, async () => { if (!(await asked())) return null; const j = await olGet(`/subjects/${g[1]}.json?limit=100`);
+      const books = (j.works || []).map(w => [String(w.key || '').replace('/works/', ''), clubText(w.title, 160), (w.authors || []).map(a => a.name).slice(0, 2).join(', ').slice(0, 80), w.first_publish_year || null, w.edition_count || 0, w.public_scan && w.ia ? String(w.ia).slice(0, 80) : '']).filter(b => /^OL\d+W$/.test(b[0]) && b[1]);
+      return books.length ? { g: g[0], books } : null; });
+    /* never nothing: with no list kept and none to be had, the site's own public-domain shelf stands in */
+    return out(d || { g: g[0], books: BOOKS.map(b => ['', b[1], b[2], b[3], 0, '']), fallback: 1 }); }
+  if (q.has('w')) { const w = q.get('w'); if (!/^OL\d{1,10}W$/.test(w)) return fail(400, 'w');
+    const d = await clubKept(env, ctx, 'bookclub/w-' + w + '.json', 90 * DAY, async () => { if (!(await asked())) return null;
+      const [wk, s] = await Promise.all([olGet(`/works/${w}.json`), olGet(`/search.json?q=key:/works/${w}&fields=first_sentence,number_of_pages_median,ia,public_scan_b&limit=1`).catch(() => ({}))]); const d0 = (s.docs || [])[0] || {};
+      return { w, d: clubText(wk.description, 1400), f: clubText((d0.first_sentence || [])[0], 400), pp: d0.number_of_pages_median || null, ia: d0.public_scan_b && d0.ia ? String(d0.ia[0]).slice(0, 80) : '' }; });
+    return d ? out(d) : fail(502, 'preview'); }
+  if (q.has('q')) { const t = String(q.get('q')).replace(/\s+/g, ' ').trim().slice(0, 160); if (t.length < 2) return fail(400, 'q');
+    const d = await clubKept(env, ctx, 'bookclub/q-' + encodeURIComponent(t.toLowerCase()).slice(0, 400) + '.json', 90 * DAY, async () => { if (!(await asked())) return null;
+      const j = await olGet(`/search.json?q=${encodeURIComponent(t)}&fields=key,title,author_name,first_publish_year,edition_count,first_sentence&limit=1`), b = (j.docs || [])[0];
+      return b ? { book: [String(b.key || '').replace('/works/', ''), clubText(b.title, 160), (b.author_name || []).slice(0, 2).join(', ').slice(0, 80), b.first_publish_year || null, b.edition_count || 0, ''], f: clubText((b.first_sentence || [])[0], 400) } : { book: null }; });
+    return d ? out(d) : fail(502, 'look'); }
+  return out({ genres: CLUB.map(g => g[0]) });
+}
 /* the two things asked of OpenStreetMap: the places with a name (as the radar's knots), and the water. Built here from a box of
    whole tiles, so nothing else can be asked through novel.global */
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
@@ -1980,6 +2019,7 @@ async function api(req, env, url, ctx) {
   if (url.pathname === '/api/book' && req.method === 'GET') return bookThrough(url, env, ctx);
   if (url.pathname === '/api/c' && req.method === 'GET') return cartFor(env, url);
   const db = dbOf(env); if (!db) return fail(503, 'no database');
+  if (url.pathname === '/api/bookclub' && req.method === 'GET') return clubThrough(req, env, url, db, ctx);
   await ready(db); if (Math.random() < 0.05) await tidy(db, env);
   const p = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean).map(decodeURIComponent); const m = req.method;
   if (p[0] === 'stories' && !p[1] && m === 'GET') return listStories(db, url);
