@@ -3,11 +3,9 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"html/template"
-	"image/png"
 	"io"
 	"log"
 	"net"
@@ -20,6 +18,12 @@ import (
 
 //go:embed page.html
 var pageHTML string
+
+// the print engine the site uses, the same file (thermal_test.go holds it to web/src/base/thermal.js): a photograph prints the same
+// from this island's own page as from any other
+//
+//go:embed thermal.js
+var thermalJS []byte
 
 var pages = template.Must(template.New("page").Parse(pageHTML))
 
@@ -73,6 +77,7 @@ func (p *portal) serve(ctx context.Context) {
 
 type view struct {
 	Name, SSID, Note, Server, Done, Paper string
+	Dots                                  int
 	Setup, Island, Offline                bool
 	Nets                                  []Net
 	Known                                 []Known
@@ -83,7 +88,7 @@ func (p *portal) render(w http.ResponseWriter, v view) {
 	c := p.a.conf()
 	v.Name, v.SSID, v.Server = c.Name, setupSSID(c), c.Own.Server
 	v.Offline = c.Mode == "offline"
-	v.Paper = c.Paper
+	v.Paper, v.Dots = c.Paper, dots
 	if l := p.a.shelf(); l != nil && v.Island {
 		v.Carts = l.Carts
 	}
@@ -110,6 +115,11 @@ func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reopen(w, r)
 	case r.URL.Path == "/setup" && r.Method == "GET" && !p.setup:
 		p.render(w, view{Done: "ask"})
+	case r.URL.Path == "/thermal.js" && (r.Method == "GET" || r.Method == "HEAD"):
+		w.Header().Set("content-type", "text/javascript; charset=utf-8")
+		w.Header().Set("cache-control", "no-cache")
+		w.Header().Set("x-content-type-options", "nosniff")
+		w.Write(thermalJS)
 	case r.URL.Path == "/print" && r.Method == "POST" && !p.setup:
 		p.printWish(w, r)
 	case r.URL.Path == "/pass" && r.Method == "GET" && !p.setup:
@@ -215,40 +225,20 @@ func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
 		p.answer(w, r, "THE ISLAND HAS PRINTED ENOUGH FOR TODAY.")
 		return
 	}
-	var slip []byte
-	name := p.a.conf().Name
-	if strings.HasPrefix(r.Header.Get("content-type"), "image/png") {
-		raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 3<<20))
-		if err != nil {
-			p.answer(w, r, "TOO LARGE.")
-			return
+	// words alone (a phone without scripts): pictures come as printer bytes made on the phone by the engine, through /api/stories
+	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+	r.ParseForm()
+	var lines []string
+	for _, k := range []string{"w", "i", "s", "h"} {
+		if l := clean(r.FormValue(k), 120); l != "" {
+			lines = append(lines, l)
 		}
-		cfg, err := png.DecodeConfig(bytes.NewReader(raw))
-		if err != nil || cfg.Width > 1200 || cfg.Height > 4000 {
-			p.answer(w, r, "NOT A PICTURE THE PRINTER CAN TAKE.")
-			return
-		}
-		img, err := png.Decode(bytes.NewReader(raw))
-		if err != nil {
-			p.answer(w, r, "NOT A PICTURE THE PRINTER CAN TAKE.")
-			return
-		}
-		slip = NewSlip().Center().Image(img).Cut().Bytes()
-	} else {
-		r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
-		r.ParseForm()
-		var lines []string
-		for _, k := range []string{"w", "i", "s", "h"} {
-			if l := clean(r.FormValue(k), 120); l != "" {
-				lines = append(lines, l)
-			}
-		}
-		if len(lines) == 0 {
-			p.answer(w, r, "WRITE A LINE FIRST.")
-			return
-		}
-		slip = wishSlip(name, lines)
 	}
+	if len(lines) == 0 {
+		p.answer(w, r, "WRITE A LINE FIRST.")
+		return
+	}
+	slip := wishSlip(p.a.conf().Name, lines)
 	if err := p.a.pr.Print(slip); err != nil {
 		log.Printf("a W.I.S.H. not printed: %v", err)
 		p.answer(w, r, "NOT PRINTED: THE PRINTER DID NOT ANSWER.")

@@ -81,32 +81,37 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 <button>CHECK</button>
 </form>
 <a class="soft" href="/setup">SETUP</a>
+<script src="/thermal.js"></script>
 <script>
 (() => {
-  const f = document.getElementById('wish'), say = document.getElementById('say'), ph = document.getElementById('ph'); ph.hidden = false;
-  const W = 512, PAD = 8, FONT = 'bold 30px ui-monospace, Menlo, Consolas, monospace', LH = 38;
+  /* the words and the photograph laid on the printer's own grid, then through the one print engine (thermal.js, the site's own),
+     the same settings the site prints with when the island has them: what comes out here is what comes out anywhere */
+  const T = window.THERMAL, f = document.getElementById('wish'), say = document.getElementById('say'), ph = document.getElementById('ph');
+  if (!T) return; ph.hidden = false;
+  const W = {{.Dots}}, k = W / 512, PAD = Math.round(8 * k), LH = Math.round(38 * k), FONT = 'bold ' + Math.round(30 * k) + 'px ui-monospace, Menlo, Consolas, monospace';
+  let Q = T.settle(null, null); T.houseQ().then(q => { Q = q; });
   const lines = (g, t) => { const out = []; let l = ''; for (const w of t.split(/\s+/).filter(Boolean)) { const n = l ? l + ' ' + w : w; if (g.measureText(n).width > W - 2 * PAD && l) { out.push(l); l = w; } else l = n; } if (l) out.push(l); return out; };
   const photo = file => new Promise(ok => { if (!file) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = URL.createObjectURL(file); });
-  const atkinson = (d, w, h) => { const g = new Float32Array(w * h); for (let i = 0; i < w * h; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x, o = g[i] < 128 ? 0 : 255, e = (g[i] - o) / 8; g[i] = o;
-      for (const [dx, dy] of [[1, 0], [2, 0], [-1, 1], [0, 1], [1, 1], [0, 2]]) { const X = x + dx, Y = y + dy; if (X >= 0 && X < w && Y < h) g[Y * w + X] += e; } }
-    for (let i = 0; i < w * h; i++) { d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = g[i]; d[i * 4 + 3] = 255; } };
+  const canvas = h => { const c = document.createElement('canvas'); c.width = W; c.height = h; return c; };
+  const SAID = { 200: 'PRINTED. TAKE IT FROM THE PRINTER.', 429: 'ONE AT A TIME: WAIT A MOMENT.', 503: 'NOT PRINTED: THE PRINTER DID NOT ANSWER.' };
   f.addEventListener('submit', async e => {
     e.preventDefault(); const b = f.querySelector('button'); b.disabled = true; say.hidden = true;
     try {
-      const c = document.createElement('canvas'), g = c.getContext('2d'); g.font = FONT;
-      const text = ['w', 'i', 's', 'h'].map(k => f[k].value.trim()).filter(Boolean), set = text.flatMap(t => lines(g, t));
-      const img = await photo(f.querySelector('input[type=file]').files[0]), ih = img ? Math.round(img.height * W / img.width) : 0;
+      const ink = canvas(1), g = ink.getContext('2d'); g.font = FONT;
+      const set = ['w', 'i', 's', 'h'].map(n => f[n].value.trim()).filter(Boolean).flatMap(t => lines(g, t));
+      const img = await photo(f.querySelector('input[type=file]').files[0]), ih = img ? Math.round(img.naturalHeight * W / img.naturalWidth) : 0;
       if (!set.length && !img) { say.textContent = 'WRITE A LINE FIRST.'; say.hidden = false; return; }
-      c.width = W; c.height = Math.min(4000, PAD + LH + 12 + (ih ? ih + 16 : 0) + set.length * LH + PAD);
-      g.fillStyle = '#fff'; g.fillRect(0, 0, W, c.height); let y = PAD;
-      if (img) { g.drawImage(img, 0, y, W, ih); const d = g.getImageData(0, y, W, ih); atkinson(d.data, W, ih); g.putImageData(d, 0, y); y += ih + 16; }
-      g.fillStyle = '#000'; g.textBaseline = 'top'; g.font = FONT; g.textAlign = 'center'; g.fillText({{.Name}}, W / 2, y); y += LH + 12;
-      g.textAlign = 'left'; for (const l of set) { g.fillText(l, PAD, y); y += LH; }
-      const words = g.getImageData(0, 0, W, c.height); for (let i = 0; i < words.data.length; i += 4) { const v = words.data[i] < 128 ? 0 : 255; words.data[i] = words.data[i + 1] = words.data[i + 2] = v; words.data[i + 3] = 255; } g.putImageData(words, 0, 0);
-      const png = await new Promise(ok => c.toBlob(ok, 'image/png'));
-      const r = await fetch('/print', { method: 'POST', headers: { 'content-type': 'image/png', 'x-island': '1' }, body: png });
-      say.textContent = await r.text(); say.hidden = false; if (/^PRINTED/.test(say.textContent)) f.reset();
+      const H = Math.min(4000, Math.ceil((PAD + (ih ? ih + 16 : 0) + LH + 12 + set.length * LH + PAD) / 8) * 8), n = W * H;
+      const pc = canvas(H), px = pc.getContext('2d'); px.fillStyle = '#fff'; px.fillRect(0, 0, W, H); if (img) { px.imageSmoothingQuality = 'high'; px.drawImage(img, 0, PAD, W, ih); }
+      ink.height = H; g.font = FONT; g.fillStyle = '#000'; g.textBaseline = 'top'; let y = PAD + (ih ? ih + 16 : 0);
+      g.textAlign = 'center'; g.fillText({{.Name}}, W / 2, y); y += LH + 12; g.textAlign = 'left'; for (const l of set) { g.fillText(l, PAD, y); y += LH; }
+      const L = T.luma(px.getImageData(0, 0, W, H).data, n); let grey = false;
+      if (img) grey = T.isGrey(T.ready(L, W, H, Q));
+      const id = g.getImageData(0, 0, W, H).data, cut = +Q.lineCut || 215; for (let l = 0, i = 0; l < n; l++, i += 4) if (id[i + 3] > 110) L[l] = (id[i] * 0.299 + id[i + 1] * 0.587 + id[i + 2] * 0.114) < cut ? 0 : 255;
+      const out = canvas(H), o = out.getContext('2d'), im = o.createImageData(W, H); for (let l = 0, i = 0; l < n; l++, i += 4) { im.data[i] = im.data[i + 1] = im.data[i + 2] = L[l]; im.data[i + 3] = 255; } o.putImageData(im, 0, 0);
+      const r = await fetch('/api/stories', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'record', from: 'wish', escpos: T.raster(out, Object.assign(T.opts(Q), { grey })) }) });
+      const j = await r.json().catch(() => ({}));
+      say.textContent = j.error === 'full' ? 'THE ISLAND HAS PRINTED ENOUGH FOR TODAY.' : SAID[r.status] || 'NOT A PICTURE THE PRINTER CAN TAKE.'; say.hidden = false; if (r.ok) f.reset();
     } catch (err) { f.submit(); } finally { b.disabled = false; }
   });
 })();
