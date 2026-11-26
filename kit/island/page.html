@@ -64,7 +64,7 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 </script>
 
 {{else if .Island}}
-{{if .Carts}}<nav class="carts">{{range .Carts}}<a href="/cart.html#{{.ID}}">{{.Name}}</a>{{end}}</nav>{{end}}
+{{if .Carts}}<nav class="carts"><a href="/paper.html">PAPER</a>{{range .Carts}}<a href="/cart.html#{{.ID}}">{{.Name}}</a>{{end}}</nav>{{end}}
 <form method="post" action="/print" id="wish">
 <h2>W.I.S.H.</h2>
 <label class="f">W<input type="text" name="w" maxlength="120" autocomplete="off"></label>

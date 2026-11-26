@@ -196,7 +196,8 @@ fs.appendFileSync(path.join(out, '_headers'), `
     if (s.kind === 'news') feeds.add('/api/news');
     if (s.kind === 'book') for (let p = 1; p <= 3; p++) feeds.add(`/api/book?b=1&p=${p}` + (s.shelf ? `&s=${s.shelf}` : ''));
   }
-  const files = ['cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]
+  /* the paper works on an island's own Wi-Fi with none: it asks only for /api/settings, /api/partners and /api/stories, which the island answers */
+  const files = ['paper.html', 'paper.js', 'iruk.svg', 'cart.html', 'cart.js', 'spot.js', 'away.js', 'leave.js', 'vendor/qrcode.js', ...FONTS, 'base-db.json', 'tapes/night-field.json', 'stacks/index.json', ...carts.map(c => `stacks/${c.id}.json`)]
     .map(f => { const b = fs.readFileSync(path.join(out, f)); return { p: f, h: crypto.createHash('sha256').update(b).digest('hex'), n: b.length }; });
   fs.writeFileSync(path.join(out, 'shelf.json'), JSON.stringify({ v: sha, files, feeds: [...feeds], carts: carts.map(c => ({ id: c.id, name: c.name })) }));
 }

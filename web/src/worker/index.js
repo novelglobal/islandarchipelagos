@@ -1993,7 +1993,8 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
   if (p[0] === 'partners' && m === 'GET') return partners(db, req);
   if (p[0] === 'visit' && p[1] && m === 'GET') return visit(db, env, p[1]);
-  if (p[0] === 'isles' && m === 'GET') return isles(db, req);
+  /* the island browser: the open islands may be shown on any site (read only, nothing private in it) */
+  if (p[0] === 'isles' && m === 'GET') { const r = await isles(db, req); r.headers.set('access-control-allow-origin', '*'); return r; }
   /* the joined slip's words, for a printer that has just joined a Wi-Fi: plain lines a receipt can print */
   if (p[0] === 'welcome' && m === 'GET') { let w = null; try { w = JSON.parse((await settingsOf(db)).welcome || 'null'); } catch (e) { w = null; } w = w && typeof w === 'object' ? w : WELCOME;
     const a = s => String(s == null ? '' : s).normalize('NFKD').replace(/[^\x20-\x7e]/g, '').slice(0, 42);

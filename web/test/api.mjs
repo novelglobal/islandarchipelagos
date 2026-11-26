@@ -18,7 +18,7 @@ const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip, 
   /* one print a minute for each person: each test print comes from a person of its own, unless the test is about that minute */
   if (!gap && method === 'POST' && p === '/api/stories' && body && body.dest) headers['cf-connecting-ip'] = (ip || '10.77.0') + '.' + (++GAPN); if (body !== undefined) headers['content-type'] = 'application/json'; if (key) headers.authorization = `Bearer ${key}`; if (token) headers.authorization = `Bearer ${token}`;
   const r = await server.fetch(new URL(p, O), { method, headers, body: raw != null ? raw : body !== undefined ? JSON.stringify(body) : undefined });
-  const t = r.headers.get('content-type') || ''; return { status: r.status, type: t, island: r.headers.get('x-island'), pk: r.headers.get('x-pk'), json: /json/.test(t) ? await r.json() : null, text: /text/.test(t) ? await r.text() : null, bin: /image/.test(t) ? Buffer.from(await r.arrayBuffer()) : null };
+  const t = r.headers.get('content-type') || ''; return { status: r.status, type: t, acao: r.headers.get('access-control-allow-origin'), island: r.headers.get('x-island'), pk: r.headers.get('x-pk'), json: /json/.test(t) ? await r.json() : null, text: /text/.test(t) ? await r.text() : null, bin: /image/.test(t) ? Buffer.from(await r.arrayBuffer()) : null };
 };
 const SIG = Buffer.from(JSON.stringify({ c: 'DA-7K2Q', t: 'hs0d7', p: [-37.77, 144.96, 'bird', 'Noisy Miner', 'Manorina melanocephala', 'BRUNSWICK', 0], l: ['A line', '', '', ''], k: [], e: [] })).toString('base64url');
 const JPEG_B = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0xFF, 0xD9]), JPEG = 'data:image/jpeg;base64,' + JPEG_B.toString('base64');
@@ -716,6 +716,7 @@ try {
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { label: JSON.stringify({ on: true, title: 'T' }), isles: JSON.stringify({ novelglobal: { addr: '1 Test St', lat: -37.8, lng: 144.9 }, milkbar: { addr: '2 Test St', lat: -37.7, lng: 144.9, open: true } }) } });
     const ps = await call('/api/settings'), is = await call('/api/isles');
     check('the label is public, the islands list says who is on and open, and where only while open', /"title":"T"/.test(ps.json.label || '') && ps.json.isles === undefined && Array.isArray(is.json.isles) && is.json.isles.every(i => i.open || i.addr === undefined), JSON.stringify([ps.json.label, is.json]));
+    check('the island browser: any site may read the open islands, and only them', (await call('/api/isles')).acao === '*' && (await call('/api/partners')).acao !== '*', '');
     const raw = JSON.stringify(is.json);
     { const pl0 = ((await call('/api/admin/printers', { key: KEY })).json.printers || []).find(x => x.id === 'milkbar'), was = !!(pl0 && pl0.live);
       await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'live', on: false } }); const off = ((await call('/api/isles')).json.isles || []).find(i => i.id === 'milkbar');
