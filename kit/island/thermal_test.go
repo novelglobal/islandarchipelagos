@@ -36,3 +36,16 @@ func TestThePageUsesTheEngine(t *testing.T) {
 		t.Fatal("the island page does not print through the engine")
 	}
 }
+
+// what the engine makes, the island takes: its byte guard holds every kept engine print (spec/fixtures/engine, tools/engine.mjs)
+func TestTheIslandTakesTheEnginesPrints(t *testing.T) {
+	for _, f := range []string{"greys.bin", "dots.bin", "art.bin"} {
+		b, err := os.ReadFile("../../spec/fixtures/engine/" + f)
+		if err != nil {
+			t.Skip("the engine's prints are not beside this island's code")
+		}
+		if !rasterOnly(b) {
+			t.Errorf("the engine's %s is refused by the island", f)
+		}
+	}
+}

@@ -12,6 +12,8 @@ import { see, png } from './see.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE, '..', '..');
 const ENGINE = path.join(ROOT, 'web/src/base/thermal.js'), FIX = path.join(HERE, '..', 'fixtures', 'engine.json');
+/* three prints kept whole, so an island's own byte guard (kit/island, rasterOnly) is held to take what the engine makes */
+const SAMPLES = { 'ramp/house': 'greys.bin', 'sphere/way-C': 'dots.bin', 'art/house': 'art.bin' }, SDIR = path.join(HERE, '..', 'fixtures', 'engine');
 
 export function engine(file = ENGINE) {
   const ctx = { window: {}, btoa: s => Buffer.from(s, 'latin1').toString('base64'), Math, Float32Array, Uint8Array, Uint32Array, Int32Array, Array, Object, String, Number, JSON, isFinite, parseInt, RegExp };
@@ -60,9 +62,11 @@ if (import.meta.url === 'file://' + process.argv[1]) {
   for (const [k, v] of Object.entries(got)) now[k] = { how: v.how, bytes: v.bytes.length, sha256: crypto.createHash('sha256').update(v.bytes).digest('hex').slice(0, 32) };
   if (args.includes('--see')) { const dir = args[args.indexOf('--see') + 1]; fs.mkdirSync(dir, { recursive: true });
     for (const [k, v] of Object.entries(got)) { const r = see(v.bytes); fs.writeFileSync(path.join(dir, k.replace('/', '-') + '.png'), png(r.rows, r.width)); } console.log('the prints: ' + dir); }
-  if (args.includes('--write')) { fs.writeFileSync(FIX, JSON.stringify(now, null, 1) + '\n'); console.log(`${Object.keys(now).length} prints held in ${path.relative(ROOT, FIX)}`); process.exit(0); }
+  if (args.includes('--write')) { fs.writeFileSync(FIX, JSON.stringify(now, null, 1) + '\n'); fs.mkdirSync(SDIR, { recursive: true });
+    for (const [k, f] of Object.entries(SAMPLES)) fs.writeFileSync(path.join(SDIR, f), got[k].bytes); console.log(`${Object.keys(now).length} prints held in ${path.relative(ROOT, FIX)}`); process.exit(0); }
   const was = fs.existsSync(FIX) ? JSON.parse(fs.readFileSync(FIX, 'utf8')) : {}, bad = [];
   for (const k of new Set([...Object.keys(was), ...Object.keys(now)])) if (JSON.stringify(was[k]) !== JSON.stringify(now[k])) bad.push(`${k}: was ${JSON.stringify(was[k])}, now ${JSON.stringify(now[k])}`);
+  for (const [k, f] of Object.entries(SAMPLES)) { const p = path.join(SDIR, f); if (!fs.existsSync(p) || !fs.readFileSync(p).equals(got[k].bytes)) bad.push(`${k}: not as kept in fixtures/engine/${f}`); }
   /* and every print the engine makes is one an island takes: no stored settings, nothing but pictures, speed, parts and a cut */
   for (const [k, v] of Object.entries(got)) { const r = see(v.bytes); if (r.unknown.length) bad.push(`${k}: bytes the pretend printer does not know: ${r.unknown.join(' ')}`); if (r.cuts !== 1) bad.push(`${k}: ${r.cuts} cuts`); }
   if (bad.length) { console.error('the engine moved:\n  ' + bad.join('\n  ') + '\nif it is meant: node tools/engine.mjs --see /tmp/prints, look, then --write'); process.exit(1); }
