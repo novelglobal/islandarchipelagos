@@ -110,7 +110,13 @@ func statusSlip(a *App) []byte {
 	if m := a.pr.Model(); m != "" {
 		s.Text("PRINTER  " + m)
 	}
+	if c.Paused {
+		s.Bold(true).Text("PAUSED").Bold(false)
+	}
 	s.Text(fmt.Sprintf("PRINTED  %d", c.Printed))
+	if c.Failed > 0 {
+		s.Text(fmt.Sprintf("NOT PRINTED  %d", c.Failed))
+	}
 	s.Text("SETUP WI-FI  " + setupSSID(c)).Text("SLIP KEY  " + c.SetupPass)
 	s.Text("VERSION  " + version)
 	if k := c.privateKey(); k != nil {

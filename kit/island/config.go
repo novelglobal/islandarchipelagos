@@ -28,8 +28,10 @@ type Config struct {
 	Stamps     []string `json:"stamps,omitempty"` // "day pass code", kept with no internet, told to the site when it is back
 	IssueDay   string   `json:"issue_day,omitempty"`
 	IssueN     int      `json:"issue_n,omitempty"`
-	Ident      string   `json:"ident,omitempty"` // the island's own signing key (ident.go): made here, never sent
-	Open       bool     `json:"open,omitempty"`  // listed for every island browser; closed unless its keeper opens it
+	Ident      string   `json:"ident,omitempty"`  // the island's own signing key (ident.go): made here, never sent
+	Open       bool     `json:"open,omitempty"`   // listed for every island browser; closed unless its keeper opens it
+	Paused     bool     `json:"paused,omitempty"` // the keeper has stopped every print, from any phone and any site, until they start it again
+	Failed     int      `json:"failed,omitempty"` // prints the printer did not take (paper out, cover open, unplugged)
 }
 
 type Link struct {

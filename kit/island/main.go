@@ -104,6 +104,13 @@ func (a *App) fit() {
 	setPaper(p)
 }
 
+// paused: the keeper has stopped prints. Strangers' prints are refused (the site's queue keeps its own until the island starts
+// again); the keeper's own slips (status, setup) still print
+func (a *App) paused() bool { return a.conf().Paused }
+
+// failedOne: one more print the printer did not take, kept for the status slip
+func (a *App) failedOne() { a.update(func(c *Config) { c.Failed++ }) }
+
 func (a *App) print(b []byte) {
 	if err := a.pr.Print(b); err != nil {
 		log.Printf("no slip: %v", err)

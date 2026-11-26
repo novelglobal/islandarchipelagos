@@ -78,7 +78,7 @@ func (p *portal) serve(ctx context.Context) {
 type view struct {
 	Name, SSID, Note, Server, Done, Paper string
 	Dots                                  int
-	Setup, Island, Offline                bool
+	Setup, Island, Offline, Paused        bool
 	Nets                                  []Net
 	Known                                 []Known
 	Carts                                 []shelfCart
@@ -88,7 +88,7 @@ func (p *portal) render(w http.ResponseWriter, v view) {
 	c := p.a.conf()
 	v.Name, v.SSID, v.Server = c.Name, setupSSID(c), c.Own.Server
 	v.Offline = c.Mode == "offline"
-	v.Paper, v.Dots = c.Paper, dots
+	v.Paper, v.Dots, v.Paused = c.Paper, dots, c.Paused
 	if l := p.a.shelf(); l != nil && v.Island {
 		v.Carts = l.Carts
 	}
@@ -213,11 +213,21 @@ func (p *portal) reopen(w http.ResponseWriter, r *http.Request) {
 		p.render(w, view{Done: "ask", Note: "TYPE THE SLIP KEY, PRINTED ON THE SLIP. YOUR WI-FI PASSWORD GOES ON THE NEXT PAGE."})
 		return
 	}
+	if r.FormValue("do") == "pause" {
+		p.a.update(func(c *Config) { c.Paused = !c.Paused })
+		log.Printf("the keeper: paused %v", p.a.paused())
+		p.render(w, view{Done: "ask", Note: map[bool]string{true: "PAUSED.", false: "PRINTING."}[p.a.paused()]})
+		return
+	}
 	p.render(w, view{Done: "reopen"})
 	go func() { time.Sleep(2 * time.Second); p.a.ask("setup") }()
 }
 
 func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
+	if p.a.paused() {
+		p.answer(w, r, "PAUSED.")
+		return
+	}
 	busy, full := p.allow(r)
 	if busy {
 		p.answer(w, r, "ONE AT A TIME: WAIT A MOMENT.")
@@ -243,6 +253,7 @@ func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
 	slip := wishSlip(p.a.conf().Name, lines)
 	if err := p.a.pr.Print(slip); err != nil {
 		log.Printf("a W.I.S.H. not printed: %v", err)
+		p.a.failedOne()
 		p.answer(w, r, "NOT PRINTED: THE PRINTER DID NOT ANSWER.")
 		return
 	}

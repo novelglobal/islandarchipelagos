@@ -322,6 +322,10 @@ func (p *portal) shelfPrint(w http.ResponseWriter, r *http.Request) {
 		jsonOut(w, 400, map[string]any{"error": "nothing to print"})
 		return
 	}
+	if p.a.paused() {
+		jsonOut(w, 503, map[string]any{"error": "paused"})
+		return
+	}
 	raw, err := base64.StdEncoding.DecodeString(b.Escpos)
 	if err != nil || len(raw) > escposMax || !rasterOnly(raw) {
 		jsonOut(w, 400, map[string]any{"error": "not a print this island takes"})
@@ -336,6 +340,7 @@ func (p *portal) shelfPrint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := p.a.pr.Print(raw); err != nil {
+		p.a.failedOne()
 		log.Printf("a cart not printed: %v", err)
 		jsonOut(w, 503, map[string]any{"error": "the printer did not answer"})
 		return

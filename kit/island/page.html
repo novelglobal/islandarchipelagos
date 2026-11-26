@@ -18,6 +18,7 @@ h2{font-size:11px;font-weight:600;letter-spacing:.14em;margin:26px 0 8px}
 .f{display:block;margin:18px 0 0;font-size:11px;letter-spacing:.14em}
 .f input{display:block;width:100%;margin:6px 0 0;padding:12px;font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:inherit;background:transparent;border:1px solid var(--line);border-radius:4px}
 button{width:100%;margin:26px 0 0;padding:15px;font:inherit;font-weight:600;letter-spacing:.16em;color:var(--bg);background:var(--fg);border:0;border-radius:4px}
+button.alt{color:var(--fg);background:transparent;border:1px solid var(--fg)}
 .e{margin:0 0 18px;padding:10px 12px;border:1px solid currentColor;border-radius:4px}
 p{margin:0 0 12px}details{margin:22px 0 0;font-size:11px;letter-spacing:.14em}summary{opacity:.6}
 a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px}.carts a{display:block;padding:14px 10px;border:1px solid var(--line);border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;letter-spacing:.14em;text-align:center}.soft{opacity:.5;font-size:11px;letter-spacing:.14em;margin-top:40px;display:block;text-align:center}
@@ -36,7 +37,8 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 {{else if eq .Done "ask"}}
 <form method="post" action="/setup">
 <label class="f">SLIP KEY (ON THE SLIP)<input type="password" name="pass" autocomplete="off"></label>
-<button>SETUP</button></form>
+<button>SETUP</button>
+<button name="do" value="pause" class="alt">{{if .Paused}}PRINT AGAIN{{else}}PAUSE{{end}}</button></form>
 
 {{else if .Setup}}
 <form method="post" action="/setup" id="setup">
@@ -111,7 +113,7 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
       const out = canvas(H), o = out.getContext('2d'), im = o.createImageData(W, H); for (let l = 0, i = 0; l < n; l++, i += 4) { im.data[i] = im.data[i + 1] = im.data[i + 2] = L[l]; im.data[i + 3] = 255; } o.putImageData(im, 0, 0);
       const r = await fetch('/api/stories', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'record', from: 'wish', escpos: T.raster(out, Object.assign(T.opts(Q), { grey })) }) });
       const j = await r.json().catch(() => ({}));
-      say.textContent = j.error === 'full' ? 'THE ISLAND HAS PRINTED ENOUGH FOR TODAY.' : SAID[r.status] || 'NOT A PICTURE THE PRINTER CAN TAKE.'; say.hidden = false; if (r.ok) f.reset();
+      say.textContent = j.error === 'full' ? 'THE ISLAND HAS PRINTED ENOUGH FOR TODAY.' : j.error === 'paused' ? 'PAUSED.' : SAID[r.status] || 'NOT A PICTURE THE PRINTER CAN TAKE.'; say.hidden = false; if (r.ok) f.reset();
     } catch (err) { f.submit(); } finally { b.disabled = false; }
   });
 })();

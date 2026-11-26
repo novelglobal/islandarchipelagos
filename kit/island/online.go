@@ -125,6 +125,9 @@ func (a *App) pullStep(i int) (time.Duration, string) {
 	if ip := localIP(); ip != "" {
 		q.Set("ip", ip)
 	}
+	if a.paused() {
+		return 30 * time.Second, "" // the site keeps the island's prints waiting until the keeper starts it again
+	}
 	base := l.Server + "/api/printers/" + url.PathEscape(l.Printer)
 	r, err := call("GET", base+"/next?"+q.Encode(), l.Token, nil)
 	if err != nil {
@@ -190,6 +193,7 @@ func (a *App) pullStep(i int) (time.Duration, string) {
 	}
 	status, why := "printed", ""
 	if perr != nil {
+		a.failedOne()
 		status, why = "failed", perr.Error()
 		log.Printf("%s not printed: %v", code, perr)
 	} else {
