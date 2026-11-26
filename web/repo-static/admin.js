@@ -1193,9 +1193,18 @@
     const evx = el('textarea', { rows: 6, maxlength: 3000, placeholder: 'SAT 10AM | MARKET | ROYAL PARK' }); evx.value = st.events || '';
     const events = el('section', { class: 'ed' }, el('h3', { text: 'LAN PARTIES' }), hint('One a line: when | what | where. Shown on the LAN PARTIES card and its print.'), evx,
       el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: () => save({ events: evx.value.trim() }) })));
+    /* every line: the words of novel.global's own cards and of every island's page, each as built (lines.json) beside the line now. Empty: as built */
+    let sy = {}; try { sy = st.say ? JSON.parse(st.say) || {} : {}; } catch (e) { sy = {}; }
+    const lnTabs = el('div', { class: 'acts' }), lnBody = el('div', {}), lnSay = el('p', { class: 'note' }), lnIn = [];
+    const lines = el('section', { class: 'ed' }, el('h3', { text: 'EVERY LINE' }), hint('Each line as built, in grey; type over it to change it. Empty: as built. The paper and the home show a change at once; an island takes it the next time it is online.'), lnTabs, lnBody,
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: 'on', text: 'SAVE', onclick: async () => { const o = {}; for (const [d, i] of lnIn) { const v = i.value.trim(); if (v && v !== d) o[d] = v; } await api('settings', { method: 'POST', body: JSON.stringify({ say: JSON.stringify(o) }) }); lnSay.textContent = 'SAVED · ' + Object.keys(o).length + ' CHANGED'; } })), lnSay);
+    fetch('/lines.json', { cache: 'no-store' }).then(r => r.json()).then(L => { const tabs = Object.keys(L), pick = t => { [...lnTabs.children].forEach(b => b.classList.toggle('on', b.dataset.t === t)); [...lnBody.children].forEach(g => { g.hidden = g.dataset.t !== t; }); };
+      tabs.forEach(t => { lnTabs.append(el('button', { type: 'button', text: t, 'data-t': t, onclick: () => pick(t) }));
+        lnBody.append(el('div', { 'data-t': t }, ...L[t].map(d => { const i = el('input', { type: 'text', maxlength: 300, placeholder: d }); i.value = sy[d] || ''; lnIn.push([d, i]); return el('label', {}, el('span', { class: 'note', text: d }), i); }))); });
+      pick(tabs[0]); }).catch(() => { lnSay.textContent = 'THE LINES DID NOT LOAD'; });
     /* grouped by what they change, each group under its own word; the keys at the top jump to a group */
     const grp = (id, t, why) => el('h3', { id: 'set-' + id, class: 'set-g', title: why, text: t });
-    const G = [['print', 'PRINTING', 'How prints look and when they go out', [printq, tuneSec, sends, gates]], ['words', 'WORDS', 'What the site says first, and where it is', [start, notice, country, events]],
+    const G = [['print', 'PRINTING', 'How prints look and when they go out', [printq, tuneSec, sends, gates]], ['words', 'WORDS', 'What the site says first, and where it is', [start, notice, country, events, lines]],
       ['look', 'LOOK', 'How the site moves and its style packs', [motion, styles]], ['making', 'MAKING', 'What people may put up, and how prints go out', [printing, making]], ['folio', 'PORTFOLIO', 'The blog, its curations and its sources', [blog, cur, sources]], ['reset', 'RESET', 'Back to the start, and what this browser keeps', [reset]]];
     const jump = el('div', { class: 'acts', style: 'margin:0 0 14px' }, ...G.map(g => el('button', { type: 'button', text: g[1], title: g[2], onclick: () => { const h = document.getElementById('set-' + g[0]); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); } })),
       el('button', { type: 'button', text: 'HOME →', title: 'The cards on the home: order, size and look', onclick: () => show('home') }), el('button', { type: 'button', text: 'POP-UPS →', title: 'Pop-up cards, their links and QR codes', onclick: () => show('popups') }));
@@ -1294,7 +1303,7 @@
       P('tune', 'TONE', [[site, ['TONE']]], null, 'tone light normal dark tone test photo test own photo text test darkness test log'), P('styles', 'STYLES', [[site, ['STYLES · MOD PACKS']]], null, 'mod packs house press quiet loud'),
       P('rules', 'RULES', [[site, ['PRINTING', 'SENT WITHOUT A PRINT', 'MAKING']]], null, 'codes gap touch maker free print approval')]],
     ['site', 'SITE', 'What the site shows and says', [P('home', 'HOME', home, null, 'opener business card species list showcase cards order size look'), P('label', 'LABEL', [[label, ['THE LABEL', 'THE FILM', 'ETHICS AND AI DISCLOSURE', 'CARD NOTES']]], null, 'label film ethics ai disclosure private page card notes'),
-      P('words', 'WORDS', [[site, ['START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES']], [stations, ['INTENTION AND W.I.S.H. · THE WORDS']]], null, 'start booth notice country lan parties intention wish'),
+      P('words', 'WORDS', [[site, ['START AND BOOTH', 'NOTICE', 'COUNTRY', 'LAN PARTIES', 'EVERY LINE']], [stations, ['INTENTION AND W.I.S.H. · THE WORDS']]], null, 'start booth notice country lan parties intention wish'),
       P('boards', 'BOARDS', [[stations, ['THE EXAMPLE · ITS POSTER AND BOARD 00', 'BOARD 01 · THE TEMPLATE']]], null, 'example board 00 board 01 template'),
       P('map', 'MAP', [[stations, ['LIVING', 'THE MOON', 'THE BUOY', 'CITIES AND DATA PACKS']]], null, 'living moon buoy cities data packs'),
       P('cards', 'CARDS', [[stations, ['CARDS', 'PHOTOS', 'CARD PICTURES']]], null, 'card words photos card pictures bluepaper direct action radio'),

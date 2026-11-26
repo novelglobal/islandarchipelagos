@@ -477,6 +477,19 @@ if (run('portfolio')) try {
   check('TUNE proves the saved settings print: the owner\'s tweak wins, a test way brings its tones (an old way gone goes to the nearest), a step changes the dots, each speed band is sent, and in greys (the default) it fits a print', tu.own === 1.1 && tu.way === 0.78 && tu.old === 'fs' && tu.hi - tu.lo > 0.04 && tu.dens >= 4 && tu.w === 512 && tu.h > 900 && tu.gStores >= 28 && tu.gBytes < 675e3, JSON.stringify(tu));
   check('the text test: the site\'s words four ways at the printer\'s width, solid ink, then the printer\'s own letters as text (font A and B)', tu.text[0] === 512 && tu.text[1] > 500 && tu.text[2] === 0 && tu.text[3] && tu.text[4], JSON.stringify(tu.text));
   const tc = await page.evaluate(() => { let e = [...document.querySelectorAll('section.ed h3')].find(h => h.textContent === 'TONE'); while (e && !(e.classList && e.classList.contains('big'))) e = e.nextElementSibling; return e.querySelector('canvas').toDataURL('image/png'); }); fs.writeFileSync(path.join(SHOTS, 'tone-slip.png'), Buffer.from(tc.split(',')[1], 'base64'));
+  /* EVERY LINE: a line of the paper's three cards and the home's toggle word changed on the approval page, seen at once; empty brings each back */
+  await page.click('#tabs [data-tab="words"]'); await page.waitForSelector('section.ed h3:has-text("EVERY LINE")'); await page.waitForSelector('[data-t="PAPER"] input');
+  const lineIn = (t, d) => page.locator(`[data-t="${t}"] input[placeholder="${d}"]`);
+  await lineIn('PAPER', 'Stories, quests and workshops, told on paper.').fill('Told on paper, together.');
+  await page.click('button[data-t="HOME"]'); await lineIn('HOME', 'GHOST').fill('PHANTOM');
+  await page.locator('section.ed:has(h3:has-text("EVERY LINE")) button.on:has-text("SAVE")').click(); await page.waitForFunction(() => /SAVED · 2 CHANGED/.test(document.body.innerText));
+  const lp = await ctx.newPage(); await lp.goto('https://oan.test/paper'); await lp.waitForFunction(() => /Told on paper, together\./.test(document.querySelector('#three').textContent), null, { timeout: 8000 }).catch(() => {});
+  const lines1 = await lp.evaluate(() => [...document.querySelectorAll('#three button')].map(b => b.textContent)); await lp.close();
+  check('EVERY LINE: a line of the paper\'s three cards changed on the approval page shows on the paper, the others as built', lines1[2] === 'Told on paper, together.' && /Raspberry Pi/.test(lines1[0]), JSON.stringify(lines1));
+  const sy = JSON.parse((await admin('settings')).say || '{}'); check('EVERY LINE keeps only the lines changed, each by the line as built', JSON.stringify(sy) === JSON.stringify({ 'Stories, quests and workshops, told on paper.': 'Told on paper, together.', GHOST: 'PHANTOM' }), JSON.stringify(sy));
+  await lineIn('HOME', 'GHOST').fill(''); await page.click('button[data-t="PAPER"]'); await lineIn('PAPER', 'Stories, quests and workshops, told on paper.').fill('');
+  await page.locator('section.ed:has(h3:has-text("EVERY LINE")) button.on:has-text("SAVE")').click(); await page.waitForFunction(() => /SAVED · 0 CHANGED/.test(document.body.innerText));
+  check('EVERY LINE emptied brings every line back as built', ((await admin('settings')).say || '{}') === '{}', '');
   /* the desk in six groups: every page draws with its own heading and nothing is lost from the old long pages; FIND finds by any word;
      a section typed in is marked unsaved with one key to save it; on a phone the groups sit along the foot */
   const desk = await page.evaluate(async () => { const ids = [...document.querySelectorAll('#tabs [data-tab]')].map(b => b.dataset.tab), seen = {}, bad = [];

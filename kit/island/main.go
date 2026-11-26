@@ -53,6 +53,7 @@ func main() {
 	}
 	a := &App{cfg: cfg, path: *path, pr: newPrinter(), asks: make(chan string, 4)}
 	a.fit()
+	a.keepWords()
 	if *demo != "" {
 		a.demo(*demo)
 		return

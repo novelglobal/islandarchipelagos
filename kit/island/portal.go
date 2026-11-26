@@ -25,7 +25,7 @@ var pageHTML string
 //go:embed thermal.js
 var thermalJS []byte
 
-var pages = template.Must(template.New("page").Parse(pageHTML))
+var pages = template.Must(template.New("page").Funcs(template.FuncMap{"words": words}).Parse(pageHTML))
 
 type Choice struct {
 	Name, Mode, Net, Pass, Server, Paper string
@@ -154,7 +154,7 @@ func (p *portal) say(w http.ResponseWriter, r *http.Request, note string) {
 func (p *portal) choose(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
 	if r.ParseForm() != nil {
-		p.say(w, r, "TRY AGAIN.")
+		p.say(w, r, words("TRY AGAIN."))
 		return
 	}
 	c := Choice{Name: strings.ToUpper(clean(r.FormValue("name"), 24)), Mode: r.FormValue("mode"), Server: strings.TrimRight(clean(r.FormValue("server"), 100), "/")}
@@ -179,16 +179,16 @@ func (p *portal) choose(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case c.Mode != "online" && c.Mode != "offline":
-		p.say(w, r, "CHOOSE ONLINE OR OFFLINE.")
+		p.say(w, r, words("CHOOSE ONLINE OR OFFLINE."))
 		return
 	case c.Mode == "online" && c.Net == "":
-		p.say(w, r, "CHOOSE A WI-FI.")
+		p.say(w, r, words("CHOOSE A WI-FI."))
 		return
 	case c.Mode == "online" && c.Pass != "" && strings.EqualFold(strings.TrimSpace(c.Pass), p.a.conf().SetupPass):
-		p.say(w, r, "THAT IS THE SLIP KEY. TYPE YOUR OWN WI-FI PASSWORD.")
+		p.say(w, r, words("THAT IS THE SLIP KEY. TYPE YOUR OWN WI-FI PASSWORD."))
 		return
 	case c.Mode == "online" && !strings.HasPrefix(c.Net, "keep:") && c.Pass != "" && (len(c.Pass) < 8 || len(c.Pass) > 63):
-		p.say(w, r, "A WI-FI PASSWORD HAS 8 TO 63 CHARACTERS.")
+		p.say(w, r, words("A WI-FI PASSWORD HAS 8 TO 63 CHARACTERS."))
 		return
 	}
 	done := "online"
@@ -210,13 +210,13 @@ func (p *portal) reopen(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	if !strings.EqualFold(strings.TrimSpace(clean(r.FormValue("pass"), 64)), p.a.conf().SetupPass) {
 		time.Sleep(2 * time.Second)
-		p.render(w, view{Done: "ask", Note: "TYPE THE SLIP KEY, PRINTED ON THE SLIP. YOUR WI-FI PASSWORD GOES ON THE NEXT PAGE."})
+		p.render(w, view{Done: "ask", Note: words("TYPE THE SLIP KEY, PRINTED ON THE SLIP. YOUR WI-FI PASSWORD GOES ON THE NEXT PAGE.")})
 		return
 	}
 	if r.FormValue("do") == "pause" {
 		p.a.update(func(c *Config) { c.Paused = !c.Paused })
 		log.Printf("the keeper: paused %v", p.a.paused())
-		p.render(w, view{Done: "ask", Note: map[bool]string{true: "PAUSED.", false: "PRINTING."}[p.a.paused()]})
+		p.render(w, view{Done: "ask", Note: words(map[bool]string{true: "PAUSED.", false: "PRINTING."}[p.a.paused()])})
 		return
 	}
 	p.render(w, view{Done: "reopen"})
@@ -225,16 +225,16 @@ func (p *portal) reopen(w http.ResponseWriter, r *http.Request) {
 
 func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
 	if p.a.paused() {
-		p.answer(w, r, "PAUSED.")
+		p.answer(w, r, words("PAUSED."))
 		return
 	}
 	busy, full := p.allow(r)
 	if busy {
-		p.answer(w, r, "ONE AT A TIME: WAIT A MOMENT.")
+		p.answer(w, r, words("ONE AT A TIME: WAIT A MOMENT."))
 		return
 	}
 	if full {
-		p.answer(w, r, "THE ISLAND HAS PRINTED ENOUGH FOR TODAY.")
+		p.answer(w, r, words("THE ISLAND HAS PRINTED ENOUGH FOR TODAY."))
 		return
 	}
 	// words alone (a phone without scripts): pictures come as printer bytes made on the phone by the engine, through /api/stories
@@ -247,18 +247,18 @@ func (p *portal) printWish(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(lines) == 0 {
-		p.answer(w, r, "WRITE A LINE FIRST.")
+		p.answer(w, r, words("WRITE A LINE FIRST."))
 		return
 	}
 	slip := wishSlip(p.a.conf().Name, lines)
 	if err := p.a.pr.Print(slip); err != nil {
 		log.Printf("a W.I.S.H. not printed: %v", err)
 		p.a.failedOne()
-		p.answer(w, r, "NOT PRINTED: THE PRINTER DID NOT ANSWER.")
+		p.answer(w, r, words("NOT PRINTED: THE PRINTER DID NOT ANSWER."))
 		return
 	}
 	p.a.update(func(c *Config) { c.Printed++ })
-	p.answer(w, r, "PRINTED. TAKE IT FROM THE PRINTER.")
+	p.answer(w, r, words("PRINTED. TAKE IT FROM THE PRINTER."))
 }
 
 func (p *portal) answer(w http.ResponseWriter, r *http.Request, note string) {

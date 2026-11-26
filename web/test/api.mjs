@@ -52,6 +52,17 @@ try {
     /* the checks below are of what codes and passes guard, so they run with ALL OPEN off */
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true, freePrint: false, passOn: true, allOpen: false } });
     check('with ALL OPEN off, a code nobody has printed is not a printed one', (await call('/api/mine/AB4')).json.printed === false, ''); }
+  /* every line: the approval page changes a line, and every page that reads the settings (and every island, from its kept copy) has it */
+  { const say = JSON.stringify({ GHOST: 'PHANTOM', 'PRINT AGAIN': 'GO' });
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { say } });
+    const st1 = (await call('/api/settings')).json; check('a line changed on the approval page reaches the settings any page reads', st1.say === say, String(st1.say));
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { say: 'x'.repeat(33000) } }); check('the lines are kept to their size (a page that cannot read them shows each line as built)', (await call('/api/settings')).json.say.length === 32000, '');
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { say: '' } }); }
+  /* and the list the approval page edits holds every line of the paper's three cards and the home's toggle, and nothing they do not show */
+  { const L = JSON.parse(fs.readFileSync(new URL('../repo-static/lines.json', import.meta.url), 'utf8')), pj = fs.readFileSync(new URL('../repo-static/paper.js', import.meta.url), 'utf8'), hj = fs.readFileSync(new URL('../src/base/home.js', import.meta.url), 'utf8');
+    const three = pj.slice(pj.indexOf('var THREE = ['), pj.indexOf('];', pj.indexOf('var THREE = ['))), shown = [...three.matchAll(/(?:line|label): '([^']+)'|\['([^']+)', (?:null|'[^']*')\]/g)].map(m => m[1] || m[2]);
+    check('every line of the paper\'s three cards is on the approval page\'s list, and only those', shown.every(t => L.PAPER.includes(t)) && L.PAPER.every(t => shown.includes(t)), JSON.stringify(shown.filter(t => !L.PAPER.includes(t))));
+    check('the home\'s toggle word is on the list', L.HOME.every(t => hj.includes("'" + t + "'")), ''); }
   const h = await call('/api/health');
   check('health answers ok with the build', h.status === 200 && /^ok \w+/.test(h.text), h.text);
   const pa = await call('/api/partners');

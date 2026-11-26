@@ -29,36 +29,36 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 {{if .Note}}<p class="e">{{.Note}}</p>{{end}}
 
 {{if eq .Done "online"}}
-<p>JOINING THE WI-FI. THIS PHONE NOW LEAVES THE SETUP WI-FI.</p><p>WATCH THE PRINTER: A CODE TO SCAN, OR COULD NOT JOIN.</p>
+<p>{{words "JOINING THE WI-FI. THIS PHONE NOW LEAVES THE SETUP WI-FI."}}</p><p>{{words "WATCH THE PRINTER: A CODE TO SCAN, OR COULD NOT JOIN."}}</p>
 {{else if eq .Done "offline"}}
-<p>OPENING THE ISLAND.</p><p>THE PRINTER PRINTS ITS WI-FI. JOIN IT TO MAKE AND PRINT.</p>
+<p>{{words "OPENING THE ISLAND."}}</p><p>{{words "THE PRINTER PRINTS ITS WI-FI. JOIN IT TO MAKE AND PRINT."}}</p>
 {{else if eq .Done "reopen"}}
 <p>THE SETUP WI-FI OPENS: {{.SSID}}.</p>
 {{else if eq .Done "ask"}}
 <form method="post" action="/setup">
-<label class="f">SLIP KEY (ON THE SLIP)<input type="password" name="pass" autocomplete="off"></label>
-<button>SETUP</button>
-<button name="do" value="pause" class="alt">{{if .Paused}}PRINT AGAIN{{else}}PAUSE{{end}}</button></form>
+<label class="f">{{words "SLIP KEY (ON THE SLIP)"}}<input type="password" name="pass" autocomplete="off"></label>
+<button>{{words "SETUP"}}</button>
+<button name="do" value="pause" class="alt">{{if .Paused}}{{words "PRINT AGAIN"}}{{else}}{{words "PAUSE"}}{{end}}</button></form>
 
 {{else if .Setup}}
 <form method="post" action="/setup" id="setup">
-<label class="f">NAME<input type="text" name="name" value="{{.Name}}" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
-<h2>THIS ISLAND IS</h2>
-<label class="n"><input type="radio" name="mode" value="online" {{if not .Offline}}checked{{end}}><span>ONLINE</span><i>PRINTS FOR THE SITE</i></label>
-<label class="n"><input type="radio" name="mode" value="offline" {{if .Offline}}checked{{end}}><span>OFFLINE</span><i>ITS OWN WI-FI</i></label>
-<h2>PAPER</h2>
-<label class="n"><input type="radio" name="paper" value="" {{if eq .Paper ""}}checked{{end}}><span>AUTO</span></label>
+<label class="f">{{words "NAME"}}<input type="text" name="name" value="{{.Name}}" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+<h2>{{words "THIS ISLAND IS"}}</h2>
+<label class="n"><input type="radio" name="mode" value="online" {{if not .Offline}}checked{{end}}><span>{{words "ONLINE"}}</span><i>{{words "PRINTS FOR THE SITE"}}</i></label>
+<label class="n"><input type="radio" name="mode" value="offline" {{if .Offline}}checked{{end}}><span>{{words "OFFLINE"}}</span><i>{{words "ITS OWN WI-FI"}}</i></label>
+<h2>{{words "PAPER"}}</h2>
+<label class="n"><input type="radio" name="paper" value="" {{if eq .Paper ""}}checked{{end}}><span>{{words "AUTO"}}</span></label>
 <label class="n"><input type="radio" name="paper" value="80" {{if eq .Paper "80"}}checked{{end}}><span>80 MM</span></label>
 <label class="n"><input type="radio" name="paper" value="58" {{if eq .Paper "58"}}checked{{end}}><span>58 MM</span></label>
 <div id="wifi">
-<h2>WI-FI</h2>
-{{range $i, $k := .Known}}<label class="n"><input type="radio" name="net" value="keep:{{$k.Con}}" {{if eq $i 0}}checked{{end}}><span>{{$k.SSID}}</span><i>KNOWN</i></label>{{end}}
+<h2>{{words "WI-FI"}}</h2>
+{{range $i, $k := .Known}}<label class="n"><input type="radio" name="net" value="keep:{{$k.Con}}" {{if eq $i 0}}checked{{end}}><span>{{$k.SSID}}</span><i>{{words "KNOWN"}}</i></label>{{end}}
 {{range .Nets}}<label class="n"><input type="radio" name="net" value="{{.Name}}"><span>{{.Name}}</span><i>{{if not .Locked}}OPEN {{end}}{{.Signal}}%</i></label>{{end}}
-<label class="f">OTHER<input type="text" name="other" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-<label class="f">YOUR WI-FI PASSWORD<input type="password" name="pass" autocomplete="off"></label>
-<details><summary>OWN SITE</summary><label class="f">SITE<input type="text" name="server" value="{{.Server}}" autocomplete="off" autocapitalize="off" spellcheck="false"></label></details>
+<label class="f">{{words "OTHER"}}<input type="text" name="other" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="f">{{words "YOUR WI-FI PASSWORD"}}<input type="password" name="pass" autocomplete="off"></label>
+<details><summary>{{words "OWN SITE"}}</summary><label class="f">{{words "SITE"}}<input type="text" name="server" value="{{.Server}}" autocomplete="off" autocapitalize="off" spellcheck="false"></label></details>
 </div>
-<button>BEGIN</button>
+<button>{{words "BEGIN"}}</button>
 </form>
 <script>
 (() => { const f = document.getElementById('setup'), w = document.getElementById('wifi');
@@ -66,23 +66,23 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 </script>
 
 {{else if .Island}}
-{{if .Carts}}<nav class="carts"><a href="/paper.html">PAPER</a>{{range .Carts}}<a href="/cart.html#{{.ID}}">{{.Name}}</a>{{end}}</nav>{{end}}
+{{if .Carts}}<nav class="carts"><a href="/paper.html">{{words "PAPER"}}</a>{{range .Carts}}<a href="/cart.html#{{.ID}}">{{.Name}}</a>{{end}}</nav>{{end}}
 <form method="post" action="/print" id="wish">
-<h2>W.I.S.H.</h2>
+<h2>{{words "W.I.S.H."}}</h2>
 <label class="f">W<input type="text" name="w" maxlength="120" autocomplete="off"></label>
 <label class="f">I<input type="text" name="i" maxlength="120" autocomplete="off"></label>
 <label class="f">S<input type="text" name="s" maxlength="120" autocomplete="off"></label>
 <label class="f">H<input type="text" name="h" maxlength="120" autocomplete="off"></label>
-<label class="f" id="ph" hidden>PHOTO<input type="file" accept="image/*"></label>
-<button>PRINT</button>
+<label class="f" id="ph" hidden>{{words "PHOTO"}}<input type="file" accept="image/*"></label>
+<button>{{words "PRINT"}}</button>
 </form>
 <p id="say" hidden></p>
 <form method="get" action="/pass" id="pass">
-<label class="f">PASS<input type="text" name="c" maxlength="7" autocomplete="off" autocapitalize="characters"></label>
-<label class="f">CODE<input type="text" name="w" maxlength="6" autocomplete="off" autocapitalize="characters"></label>
-<button>CHECK</button>
+<label class="f">{{words "PASS"}}<input type="text" name="c" maxlength="7" autocomplete="off" autocapitalize="characters"></label>
+<label class="f">{{words "CODE"}}<input type="text" name="w" maxlength="6" autocomplete="off" autocapitalize="characters"></label>
+<button>{{words "CHECK"}}</button>
 </form>
-<a class="soft" href="/setup">SETUP</a>
+<a class="soft" href="/setup">{{words "SETUP"}}</a>
 <script src="/thermal.js"></script>
 <script>
 (() => {
@@ -95,14 +95,14 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
   const lines = (g, t) => { const out = []; let l = ''; for (const w of t.split(/\s+/).filter(Boolean)) { const n = l ? l + ' ' + w : w; if (g.measureText(n).width > W - 2 * PAD && l) { out.push(l); l = w; } else l = n; } if (l) out.push(l); return out; };
   const photo = file => new Promise(ok => { if (!file) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = URL.createObjectURL(file); });
   const canvas = h => { const c = document.createElement('canvas'); c.width = W; c.height = h; return c; };
-  const SAID = { 200: 'PRINTED. TAKE IT FROM THE PRINTER.', 429: 'ONE AT A TIME: WAIT A MOMENT.', 503: 'NOT PRINTED: THE PRINTER DID NOT ANSWER.' };
+  const SAID = { 200: {{words "PRINTED. TAKE IT FROM THE PRINTER."}}, 429: {{words "ONE AT A TIME: WAIT A MOMENT."}}, 503: {{words "NOT PRINTED: THE PRINTER DID NOT ANSWER."}} };
   f.addEventListener('submit', async e => {
     e.preventDefault(); const b = f.querySelector('button'); b.disabled = true; say.hidden = true;
     try {
       const ink = canvas(1), g = ink.getContext('2d'); g.font = FONT;
       const set = ['w', 'i', 's', 'h'].map(n => f[n].value.trim()).filter(Boolean).flatMap(t => lines(g, t));
       const img = await photo(f.querySelector('input[type=file]').files[0]), ih = img ? Math.round(img.naturalHeight * W / img.naturalWidth) : 0;
-      if (!set.length && !img) { say.textContent = 'WRITE A LINE FIRST.'; say.hidden = false; return; }
+      if (!set.length && !img) { say.textContent = {{words "WRITE A LINE FIRST."}}; say.hidden = false; return; }
       const H = Math.min(4000, Math.ceil((PAD + (ih ? ih + 16 : 0) + LH + 12 + set.length * LH + PAD) / 8) * 8), n = W * H;
       const pc = canvas(H), px = pc.getContext('2d'); px.fillStyle = '#fff'; px.fillRect(0, 0, W, H); if (img) { px.imageSmoothingQuality = 'high'; px.drawImage(img, 0, PAD, W, ih); }
       ink.height = H; g.font = FONT; g.fillStyle = '#000'; g.textBaseline = 'top'; let y = PAD + (ih ? ih + 16 : 0);
@@ -113,7 +113,7 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
       const out = canvas(H), o = out.getContext('2d'), im = o.createImageData(W, H); for (let l = 0, i = 0; l < n; l++, i += 4) { im.data[i] = im.data[i + 1] = im.data[i + 2] = L[l]; im.data[i + 3] = 255; } o.putImageData(im, 0, 0);
       const r = await fetch('/api/stories', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'record', from: 'wish', escpos: T.raster(out, Object.assign(T.opts(Q), { grey })) }) });
       const j = await r.json().catch(() => ({}));
-      say.textContent = j.error === 'full' ? 'THE ISLAND HAS PRINTED ENOUGH FOR TODAY.' : j.error === 'paused' ? 'PAUSED.' : SAID[r.status] || 'NOT A PICTURE THE PRINTER CAN TAKE.'; say.hidden = false; if (r.ok) f.reset();
+      say.textContent = j.error === 'full' ? {{words "THE ISLAND HAS PRINTED ENOUGH FOR TODAY."}} : j.error === 'paused' ? {{words "PAUSED."}} : SAID[r.status] || {{words "NOT A PICTURE THE PRINTER CAN TAKE."}}; say.hidden = false; if (r.ok) f.reset();
     } catch (err) { f.submit(); } finally { b.disabled = false; }
   });
 })();

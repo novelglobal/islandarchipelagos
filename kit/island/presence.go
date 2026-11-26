@@ -231,16 +231,16 @@ func (p *portal) passCheck(w http.ResponseWriter, r *http.Request) {
 // the island's page: the next pass of the island's own printed (twenty a day)
 func (p *portal) passPrint(w http.ResponseWriter, r *http.Request) {
 	if p.a.paused() {
-		p.passSay(w, r, "PAUSED.")
+		p.passSay(w, r, words("PAUSED."))
 		return
 	}
 	code, mark := p.a.nextPass(time.Now())
 	if code == "" {
-		p.passSay(w, r, "PASS · NONE LEFT")
+		p.passSay(w, r, words("PASS · NONE LEFT"))
 		return
 	}
 	p.a.print(textSlip(p.a.conf().Name, "PASS", mark, code))
-	p.passSay(w, r, "PASS · PRINTED")
+	p.passSay(w, r, words("PASS · PRINTED"))
 }
 
 func (p *portal) passSay(w http.ResponseWriter, r *http.Request, note string) {

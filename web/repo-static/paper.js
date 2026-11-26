@@ -266,15 +266,17 @@
     { line: 'Stories, quests and workshops, told on paper.', label: 'novel.global',
       site: [[['novel.global', '/'], ['The wall', '/art'], ['Research', '/research']]] }
   ];
-  var three = $('#three'); three.innerHTML = THREE.map(function (c, i) { return '<button data-i="' + i + '" aria-label="' + c.label + '">' + c.line + '</button>'; }).join('');
+  /* every line as the approval page changed it (EVERY LINE; empty: as built) */
+  var SAY = {}, say = function (t) { return Object.prototype.hasOwnProperty.call(SAY, t) && SAY[t] ? SAY[t] : t; }, esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var three = $('#three'), drawThree = function () { three.innerHTML = THREE.map(function (c, i) { return '<button data-i="' + i + '" aria-label="' + esc(say(c.label)) + '">' + esc(say(c.line)) + '</button>'; }).join(''); }; drawThree();
   three.addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (!b) return; var c = THREE[+b.dataset.i], s = $('#site');
-    s.setAttribute('aria-label', c.label); s.querySelector('.in').innerHTML = '<ul>' + c.site[0].map(function (l) { return '<li>' + (l[1] ? '<a href="' + l[1] + '"' + (/^https:/.test(l[1]) ? ' target="_blank" rel="noopener"' : '') + '>' + l[0] + '</a>' : '<span>' + l[0] + '</span>') + '</li>'; }).join('') + '</ul>';
+    s.setAttribute('aria-label', say(c.label)); s.querySelector('.in').innerHTML = '<ul>' + c.site[0].map(function (l) { return '<li>' + (l[1] ? '<a href="' + l[1] + '"' + (/^https:/.test(l[1]) ? ' target="_blank" rel="noopener"' : '') + '>' + esc(say(l[0])) + '</a>' : '<span>' + esc(say(l[0])) + '</span>') + '</li>'; }).join('') + '</ul>';
     s.classList.add('on'); buzz(6); s.querySelector('.x').focus(); });
   $('#site .x').addEventListener('click', function () { $('#site').classList.remove('on'); });
   addEventListener('keydown', function (e) { if (e.key === 'Escape') $('#site').classList.remove('on'); });
 
   /* ───────── start: the site's one print setting, the printers, the paper ───────── */
-  fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { var o = null; try { o = j && j.printq ? JSON.parse(j.printq) : null; } catch (e) { o = null; } Q = T.settle(o, null); }).catch(function () { /* the house setting */ });
+  fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { var o = null; try { o = j && j.printq ? JSON.parse(j.printq) : null; } catch (e) { o = null; } Q = T.settle(o, null); try { SAY = j && j.say ? JSON.parse(j.say) || {} : {}; } catch (e) { SAY = {}; } drawThree(); }).catch(function () { /* the house setting */ });
   printers(); nibDraw(); addEventListener('resize', fit); if (window.visualViewport) visualViewport.addEventListener('resize', function () { if (!editing) { window.scrollTo(0, 0); fit(); } }); fit();
   /* back to the cards: where this came from on the site, else the home */
   $('#home').addEventListener('click', function (e) { e.preventDefault(); try { if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) return history.back(); } catch (x) { /* home */ } location.href = '/'; });
