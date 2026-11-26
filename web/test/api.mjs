@@ -30,7 +30,7 @@ const DAY0 = melDay(), { PK, BOTH, SITE } = (() => {
     return { PK: pk, BOTH: both, SITE: site }; }
   throw new Error('no pass key fits ' + DAY0); })();
 const results = []; const check = (name, cond, info = '') => results.push(`${cond ? 'PASS' : 'FAIL'}  ${name}${info ? ' — ' + info : ''}`);
-const server = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY: KEY, PASS_KEY: PK } }] });
+const server = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY: KEY, PASS_KEY: PK, NO_NET: '1' } }] });
 const { url } = await server.listen(); const O = url.origin;
 let GAPN = 0;
 const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip, gap } = {}) => {
@@ -64,7 +64,7 @@ try {
     check('every line of the paper\'s three cards is on the approval page\'s list, and only those', shown.every(t => L.PAPER.includes(t)) && L.PAPER.every(t => shown.includes(t)), JSON.stringify(shown.filter(t => !L.PAPER.includes(t))));
     check('the home\'s toggle word is on the list', L.HOME.every(t => hj.includes("'" + t + "'")), ''); }
   /* the book club: a genre with nothing kept and Open Library out of reach still answers (the public-domain shelf); a bad ask is refused */
-  { const g = await call('/api/bookclub?g=fiction'); check('the book club never answers with nothing: a hundred from Open Library, or with none to fetch, the public-domain shelf', g.status === 200 && g.json.books.length > 10 && g.json.books[0][1] && (g.json.fallback === 1 || (g.json.books.length <= 100 && g.json.books.every(b => /^OL\d+W$/.test(b[0])))), JSON.stringify(g.json).slice(0, 200));
+  { const g = await call('/api/bookclub?g=fiction'); check('the book club never answers with nothing: with no list kept and none to fetch, the public-domain shelf', g.status === 200 && g.json.fallback === 1 && g.json.books.length > 10 && g.json.books[0][1], JSON.stringify(g.json).slice(0, 200));
     const bad = await Promise.all(['g=nope', 'w=123', 'q=x'].map(q => call('/api/bookclub?' + q))); check('the book club refuses a genre it has not, a work id that is not one, a one-letter search', bad.every(r => r.status === 400), bad.map(r => r.status).join());
     const l = await call('/api/bookclub'); check('the book club lists its genres', Array.isArray(l.json.genres) && l.json.genres.includes('essays') && l.json.genres.length === 21, JSON.stringify(l.json)); }
   const h = await call('/api/health');

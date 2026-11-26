@@ -25,7 +25,7 @@ const cache = new Map(); const unexpected = new Set(); const direct = new Set();
 const BASE_CONFIG = fs.readFileSync(path.join(DIST, 'config.js'), 'utf8');
 /* the app's own server: the real Worker with a fresh local database, behind https://oan.test/api/ */
 const ADMIN_KEY = 'test-admin-key-not-a-real-one';
-const apiServer = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY } }] });
+const apiServer = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY, NO_NET: '1' } }] });
 const API_O = (await apiServer.listen()).url.origin;
 const admin = async (p, body) => { const r = await apiServer.fetch(new URL('/api/admin/' + p, API_O), { method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${ADMIN_KEY}`, 'content-type': 'application/json', origin: API_O }, body: body ? JSON.stringify(body) : undefined }); return r.json(); };
 

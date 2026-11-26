@@ -1397,7 +1397,7 @@ async function bookPages(bk, env) {
   if (BOOKP.has(bk[0])) return BOOKP.get(bk[0]);
   const kept = 'books/' + bk[0] + '.json';
   try { const o = env && env.MEDIA ? await env.MEDIA.get(kept) : null; const pg = o ? await o.json() : null; if (Array.isArray(pg) && pg.length) { BOOKP.set(bk[0], pg); return pg; } } catch {}
-  const t = await gutText(bk[0]);
+  const t = env && env.NO_NET ? '' : await gutText(bk[0]);
   if (!t) return null;
   const a = t.indexOf('*** START'), b = t.indexOf('*** END'); if (a < 0 || b < 0) return null;
   const body = t.slice(t.indexOf('\n', a) + 1, b).replace(/\r/g, '').replace(/^Produced by.*$/m, '');
@@ -1431,7 +1431,8 @@ async function clubKept(env, ctx, key, age, make) {
   const t = now(), m = CLUBM.get(key); if (m && t - m.at < age) return m;
   let old = m || null; if (!old) try { const o = env.MEDIA ? await env.MEDIA.get(key) : null; old = o ? await o.json() : null; } catch { old = null; }
   if (old && t - old.at < age) { CLUBM.set(key, old); return old; }
-  let fresh = null; try { fresh = await make(); } catch { fresh = null; }
+  /* NO_NET: the test servers ask nothing outside, so a test passes or fails the same on every machine */
+  let fresh = null; if (!env.NO_NET) try { fresh = await make(); } catch { fresh = null; }
   if (!fresh) return old;
   fresh.at = t; CLUBM.set(key, fresh); if (env.MEDIA) { const put = env.MEDIA.put(key, JSON.stringify(fresh), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put; }
   return fresh;
