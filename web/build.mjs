@@ -155,7 +155,7 @@ for (const f of fs.readdirSync(out).filter(f => f.endsWith('.html') && !/^(play-
 /* the security policy for every page (stage 4). Scripts only from novel.global, and the few small ones written into the pages, each
    allowed by its fingerprint (taken as a browser reads it, every line ending a plain newline); data from novel.global (which asks iNaturalist and OpenStreetMap for everyone, the browser going round to them only when it cannot) and the open
    sources still asked directly: the weather, the city's sensors and fountains, the map's imagery and height. Photographs and
-   sounds shown from iNaturalist as they are. Nothing frames the site but itself. A source added to the config goes here too */
+   sounds shown from iNaturalist as they are. Nothing frames the site but itself, but for a card (/play). A source added to the config goes here too */
 const inline = fs.readdirSync(out).filter(f => f.endsWith('.html')).flatMap(f => [...read(path.join(out, f)).matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1].replace(/\r\n?/g, '\n')).digest('base64')}'`));
 const DATA = ['https://api.inaturalist.org', 'https://overpass-api.de', 'https://overpass.kumi.systems', 'https://api.open-meteo.com', 'https://ensemble-api.open-meteo.com', 'https://data.melbourne.vic.gov.au', 'https://server.arcgisonline.com', 'https://s3.amazonaws.com'];
 const INAT_MEDIA = ['https://inaturalist-open-data.s3.amazonaws.com', 'https://static.inaturalist.org'];
@@ -168,6 +168,16 @@ fs.appendFileSync(path.join(out, '_headers'), `
 # every page: the security policy, written by build.mjs
 /*
   Content-Security-Policy: ${CSP}
+
+# a card may run inside any site (browser.js, Archipelagos.card): the same policy, framed from anywhere; every other page stays unframed
+/play
+  ! Content-Security-Policy
+  ! X-Frame-Options
+  Content-Security-Policy: ${CSP.replace("frame-ancestors 'self'", 'frame-ancestors *')}
+/play.html
+  ! Content-Security-Policy
+  ! X-Frame-Options
+  Content-Security-Policy: ${CSP.replace("frame-ancestors 'self'", 'frame-ancestors *')}
 
 # a play's sandbox: its own page, run with no origin and no network, so what someone made can run and reach nothing
 /play-box.html
