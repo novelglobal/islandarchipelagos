@@ -1657,7 +1657,7 @@ async function makerPass(db, env, req) {
   if (await tooMany(db, env, req, 'maker', 12, 10 * 60e3)) return fail(429, 'too many');
   const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null, pass = typeof b.pass === 'string' ? b.pass.toUpperCase().replace(/\s+/g, '') : '';
   if (!who || !PASS.test(pass) || !codeKey(env)) return fail(400, 'pass');
-  const f = await passFind(db, env, pass); if (!f) return fail(404, 'not found');
+  const f = await passFind(db, env, pass, isleHint(b.island)); if (!f) return fail(404, 'not found'); if (f.amb) return passWhich(f);
   if (!(await passUse(db, f.code, f.day, f.p.id))) return fail(409, 'used');
   await makerPrinted(db, who); await stampPut(db, env, who, f); const home = await homeGive(db, env, req, who, b); return json({ ok: true, island: f.p.id, ...(home ? { home } : {}) }, 201);
 }
@@ -1705,7 +1705,7 @@ async function stampPost(db, env, req) {
   if (await tooMany(db, env, req, 'stamp', 12, 10 * 60e3)) return fail(429, 'too many');
   const b = await body(req); const who = typeof b.who === 'string' && WHO.test(b.who) ? b.who : null;
   if (!who || typeof b.pass !== 'string' || !codeKey(env)) return fail(400, 'pass');
-  const f = await passFind(db, env, b.pass); if (!f) return fail(404, 'not found');
+  const f = await passFind(db, env, b.pass, isleHint(b.island)); if (!f) return fail(404, 'not found'); if (f.amb) return passWhich(f);
   if (!(await stampPut(db, env, who, f))) return fail(409, 'taken');
   const home = await homeGive(db, env, req, who, b), at = (await stampsOf(db, who)).find(x => x.id === f.p.id) || {};
   return json({ ok: true, island: f.p.id, name: f.p.name || f.p.id, n: at.n || 1, ...(at.use ? { use: at.use, full: (at.n || 1) % at.use.every === 0 } : {}), ...(home ? { home } : {}) }, 201); }
@@ -1903,13 +1903,24 @@ async function popGet(db, env, req, url) { if (await tooMany(db, env, req, 'pop'
   const pub = {}; ['id', 'name', 'to', 'logos', 'donate', 'tips', 'animals', 'home', 'card', 'free', 'promo', 'pimg'].forEach(f => { if (p[f] !== undefined) pub[f] = p[f]; });
   pub.keep = p.private === false;
   const r = json({ ok: true, pop: pub }); if (typeof p.key === 'string' && /^[a-z0-9]{6,40}$/.test(p.key)) r.headers.append('set-cookie', 'pop=' + p.key + '; Path=/api; Max-Age=259200; HttpOnly; Secure; SameSite=Lax'); return r; }
-/* a pass looked up: today's, at any island (or only the one named); its slot says where it was given out */
+/* a pass looked up: today's, at the island named (the one the phone is at, or the one it was told), else at any island; its slot says where it
+   was given out. Each island makes its passes from its own key, most of them with no internet, so two islands can make the same code on a day
+   and neither can know it. Named, the island decides. Not named, a code more than one island made is no one island's: it comes back as
+   { amb: [those islands] } and is used nowhere until the island is named. A site slot not yet handed out is no pass anyone holds, so where
+   another island's slot also matches, that one is left out first */
+const ISLE = /^[a-z0-9-]{1,40}$/, isleHint = v => (typeof v === 'string' && ISLE.test(v) ? v : '');
 async function passFind(db, env, code, only) { const c = passNorm(code), day = melDay(); if (!PASS.test(c)) return null;
   const { results } = await (only ? db.prepare('SELECT id, name, number FROM printers WHERE id = ?').bind(only) : db.prepare("SELECT id, name, number FROM printers WHERE token IS NOT NULL OR id = 'novelglobal'")).all();
+  let hit = [];
   for (const p of results) {
-    if (c.length === 3) { const n = (await pass3Day(env, p.id, day)).get(c); if (n != null) return { p, day, code: c, slot: n }; }
-    else if (await passMac(env, p.id, day, c.slice(0, 3)) === c.slice(3)) return { p, day, code: c.slice(0, 3) + '-' + c.slice(3) }; }
-  return null; }
+    if (c.length === 3) { const n = (await pass3Day(env, p.id, day)).get(c); if (n != null) hit.push({ p, day, code: c, slot: n }); }
+    else if (await passMac(env, p.id, day, c.slice(0, 3)) === c.slice(3)) hit.push({ p, day, code: c.slice(0, 3) + '-' + c.slice(3) }); }
+  if (hit.length > 1 && c.length === 3) { await passNTable(db); const [a0, a1] = PASS_SLOTS.site, out = [];
+    for (const h of hit) { if (h.slot < a0 || h.slot >= a1) { out.push(h); continue; } const r = await db.prepare('SELECT n FROM passn WHERE island = ? AND day = ?').bind(h.p.id, day).first(); if (h.slot < a0 + ((r && r.n) || 0)) out.push(h); }
+    if (out.length) hit = out; }
+  return hit.length > 1 ? { amb: hit.map(h => h.p), day, code: hit[0].code } : hit[0] || null; }
+/* told back when a code is more than one island's today: which they are, so the phone can ask where it is */
+const passWhich = f => json({ error: 'which island', islands: f.amb.map(p => ({ id: p.id, name: p.name || p.id, number: p.number || null })) }, 409);
 async function passUse(db, code, day, island) { await passTable(db); const r = await db.prepare('INSERT OR IGNORE INTO passes (code, day, island, used) VALUES (?, ?, ?, ?)').bind(island + ':' + code, day, island, now()).run(); return !!(r.meta && r.meta.changes); }
 /* a pass asked for from a phone: the printer's own text and QR, so the code is only ever on the paper; 5 to 10 minutes apart, 10 a day per island */
 const asksReady = new WeakMap();
@@ -1939,12 +1950,12 @@ async function passAsk(db, env, req) {
 }
 async function codeRead(db, env, req, raw) {
   if (await tooMany(db, env, req, 'code', 40, 10 * 60e3)) return fail(429, 'too many');
-  const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12), at = /^[a-z0-9-]{1,40}$/.test(new URL(req.url).searchParams.get('at') || '') ? new URL(req.url).searchParams.get('at') : '';
+  const c = String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 12), at = isleHint(new URL(req.url).searchParams.get('at'));
   if (/^DA-?[0-9A-HJKMNP-TV-Z]{4}$/.test(c)) { const code = 'DA-' + c.replace(/^DA-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE code = ? AND status = 'shown' AND gone IS NULL").bind(code).first();
     return r ? json({ kind: 'wish', code, go: '/#n=' + code }) : fail(404, 'not found'); }
   if (/^PL-?[A-Z2-9]{4}$/.test(c)) { const code = 'PL-' + c.replace(/^PL-?/, ''); const r = await db.prepare("SELECT 1 FROM stories WHERE kind = 'play' AND status = 'shown' AND gone IS NULL AND code = ?").bind(code).first();
     return r || code === FIRST_PLAY.code ? json({ kind: 'play', code, go: '/play.html?c=' + code }) : fail(404, 'not found'); }
-  if (PASS.test(passNorm(c)) && codeKey(env)) { const f = await passFind(db, env, c, at); if (!f) return fail(404, 'not found'); await passTable(db);
+  if (PASS.test(passNorm(c)) && codeKey(env)) { const f = await passFind(db, env, c, at); if (!f) return fail(404, 'not found'); if (f.amb) return passWhich(f); await passTable(db);
     const u = await db.prepare('SELECT used FROM passes WHERE code = ? AND day = ?').bind(f.p.id + ':' + f.code, f.day).first();
     return json({ kind: 'pass', code: f.code, island: f.p.id, name: f.p.name || f.p.id, number: f.p.number || null, used: !!u, mark: await markOf(env, f.p.id, f.day) }); }
   if (/^[A-HJKMNP-TV-Z]{3}$/.test(c) && codeKey(env)) { const q = quarterOf();

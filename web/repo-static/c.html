@@ -23,6 +23,7 @@
   .w { font: 700 26px/1.1 Poppins, Arial, sans-serif; margin: 4px 0 2px; }
   .say { color: var(--dim); margin: 10px 0; }
   #out button { width: 100%; min-height: 52px; font-size: 14px; }
+  #out button + button { margin-top: 8px; }
   #ask { border-top: 1px dashed var(--line); padding: 12px 16px 16px; }
   #ask p { margin: 0 0 10px; color: var(--dim); }
   #isl { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -50,12 +51,18 @@
       var go = function () { setTimeout(function () { location.href = '/'; }, 1400); };
       if (!/^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/.test(who)) return go();
       var hk = ''; try { hk = JSON.parse(localStorage.getItem('da.who.home') || '""'); } catch (e) { hk = ''; }
-      fetch('/api/stamp', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, /^[0-9a-f]{16}$/.test(hk) ? { 'x-home': hk } : {}), body: JSON.stringify({ who: who, pass: j.code, home: 1 }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (s) {
+      fetch('/api/stamp', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, /^[0-9a-f]{16}$/.test(hk) ? { 'x-home': hk } : {}), body: JSON.stringify({ who: who, pass: j.code, island: j.island, home: 1 }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (s) {
         if (s) try { if (s.home) localStorage.setItem('da.who.home', JSON.stringify(s.home)); localStorage.setItem('da.who.ok', '1'); k.textContent = s.full ? 'FULL' : 'STAMPED'; } catch (e) { /* none */ } go(); }, go); });
   }
-  function open(c) {
+  /* a code two islands made today: the phone says which one it is at, and the code is that island's */
+  function which(c, l) {
+    out.innerHTML = '<p class="say" title="This code was given at more than one island today">WHICH ISLAND?</p>' + l.map(function (p) { return '<button type="button" data-at="' + esc(p.id) + '">' + esc(String(p.name || p.id).toUpperCase()) + (p.number ? ' · ' + esc(p.number) : '') + '</button>'; }).join('');
+    [].forEach.call(out.querySelectorAll('[data-at]'), function (b) { b.addEventListener('click', function () { open(c, b.dataset.at); }); });
+  }
+  function open(c, at) {
     c = String(c || '').toUpperCase().replace(/[^A-Z0-9-]/g, ''); if (!c) return; inp.value = c; out.innerHTML = '<p class="say">· · ·</p>';
-    fetch('/api/c/' + encodeURIComponent(c)).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
+    fetch('/api/c/' + encodeURIComponent(c) + (at ? '?at=' + encodeURIComponent(at) : '')).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
+      if (!x.ok && Array.isArray(x.j.islands) && x.j.islands.length) return which(c, x.j.islands);
       if (!x.ok) { out.innerHTML = '<p class="say">' + (/island/.test(x.j.error || '') ? '<span title="Type it on the island">ISLAND</span>' : /many/.test(x.j.error || '') ? 'WAIT' : 'UNKNOWN') + '</p>'; return; }
       if (x.j.kind === 'pass') return pass(x.j);
       if (x.j.go) location.href = x.j.go;

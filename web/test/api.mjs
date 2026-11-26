@@ -9,8 +9,28 @@ import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const KEY = 'test-admin-key-not-a-real-one';
+/* the day's passes, the same every day. A short pass is worked out from its island's key and the Melbourne day, so which codes two islands
+   happen to share changes from day to day (on some days Tide Pool's matched Laundromate's, and a stamp went to the wrong island). The test's
+   PASS_KEY is chosen for today so that today always looks the same: Tide Pool's passes are no other island's, and Laundromate and novelglobal
+   share two codes, one each island made itself (BOTH) and one that is a Laundromate site slot not yet handed out (SITE). Within a few minutes
+   of midnight in Melbourne the run waits for the new day, so the day can't turn under it. ISLES is every island the run pairs: checked at the end */
+const { createHmac } = await import('crypto');
+const DAYF = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }), melDay = (t = Date.now()) => DAYF.format(new Date(t));
+const ISLES = ['novelglobal', 'laundromate', 'tide-pool', 'milkbar', 'kines', 'elsie', 'ghost-aa', 'ghost-bb', 'pi-aa', 'shut-gate'];
+const PCs = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', hmac = (k, m) => createHmac('sha256', k).update(m).digest();
+const pass3 = (ik, day, n) => { const b = hmac(ik, `p3:${day}:${n}`); const c = [PCs[b[0] % 22], PCs[22 + b[1] % 8], PCs[b[2] % 30]]; if (b[3] & 1) [c[0], c[1]] = [c[1], c[0]]; return c.join(''); };
+const dayOf = (pk, id, day) => { const ik = hmac(pk, 'island:' + id).toString('hex'), m = new Map(); for (let n = 0; n < 60; n++) { const c = pass3(ik, day, n); if (!m.has(c)) m.set(c, n); } return m; };
+{ const d0 = melDay(); while (melDay(Date.now() + 6 * 60e3) !== d0 && melDay() === d0) await new Promise(r => setTimeout(r, 5e3)); }
+const DAY0 = melDay(), { PK, BOTH, SITE } = (() => {
+  for (let i = 0; i < 1e5; i++) { const pk = 'test-pass-key-' + i, L = dayOf(pk, 'laundromate', DAY0), N = dayOf(pk, 'novelglobal', DAY0); let both = '', site = '';
+    for (const [c, n] of L) { const g = N.get(c); if (g == null || g < 30) continue; if (n >= 30 && !both) both = c; if (n >= 5 && n < 30 && !site) site = c; }
+    if (!both || !site) continue;
+    const T = dayOf(pk, 'tide-pool', DAY0), S = ISLES.filter(id => !['laundromate', 'novelglobal', 'tide-pool'].includes(id)).map(id => dayOf(pk, id, DAY0));
+    if ([T, ...S].some(m => m.has(both) || m.has(site)) || [L, N, ...S].some(m => [...T.keys()].some(c => m.has(c)))) continue;
+    return { PK: pk, BOTH: both, SITE: site }; }
+  throw new Error('no pass key fits ' + DAY0); })();
 const results = []; const check = (name, cond, info = '') => results.push(`${cond ? 'PASS' : 'FAIL'}  ${name}${info ? ' — ' + info : ''}`);
-const server = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY: KEY } }] });
+const server = createTestHarness({ root: ROOT, workers: [{ configPath: './wrangler.jsonc', secrets: { ADMIN_KEY: KEY, PASS_KEY: PK } }] });
 const { url } = await server.listen(); const O = url.origin;
 let GAPN = 0;
 const call = async (p, { method = 'GET', body, key, token, origin = O, raw, ip, gap } = {}) => {
@@ -412,8 +432,7 @@ try {
       JSON.stringify([pc2, lk0.status, mk1.status, mk2.status, lk1.status, lk2.status, al.json]));
     /* v0.7: short passes, from the island's own key: the island is handed the key when it pairs (or asks), and works out the same codes and mark */
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { codeLen: 3 } });
-    const { createHmac } = await import('crypto'), IK = createHmac('sha256', KEY).update('island:' + id).digest('hex'), mc = (k, m) => createHmac('sha256', k).update(m).digest();
-    const PCs = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', p3 = n => { const b = mc(IK, `p3:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne' }).format(new Date())}:${n}`); const c = [PCs[b[0] % 22], PCs[22 + b[1] % 8], PCs[b[2] % 30]]; if (b[3] & 1) [c[0], c[1]] = [c[1], c[0]]; return c.join(''); };
+    const IK = hmac(PK, 'island:' + id).toString('hex'), p3 = n => pass3(IK, melDay(), n);
     const nk = await call(`/api/printers/${id}/next?pk=1`, { token: PT }), nk0 = await call(`/api/printers/${id}/next`, { token: PT });
     const sp = await call('/api/island', { method: 'POST', token: K, body: { action: 'passes', n: 2, escpos: esc } }), sc1 = await (async () => { for (let i = 0; i < 8; i++) { const r = await call(`/api/printers/${id}/next`, { token: PT }); const e = r.json && r.json.escpos; if (!e) return ''; const m = /\x1d!3([A-Z2-9]{3})\n/.exec(Buffer.from(e, 'base64').toString('latin1')); if (r.json.code === 'DA-PASS' && m) return m[1]; } return ''; })();
     const sr = await call('/api/c/' + sc1.toLowerCase()), sr2 = await call(`/api/c/${sc1}?at=${id}`), sOff = p3(31), sMk = await call('/api/maker', { method: 'POST', ip: '10.0.0.82', body: { who: 'QX9', pass: sc1, home: 1 } });
@@ -427,7 +446,7 @@ try {
     const kp0 = (await call('/api/mine/QX9')).json.keep, DY = 864e5; await call('/api/stories', { method: 'POST', ip: '10.0.0.83', body: story('DA-5KPA', { who: 'QX9' }) }); const kp1 = (await call('/api/mine/QX9')).json.keep;
     check('a code is kept a month from when a pass is kept on it, and again from when something is made with it', Math.abs(kp0 - Date.now() - 30 * DY) < DY && Math.abs(kp1 - Date.now() - 30 * DY) < DY, JSON.stringify([(kp0 - Date.now()) / DY, (kp1 - Date.now()) / DY]));
     /* v0.7 C: a pass kept on a code is a stamp of the island; where a code has been is told only with its home key */
-    const HK = w => createHmac('sha256', KEY).update('home:' + w).digest('hex').slice(0, 16);
+    const HK = w => createHmac('sha256', PK).update('home:' + w).digest('hex').slice(0, 16);
     const hm0 = await call('/api/mine/QX9'), hm1 = await call('/api/mine/QX9?k=' + HK('QX9')), hmX = await call('/api/mine/QX9?k=0000000000000000');
     const stT = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: sc1 } }), stN = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: p3(2), home: 1 } }), stB = await call('/api/stamp', { method: 'POST', ip: '10.0.0.83', body: { who: 'QY8', pass: 'ZZ2' } });
     const hm2 = await call('/api/mine/QY8?k=' + HK('QY8'));
@@ -455,7 +474,7 @@ try {
       JSON.stringify({ su0: [su0.json.pack, su0.json.ways], su1: su1.json && [su1.json.pack, su1.json.ways, su1.json.gap, su1.json.mods], suP, suM: suM.json.mods, md: md.status, mdX: mdX.status, mdS: mdS.json && mdS.json.pack, gf: [gf1.status, gf1.json, gf2.status, gfN.status], ask0: ask0.status }));
     /* v0.7 D: what an island's stamps are for: a class roll (codes and counts this moon) or a shop card, every few stamps one full */
     const us0 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'loud' } } }), us1 = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'class', every: 3 } } });
-    const ust = []; for (const n of [6, 7, 8]) ust.push((await call('/api/stamp', { method: 'POST', ip: '10.0.0.89', body: { who: 'QZ7', pass: p3(n) } })).json);
+    const ust = []; for (const n of [6, 7, 8]) ust.push((await call('/api/stamp', { method: 'POST', ip: '10.0.0.89', body: { who: 'QZ7', pass: p3(n), island: id } })).json);
     const usA = (await call('/api/admin/printers', { key: KEY })).json.printers.find(x => x.id === id), usMod = await call('/api/island', { method: 'POST', token: K, body: { mods: ['QX9'] } }).then(() => call('/api/island', { token: 'QX9.' + HK('QX9') }));
     const usR = await call('/api/island', { token: K }), usM = await call('/api/mine/QZ7?k=' + HK('QZ7')), usS = await call('/api/island', { method: 'POST', token: K, body: { use: { kind: 'shop', every: 5 } } }), usR2 = await call('/api/island', { token: K });
     check('an island chooses a use for its stamps: a class sees its roll (codes and counts, no days); a shop keeps a card; the holder sees the count on their own code, and a full card when it comes',
@@ -463,6 +482,17 @@ try {
       && usR.json.roll.some(x => x.who === 'QZ7' && x.n === 3) && usA.roll.some(x => x.who === 'QZ7') && usMod.status === 200 && !usMod.json.roll && !JSON.stringify(usR.json.roll).includes('day') && usM.json.stamps[0].use.kind === 'class' && usS.json.use.kind === 'shop' && !usR2.json.roll,
       JSON.stringify({ us0: us0.json.use, us1: us1.json.use, ust, roll: usR.json.roll, usM: usM.json.stamps, usS: usS.json.use, r2: !!usR2.json.roll }));
     await call('/api/island', { method: 'POST', token: K, body: { use: null } });
+    /* a code two islands made the same day: with no island named it is neither's, and the reader asks which; named, it is that island's, and
+       the other island's same code is a pass of its own. A site slot not yet handed out gives way to another island's pass */
+    const amC = await call('/api/c/' + BOTH, { ip: '10.0.0.92' }), amA = await call(`/api/c/${BOTH}?at=laundromate`, { ip: '10.0.0.92' }), amT = await call('/api/c/' + SITE, { ip: '10.0.0.92' });
+    const amS = await call('/api/stamp', { method: 'POST', ip: '10.0.0.90', body: { who: 'QW6', pass: BOTH } }), amL = await call('/api/stamp', { method: 'POST', ip: '10.0.0.90', body: { who: 'QW6', pass: BOTH, island: 'laundromate' } });
+    const amN = await call('/api/stamp', { method: 'POST', ip: '10.0.0.90', body: { who: 'QW5', pass: BOTH, island: 'novelglobal' } }), amN2 = await call('/api/stamp', { method: 'POST', ip: '10.0.0.90', body: { who: 'QW4', pass: BOTH, island: 'novelglobal' } });
+    const amM = await call('/api/maker', { method: 'POST', ip: '10.0.0.91', body: { who: 'QW3', pass: BOTH } }), amW = await call('/api/mine/QW6?k=' + HK('QW6'));
+    check('a code two islands made today is neither\'s until the island is named: the reader asks which, a stamp or a maker pass is refused; named, it is that island\'s, once, and the other\'s is its own; a site slot not handed out gives way',
+      amC.status === 409 && amC.json.error === 'which island' && amC.json.islands.map(x => x.id).sort().join() === 'laundromate,novelglobal' && amA.status === 200 && amA.json.island === 'laundromate'
+      && amS.status === 409 && amS.json.islands.length === 2 && amL.status === 201 && amL.json.island === 'laundromate' && amN.status === 201 && amN.json.island === 'novelglobal' && amN2.status === 409 && amN2.json.error === 'taken'
+      && amM.status === 409 && amM.json.error === 'which island' && amW.json.stamps.length === 1 && amW.json.stamps[0].id === 'laundromate' && amT.status === 200 && amT.json.island === 'novelglobal',
+      JSON.stringify({ BOTH, SITE, amC: [amC.status, amC.json], amA: amA.json, amS: [amS.status, amS.json], amL: amL.json, amN: amN.json, amN2: [amN2.status, amN2.json], amM: [amM.status, amM.json], amW: amW.json.stamps, amT: [amT.status, amT.json] }));
     /* builds: the approval page gives this island SIMPLE; its keeper is told only those parts, and the rest is refused or left as it was */
     const bd0 = (await call('/api/admin/settings', { key: KEY })).json.builds || '';
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { builds: JSON.stringify({ isles: { [id]: 'simple' } }) } });
@@ -752,6 +782,8 @@ try {
     check('a fresh start wipes every maker, code, print, talk, link and play, and tells every phone to let go; the printers, islands, species met and settings stay',
       fr.status === 200 && (ex0.makers || []).length > 0 && (ex0.stories || []).length > 0 && Object.values(left).every(n => n === 0) && (ex1.species || []).length === (ex0.species || []).length && ep1 && ep1 !== ep0 && (ex1.printers || []).filter(p => p.paired).length === pr0 && Object.keys(ex1.settings || {}).length >= set0 && Array.isArray(is1.isles) && is1.isles.length === pr0,
       JSON.stringify({ status: fr.status, body: fr.json, before: { makers: (ex0.makers || []).length, stories: (ex0.stories || []).length, links: lk0 }, left, ep0, ep1 })); }
+  { const pd = ((await call('/api/admin/export', { key: KEY })).json.printers || []).filter(p => p.paired).map(p => p.id).filter(id => !ISLES.includes(id));
+    check('every island the run pairs is one the day\'s passes were chosen for (ISLES, at the top)', pd.length === 0, JSON.stringify(pd)); }
 } catch (e) { results.push(`FAIL  api: ${e.stack || e.message}`); }
 await server.close();
 console.log(results.join('\n'));
