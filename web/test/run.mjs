@@ -1737,6 +1737,21 @@ if (run('guide')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section guide: ${e.message.split('\n')[0]}`); }
 
+// ───────── the paper sends to the mesh: MESH among the printers, the drawing as one LoRa message for the phone's share sheet (ONLY=paper) ─────────
+if (run('paper')) try {
+  const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx);
+  await ctx.addInitScript(() => { window.__shared = []; Object.defineProperty(navigator, 'share', { value: o => { window.__shared.push(o.text); return Promise.resolve(); }, configurable: true }); });
+  const page = await ctx.newPage(); watch(page, 'paper'); await page.goto('https://oan.test/paper'); await page.waitForSelector('#strip'); await sleep(800);
+  await page.click('#nib'); const b = await page.locator('#strip').boundingBox();
+  await page.mouse.move(b.x + 60, b.y + 60); await page.mouse.down(); for (let i = 1; i <= 20; i++) await page.mouse.move(b.x + 60 + i * 12, b.y + 60 + Math.round(Math.sin(i / 3) * 40)); await page.mouse.up(); await sleep(300);
+  await page.click('#tick'); await sleep(300); let to = '';
+  for (let i = 0; i < 6 && to !== 'MESH'; i++) { to = (await page.textContent('#to b')).trim(); if (to !== 'MESH') { await page.click('#to'); await sleep(150); } }
+  await page.click('#tick'); await sleep(500); const shared = await page.evaluate(() => window.__shared);
+  const msg = shared[0] || '', bytes = msg.startsWith('ng1:') ? Buffer.from(msg.slice(4), 'base64url') : Buffer.alloc(0);
+  check('PAPER: MESH is among the printers; with it the tick hands the drawing to the share sheet as one mesh message (ng1, its strokes, under 240 characters)', to === 'MESH' && msg.length > 8 && msg.length <= 240 && bytes[0] > 0 && bytes.length > 4, JSON.stringify({ to, msg }));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section paper: ${e.message.split('\n')[0]}`); }
+
 // ───────── the book club: another island's hero card (ONLY=bookclub) ─────────
 if (run('bookclub')) try {
   const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx); const page = await ctx.newPage(); watch(page, 'bookclub');

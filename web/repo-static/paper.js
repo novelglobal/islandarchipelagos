@@ -194,8 +194,8 @@
   function printers() {
     return fetch('/api/partners', { headers: hdr(), cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
       ISL = ((j && j.partners) || []).filter(function (p) { return p.id === 'novelglobal' || p.ghost || (p.paired && (p.links || []).indexOf('wish') >= 0); })
-        .sort(function (a, b) { return live(b) - live(a); });
-      if (!ISL.some(function (p) { return p.id === TO; })) TO = ISL.length ? ISL[0].id : 'novelglobal'; toDraw(); }).catch(toDraw); }
+        .sort(function (a, b) { return live(b) - live(a); }).concat([MESH]);
+      if (!ISL.some(function (p) { return p.id === TO; })) TO = ISL.length ? ISL[0].id : 'novelglobal'; toDraw(); }).catch(function () { if (!ISL.some(function (p) { return p.id === 'mesh'; })) ISL.push(MESH); toDraw(); }); }
   function toNow() { return ISL.filter(function (p) { return p.id === TO; })[0] || null; }
   function toDraw() { var p = toNow(), b = $('#to'); b.querySelector('b').textContent = p ? word(p) : 'novel.global'; b.classList.toggle('on', live(p)); b.setAttribute('aria-label', 'Prints on ' + (p ? word(p) : 'novel.global') + (live(p) ? ', on now' : '')); }
   $('#to').addEventListener('click', function () { open(true); if (ISL.length < 2) return buzz(30); var i = ISL.findIndex(function (p) { return p.id === TO; }); TO = ISL[(i + 1) % ISL.length].id; store.set('da.paper.to', TO); buzz(6); toDraw(); });
@@ -219,7 +219,24 @@
   function wallAdd(c) { var w = store.get('da.paper.wall', []) || [], u; try { u = c.toDataURL('image/jpeg', 0.82); } catch (e) { return; } w.unshift(u); while (w.length && !store.set('da.paper.wall', w.slice(0, 24))) w.pop(); }
   function away() { strip.classList.add('feed'); buzz([8, 30, 8]); S.items = []; S.done = []; S.undone = []; editing = null; type.hidden = true; setTimeout(function () { strip.classList.remove('feed'); fit(); }, 720); }
 
+  /* MESH: the paper as one LoRa message (format ng1, kit/island/mesh.go; the same as spec/tools/meshdraw.mjs): its pen strokes on a grid
+     64 across, or its words if it has no strokes. Handed to the phone's share sheet (the Meshtastic app, or anything) or copied */
+  var MESH = { id: 'mesh', name: 'MESH', ready: true };
+  function meshEncode(strokes, h) { var out = [h];
+    strokes.forEach(function (s) { if (!s.length) return; var x = s[0][0], y = s[0][1], mv = [];
+      s.slice(1).forEach(function (t) { while (x !== t[0] || y !== t[1]) { var dx = Math.max(-8, Math.min(7, t[0] - x)), dy = Math.max(-8, Math.min(7, t[1] - y)); mv.push(((dx & 15) << 4) | (dy & 15)); x += dx; y += dy; } });
+      for (var i = 0; i < Math.max(1, mv.length); i += 255) { var part = mv.slice(i, i + 255); out.push.apply(out, (i ? [x, y] : s[0]).concat([part.length], part)); } });
+    var b = ''; out.forEach(function (v) { b += String.fromCharCode(v & 255); }); return 'ng1:' + btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function meshMessage() { var k = 64 / W, lines = S.items.filter(function (it) { return it.k === 'st' && !it.white; }), H = Math.max(1, Math.min(160, Math.ceil(used() * k)));
+    if (!lines.length) { var t = S.items.filter(function (it) { return it.k === 'tx'; }).map(function (it) { return String(it.s || '').trim(); }).filter(Boolean).join(' '); return t ? t.slice(0, 230) : null; }
+    var st = lines.map(function (l) { return l.pts.map(function (p) { return [Math.max(0, Math.min(63, Math.round(p[0] * k))), Math.max(0, Math.min(H - 1, Math.round(p[1] * k)))]; }).filter(function (p, i, a) { return !i || p[0] !== a[i - 1][0] || p[1] !== a[i - 1][1]; }); }), m = meshEncode(st, H);
+    while (m.length > 240 && st.some(function (l) { return l.length > 2; })) { st = st.map(function (l) { return l.length > 2 ? l.filter(function (p, i) { return i % 2 === 0 || i === l.length - 1; }) : l; }); m = meshEncode(st, H); }
+    return m.length > 240 ? null : m; }
+  function meshSend() { open(false); var m = meshMessage(); if (!m) { shiver(); return buzz(30); }
+    var done = function () { say('MESH · ✓'); }, copy = function () { (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(m) : Promise.reject()).then(done, function () { say('×'); }); };
+    if (navigator.share) navigator.share({ text: m }).then(done, function (e) { if (!e || e.name !== 'AbortError') copy(); }); else copy(); }
   function print() {
+    if (TO === 'mesh') return meshSend();
     open(false); var p = toNow(), dots = p && +p.paper === 58 ? 384 : 512, cd = code(), body = null, shot = null;
     try { var c = forPrinter(dots), isle = (store.get('da.hm.isle', null) || {}).id; shot = colour(W);
       body = { kind: 'record', code: cd, body: JSON.stringify({ type: 'paper', w: c.width, h: c.height }), lat: -37.8136, lng: 144.9631, dest: p ? p.id : 'novelglobal',
