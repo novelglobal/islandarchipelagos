@@ -1350,6 +1350,12 @@ if (run('access')) try {
   await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb', { timeout: 15000 }); await sleep(500);
   const old = await page.evaluate(() => ({ full: document.getElementById('lb').classList.contains('lb-full'), mini: !!document.getElementById('lbm') }));
   check('the label as it was stays the way it comes: over the site, no small card', !old.full && !old.mini, JSON.stringify(old));
+  /* as built now: a small i on every card, foot left; on the first card's words side top right; a tap opens the label; nothing over the site first */
+  await page.goto('https://oan.test/'); await page.waitForSelector('.hm-card .hm-i', { timeout: 15000 }); await sleep(600);
+  const dots = await page.evaluate(() => { const cards = [...document.querySelectorAll('.hm-card')], i0 = document.querySelector('.hm-card:not(.sk-intro) > .hm-i'), r = i0.getBoundingClientRect(), c = i0.parentNode.getBoundingClientRect(), top = document.querySelector('.sk-intro .in-f > .hm-i-top');
+    return { cards: cards.length, with: cards.filter(c => c.querySelector('.hm-i')).length, over: !!document.getElementById('lb'), left: r.left - c.left, foot: c.bottom - r.bottom, top: !!top }; });
+  await page.click('.hm-card:not(.sk-intro) > .hm-i'); await sleep(700); const opened = await page.evaluate(() => !!document.getElementById('lb'));
+  check('the label as a small i (as built): on every card at its foot left, on the first card\'s words side top right; nothing over the site first; a tap opens the label', dots.cards > 3 && dots.with === dots.cards && !dots.over && dots.left < 20 && dots.foot < 20 && dots.top && opened, JSON.stringify({ dots, opened }));
   /* MORE on a phone: the whole label on the whole screen, read by scrolling, closed by its ×. Never squeezed to fit */
   await admin('settings', { label: JSON.stringify({ on: true, title: 'T', fold: 1, body: ['First words.'].concat(Array.from({ length: 40 }, (_, i) => 'More words, paragraph ' + (i + 2) + ', long enough to need the whole screen and then some more of it.')).join(String.fromCharCode(10, 10)) }) });
   await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb .lb-mo', { timeout: 15000 }); await sleep(500);

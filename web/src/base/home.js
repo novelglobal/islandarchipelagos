@@ -802,9 +802,16 @@
   var LBT = '';
   function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || ((HASHGO || (xv.classList.contains('on') && /^(TWIN|GHOST)$/.test(xv.getAttribute('aria-label') || ''))) && !force)) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
+    if (L.as !== 'card' && L.as !== 'over' && !force) return labelDots(L, mem);
     if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
     labelBuild(L, mem, null); }
+  /* THE LABEL AS A SMALL i (as built, every card): an i at the foot of each card, left; on the first card's words side, top right (the
+     flip key has the foot right). A tap opens the whole label, as the label always opened, with all of it to unfold */
+  function labelDots(L, mem) { var add = function () { [].forEach.call(D.querySelectorAll('.hm-card'), function (cd) { var at = cd.classList.contains('sk-intro') ? [cd.querySelector('.in-front'), cd.querySelector('.in-f')] : [cd];
+        at.forEach(function (el, k) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (k ? ' hm-i-top' : ''); b.textContent = 'i'; b.setAttribute('aria-label', L.title || L.top || 'novel.global'); el.appendChild(b); }); }); };
+    add(); if (!labelDots.on) { labelDots.on = true; new MutationObserver(function () { clearTimeout(labelDots.t); labelDots.t = setTimeout(add, 80); }).observe(D.body, { childList: true, subtree: true });
+      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); labelBuild(L, mem, b.getBoundingClientRect()); }, true); } }
   /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
      A tap opens the whole label over the full screen, its film playing; closed, the small card comes back. × puts it away for the visit */
   function labelMini(L, mem) { if (D.getElementById('lbm') || D.getElementById('lb')) return;
