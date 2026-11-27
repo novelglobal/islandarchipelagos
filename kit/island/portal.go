@@ -100,7 +100,7 @@ func (p *portal) render(w http.ResponseWriter, v view) {
 }
 
 func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("ISLAND_LISTEN") == "" && strings.Split(r.Host, ":")[0] != apAddr {
+	if os.Getenv("ISLAND_LISTEN") == "" && strings.Split(r.Host, ":")[0] != apAddr && r.URL.Path != "/mesh" {
 		http.Redirect(w, r, "http://"+apAddr+"/", http.StatusFound)
 		return
 	}
@@ -120,6 +120,8 @@ func (p *portal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("cache-control", "no-cache")
 		w.Header().Set("x-content-type-options", "nosniff")
 		w.Write(thermalJS)
+	case r.URL.Path == "/mesh" && r.Method == "POST":
+		p.meshIn(w, r)
 	case r.URL.Path == "/entry.json" && r.Method == "GET":
 		p.serveEntry(w)
 	case r.URL.Path == "/print" && r.Method == "POST" && !p.setup:

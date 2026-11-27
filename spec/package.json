@@ -5,7 +5,7 @@
   "description": "card, mod and slip schemas",
   "type": "module",
   "scripts": {
-    "test": "node tools/check.mjs && node tools/golden.mjs && node tools/engine.mjs && node tools/entry.mjs",
+    "test": "node tools/check.mjs && node tools/golden.mjs && node tools/engine.mjs && node tools/entry.mjs && node tools/meshdraw.mjs > /dev/null && git diff --exit-code fixtures/mesh.json",
     "golden": "node tools/golden.mjs --write",
     "export:front": "node tools/export-front.mjs",
     "engine": "node tools/engine.mjs --write"

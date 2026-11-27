@@ -20,6 +20,7 @@ What every island answers, on its own Wi-Fi, with no internet. Described from `k
 | `GET /api/*` | | A feed the island kept while online, else `404 {error: "offline"}` |
 | `GET /<file>` | | A file of the shelf (the cards it carries), listed in its manifest; anything else 404 |
 | `GET, POST /pass` | | Presence passes (off until presence is switched on) |
+| `POST /mesh` | text: words, or `ng1:` a drawing (`spec/tools/meshdraw.mjs`); from the Pi itself only (`kit/mesh/bridge.py`) | `printed`; `400`, `403` not from the Pi, `429` full, `503` paused or no printer |
 | `GET, POST /setup` | form `pass` (the slip key), `do=pause` | The keeper's page: reopens setup, or pauses and starts the island |
 
 ## Printer bytes an island takes
