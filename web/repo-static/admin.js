@@ -280,12 +280,14 @@
     let sx = null; box.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true }); box.addEventListener('touchend', e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 70 && !e.target.closest('textarea, select')) go(dx < 0 ? 1 : -1); });
     document.body.append(box);
   }
-  /* what people make, on the site or not: off, everything shown here is a draft that only this page sees */
+  /* WHO SEES WHAT PEOPLE MAKE: as built, the maker by their code and the members of an open island; EVERYONE puts what is approved
+     here in front of every visitor. The same switch as madeShow; it covers stories, posters, photographs and the cards people make */
   async function madeSwitch() {
-    const s0 = await (await api('settings')).json(), on = !!s0.madeShow;
-    return el('section', { class: 'printer made' + (on ? ' on' : '') }, el('h3', { text: on ? 'ON NOVEL.GLOBAL: WHAT IS SHOWN HERE IS PUBLIC' : 'DRAFTS: NOTHING MADE IS ON NOVEL.GLOBAL' }),
-      el('div', { class: 'note', text: on ? 'EVERY STORY, POSTER, PACK AND PHOTOGRAPH SHOWN HERE IS ON THE MAP AND THE WALL FOR EVERY VISITOR.' : 'SHOW STILL APPROVES AND PRINTS, BUT VISITORS SEE NONE OF IT: NOT ON THE MAP, THE WALL OR IN ITS TALK. NOTHING IS DELETED. THE EXAMPLE IS SET APART, UNDER SITE → BOARDS.' }),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: on ? 'on' : '', text: on ? 'SHOWN ON NOVEL.GLOBAL' : 'DRAFTS · HIDDEN', onclick: async () => { if (!on && !confirm('Show everything approved here on novel.global, to every visitor?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ madeShow: !on }) }); show(tab); } })));
+    const s0 = await (await api('settings')).json(), on = !!s0.madeShow, set = async v => { if (v === on) return; if (v && !confirm('Show everything approved here to every visitor of novel.global?')) return; await api('settings', { method: 'POST', body: JSON.stringify({ madeShow: v }) }); show(tab); };
+    return el('section', { class: 'printer made' + (on ? ' on' : '') }, el('h3', { text: 'WHO SEES WHAT PEOPLE MAKE' }),
+      el('div', { class: 'acts big' }, el('button', { type: 'button', class: on ? '' : 'on', text: 'THEIR CODE AND THEIR ISLAND', onclick: () => set(false) }), el('button', { type: 'button', class: on ? 'on' : '', text: 'EVERYONE', onclick: () => set(true) })),
+      el('div', { class: 'note', text: on ? 'NOW: EVERY STORY, POSTER, PHOTOGRAPH AND MADE CARD APPROVED HERE IS SEEN BY EVERY VISITOR, ON THE MAP, THE WALL AND THE NINE.' : 'NOW: A MAKER SEES THEIR OWN BY THEIR CODE, ON ANY DEVICE. MEMBERS OF AN OPEN ISLAND (A CODE THAT HAS PRINTED THERE) SEE WHAT WAS MADE THERE. NOBODY ELSE SEES ANY OF IT. CARDS STARRED HERE STILL SHOW TO ALL. NOTHING IS DELETED.' }),
+      el('small', { class: 'hint', text: 'Tweaks: approval before anything shows is on WAITING; a made card going up at once is RULES → MAKING (sandbox); an island is open from PRINTERS (online on the map) and FINDER.' }));
   }
   async function stories(st) {
     const r = await api('stories?status=' + st); const { stories: list } = await r.json();

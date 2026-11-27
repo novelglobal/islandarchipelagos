@@ -60,9 +60,11 @@
   };
   /* the island's: every poster live on novel.global, from every phone (one's own, kept here, already on the wall), asked for now
      and again; each its talk, none deletable from here */
+  /* who asks, and from which island: an open island's makes show to its members (the worker decides) */
+  var auSeen = function () { try { var w = JSON.parse(localStorage.getItem('da.who') || '""'), i = (JSON.parse(localStorage.getItem('da.hm.isle') || 'null') || JSON.parse(localStorage.getItem('da.hm.visit') || 'null') || {}).id || ''; return w && i ? '?who=' + encodeURIComponent(w) + '&isle=' + encodeURIComponent(i) : ''; } catch (e) { return ''; } };
   var ISLAND = [], islandAt = 0, ONISL = {}, HIDE = store.get('da.island.hide', []) || [];
-  function islandLoad() { if (Date.now() - islandAt < 90e3) return; islandAt = Date.now(); fetch('/api/posters').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (!j) return; var mine = {}; FOLIO.forEach(function (f) { if (f.code) mine[f.code] = 1; }); ONISL = {}; (j.posters || []).forEach(function (p) { if (p.code) ONISL[p.code] = 1; });
-    var nx = (j.posters || []).filter(function (p) { return p.code && !mine[p.code] && HIDE.indexOf(p.code) < 0; }).slice(0, 48).map(function (p) { return { id: 'i' + p.id, at: p.at, src: '/api/posters/' + encodeURIComponent(p.id), cap: p.code, code: p.code, island: 1 }; });
+  function islandLoad() { if (Date.now() - islandAt < 90e3) return; islandAt = Date.now(); fetch('/api/posters' + auSeen()).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (!j) return; var mine = {}; FOLIO.forEach(function (f) { if (f.code) mine[f.code] = 1; }); ONISL = {}; (j.posters || []).forEach(function (p) { if (p.code) ONISL[p.code] = 1; });
+    var nx = (j.posters || []).filter(function (p) { return p.code && !mine[p.code] && HIDE.indexOf(p.code) < 0; }).slice(0, 48).map(function (p) { return { id: 'i' + p.id, at: p.at, src: '/api/posters/' + encodeURIComponent(p.id) + auSeen(), cap: p.code, code: p.code, island: 1 }; });
     if (nx.map(function (q) { return q.id; }).join() !== ISLAND.map(function (q) { return q.id; }).join()) { ISLAND = nx; if (S.stage === 3 && !making()) paint(); } }).catch(function () { /* the wall as it was */ }); }
   var slides = function () { islandLoad(); return FOLIO.concat(ISLAND).concat(NG.pieces().map(function (p) { return { id: p.id, at: p.at, src: p.src, cap: 'A piece' + (p.at ? ', ' + NG.when(p.at).slice(0, 6) : '') }; })).concat(studioPosters()).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }); };
 

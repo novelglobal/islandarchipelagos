@@ -1099,7 +1099,7 @@
     CARDS.splice.apply(CARDS, [at, 0].concat(add)); if (bigs.length) { var s0 = -1; CARDS.forEach(function (c, i) { if (s0 < 0 && c.g === 'soon') s0 = i; }); CARDS.splice.apply(CARDS, [s0 < 0 ? at : s0, 0].concat(bigs)); } applyCards(''); }
   /* a page asked for from where it starts: the first nine leaves room for the cards of this phone, every later nine is nine */
   function devLoad() { var loc = devLocals(), L = Math.min(8, loc.length), my = ++DEV.t; DEV.L = L;
-    var u = '/api/plays?o=' + DEV.o + '&pg=' + DEV.pg + '&n=' + (DEV.pg ? 9 : 9 - L) + '&off=' + (DEV.pg ? 9 - L + (DEV.pg - 1) * 9 : 0) + (DEV.q ? '&q=' + encodeURIComponent(DEV.q) : '') + (DEV.sh ? '&sh=' + encodeURIComponent(DEV.sh) : '') + (DEV.isle ? '&isle=' + encodeURIComponent(DEV.isle) : '');
+    var u = '/api/plays?o=' + DEV.o + '&pg=' + DEV.pg + '&n=' + (DEV.pg ? 9 : 9 - L) + '&off=' + (DEV.pg ? 9 - L + (DEV.pg - 1) * 9 : 0) + (DEV.q ? '&q=' + encodeURIComponent(DEV.q) : '') + (DEV.sh ? '&sh=' + encodeURIComponent(DEV.sh) : '') + (DEV.isle ? '&isle=' + encodeURIComponent(DEV.isle) : '') + (store.get('da.who', '') ? '&who=' + encodeURIComponent(store.get('da.who', '')) : '');
     fetch(u).then(function (r) { return r.ok ? r.json() : { plays: [] }; }).then(function (j) { if (my === DEV.t) playCards(j, loc); }).catch(function () { if (my === DEV.t) playCards({}, loc); }); }
   var devPages = function () { return 1 + Math.ceil(Math.max(0, DEV.total - (9 - DEV.L)) / 9); };
   function devBar() { var d0 = CARDS.filter(function (c) { return c.g === 'dev'; })[0], f = d0 && col.querySelector('.hm-card[data-id="' + d0.id + '"]'), sec = f && f.closest('.hm-trio'); if (!sec) return;

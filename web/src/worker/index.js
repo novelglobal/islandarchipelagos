@@ -278,9 +278,9 @@ const storyOut = r => ({ id: r.id, code: r.code, kind: r.kind, body: r.body, pho
 const PUBLIC_COLS = "id, code, kind, body, dest, created, decided, (photo IS NOT NULL OR pic IS NOT NULL) AS has_photo, star, here, (SELECT count(*) FROM jobs j WHERE j.story = stories.id AND j.status = 'printed') AS printed";
 
 async function listStories(db, url) {
-  if (!(await madeOn(db))) return json({ stories: [], at: now() });
+  const sb = await seenBy(db, url); if (!sb.all && !sb.isle) return json({ stories: [], at: now() });
   const since = Math.max(0, +(url.searchParams.get('since') || 0));
-  const { results } = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('example', 'message', 'play') AND decided > ? ORDER BY decided DESC LIMIT 200`).bind(since).all();
+  const { results } = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('example', 'message', 'play') AND decided > ?${sb.isle ? ' AND dest = ?' : ''} ORDER BY decided DESC LIMIT 200`).bind(since, ...(sb.isle ? [sb.isle] : [])).all();
   return json({ stories: results.map(storyOut), at: now() });
 }
 /* the example board everyone sees: the latest one approved, or none (then the example built into the site stands) */
@@ -289,14 +289,14 @@ async function exampleBoard(db) {
   let board = null; try { board = r ? JSON.parse(r.body) : null; } catch (e) { board = null; }
   return json({ board, at: r ? r.decided : 0 });
 }
-async function oneStory(db, code) {
-  if (!(await madeOn(db))) return fail(404, 'not found');
-  const r = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('message', 'play') AND code = ? ORDER BY decided DESC LIMIT 1`).bind(code).first();
+async function oneStory(db, code, url) {
+  const sb = await seenBy(db, url); if (!sb.all && !sb.isle) return fail(404, 'not found');
+  const r = await db.prepare(`SELECT ${PUBLIC_COLS} FROM stories WHERE status = 'shown' AND gone IS NULL AND kind NOT IN ('message', 'play') AND code = ?${sb.isle ? ' AND dest = ?' : ''} ORDER BY decided DESC LIMIT 1`).bind(code, ...(sb.isle ? [sb.isle] : [])).first();
   return r ? json({ story: storyOut(r) }) : fail(404, 'not found');
 }
-async function photo(db, env, id, any) {
-  const r = await db.prepare(`SELECT photo, pic, status, kind, gone FROM stories WHERE id = ?`).bind(id).first();
-  if (!r || !(r.photo || r.pic) || (!any && (r.status !== 'shown' || r.gone || r.kind === 'message' || !(await madeOn(db))))) return fail(404, 'not found');
+async function photo(db, env, id, any, url) {
+  const r = await db.prepare(`SELECT photo, pic, status, kind, gone, dest FROM stories WHERE id = ?`).bind(id).first(); const sb = any ? {} : await seenBy(db, url);
+  if (!r || !(r.photo || r.pic) || (!any && (r.status !== 'shown' || r.gone || r.kind === 'message' || !(sb.all || (sb.isle && r.dest === sb.isle))))) return fail(404, 'not found');
   const o = !r.photo && env.MEDIA ? await env.MEDIA.get(photoKey(id)) : null; if (!r.photo && !o) return fail(404, 'not found');
   return new Response(o ? o.body : new Uint8Array(r.photo), { headers: { 'content-type': 'image/jpeg', 'cache-control': any ? 'no-store' : 'public, max-age=3600', 'x-content-type-options': 'nosniff' } });
 }
@@ -617,6 +617,24 @@ async function rollOf(db, id) { await stampTable(db);
   const { results } = await db.prepare('SELECT who, count(*) AS n FROM stamps WHERE island = ? AND at > ? GROUP BY who ORDER BY n DESC, who LIMIT 400').bind(id, now() - MOON).all();
   return results.map(x => ({ who: x.who, n: x.n })); }
 const madeOn = async db => !!(await settingsOf(db)).madeShow;
+/* WHO SEES WHAT PEOPLE MAKE. As built: the maker, by their code, on any device (/api/mine), and the members of an open island, what was
+   made there. EVERYONE (madeShow, on the approval page) shows what is approved to every visitor. A member is a code that has printed at
+   that island; an island is open while the approval page has it online on the map and it is open or has its pop-up on (as /api/isles) */
+async function isleOpen(db, id) {
+  if (!/^[a-z0-9-]{1,40}$/.test(id || '')) return false;
+  const p = await db.prepare('SELECT live FROM printers WHERE id = ? AND token IS NOT NULL').bind(id).first(); if (!p || !p.live) return false;
+  const st = await settingsOf(db); let pl = {}; try { pl = st.isles ? JSON.parse(st.isles) : {}; } catch (e) { pl = {}; }
+  if (pl[id] && pl[id].hide) return false; if (pl[id] && pl[id].open === true) return true;
+  return (await popsOf(db)).some(q => q && q.on && (q.to === id || (!q.to && q.id === id)));
+}
+async function memberOf(db, id, who) {
+  if (!WHO.test(who || '') || !(await isleOpen(db, id))) return false;
+  return !!(await db.prepare('SELECT 1 AS y FROM jobs j JOIN stories s ON s.id = j.story WHERE j.printer = ? AND s.who = ? LIMIT 1').bind(id, who).first());
+}
+/* what a visitor may see of people's makes: everything approved, or one island's, or nothing; { all, isle } */
+async function seenBy(db, url) { if (await madeOn(db)) return { all: true };
+  const q = url ? url.searchParams : new URLSearchParams(), isle = q.get('isle') || '';
+  return (await memberOf(db, isle, q.get('who') || '')) ? { isle } : {}; }
 /* and words: the first board's template, as rewritten on the approval page (empty: the site's own, in config.js) */
 /* gates: how the devices are earned (JSON: mode earn | open | closed, at: the posters for each); fx: the aura's motion (calm | base | chaos);
    curations: the portfolio's twelve groups (JSON: [{ k, name, about }]) */
@@ -635,14 +653,14 @@ const HIDDEN_TEXTS = ['builds', 'popKey', 'pops', 'note', 'noteKey', 'noteSlip',
 /* what the full-size photographs take in R2: full holds each one's size (1, for those kept before sizes were, counts as the largest) */
 async function r2Bytes(db) { const r = await db.prepare(`SELECT coalesce(sum(CASE WHEN full = 1 THEN ${LIMIT.full} ELSE coalesce(full, 0) END), 0) + coalesce(sum(art), 0) + coalesce(sum(pic), 0) AS b FROM stories WHERE full IS NOT NULL OR art IS NOT NULL OR pic IS NOT NULL`).first(); const c = await db.prepare('SELECT coalesce(sum(cov), 0) AS b FROM posts').first().catch(() => null); const tp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM tapes').first().catch(() => null); const cp = await db.prepare('SELECT coalesce(sum(bytes), 0) AS b FROM cardpics').first().catch(() => null); return ((r && r.b) || 0) + ((c && c.b) || 0) + ((tp && tp.b) || 0) + ((cp && cp.b) || 0); }
 /* the wall of posters: every poster shown on the site, as designed, the starred first; each with how much its talk has said */
-async function posters(db) {
-  if (!(await madeOn(db))) return json({ posters: [] });
-  const { results } = await db.prepare("SELECT s.id, s.code, s.created AS at, s.star, s.quiet IS NOT NULL AS quiet, m.kin, (SELECT count(*) FROM talk t WHERE t.sec = 'p.' || s.code AND t.hidden IS NULL) AS said FROM stories s LEFT JOIN makers m ON m.who = s.who WHERE s.status = 'shown' AND s.gone IS NULL AND s.art IS NOT NULL AND s.kind != 'message' ORDER BY s.star DESC, s.created DESC LIMIT 120").all();
+async function posters(db, url) {
+  const sb = await seenBy(db, url); if (!sb.all && !sb.isle) return json({ posters: [] });
+  const { results } = await db.prepare("SELECT s.id, s.code, s.created AS at, s.star, s.quiet IS NOT NULL AS quiet, m.kin, (SELECT count(*) FROM talk t WHERE t.sec = 'p.' || s.code AND t.hidden IS NULL) AS said FROM stories s LEFT JOIN makers m ON m.who = s.who WHERE s.status = 'shown' AND s.gone IS NULL AND s.art IS NOT NULL AND s.kind != 'message'" + (sb.isle ? ' AND s.dest = ?' : '') + " ORDER BY s.star DESC, s.created DESC LIMIT 120").bind(...(sb.isle ? [sb.isle] : [])).all();
   return new Response(JSON.stringify({ posters: results.map(r => ({ ...r, star: !!r.star, quiet: !!r.quiet })) }), { headers: { ...JSON_H, 'cache-control': 'public, max-age=120' } });
 }
-async function posterArt(db, env, id, any) {
-  if (!any && !(await madeOn(db))) return fail(404, 'not found');
-  const s = await db.prepare(`SELECT id FROM stories WHERE id = ? AND art IS NOT NULL${any ? '' : " AND status = 'shown' AND gone IS NULL AND kind != 'message'"}`).bind(id).first(); if (!s || !env.MEDIA) return fail(404, 'not found');
+async function posterArt(db, env, id, any, url) {
+  const sb = any ? { all: true } : await seenBy(db, url); if (!sb.all && !sb.isle) return fail(404, 'not found');
+  const s = await db.prepare(`SELECT id FROM stories WHERE id = ? AND art IS NOT NULL${any ? '' : " AND status = 'shown' AND gone IS NULL AND kind != 'message'"}${sb.isle ? ' AND dest = ?' : ''}`).bind(id, ...(sb.isle ? [sb.isle] : [])).first(); if (!s || !env.MEDIA) return fail(404, 'not found');
   const o = await env.MEDIA.get(`art/${id}`); if (!o) return fail(404, 'not found');
   return new Response(o.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': any ? 'no-store' : 'public, max-age=86400', 'x-content-type-options': 'nosniff' } });
 }
@@ -1801,7 +1819,10 @@ async function playList(db, url) {
   if (q) { w.push("(upper(json_extract(s.body, '$.n')) LIKE ? OR s.code = ?)"); b.push('%' + q.toUpperCase().replace(/[%_]/g, '') + '%', q.toUpperCase()); }
   if (sh) { w.push("json_extract(s.body, '$.shelf') = ?"); b.push(sh); }
   if (isle) { w.push('s.code IN (SELECT code FROM isle_plays WHERE isle = ?)'); b.push(await isleSrc(db, isle)); }
+  const pub = await madeOn(db), me = WHO.test(q0.get('who') || '') ? q0.get('who') : '', isleOk = !!isle && await memberOf(db, isle, me);
+  /* everyone's only when EVERYONE is on; otherwise those starred here, and the asker's own */
   if (SC.star && all) w.push("json_extract(s.body, '$.star') IS NOT NULL");
+  else if (!pub && !isleOk) { w.push(`(json_extract(s.body, '$.star') IS NOT NULL${me ? ' OR s.who = ?' : ''})`); if (me) b.push(me); }
   const W0 = w.join(' AND '), { t } = await db.prepare(`SELECT count(*) AS t FROM stories s WHERE ${W0}`).bind(...b).first(), total = SC.cap && all ? Math.min(SC.cap, t) : t;
   const lim = Math.max(0, Math.min(n, total - off));
   const { results } = lim ? await db.prepare(`SELECT s.code, s.body, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk FROM stories s WHERE ${W0} ORDER BY (json_extract(s.body, '$.star') IS NOT NULL) DESC, ${PLAY_ORDER[o]} LIMIT ? OFFSET ?`).bind(...b, lim, off).all() : { results: [] };
@@ -2032,7 +2053,7 @@ async function api(req, env, url, ctx) {
   const p = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean).map(decodeURIComponent); const m = req.method;
   if (p[0] === 'stories' && !p[1] && m === 'GET') return listStories(db, url);
   if (p[0] === 'stories' && !p[1] && m === 'POST') return send(db, env, req);
-  if (p[0] === 'stories' && p[1] && m === 'GET') return CODE.test(p[1]) ? oneStory(db, p[1]) : fail(400, 'code');
+  if (p[0] === 'stories' && p[1] && m === 'GET') return CODE.test(p[1]) ? oneStory(db, p[1], url) : fail(400, 'code');
   if (p[0] === 'receipts' && p[1] && m === 'GET') return receipt(db, p[1]);
   if (p[0] === 'c' && p[1] && !p[2] && m === 'GET') return codeRead(db, env, req, p[1]);
   if (p[0] === 'c' && !p[1] && m === 'POST') return passAsk(db, env, req);
@@ -2054,7 +2075,7 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'tapes' && !p[1] && m === 'POST') return tapeUp(db, env, req, url);
   if (p[0] === 'tapes' && p[1] && !p[2] && m === 'GET') return tapeGet(db, env, p[1]);
   if (p[0] === 'mine' && p[1] && !p[3] && (m === 'GET' && !p[2] || m === 'POST' && p[2])) return mine(db, env, req, p[1], p[2]);
-  if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false);
+  if (p[0] === 'photos' && p[1] && m === 'GET') return photo(db, env, p[1], false, url);
   if (p[0] === 'partners' && m === 'GET') return partners(db, req);
   if (p[0] === 'visit' && p[1] && m === 'GET') return visit(db, env, p[1]);
   /* the island browser: the open islands may be shown on any site (read only, nothing private in it) */
@@ -2080,8 +2101,8 @@ async function api(req, env, url, ctx) {
   if (p[0] === 'pop' && p[1] === 'desk' && p[2] === 'art' && p[3] && m === 'GET') return deskArt(db, env, req, url, p[3]);
   if (p[0] === 'example' && m === 'GET') return exampleBoard(db);
   if (p[0] === 'species' && !p[1] && m === 'POST') return learnKinds(db, env, req);
-  if (p[0] === 'posters' && !p[1] && m === 'GET') return posters(db);
-  if (p[0] === 'posters' && p[1] && !p[2] && m === 'GET') return posterArt(db, env, p[1], false);
+  if (p[0] === 'posters' && !p[1] && m === 'GET') return posters(db, url);
+  if (p[0] === 'posters' && p[1] && !p[2] && m === 'GET') return posterArt(db, env, p[1], false, url);
   /* someone has set out towards a print: every printer asks quickly for the next few minutes (at most one write a minute from each copy) */
   if (p[0] === 'warm' && !p[1] && m === 'POST') { if (now() - USE.warmAt > 60e3) { USE.warmAt = now(); await db.prepare('UPDATE printers SET warm = ? WHERE token IS NOT NULL OR touch IS NOT NULL').bind(now()).run(); } return new Response(null, { status: 204, headers: TEXT_H }); }
   if (p[0] === 'film' && !p[1] && m === 'POST') return filmAsk(db, env, req);

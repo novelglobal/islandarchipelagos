@@ -715,6 +715,17 @@ try {
     JSON.stringify({ m: qM.status, x: qMx.status, d: qD.status, m2: qM2.status }));
   { await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: false } }); const [hs, ho, hp, hph, hpa, ha] = await Promise.all([call('/api/stories'), call('/api/stories/DA-7K2Q'), call('/api/posters'), call(`/api/photos/${s1.json.id}`), call('/api/talk?s=p.DA-7K2Q&who=K7Q'), call('/api/admin/stories?status=shown', { key: KEY })]);
     check('switched off, visitors see nothing made (no stories, posters, photographs or poster talk), the approval page still sees it all', hs.json.stories.length === 0 && ho.status === 404 && hp.json.posters.length === 0 && hph.status === 404 && hpa.status >= 400 && ha.json.stories.length > 0, [hs.json.stories.length, ho.status, hp.json.posters.length, hph.status, hpa.status, ha.json.stories.length].join());
+    /* WHO SEES WHAT PEOPLE MAKE, as built (THEIR CODE AND THEIR ISLAND): a code that has printed at an open island sees what was made
+       there, on any device; a code that has not, or the island closed, sees nothing; made cards in the nine are only those starred */
+    await call(`/api/admin/stories/${kp.json.id}`, { method: 'POST', key: KEY, body: { action: 'show' } });
+    await call('/api/admin/printers/milkbar', { method: 'POST', key: KEY, body: { action: 'live', on: true } });
+    const isl0 = (await call('/api/admin/settings', { key: KEY })).json.isles || '{}', islO = JSON.parse(isl0 || '{}'); islO.milkbar = { ...(islO.milkbar || {}), open: true };
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { isles: JSON.stringify(islO) } });
+    const [mem, memP, out, anon] = await Promise.all([call('/api/stories?isle=milkbar&who=K7Q'), call('/api/posters?isle=milkbar&who=K7Q'), call('/api/stories?isle=milkbar&who=ZZ9'), call('/api/stories')]);
+    islO.milkbar.open = false; await call('/api/admin/settings', { method: 'POST', key: KEY, body: { isles: JSON.stringify(islO) } }); const shut = await call('/api/stories?isle=milkbar&who=K7Q');
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { isles: isl0 } });
+    check('as built, a member of an open island sees what was made there (and only there) on any device; a stranger, or a closed island, sees nothing', mem.json.stories.length > 0 && mem.json.stories.every(x => x.dest === 'milkbar') && Array.isArray(memP.json.posters) && out.json.stories.length === 0 && anon.json.stories.length === 0 && shut.json.stories.length === 0, [mem.json.stories.length, out.json.stories.length, anon.json.stories.length, shut.json.stories.length].join());
+    const pl = await call('/api/plays'); check('as built, the cards people make are in the nine for everyone only when starred here (each still opens by its own code)', (pl.json.plays || []).every(x => x.first || x.star), JSON.stringify((pl.json.plays || []).map(x => [x.c, !!x.star])));
     await call('/api/admin/settings', { method: 'POST', key: KEY, body: { madeShow: true } }); }
   /* a pop-up is private until its place says otherwise: the print waits for the printer and nothing else is written; its place looks after it at its desk */
   { const K = 'abcdefghjkmn', DK = 'deskdeskdeskdesk22', raster = Buffer.alloc(600, 1).toString('base64');
