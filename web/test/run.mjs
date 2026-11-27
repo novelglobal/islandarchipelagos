@@ -1821,6 +1821,15 @@ if (run('cards')) try {
   check('a hundred made cards stay one nine, paged through with none missed, grouped by shelf and island, found by name', walk.seen === 100 && walk.star && walk.pages === 12 && walk.count === '12/12' && walk.sh === 5 && walk.isle === 3 && walk.found === 9 && walk.nine === 9, JSON.stringify(walk));
   await page.setViewportSize({ width: 375, height: 812 }); await sleep(400);
   check('both papers fit a phone', await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0);
+  /* TAROT, and any card's own art: a picture put on a card prints in the printer's greys through the one engine; its words stay solid */
+  { const { png } = await import('../../spec/tools/see.mjs'), rows = Array.from({ length: 120 }, (_, y) => Uint8Array.from({ length: 160 }, (_, x) => Math.round(x / 159 * 255)));
+    const url = 'data:image/png;base64,' + png(rows, 160).toString('base64'), art = Object.fromEntries(Array.from({ length: 22 }, (_, i) => ['t' + i, url]));
+    const tx = await newCtx(); await wire(tx); await tx.addInitScript(a => { try { localStorage.setItem('da.art.tarot', a); } catch (e) { /* none */ } }, JSON.stringify(art));
+    const tp = await tx.newPage(); watch(tp, 'tarot'); const sent = []; await tp.route(u => new URL(u).pathname === '/api/stories', r => { sent.push(JSON.parse(r.request().postData())); return r.fulfill({ json: { ok: true, job: { status: 'queued' } } }); });
+    await tp.goto('https://oan.test/cart.html?c=tarot'); await tp.waitForFunction(() => document.querySelector('#paper.has') && !document.querySelector('#go').disabled, null, { timeout: 10000 }); await tp.waitForTimeout(600);
+    await tp.click('#go'); await tp.waitForFunction(n => n, sent.length, { timeout: 1 }).catch(() => {}); await tp.waitForTimeout(1500);
+    const raw = sent[0] ? Buffer.from(sent[0].escpos, 'base64') : Buffer.alloc(0), greys = raw.includes(Buffer.from([0x1D, 0x28, 0x4C])) && raw.includes(Buffer.from([0x30, 0x70, 0x34])), stored = raw.includes(Buffer.from([0x1D, 0x28, 0x45]));
+    check('TAROT: a picture put on the card prints in the printer\'s greys (the engine\'s sixteen-grey graphics), never stored settings', sent.length === 1 && greys && !stored, JSON.stringify({ sent: sent.length, bytes: raw.length, greys, stored })); await tx.close(); }
   /* BOOK: a book still being paged shows its title and line at once, PRINT held, then its page; each page read (and the next) is kept, so the
      shelf opens with no internet; no adding a book, no text sizes; on a phone the choices and PRINT stand above the long page */
   { const bx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(bx); const bp = await bx.newPage(); watch(bp, 'book'); let calls = 0;

@@ -54,10 +54,14 @@
     return k;
   }
   /* one bit */
+  /* the slip made solid, words and lines black or paper; the art placed on it (PICS: its boxes on the sheet) kept as the engine laid it,
+     in the printer's greys, so a picture on a card prints as a photograph does everywhere else */
+  var PICS = [];
   function oneBit(cv, h) {
-    var g = cv.getContext('2d', { willReadFrequently: true }), im = g.getImageData(0, 0, W, h), p = im.data;
-    for (var k = 0; k < p.length; k += 4) { var on = p[k] * 0.3 + p[k + 1] * 0.59 + p[k + 2] * 0.11 < 140 ? 0 : 255; p[k] = p[k + 1] = p[k + 2] = on; p[k + 3] = 255; }
-    cv.height = h; g.putImageData(im, 0, 0); return cv;
+    var g = cv.getContext('2d', { willReadFrequently: true }), im = g.getImageData(0, 0, W, h), p = im.data, inPic = function (x, y) { for (var i = 0; i < PICS.length; i++) { var r = PICS[i]; if (x >= r[0] && x < r[0] + r[2] && y >= r[1] && y < r[1] + r[3]) return true; } return false; };
+    for (var k = 0, n = 0; k < p.length; k += 4, n++) { var x = n % W, y = (n - x) / W, v = p[k] * 0.3 + p[k + 1] * 0.59 + p[k + 2] * 0.11;
+      p[k] = p[k + 1] = p[k + 2] = PICS.length && inPic(x, y) ? Math.round(v) : v < 140 ? 0 : 255; p[k + 3] = 255; }
+    cv.height = h; g.putImageData(im, 0, 0); cv.grey = PICS.length > 0; return cv;
   }
 
   /* ───────── weather ───────── */
@@ -373,9 +377,9 @@
     var im = ART[key];
     if (im) { var c = document.createElement('canvas'); c.width = w; c.height = h; var q = c.getContext('2d', { willReadFrequently: true }), s = Math.max(w / im.width, h / im.height);
       q.fillStyle = '#fff'; q.fillRect(0, 0, w, h); q.drawImage(im, (w - im.width * s) / 2, (h - im.height * s) / 2, im.width * s, im.height * s);
-      var p = q.getImageData(0, 0, w, h).data, Lp = window.THERMAL.luma(p, w * h), cq = {}, kq; for (kq in CQ) cq[kq] = CQ[kq]; cq.dither = 'bayer'; window.THERMAL.tone(Lp, w, h, cq);
-      g.fillStyle = '#fff'; g.fillRect(x, y, w, h); g.fillStyle = '#000';
-      for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) { var l = Lp[yy * w + xx] / 255; if (l * 16 < BAYER[(yy % 4) * 4 + (xx % 4)] + 0.5) g.fillRect(x + xx, y + yy, 1, 1); }
+      var id = q.getImageData(0, 0, w, h), Lp = window.THERMAL.luma(id.data, w * h); window.THERMAL.ready(Lp, w, h, CQ);
+      for (var i = 0, j = 0; i < Lp.length; i++, j += 4) { id.data[j] = id.data[j + 1] = id.data[j + 2] = Lp[i]; id.data[j + 3] = 255; } q.putImageData(id, 0, 0);
+      g.drawImage(c, x, y); PICS.push([x, y + (k.dy || 0), w, h]);
       return true; }
     g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.translate(x, y); pattern(g, w, h, kind, '#000', '#fff', sd || 3); g.restore(); return false;
   }
@@ -707,7 +711,7 @@
     /* art at the head only when a picture is there: it pushes the paper down, and the sheet grows by as much, so nothing at the foot is lost.
        With ART on and no picture, nothing is drawn; the head is only a place to tap */
     var K = KINDS[kind], hw = W - 48, hh = Math.round(hw * 0.56), top = K.head && ART.head ? 20 + hh + 18 : 0;
-    cv.width = W; cv.height = (K.tall || 4200) + top; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
+    cv.width = W; cv.height = (K.tall || 4200) + top; var k = kit(cv); k.code = o && o.code; k.hits = HITS = []; PICS = []; k.g.fillStyle = '#fff'; k.g.fillRect(0, 0, W, cv.height);
     if (top) { panel(k, 'head', 'spots', 24, 20, hw, hh, 5); k.g.save(); k.g.translate(0, top); k.dy = top; } else if (K.head && o && o.art) k.hits.push({ key: 'head', x: 24, y: 0, w: hw, h: 90 });
     var hgt = K.draw(k, data || {}, stack, o || {}); if (top) k.g.restore();
     return oneBit(cv, Math.min(cv.height, hgt + top));
@@ -773,14 +777,16 @@
   function print() {
     var go = $('#go'), st = $('#st'); if (!S.ready || !S.to) return; go.disabled = true;
     st.textContent = '· · ·';
-    if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, 0); S.o.head = false; paint();
+    if (S.K.send) { S.o.head = true; paint(); var hd = T.raster(cv, rq()); S.o.head = false; paint();
       return S.K.send(hd, S.o).then(function (j) { st.textContent = 'SENT · ' + j.n + (j.n > 1 ? ' PASSES' : ' PASS'); }, function (e) { st.textContent = /full/.test(e.message) ? 'FULL' : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
-    if (S.o.biz) { var bset = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), bh = atob(T.raster(cv, 0)), one = btoa(bh.slice(0, -7) + String.fromCharCode(0x1D, 0x56, 0x42, 0x00)), bn = 0, three = function () { if (bn >= 3) return Promise.resolve(); bn++; return send(one, bset).then(three); };
+    if (S.o.biz) { var bset = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), bh = atob(T.raster(cv, rq())), one = btoa(bh.slice(0, -7) + String.fromCharCode(0x1D, 0x56, 0x42, 0x00)), bn = 0, three = function () { if (bn >= 3) return Promise.resolve(); bn++; return send(one, bset).then(three); };
       return three().then(function () { st.textContent = 'SENT · 3'; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
-    if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, set = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, 0), set).then(all); };
+    if (S.o.deck && S.K.pages) { var pg0 = S.o.page, n = 0, set = code().replace(/[^A-Za-z0-9]/g, '') + Date.now().toString(36), all = function () { if (n >= S.K.pages) return Promise.resolve(); S.o.page = n++; paint(); return send(T.raster(cv, rq()), set).then(all); };
       return all().then(function () { S.o.page = pg0; paint(); st.textContent = 'SENT · ' + S.K.pages; }, function (e) { S.o.page = pg0; paint(); st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); }); }
-    send(T.raster(cv, 0)).then(function (c) { st.textContent = c; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
+    send(T.raster(cv, rq())).then(function (c) { st.textContent = c; }, function (e) { st.textContent = e.status === 429 || /too many/i.test(e.message) ? (e.wait ? 'WAIT ' + e.wait + 's' : 'WAIT') : 'UNSENT'; }).then(function () { go.disabled = false; keys(); });
   }
+  /* what the printer is told: the house setting's speed and head, and the greys where art is */
+  function rq() { return Object.assign(T.opts(CQ), { grey: !!cv.grey }); }
   function send(escpos, set) {
     var w = S.stack.where || [0, 0], c = code(), body = { type: 'stack', stack: S.stack.id, lat: w[0], lng: w[1] }, ps = null;
     try { ps = JSON.parse(localStorage.getItem('da.pass') || 'null'); } catch (e) { ps = null; } if (ps && (ps.island !== S.to || ps.day !== today())) ps = null;
