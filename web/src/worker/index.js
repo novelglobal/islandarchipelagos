@@ -574,12 +574,20 @@ const BUILD_PARTS = ['name', 'pics', 'links', 'cards', 'picks', 'passes', 'use',
    off (cards of those nines left out), label (what a first visit meets there: words, More, links, and a film the approval page gives it).
    main or nines left unset: the site's own */
 const MAINS = ['radio', 'wish', 'research', 'zine', 'kit', 'space', 'portfolio'], NINES = ['utils', 'soon', 'dev'];
+/* the i's sections (repo-static/info.js): words, a link, a film, a picture, an amount so far of an amount, a countdown; at most twelve */
+const PART_K = ['text', 'link', 'film', 'pic', 'goal', 'count'];
+const partsOf = a => (Array.isArray(a) ? a : []).filter(p => p && typeof p === 'object' && PART_K.includes(p.k)).slice(0, 12).map(p => {
+  const t = typeof p.t === 'string' ? p.t.replace(/\r/g, '').trim().slice(0, p.k === 'text' ? 600 : 80) : '', u = typeof p.u === 'string' && /^https:\/\/[^\s"<>]{3,300}$/.test(p.u) ? p.u : '', n = v => { const x = parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, '')); return Number.isFinite(x) ? Math.round(x * 100) / 100 : null; };
+  if (p.k === 'text') return t ? { k: 'text', t } : null;
+  if (p.k === 'link' || p.k === 'film' || p.k === 'pic') return u ? { k: p.k, u, ...(t ? { t } : {}) } : null;
+  if (p.k === 'goal') { const have = n(p.have), of = n(p.of); return of > 0 && have != null ? { k: 'goal', have, of, ...(typeof p.unit === 'string' && p.unit.trim() ? { unit: p.unit.trim().slice(0, 4) } : {}), ...(t ? { t } : {}) } : null; }
+  const at = Date.parse(p.at); return Number.isFinite(at) ? { k: 'count', at: new Date(at).toISOString(), ...(t ? { t } : {}) } : null; }).filter(Boolean);
 const homeOfIsle = v => { const h = jsonOf(v); if (!h || typeof h !== 'object') return null;
   const ids = (a, ok, n) => Array.isArray(a) ? [...new Set(a.map(String).filter(ok))].slice(0, n) : null, txt = (x, n) => typeof x === 'string' ? x.replace(/\r/g, '').slice(0, n) : '';
   const L = h.label && typeof h.label === 'object' ? h.label : null;
   const label = L ? { on: L.on !== false, top: txt(L.top, 60), title: txt(L.title, 80), body: txt(L.body, 1500), fold: Math.max(0, Math.min(6, Math.round(+L.fold) || 0)),
     links: (Array.isArray(L.links) ? L.links : []).filter(k => k && typeof k.t === 'string' && k.t.trim() && /^https:\/\/[^\s"<>]{1,300}$/.test(k.u || '')).slice(0, 4).map(k => ({ t: k.t.trim().slice(0, 60), to: 'url', u: k.u })),
-    ...(L.film && FILM.file.test(L.film.file || '') ? { film: { on: true, file: L.film.file } } : {}) } : null;
+    ...(L.film && FILM.file.test(L.film.file || '') ? { film: { on: true, file: L.film.file } } : {}), ...(partsOf(L.parts).length ? { parts: partsOf(L.parts) } : {}) } : null;
   /* its radio: where Direct Action Radio listens from this island (a centre, how far in km, whose Country); unset, the site's own */
   const R = h.radio && typeof h.radio === 'object' ? h.radio : null, rlat = R ? +R.lat : NaN, rlng = R ? +R.lng : NaN;
   const radio = R && Number.isFinite(rlat) && Number.isFinite(rlng) && Math.abs(rlat) <= 85 && Math.abs(rlng) <= 180 && (rlat || rlng) ? { lat: Math.round(rlat * 1e5) / 1e5, lng: Math.round(rlng * 1e5) / 1e5, km: [1, 3, 10, 30].includes(+R.km) ? +R.km : 3, ...(txt(R.name, 40).trim() ? { name: txt(R.name, 40).trim() } : {}), ...(txt(R.country, 60).trim() ? { country: txt(R.country, 60).trim() } : {}), ...(txt(R.sov, 60).trim() ? { sov: txt(R.sov, 60).trim() } : {}) } : null;
@@ -587,7 +595,7 @@ const homeOfIsle = v => { const h = jsonOf(v); if (!h || typeof h !== 'object') 
   /* its shelf: which of the site's books its book card holds, in order; unset, all of them */
   const books = Array.isArray(h.books) ? [...new Set(h.books.map(Number).filter(i => BOOKS.some(b => b[0] === i)))].slice(0, 40) : [];
   return { ...(books.length ? { books } : {}), ...(txt(h.line, 60).trim() ? { line: txt(h.line, 60).replace(/\s+/g, ' ').trim() } : {}), ...(hero && (hero.title || hero.body || hero.pic != null) ? { hero } : {}), ...(h.share ? { share: true } : {}), ...(radio ? { radio } : {}), main: ids(h.main, x => MAINS.includes(x), MAINS.length), nines: ids(h.nines, x => NINES.includes(x), 3), off: ids(h.off, x => /^[a-z0-9-]{1,24}$/.test(x), 40) || [],
-    ...(label && (label.top || label.title || label.body || label.film) ? { label } : {}) }; };
+    ...(label && (label.top || label.title || label.body || label.film || label.parts) ? { label } : {}) }; };
 /* a keeper's change laid over what is there; a label's film is the approval page's to give (film: true keeps it) */
 const homeIn = (was, b, film) => { const o = homeOfIsle(JSON.stringify(was || {})) || {}, n = b && typeof b === 'object' ? b : {};
   ['main', 'nines', 'off', 'line', 'hero', 'share', 'radio', 'books'].forEach(k => { if (k in n) o[k] = n[k]; });
@@ -1730,7 +1738,7 @@ async function playSend(db, env, req) {
   const code = 'PL-' + rid(4).toUpperCase(), th = PLAY_TH.includes(b.th) ? b.th : 'print', fr = ['dots', 'steps', 'stripe', 'coral', 'lunch', 'print'].includes(b.fr) ? b.fr : '';
   const t = now();
   await keepMade(db, who).run();
-  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src, ...(playArt(b.art) ? { art: playArt(b.art) } : {}), ...(b.sz === 'big' ? { big: 'ask' } : {}) }), t, up ? t : null, who).run();
+  await db.prepare('INSERT INTO stories (id, code, kind, status, body, created, decided, who) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(rid(), code, 'play', up ? 'shown' : 'waiting', JSON.stringify({ n, th, fr, src, ...(playArt(b.art) ? { art: playArt(b.art) } : {}), ...(b.sz === 'big' ? { big: 'ask' } : {}), ...(partsOf(b.info).length ? { info: partsOf(b.info) } : {}) }), t, up ? t : null, who).run();
   return json({ code, shown: up }, 201);
 }
 /* a pass from a printer's slip makes this phone's code a printed one: one use, the day it was printed */
@@ -1869,7 +1877,7 @@ async function playLike(db, env, req, c) {
 async function playMine(db, url) {
   const who = url.searchParams.get('who') || ''; if (!WHO.test(who)) return fail(400, 'who'); await playTable(db);
   const { results } = await db.prepare("SELECT s.code, s.body, s.status, (SELECT count(*) FROM play_likes l WHERE l.code = s.code) AS lk, (SELECT opens FROM play_stats t WHERE t.code = s.code) AS op FROM stories s WHERE s.kind = 'play' AND s.who = ? AND s.gone IS NULL ORDER BY s.created DESC LIMIT 20").bind(who).all();
-  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', src: j.src, up: r.status === 'shown', lk: r.lk || 0, op: r.op || 0, pic: playPicV(j), big: j.big || '' }; } catch (e) { return null; } }).filter(Boolean) });
+  return json({ plays: results.map(r => { try { const j = JSON.parse(r.body); return { c: r.code, n: j.n, th: j.th, fr: j.fr || '', src: j.src, up: r.status === 'shown', lk: r.lk || 0, op: r.op || 0, pic: playPicV(j), big: j.big || '', ...(j.info ? { info: j.info } : {}) }; } catch (e) { return null; } }).filter(Boolean) });
 }
 async function playEdit(db, env, req, c) {
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return fail(400, 'code'); if (await tooMany(db, env, req, 'play', 20, 10 * 60e3)) return fail(429, 'slow down');
@@ -1882,6 +1890,7 @@ async function playEdit(db, env, req, c) {
   if (typeof b.src === 'string') { if (!b.src.trim() || b.src.length > 40e3) return fail(400, 'play'); j.src = b.src; }
   if (b.art === '') delete j.art; else if (b.art !== undefined) { if (!playArt(b.art)) return fail(400, 'art'); j.art = b.art; }
   if (b.sz === 'small') delete j.big; else if (b.sz === 'big' && j.big !== 'yes') j.big = 'ask';
+  if (b.info !== undefined) { const pi = partsOf(b.info); if (pi.length) j.info = pi; else delete j.info; }
   await db.prepare('UPDATE stories SET body = ? WHERE id = ?').bind(JSON.stringify(j), r.id).run(); return json({ code: c, ok: true }, 201);
 }
 async function playOne(db, c) {

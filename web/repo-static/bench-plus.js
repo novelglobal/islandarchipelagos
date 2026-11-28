@@ -336,6 +336,10 @@
   /* the card it will stand as: its colours, its frame, its picture, its name; small, or big if novel.global gives it */
   function cardPrev() { var ls = liveState(), cv = $('#lv .lv-cd'); if (!cv) return; var t = (PK.TH[ls.th] || PK.TH.print); cv.style.background = t[0]; cv.style.color = t[1]; cv.className = 'lv-cd fr-' + (P.fr || 'none') + (ls.sz === 'big' ? ' big' : '');
     cv.innerHTML = (ls.art ? '<img alt="" src="' + ls.art + '">' : '') + '<b>' + esc(String(ls.n || 'NAME').toUpperCase()) + '</b>'; $$('#lv [data-lsz]').forEach(function (b) { b.setAttribute('aria-pressed', String((ls.sz || 'small') === b.dataset.lsz)); }); var x = $('#lv [data-lpk="x"]'); if (x) x.hidden = !ls.art; }
+  /* the card's own i: sections its maker lays out (info.js), shown behind a small i on the card and in the play */
+  function infoMount(pb) { if (pb.querySelector('.lv-i')) return; var w = D.createElement('div'); w.className = 'lv-i'; w.innerHTML = '<b title="Shown behind the card&#8217;s i: links, films, pictures, amounts, countdowns">i</b><div></div>'; pb.appendChild(w);
+    var go = function () { var ls = liveState(); INFO.edit(w.querySelector('div'), ls.info || [], function (parts) { ls.info = parts; save(); }); };
+    if (window.INFO) go(); else { var s = D.createElement('script'); s.src = 'info.js'; s.onload = go; D.head.appendChild(s); } }
   function liveState() { if (!P.live) P.live = { src: '', th: 'print', n: '', keep: {} }; return P.live; }
   function live() { var ls = liveState(), el = $('#lv');
     if (!el.dataset.on) { el.dataset.on = 1;
@@ -368,7 +372,7 @@
     if (e.target.closest('#lv-run')) { ls.keep = {}; save(); liveRun(); beep(520, 0.05); return; }
     if (e.target.closest('#lv-clr')) { if (ls.src.trim() && !confirm('Clear it?')) return; ta.value = ''; ls.keep = {}; ta.dispatchEvent(new Event('input')); liveRun(); return; }
     if (e.target.closest('#lv-pr')) { var u = LV && LV.paper(); if (!u || !NG || !NG.printAgain) { flash('lv-pr', 0); return; } NG.printAgain(u, 'play').then(function () { flash('lv-pr', 1); beep(880, 0.06); }, function () { flash('lv-pr', 0); }); return; }
-    if (e.target.closest('#lv-up')) { var pb = $('#lv .lv-pub'); pb.hidden = !pb.hidden; if (!pb.hidden) { cardPrev(); $('[data-ln]', pb).focus(); } return; }
+    if (e.target.closest('#lv-up')) { var pb = $('#lv .lv-pub'); pb.hidden = !pb.hidden; if (!pb.hidden) { cardPrev(); infoMount(pb); $('[data-ln]', pb).focus(); } return; }
     if ((b = e.target.closest('[data-lsz]'))) { ls.sz = b.dataset.lsz; save(); cardPrev(); beep(600, 0.04); return; }
     if ((b = e.target.closest('[data-lpk]'))) { var k = b.dataset.lpk, dr = $('#lv .lv-dsr'), put = function (d) { if (!d) { flash('lv-send', 0); return; } ls.art = d; save(); dr.hidden = true; cardPrev(); beep(880, 0.05); };
       if (k === 'up') { var f = D.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = function () { if (f.files[0]) picPrep(f.files[0], put); }; f.click(); return; }
@@ -378,7 +382,7 @@
     if ((b = e.target.closest('[data-lth]'))) { ls.th = b.dataset.lth; save(); $$('[data-lth]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); liveRun(); cardPrev(); beep(660, 0.04); return; }
     if (e.target.closest('#lv-send')) { var say = $('#lv .lv-say'), n = String(ls.n || '').trim(), who = whoNow(), pub = $('#lv .lv-pub'), again = function () { $('#lv-send').click(); };
       if (!n) { $('#lv [data-ln]').focus(); flash('lv-send', 0); return; } if (!ls.src.trim()) { ta.focus(); flash('lv-send', 0); return; } if (!who) { say.textContent = 'CODE'; codeAsk(pub, again); return; }
-      say.textContent = '···'; fetch(ls.edit ? '/api/plays/' + ls.edit + '/edit' : '/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src, art: ls.art || '', sz: ls.sz || 'small' }) })
+      say.textContent = '···'; fetch(ls.edit ? '/api/plays/' + ls.edit + '/edit' : '/api/plays', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who: who, n: n, th: ls.th, fr: P.fr || 'none', src: ls.src, art: ls.art || '', sz: ls.sz || 'small', info: ls.info || [] }) })
         .then(function (r) { if (r.status !== 201) { say.textContent = r.status === 429 ? 'SLOW DOWN' : r.status === 401 ? 'CODE' : r.status === 503 ? 'FULL' : 'NOT SENT'; if (r.status === 503) say.title = 'Full for now: more open as the month turns'; say.title = r.status === 401 ? 'A code from a print puts it up' : ''; if (r.status === 401) codeAsk(pub, again); flash('lv-send', 0); return; }
           r.json().then(function (j) { if (j.ok) { say.textContent = 'SAVED · ' + j.code; say.title = 'Changed in place'; return; } say.textContent = j.shown ? 'UP · ' + j.code : 'WAITING · ' + j.code; say.title = j.shown ? 'On novel.global now, as a small card' : 'Waiting for approval'; }, function () { say.textContent = 'SENT'; }); linkAsk(pub); flash('lv-send', 1); beep(880, 0.06); setTimeout(function () { beep(1320, 0.1); }, 120); })
         .catch(function () { say.textContent = 'OFFLINE'; flash('lv-send', 0); }); } }

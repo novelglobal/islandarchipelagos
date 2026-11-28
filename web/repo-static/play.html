@@ -24,6 +24,11 @@
   #lk { position: fixed; right: 106px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 3; min-height: 30px; padding: 0 11px; border: 1px solid rgba(11, 11, 11, .25); border-radius: 15px; background: none; color: inherit; font: 600 10px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; cursor: pointer; }
   #lk[aria-pressed="true"] { background: #0B0B0B; color: #F4F1E8; border-color: #0B0B0B; } html.night #lk { border-color: rgba(244, 241, 232, .3); color: #F4F1E8; }
   html.night #again { background: rgba(244, 241, 232, .12); color: #F4F1E8; }
+  /* its maker's i: top right, opens their sections over the play */
+  #pi { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 8px; z-index: 4; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: #F4F1E8; color: #241B45; box-shadow: 0 0 0 1px rgba(36, 27, 69, .18), 0 1px 4px rgba(0, 0, 0, .28); font: 600 11px/1 'IBM Plex Mono', monospace; cursor: pointer; }
+  #pi::before { content: ''; position: absolute; inset: -11px; } #pi[hidden], #pio[hidden] { display: none; }
+  #pio { position: fixed; inset: 0; z-index: 5; overflow: auto; padding: 48px 18px 24px; box-sizing: border-box; background: #F4F1E8; color: #0B0B0B; font: 400 15px/1.5 Poppins, system-ui, sans-serif; }
+  #pio h2 { margin: 0; font: 600 22px/1.1 Poppins, sans-serif; } #pio .x { position: fixed; top: 10px; right: 10px; width: 36px; height: 36px; border: 0; background: none; font-size: 22px; cursor: pointer; color: inherit; }
 </style>
 </head>
 <body>
@@ -31,6 +36,7 @@
 <p id="by"></p>
 <button id="lk" type="button" title="Like it" aria-pressed="false" hidden>LIKE</button>
 <button id="again" type="button" aria-label="Start again" title="Start again"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5"/></svg></button>
+<button id="pi" type="button" aria-label="About this card" hidden>i</button><div id="pio" role="dialog" aria-modal="true" hidden><button class="x" type="button" aria-label="Close">×</button><h2></h2><div class="b"></div></div>
 <button id="pr" type="button" aria-label="Print" title="Print" hidden><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M4 9h16v8H4z"/><path d="M7 14h10v7H7z"/></svg></button>
 <script src="vendor/qrcode.js"></script>
 <script src="play-kit.js"></script>
@@ -41,8 +47,12 @@
   try { store = JSON.parse(localStorage.getItem(K) || '{}') || {}; } catch (e) { store = {}; }
   var pr = document.getElementById('pr'), NG = null; try { NG = window.parent !== window ? window.parent.NG : null; } catch (e) { NG = null; }
   var box = PK.mount(document.getElementById('p'), { quick: q.get('quick') === '1', keep: function (k, v) { try { store[k] = JSON.parse(v); localStorage.setItem(K, JSON.stringify(store)); } catch (e) { /* this visit only */ } }, ink: function () { pr.hidden = !(NG && NG.printAgain); } });
+  /* its maker's i: their sections (info.js), opened from the small i top right */
+  var info = function (j) { var b = document.getElementById('pi'), o = document.getElementById('pio'); b.hidden = false; var drawn = false;
+    b.addEventListener('click', function () { if (!drawn) { var s = document.createElement('script'); s.src = 'info.js'; s.onload = function () { o.querySelector('h2').textContent = String(j.n || ''); INFO.view(o.querySelector('.b'), j.info); }; document.head.appendChild(s); drawn = true; } o.hidden = false; });
+    o.querySelector('.x').addEventListener('click', function () { o.hidden = true; }); };
   if (!/^PL-[A-Z2-9]{4}$/.test(c)) return;
-  fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); if (j && j.by) document.getElementById('by').textContent = j.by; });
+  fetch('/api/plays/' + encodeURIComponent(c)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.src) box.run(j.src, j.th, store); if (j && Array.isArray(j.info) && j.info.length) info(j); if (j && j.by) document.getElementById('by').textContent = j.by; });
   /* LIKE: once for each code; the showcase orders by it */
   var lk = document.getElementById('lk'), LK = 'da.liked'; var liked = function () { try { return (JSON.parse(localStorage.getItem(LK) || '[]') || []).indexOf(c) >= 0; } catch (e) { return false; } };
   var who = function () { try { return NG && NG.me ? NG.me() : JSON.parse(localStorage.getItem('da.who') || '""'); } catch (e) { return ''; } };

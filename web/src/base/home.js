@@ -815,15 +815,20 @@
   /* THE LABEL AS A SMALL i (as built, every card): an i at the foot of each card, left; on the first card's words side, top right (the
      flip key has the foot right). A tap opens the whole label, as the label always opened, with all of it to unfold */
   var LBL = null, LBMEM = null;
+  function needInfo(cb) { if (window.INFO) return cb(); var s = D.createElement('script'); s.src = '/info.js'; s.onload = function () { try { cb(); } catch (e) { /* drawn without */ } }; D.head.appendChild(s); }
+  var memNo = function () { return null; };
   function labelDots(L, mem) { if (L) { LBL = L; LBMEM = mem; } var mkI = function (el, cls) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
     var add = function () { var cl = D.getElementById('hm-col'); if (!cl) return;
-      [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id))) return;
+      [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; var oc = cd.dataset.id && byId(cd.dataset.id); if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id)) && !(oc && oc.info)) return;
         if (cd.classList.contains('sk-intro')) mkI(cd.querySelector('.in-f'), 'hm-i-top'); else mkI(cd); });
       [].forEach.call(cl.querySelectorAll('.hm-trio.p9'), function (tr) { var c0 = [].filter.call(tr.querySelectorAll('.hm-card[data-id]'), function (c) { return noteHas(c.dataset.id); })[0]; if (!LBL && !c0) return; if (c0) tr.dataset.ni = c0.dataset.id; mkI(tr, 'hm-i-nine'); }); };
     add(); if (!labelDots.on) { labelDots.on = true; new MutationObserver(function () { clearTimeout(labelDots.t); labelDots.t = setTimeout(add, 80); }).observe(D.body, { childList: true, subtree: true });
       /* a press on an i is the i's alone: the card under it never sees it begin */
       ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(function (ty) { D.addEventListener(ty, function (e) { if (e.target.closest && e.target.closest('.hm-i')) e.stopPropagation(); }, { capture: true, passive: true }); });
-      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); var cd = b.closest('.hm-card'), tr = !cd && b.closest('.hm-trio'), id = cd ? cd.dataset.id : tr && tr.dataset.ni; if (id && noteHas(id) && !(NT.el && NT.id === id)) { e.stopImmediatePropagation(); noteOpen(id); return; }
+      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); var cd = b.closest('.hm-card'), tr = !cd && b.closest('.hm-trio'), id = cd ? cd.dataset.id : tr && tr.dataset.ni; var oc = cd && byId(cd.dataset.id);
+        /* a card its maker gave an i: their own words and sections */
+        if (oc && oc.info && oc.info.length) { var r0 = b.getBoundingClientRect(); labelBuild({ on: true, title: oc.title, parts: oc.info, key: '.' + oc.id }, memNo, { left: r0.left, top: r0.top, width: r0.width, height: r0.height, byI: true }); return; }
+        if (id && noteHas(id) && !(NT.el && NT.id === id)) { e.stopImmediatePropagation(); noteOpen(id); return; }
         if (!LBL) return; if (LBL.as === 'card' && !D.getElementById('lbm')) return labelMini(LBL, LBMEM); var r = b.getBoundingClientRect(); labelBuild(LBL, LBMEM, LBL.as === 'over' ? null : { left: r.left, top: r.top, width: r.width, height: r.height, byI: true }); }, true); } }
   /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
      A tap opens the whole label over the full screen, its film playing; closed, the small card comes back. × puts it away for the visit */
@@ -857,6 +862,8 @@
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
     var fold = Math.max(0, Math.round(+L.fold) || 0), np = 0, b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', fold && np++ >= fold ? 'lb-x' : '', t, b); });
+    /* its maker's sections (info.js): links, films, pictures, amounts, countdowns */
+    if (Array.isArray(L.parts) && L.parts.length) needInfo(function () { INFO.view(b, L.parts); });
     /* the rest of the words, and the counts where they are set to wait there, open from one small key */
     if (L.cnt === 'off') L.counts = []; var folded = !!b.querySelector('p.lb-x') || (L.cnt === 'more' && Array.isArray(L.counts) && L.counts.length);
     if (folded) { var mo = mk('button', 'lb-mo', L.more || 'More', c); mo.type = 'button'; mo.setAttribute('aria-expanded', 'false'); mo.addEventListener('click', function () { var o = c.classList.toggle('lb-open'); mo.textContent = o ? (L.less || 'Less') : (L.more || 'More'); mo.setAttribute('aria-expanded', String(o));
@@ -1108,7 +1115,7 @@
     for (var q = CARDS.length - 1; q >= 0; q--) if (CARDS[q].g === 'dev' || CARDS[q].dvBig) CARDS.splice(q, 1); var bigs = [];
     var last = -1; CARDS.forEach(function (c, i) { if (c.g === 'soon') last = i; }); var at = last < 0 ? CARDS.length : last + 1, add = [];
     var card = function (p) { var id = 'pl-' + String(p.c).toLowerCase(); if (!/^PL-[A-Z2-9]{4}$/.test(p.c) || byId(id)) return null;
-      return { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', star: !!p.star, motion: 'shadow', where: [-37.8136, 144.9631] }; };
+      return { id: id, g: 'dev', size: 'small', title: String(p.n || '').toUpperCase().slice(0, 24), opens: 'play', play: p.c, info: Array.isArray(p.info) && p.info.length ? p.info : null, skin: 'play', art: 'slot', pal: PLAY_TH.indexOf(p.th) + 1 || 6, fr: /^(dots|steps|stripe|coral|lunch|print)$/.test(p.fr || '') ? p.fr : '', pic: p.pic ? '/api/plays/' + p.c + '/art?v=' + encodeURIComponent(p.pic) : '', star: !!p.star, motion: 'shadow', where: [-37.8136, 144.9631] }; };
     (j.plays || []).slice(0, 10).forEach(function (p) { var o = card(p); if (!o) return;
       /* a play novel.global made big stands with the big cards, before the nine */
       if (p.big) { o.g = ''; o.dvBig = 1; o.size = 'full'; bigs.push(o); } else add.push(o); });
@@ -1651,6 +1658,7 @@
       '<p class="hm-h">LIST LINE</p><form class="hm-lnf" title="One line under your island’s name in the list"><input name="l" maxlength="60" autocomplete="off" placeholder="LINE" aria-label="A short line under its name" value="' + esc(h.line || '') + '"><button class="hm-btn">SAVE</button></form>' +
       '<p class="hm-h">WELCOME</p><p class="ik-hint">A note for first-time visitors.</p><form class="hm-lbf"><input name="t" maxlength="80" autocomplete="off" placeholder="TITLE" aria-label="Its title" value="' + esc(L.title || '') + '"><textarea name="b" maxlength="1500" rows="4" placeholder="WORDS" aria-label="Its words">' + esc(L.body || '') + '</textarea>' +
       [0, 1, 2].filter(function (i) { return i <= ln.length; }).map(function (i) { var k = ln[i] || {}; return '<div class="hm-row hm-lbl"><input name="lt' + i + '" maxlength="60" autocomplete="off" placeholder="LINK" aria-label="A link’s words" value="' + esc(k.t || '') + '"><input name="lu' + i + '" type="url" maxlength="300" autocomplete="off" placeholder="https://" aria-label="Where it goes" value="' + esc(k.u || '') + '"></div>'; }).join('') +
+      '<p class="ik-hint" title="Links, films, pictures, amounts, countdowns: shown behind the i">i</p><div class="hm-lbp"></div>' +
       '<div class="hm-row"><button class="hm-btn">SAVE</button>' + (L.title || L.body ? '<label class="hm-say" title="Shown to first-time visitors"><input type="checkbox" name="on"' + (L.on !== false ? ' checked' : '') + '> ON</label>' : '') + (L.film ? '<span class="hm-say" title="A film from novel.global">FILM</span>' : '') + '<span class="hm-say" data-lbs></span></div></form>'; }
   function homeWire(box, p, post) { if (p.home === undefined) return; var h = p.home || {}, mains = MAINS.filter(function (id) { var c = byId(id); return c && !c.off && !(OPT.one && id === 'kit'); });
     var set = function (o) { beep(550, 0.05); post({ home: o }); };
@@ -1662,8 +1670,9 @@
     var rs = $('[data-hreset]', box); if (rs) rs.addEventListener('click', function () { HK.open = null; set({ main: null, nines: null, off: [] }); });
     var hf = $('.hm-hrf', box); if (hf) hf.addEventListener('submit', function (e) { e.preventDefault(); var pk = hf.querySelector('input[name="pic"]:checked'); set({ hero: { title: hf.t.value.trim(), body: hf.b.value.trim(), pic: pk && pk.value !== '' ? +pk.value : null } }); });
     var lf = $('.hm-lnf', box); if (lf) lf.addEventListener('submit', function (e) { e.preventDefault(); set({ line: lf.l.value.replace(/\s+/g, ' ').trim() }); });
-    var f = $('.hm-lbf', box); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); var links = [0, 1, 2].filter(function (i) { return f['lt' + i]; }).map(function (i) { return { t: f['lt' + i].value.trim(), u: f['lu' + i].value.trim() }; }).filter(function (k) { return k.t && /^https:\/\//.test(k.u); });
-      $('[data-lbs]', f).textContent = '· · ·'; post({ home: { label: { on: f.on ? f.on.checked : true, title: f.t.value.trim(), body: f.b.value.trim(), links: links } } }); }); }
+    var f = $('.hm-lbf', box), lp = f && $('.hm-lbp', f), lpe = null; if (lp) needInfo(function () { lpe = INFO.edit(lp, ((h.label || {}).parts) || [], function () {}); });
+    if (f) f.addEventListener('submit', function (e) { e.preventDefault(); var links = [0, 1, 2].filter(function (i) { return f['lt' + i]; }).map(function (i) { return { t: f['lt' + i].value.trim(), u: f['lu' + i].value.trim() }; }).filter(function (k) { return k.t && /^https:\/\//.test(k.u); });
+      $('[data-lbs]', f).textContent = '· · ·'; post({ home: { label: { on: f.on ? f.on.checked : true, title: f.t.value.trim(), body: f.b.value.trim(), links: links, parts: lpe ? lpe.get() : ((h.label || {}).parts || []) } } }); }); }
   /* an island's joins in a line: where its prints go, and whose cards it shows */
   function joinSay(j) { var nm = function (id) { var a = (j.isles || []).filter(function (x) { return x.id === id; })[0]; return String(a ? a.name : id).toUpperCase(); };
     return (j.to.length ? (j.only ? 'ONLY → ' : '→ ') + j.to.map(nm).join(' · ') : '') + (j.mirror ? (j.to.length ? ' · ' : '') + '⟲ ' + nm(j.mirror) : '') || 'NONE'; }
