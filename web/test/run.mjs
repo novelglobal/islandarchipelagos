@@ -171,16 +171,16 @@ if (run('anywhere')) try {
   const ak = await page.evaluate(() => { const C = window.DA_CONFIG, s = window.__da.S.scan; return { b: C.BBOX, at: C.AT, lat: s.lat, lng: s.lng, ov: C.OVERLAYS.length, co: C.COUNTRY, pp: C.PLACE_PREF }; });
   const inat = asked.filter(u => /inat/.test(u)), wx = asked.filter(u => /open-meteo/.test(u));
   await page.evaluate(() => localStorage.setItem('da.radio.at', JSON.stringify({ lat: 51.5072, lng: -0.1276, km: 3, country: 'Here' }))); asked.length = 0;
-  await page.goto('https://oan.test/studio'); await ready(page); await sleep(1500);
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {}); await page.goto('https://oan.test/studio'); await ready(page); await sleep(1500);
   const ld = await page.evaluate(() => ({ b: window.DA_CONFIG.BBOX, co: window.DA_CONFIG.COUNTRY }));
-  await page.evaluate(() => localStorage.removeItem('da.radio.at')); await page.goto('https://oan.test/studio'); await ready(page); await sleep(800);
+  await page.evaluate(() => localStorage.removeItem('da.radio.at')); await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {}); await page.goto('https://oan.test/studio'); await ready(page); await sleep(800);
   const mel = await page.evaluate(() => ({ b: window.DA_CONFIG.BBOX, at: window.DA_CONFIG.AT || null, ov: window.DA_CONFIG.OVERLAYS.length }));
   check('the radio anywhere: a link\'s place (Auckland, 10 km) moves its area, radar, sightings and weather, with no Melbourne-only data and Aotearoa\'s names',
     ak.b.s < -36.9 && ak.b.n > -36.8 && ak.b.w < 174.7 && ak.b.e > 174.8 && Math.abs(ak.lat + 36.8485) < 0.01 && Math.abs(ak.lng - 174.7633) < 0.01 && ak.ov === 0 && ak.co === '' && ak.pp === 6803
     && (!inat.length || inat.every(u => /nelat=-36\.7/.test(u))) && (!wx.length || wx.some(u => /latitude=-36\.84/.test(u) && /timezone=auto/.test(u))), JSON.stringify({ ak, inat: inat.slice(0, 2), wx: wx.slice(0, 1) }));
   check('an island\'s own place, kept on the phone, moves the radio the same way (London, its Country); with none, the site\'s own place stays',
     ld.b.s > 51.4 && ld.b.n < 51.6 && ld.co === 'HERE' && mel.b.s === -37.823 && !mel.at && mel.ov > 0, JSON.stringify({ ld, mel }));
-  await ctx.close();
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {}); await ctx.close();
 } catch (e) { results.push(`FAIL  section anywhere: ${e.message.split('\n')[0]}`); }
 
 // ───────── the way home: every page reached on its own has one small mark top left back to the home, never inside the home's own sheet;
