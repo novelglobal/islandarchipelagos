@@ -817,11 +817,13 @@
   var LBL = null, LBMEM = null;
   function needInfo(cb) { if (window.INFO) return cb(); var s = D.createElement('script'); s.src = '/info.js'; s.onload = function () { try { cb(); } catch (e) { /* drawn without */ } }; D.head.appendChild(s); }
   var memNo = function () { return null; };
-  function labelDots(L, mem) { if (L) LBL = L; if (mem) LBMEM = mem; var mkI = function (el, cls) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
-    var add = function () { var cl = D.getElementById('hm-col'); if (!cl) return;
-      [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; var oc = cd.dataset.id && byId(cd.dataset.id); if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id)) && !(oc && oc.info)) return;
-        if (cd.classList.contains('sk-intro')) mkI(cd.querySelector('.in-f'), 'hm-i-top'); else mkI(cd); });
-      [].forEach.call(cl.querySelectorAll('.hm-trio.p9'), function (tr) { var c0 = [].filter.call(tr.querySelectorAll('.hm-card[data-id]'), function (c) { return noteHas(c.dataset.id); })[0]; if (!LBL && !c0) return; if (c0) tr.dataset.ni = c0.dataset.id; mkI(tr, 'hm-i-nine'); }); };
+  function labelDots(L, mem) { if (L) LBL = L; if (mem) LBMEM = mem; var want = [], mkI = function (el, cls) { if (el) want.push(el); if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
+    var add = function () { var cl = D.getElementById('hm-col'); if (!cl) return; want = [];
+      [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; var oc = cd.dataset.id && byId(cd.dataset.id);
+        /* an i only where something is added and on: the copy card's for the site's label; any other card's for its own note or its maker's own i */
+        if (cd.classList.contains('sk-intro')) { if (LBL) mkI(cd.querySelector('.in-f'), 'hm-i-top'); return; } if ((cd.dataset.id && noteHas(cd.dataset.id)) || (oc && oc.info && oc.info.length)) mkI(cd); });
+      [].forEach.call(cl.querySelectorAll('.hm-trio.p9'), function (tr) { var c0 = [].filter.call(tr.querySelectorAll('.hm-card[data-id]'), function (c) { return noteHas(c.dataset.id); })[0]; if (!c0) return; if (c0) tr.dataset.ni = c0.dataset.id; mkI(tr, 'hm-i-nine'); });
+      [].forEach.call(cl.querySelectorAll('.hm-i'), function (b) { if (want.indexOf(b.parentNode) < 0) b.remove(); }); };
     add(); if (!labelDots.on) { labelDots.on = true; new MutationObserver(function () { clearTimeout(labelDots.t); labelDots.t = setTimeout(add, 80); }).observe(D.body, { childList: true, subtree: true });
       /* a press on an i is the i's alone: the card under it never sees it begin */
       ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(function (ty) { D.addEventListener(ty, function (e) { if (e.target.closest && e.target.closest('.hm-i')) e.stopPropagation(); }, { capture: true, passive: true }); });
