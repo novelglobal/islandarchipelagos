@@ -807,17 +807,22 @@
   var LBT = '';
   function labelShow(txt) { LBT = txt; var L; try { L = JSON.parse(txt); } catch (e) { return; } var force = /[?&]label=1\b/.test(location.search); if (!L || typeof L !== 'object' || (!L.on && !force) || D.getElementById('lb') || ((HASHGO || (xv.classList.contains('on') && /^(TWIN|GHOST)$/.test(xv.getAttribute('aria-label') || ''))) && !force)) return;
     var mem = function (s, k, v) { try { if (v === undefined) return s.getItem(k); s.setItem(k, v); } catch (e) { /* a private window */ } return null; };
-    if (L.as !== 'card' && L.as !== 'over' && !force) return labelDots(L, mem);
+    /* no label shows by itself: an i opens it (AS says how: a small box by the i, over the site, or as a card) */
+    if (!force) return labelDots(L, mem);
     if (!force && (mem(localStorage, 'da.label.never' + (L.key || '')) === '1' || mem(sessionStorage, 'da.label.seen' + (L.key || '')) === '1')) return;
     if (L.as === 'card') return labelMini(L, mem);
     labelBuild(L, mem, null); }
   /* THE LABEL AS A SMALL i (as built, every card): an i at the foot of each card, left; on the first card's words side, top right (the
      flip key has the foot right). A tap opens the whole label, as the label always opened, with all of it to unfold */
-  var LBL = null, LBM = null;
-  function labelDots(L, mem) { if (L) { LBL = L; LBM = mem; } var add = function () { [].forEach.call(D.querySelectorAll('.hm-card'), function (cd) { if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id))) return; var at = cd.classList.contains('sk-intro') ? [cd.querySelector('.in-front'), cd.querySelector('.in-f')] : [cd];
-        at.forEach(function (el, k) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (k ? ' hm-i-top' : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); }); }); };
+  var LBL = null, LBMEM = null;
+  function labelDots(L, mem) { if (L) { LBL = L; LBMEM = mem; } var mkI = function (el, cls) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
+    var add = function () { var cl = D.getElementById('hm-col'); if (!cl) return;
+      [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id))) return;
+        if (cd.classList.contains('sk-intro')) mkI(cd.querySelector('.in-f'), 'hm-i-top'); else mkI(cd); });
+      [].forEach.call(cl.querySelectorAll('.hm-trio.p9'), function (tr) { var c0 = [].filter.call(tr.querySelectorAll('.hm-card[data-id]'), function (c) { return noteHas(c.dataset.id); })[0]; if (!LBL && !c0) return; if (c0) tr.dataset.ni = c0.dataset.id; mkI(tr, 'hm-i-nine'); }); };
     add(); if (!labelDots.on) { labelDots.on = true; new MutationObserver(function () { clearTimeout(labelDots.t); labelDots.t = setTimeout(add, 80); }).observe(D.body, { childList: true, subtree: true });
-      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); var cd = b.closest('.hm-card'), id = cd && cd.dataset.id; if (id && noteHas(id) && !(NT.el && NT.id === id)) { e.stopImmediatePropagation(); noteOpen(id); return; } if (LBL) labelBuild(LBL, LBM, b.getBoundingClientRect()); }, true); } }
+      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); var cd = b.closest('.hm-card'), tr = !cd && b.closest('.hm-trio'), id = cd ? cd.dataset.id : tr && tr.dataset.ni; if (id && noteHas(id) && !(NT.el && NT.id === id)) { e.stopImmediatePropagation(); noteOpen(id); return; }
+        if (!LBL) return; if (LBL.as === 'card' && !D.getElementById('lbm')) return labelMini(LBL, LBMEM); var r = b.getBoundingClientRect(); labelBuild(LBL, LBMEM, LBL.as === 'over' ? null : { left: r.left, top: r.top, width: r.width, height: r.height, byI: true }); }, true); } }
   /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
      A tap opens the whole label over the full screen, its film playing; closed, the small card comes back. × puts it away for the visit */
   function labelMini(L, mem) { if (D.getElementById('lbm') || D.getElementById('lb')) return;
@@ -846,7 +851,7 @@
       /* still past the screen with the film up: the film gives way, down to half its width */
       if (fv0 && fv0.offsetHeight) while (fw > 50 && box.scrollHeight > box.clientHeight + 1) { fw -= 5; fv0.style.maxWidth = fw + '%'; } };
     var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen' + (L.key || ''), '1'); if (nv.checked) mem(localStorage, 'da.label.never' + (L.key || ''), '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
-        lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (from && !nv.checked) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
+        lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (from && !nv.checked && L.as === 'card' && !from.byI) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
     if (L.credit || L.num) { var cr = mk('p', 'lb-cr', null, c); mk('span', '', L.credit || '', cr); mk('span', '', L.num || '', cr); }
     var fold = Math.max(0, Math.round(+L.fold) || 0), np = 0, b = mk('div', 'lb-b', null, c); String(L.body || '').split(/\n\s*\n/).forEach(function (t) { t = t.trim(); if (t) mk('p', fold && np++ >= fold ? 'lb-x' : '', t, b); });
@@ -1206,7 +1211,7 @@
       for (var i = 0; i < ls.length; i++) ls[i].style.transform = RM.matches || (still && i === 2) ? '' : 'translate3d(0,' + (p * d[i] * r.height).toFixed(1) + 'px,0)';
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
-    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); envAt(nc); } lbmAt(n);
+    var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; if (NT.byI && NT.el && NT.id !== nc) noteOut(); noteWait(); var lm = D.getElementById('lbm'); if (lm) lm.remove(); envAt(nc); } lbmAt(n);
     if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || (NT.byI ? nr.bottom < 0 || nr.top > vh : nr.bottom < vh * 0.4 || nr.top > vh * 0.6)) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
@@ -1978,7 +1983,8 @@
     else if (J.back) { J.tx = VW * 0.5; J.ty = lo; if (J.y < lo + 10) J.back = false; }
     else if (open && J.goal && t - J.goal.t < 30 && Math.hypot(J.goal.x - J.x, J.goal.y - J.y) > 26) { J.tx = J.goal.x; J.ty = J.goal.y; }
     else if (open) { J.goal = null; if (t > J.until || Math.hypot(J.tx - J.x, J.ty - J.y) < 40) { J.tx = VW * (0.12 + Math.random() * 0.76); J.ty = TOPH + (CH - TOPH) * (0.12 + Math.random() * 0.6); J.until = t + 16 + Math.random() * 12; } }
-    else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; }
+    else { var mid = J.x > VW * 0.32 && J.x < VW * 0.68; if (mid && t > (J.midNext || 0)) { J.midUntil = t + 7 + Math.random() * 5; J.midNext = J.midUntil + 12 + Math.random() * 10; }
+      if (t < (J.midUntil || 0)) { J.tx = VW * 0.5 + Math.sin(t * 0.21) * VW * 0.1; J.ty = lo + Math.cos(t * 0.17) * TOPH * 0.14; } else { J.tx = J.x - 80; J.ty = lo + Math.sin(t * 0.07) * TOPH * 0.12; } }
     var want = Math.atan2(J.ty - J.y, J.tx - J.x), d = Math.atan2(Math.sin(want - J.a), Math.cos(want - J.a)), near = Math.min(1, Math.hypot(J.tx - J.x, J.ty - J.y) / 70), turn = d * Math.min(1, dt * (far ? 0.9 : open ? (J.goal ? 0.22 : 0.4) : 0.3)) * (0.25 + 0.75 * near), cap = dt * (far ? 0.5 : 0.32); J.a += Math.max(-cap, Math.min(cap, turn));
     if (c < 0.28) { var th = (far ? 40 : open ? (J.goal ? 13 : 22) : 11) * S * dt; J.vx += Math.cos(J.a) * th; J.vy += Math.sin(J.a) * th; }
     J.vx *= Math.pow(0.5, dt); J.vy *= Math.pow(0.5, dt); J.vy += 0.5 * dt;

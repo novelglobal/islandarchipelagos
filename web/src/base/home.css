@@ -2055,9 +2055,13 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 @media (prefers-reduced-motion: reduce) { #hm .ik, #hm .ik * { animation: none !important; } }
 
 /* the label as a small i: foot left of every card; top right on the first card's words side */
-#hm .hm-i { position: absolute; left: 10px; bottom: 10px; z-index: 7; width: 24px; height: 24px; padding: 0; display: grid; place-items: center; border: 1.5px solid #fff; border-radius: 50%; background: transparent; color: #fff; mix-blend-mode: difference; font: 600 12px/1 'IBM Plex Mono', ui-monospace, monospace; opacity: .72; cursor: pointer; }
+#hm .hm-i { position: absolute; right: 10px; bottom: 10px; z-index: 3; width: 22px; height: 22px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: #F4F1E8; color: #241B45; box-shadow: 0 0 0 1px rgba(36, 27, 69, .18), 0 1px 4px rgba(0, 0, 0, .28); font: 600 11px/1 'IBM Plex Mono', ui-monospace, monospace; cursor: pointer; opacity: .92; -webkit-tap-highlight-color: transparent; }
 #hm .hm-i:hover, #hm .hm-i:focus-visible { opacity: 1; }
 #hm .hm-i.hm-i-top { top: 10px; right: 10px; left: auto; bottom: auto; }
+/* one i for a nine: small, just outside its foot right, kept on the screen; on a screen with a pointer it shows while the nine is under it */
+#hm .hm-trio.p9 { position: relative; }
+#hm .hm-i.hm-i-nine { right: -4px; bottom: -13px; width: 18px; height: 18px; font-size: 9.5px; }
+@media (hover: hover) { #hm .hm-i.hm-i-nine { opacity: 0; transition: opacity .2s; } #hm .hm-trio.p9:hover > .hm-i-nine, #hm .hm-i.hm-i-nine:focus-visible { opacity: .92; } }
 
 /* the island chart's shelf: the site's books as spines, lit when on this island's shelf */
 #hm .ik-spines { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding: 6px 4px 0; border-bottom: 3px solid currentColor; overflow-x: auto; scrollbar-width: none; }
