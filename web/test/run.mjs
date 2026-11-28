@@ -2551,7 +2551,7 @@ for (const HD of [false, true]) if (run('home')) try {
   check(`home (${tag}): a saved board keeps four cables at most and drops a pair the ports refuse; scrolling sinks the board`, h2 && h3.w.length === 4 && !h3.w.some(x => x.join() === 'zine,kit') && h3.low, JSON.stringify(h3));
   /* a play from LIVE: refused without a printed code; with one, in the sandbox, up at once as a small card that runs sealed and prints onto its paper */
   if (!HD) { const post = o => apiServer.fetch(new URL('/api/plays', API_O), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(o) });
-    await admin('settings', { allOpen: false });   /* what a printed code guards is checked with ALL OPEN off */
+    await admin('settings', { allOpen: false, madeShow: false });   /* what a printed code guards is checked with ALL OPEN off, and who sees what is made as built */
     const pre = (await (await apiServer.fetch(new URL('/api/plays', API_O))).json()).plays.length;
     const bad = (await post({ who: 'KTW', n: '', src: 'print(1)' })).status, nocode = (await post({ who: 'KTW', n: 'Telegram', src: 'print(1)' })).status; await admin('makers', { who: 'KTW' }); const sent = await post({ who: 'KTW', n: 'Telegram', th: 'cyan', src: ["big('HI')", "print('FAR ISLAND')", "say('ok')"].join('\n') }), code = (await sent.json()).code;
     const before = (await (await apiServer.fetch(new URL('/api/plays', API_O))).json()).plays.length;
