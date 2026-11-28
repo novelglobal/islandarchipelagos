@@ -817,7 +817,7 @@
   var LBL = null, LBMEM = null;
   function needInfo(cb) { if (window.INFO) return cb(); var s = D.createElement('script'); s.src = '/info.js'; s.onload = function () { try { cb(); } catch (e) { /* drawn without */ } }; D.head.appendChild(s); }
   var memNo = function () { return null; };
-  function labelDots(L, mem) { if (L) { LBL = L; LBMEM = mem; } var mkI = function (el, cls) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
+  function labelDots(L, mem) { if (L) LBL = L; if (mem) LBMEM = mem; var mkI = function (el, cls) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (cls ? ' ' + cls : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); };
     var add = function () { var cl = D.getElementById('hm-col'); if (!cl) return;
       [].forEach.call(cl.querySelectorAll('.hm-card'), function (cd) { if (cd.closest('.hm-trio.p9')) return; var oc = cd.dataset.id && byId(cd.dataset.id); if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id)) && !(oc && oc.info)) return;
         if (cd.classList.contains('sk-intro')) mkI(cd.querySelector('.in-f'), 'hm-i-top'); else mkI(cd); });
@@ -857,6 +857,7 @@
       while (px > (full ? 11.5 : 8) && box.scrollHeight > box.clientHeight + 1) { px -= 0.25; c.style.fontSize = px + 'px'; }
       /* still past the screen with the film up: the film gives way, down to half its width */
       if (fv0 && fv0.offsetHeight) while (fw > 50 && box.scrollHeight > box.clientHeight + 1) { fw -= 5; fv0.style.maxWidth = fw + '%'; } };
+    mem = typeof mem === 'function' ? mem : function () { return null; };   /* closing never waits on what can be kept */
     var shutLb = function () { if (lb.classList.contains('lb-out')) return; mem(sessionStorage, 'da.label.seen' + (L.key || ''), '1'); if (nv.checked) mem(localStorage, 'da.label.never' + (L.key || ''), '1'); if (vid) { try { vid.pause(); } catch (e) { /* not playing */ } }
         lb.classList.add('lb-out'); setTimeout(function () { lb.remove(); if (from && !nv.checked && L.as === 'card' && !from.byI) labelMini(L, mem); }, 280); D.removeEventListener('keydown', esc2); removeEventListener('resize', fit); }, esc2 = function (e) { if (e.key === 'Escape') shutLb(); };
     if (L.top) mk('p', 'lb-top', L.top, c); if (L.sub) mk('p', 'lb-sub', L.sub, c); if (L.title) mk('h2', 'lb-t', L.title, c); if (L.meta) mk('p', 'lb-m', L.meta, c);
