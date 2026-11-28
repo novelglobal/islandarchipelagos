@@ -32,6 +32,7 @@ type Config struct {
 	Open       bool     `json:"open,omitempty"`   // listed for every island browser; closed unless its keeper opens it
 	Paused     bool     `json:"paused,omitempty"` // the keeper has stopped every print, from any phone and any site, until they start it again
 	Failed     int      `json:"failed,omitempty"` // prints the printer did not take (paper out, cover open, unplugged)
+	Mesh       bool     `json:"mesh,omitempty"`   // the mesh door (/mesh) is open; off as built, the keeper turns it on with the slip key
 }
 
 type Link struct {

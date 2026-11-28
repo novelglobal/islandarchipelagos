@@ -333,11 +333,11 @@
       (() => { let L = null; try { L = p.last ? JSON.parse(p.last) : null; } catch (e) { /* none */ } const ok = b => b ? '✓' : '✗';
         const pi = `${ok(fresh(p.seen))} PI ${p.seen ? 'HEARD ' + when(p.seen) : 'NEVER HEARD'}`;
         const scr = p.touch ? `${ok(fresh(p.touch_seen))} SCREEN ${p.touch_seen ? 'ASKED ' + when(p.touch_seen) : 'NEVER ASKED (its three lines, or its site?)'}` : '· NO SCREEN';
-        const mesh = `${p.mesh ? '✓ MESH ON' : '· MESH OFF'}`;
+        const mesh = MESH_ON ? `  ·  ${p.mesh ? '✓ MESH ON' : '· MESH OFF'}` : '';
         const last = L ? `LAST SLIP ${L.code || ''} ${String(L.status).toUpperCase()} ${when(L.at)}${L.paper ? '' : ' (RADIO ONLY)'}${L.mesh ? ' · WITH A MESH LINE' : ''}${L.error ? ' · ' + L.error : ''}` : '✗ NO SLIP HAS BEEN SENT TO THIS PRINTER';
         const hint = !L ? 'Pieces go to the printer chosen on the site; make one on this site and print it here.' : L.status === 'held' ? (p.touch ? 'Waiting for a press on the touch screen.' : 'Waiting for approval below.') : L.status === 'queued' ? (fresh(p.seen) ? 'The Pi will take it in a moment.' : 'Waiting for the Pi to ask.') : L.status === 'failed' ? 'The Pi could not print it: see the error (printd answered 500 means the printer is off or unplugged).' : '';
         let R = null; try { R = p.refused ? JSON.parse(p.refused) : null; } catch (e) { /* none */ } const ref = R && (!L || R.at > L.at) ? `  ·  ✗ LAST SEND REFUSED ${when(R.at)}: ${R.why}` : '';
-        return el('div', { class: 'note', text: `${pi}  ·  ${scr}  ·  ${mesh}  ·  ${last}${ref}${hint ? '  —  ' + hint : ''}` }); })(),
+        return el('div', { class: 'note', text: `${pi}  ·  ${scr}${mesh}  ·  ${last}${ref}${hint ? '  —  ' + hint : ''}` }); })(),
       /* the Wi-Fi each is on, as each last said: the same, or not; and how strong */
       (() => { const J = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } }; const a = J(p.net), b = J(p.touch_net); if (!a && !b) return null;
         const bars = r => (r == null ? '' : r > -60 ? ' STRONG' : r > -70 ? ' GOOD' : r > -78 ? ' WEAK' : ' TOO WEAK'); const one = (who, x) => (x ? `${who} ON ${x.n} (${x.rssi} dBm${bars(x.rssi)})${x.ip ? ' AT ' + x.ip : ''}${x.g ? ' · ' + x.g + ' GHZ' : ''}${x.c === '2.4' ? ' (JOINS 2.4 GHZ ONLY)' : x.c === '5' ? ' (JOINS 2.4 AND 5 GHZ)' : ''}${x.v ? ' · ' + String(x.v).toUpperCase() : ' · OLDER VERSION'} ${when(x.at)}` : `${who} HAS NOT SAID`);
@@ -354,7 +354,7 @@
         p.paired ? el('button', { type: 'button', class: 'no', text: 'UNPAIR', onclick: async () => { await setP(p.id, { action: 'unpair' }); show('printers'); } }) : null,
         p.id !== 'novelglobal' ? el('button', { type: 'button', class: p.links === '*' ? 'on' : '', text: 'CONNECTIONS: ' + (p.links === '*' ? 'ALL' : (p.links || 'NONE').toUpperCase()), onclick: async () => { const n = prompt('Its connections, by name with commas: wish, radio, art, words, cards, codes. Or all.', p.links === '*' ? 'all' : (p.links || '')); if (n == null) return; const l = /^\s*all\s*$/i.test(n) ? ['wish', 'radio', 'art', 'words', 'cards', 'codes'] : n.toLowerCase().split(/[\s,]+/); await setP(p.id, { action: 'links', links: l }); show('printers'); } }) : null,
         el('button', { type: 'button', class: p.auto ? 'on' : '', text: p.auto ? 'PRINTS WITHOUT APPROVAL' : 'PRINTS AFTER APPROVAL', onclick: async () => { await setP(p.id, { action: 'auto', on: !p.auto }); show('printers'); } }),
-        el('button', { type: 'button', class: p.mesh ? 'on' : '', text: p.mesh ? 'MESH ON' : 'MESH OFF', onclick: async () => { await setP(p.id, { action: 'mesh', on: !p.mesh }); show('printers'); } }),
+        !MESH_ON ? null : el('button', { type: 'button', class: p.mesh ? 'on' : '', text: p.mesh ? 'MESH ON' : 'MESH OFF', onclick: async () => { await setP(p.id, { action: 'mesh', on: !p.mesh }); show('printers'); } }),
         /* a small touch screen beside the printer: every slip waits on it; one press of the jellyfish prints, a long press squashes it */
         el('button', { type: 'button', class: p.touch ? 'on' : '', text: p.touch ? 'TOUCH SCREEN ON' : 'TOUCH SCREEN OFF', onclick: async () => {
           if (p.touch) { if (!confirm('Turn the touch screen off? Slips go back to approval here.')) return; await setP(p.id, { action: 'touch', on: false }); show('printers'); return; }
@@ -535,11 +535,15 @@
     if (want) look(); return sec;
   }
   /* OPEN JOINING: while on (the pilot), a new island joins by itself the moment it asks, and its keeper gets their key; off, each waits for PAIR AN ISLAND here */
-  async function joinCard() { const st = await (await api('settings')).json(); const c = el('section', { class: 'printer' });
+  let MESH_ON = false;
+  async function joinCard() { const st = await (await api('settings')).json(); MESH_ON = !!st.meshOn; const c = el('section', { class: 'printer' });
     c.append(el('h3', { text: 'OPEN JOINING' }), el('div', { class: 'note', text: st.openJoin ? 'ON: A NEW ISLAND JOINS BY ITSELF (UP TO 160), WITHOUT APPROVAL HERE. IT PRINTS ONLY ON ITS OWN PRINTER UNTIL IT IS MADE TWO-WAY.' : 'OFF: EACH NEW ISLAND WAITS FOR ITS CODE TO BE APPROVED BELOW.' }),
       el('div', { class: 'acts' }, el('button', { type: 'button', class: st.openJoin ? 'on' : '', text: st.openJoin ? 'OPEN JOINING ON' : 'OPEN JOINING OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ openJoin: !st.openJoin }) }); show('printers'); } })),
       el('h3', { text: 'GHOST ISLANDS' }), el('div', { class: 'hint', text: st.ghostOn ? 'ON: ANYONE CAN START A GHOST ISLAND ON /TWIN (40 AT MOST, 3 A DAY FROM ONE PLACE): AN ISLAND WITH NO PRINTER, ITS PRINTS DRAWN ON ITS TWIN. ADDING A PI BY ITS PAIR CODE MAKES IT A REAL ISLAND, KEEPING ITS KEY, JOINS AND CARDS. GHOSTS ARE NOT ON THE MAP.' : 'OFF: NO NEW GHOST ISLANDS. THOSE MADE STAY.' }),
-      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.ghostOn ? 'on' : '', text: st.ghostOn ? 'GHOSTS ON' : 'GHOSTS OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ ghostOn: !st.ghostOn }) }); show('printers'); } }))); return c; }
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.ghostOn ? 'on' : '', text: st.ghostOn ? 'GHOSTS ON' : 'GHOSTS OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ ghostOn: !st.ghostOn }) }); show('printers'); } })),
+      /* the mesh: off as built, every mesh button and choice hidden everywhere; on, each island's own MESH switch shows below */
+      el('h3', { text: 'MESH' }), el('div', { class: 'hint', text: st.meshOn ? 'ON: MESH IS A PRINTER ON THE PAPER, A WAY OUT ON CARDS, AND EACH ISLAND HAS ITS OWN MESH SWITCH BELOW.' : 'OFF: NO MESH ANYWHERE. EVERYTHING FOR IT IS KEPT, ONE TAP AWAY.' }),
+      el('div', { class: 'acts' }, el('button', { type: 'button', class: st.meshOn ? 'on' : '', text: st.meshOn ? 'MESH ON' : 'MESH OFF', onclick: async () => { await api('settings', { method: 'POST', body: JSON.stringify({ meshOn: !st.meshOn }) }); show('printers'); } }))); return c; }
   /* ───────── pop-ups: a card for one place and one weekend. Build one (from a template), open it, print its QR for the poster,
      close it after; keep any as a template for the next. All of it is the pops setting: {pops:[…], tpl:[…]} ───────── */
   const POP_ANIMALS = [['frill', 'FRILLED LIZARD'], ['roo', 'KANGAROO'], ['dingo', 'DINGO'], ['emu', 'EMU'], ['quokka', 'QUOKKA'], ['wombat', 'WOMBAT'], ['echidna', 'ECHIDNA']];
@@ -964,7 +968,7 @@
       el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'VISITS · 14 DAYS' }), trace(days.map(d => per(d, /^open-/))), el('div', { class: 'ticks' }, ...days.map(d => el('span', { text: d.slice(8) })))),
       el('div', { class: 'row wide' },
         el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'UNITS' }), ...o.printers.map(p => el('div', { class: 'unit' + (fresh(p.seen) ? ' live' : '') }, el('i', { class: 'led' }), el('b', { text: (p.name || p.id).toUpperCase() }),
-          el('span', { text: [p.paired ? 'PAIRED' : 'UNPAIRED', p.seen ? (fresh(p.seen) ? 'LISTENING' : 'LAST ' + new Date(p.seen).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) : 'NEVER HEARD', p.mesh ? 'MESH' : '', p.touch ? 'SCREEN' : ''].filter(Boolean).join(' · ') })))),
+          el('span', { text: [p.paired ? 'PAIRED' : 'UNPAIRED', p.seen ? (fresh(p.seen) ? 'LISTENING' : 'LAST ' + new Date(p.seen).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) : 'NEVER HEARD', p.mesh && o.settings && o.settings.meshOn ? 'MESH' : '', p.touch ? 'SCREEN' : ''].filter(Boolean).join(' · ') })))),
         el('div', { class: 'cell' }, el('i', { class: 'cap', text: 'ACTIVITY · TODAY / 7 DAYS' }), ...(keys.length ? keys.map(k => el('div', { class: 'act' }, el('span', { text: TRAFFIC[k].toUpperCase() }), el('i', { class: 'bar', style: `width:${Math.round(100 * (o.week[k] || 0) / top)}%` }), el('b', { text: `${o.today[k] || 0} / ${o.week[k] || 0}` }))) : [el('span', { class: 'cap', text: 'NOTHING COUNTED YET' })]))));
     main.replaceChildren(...head('Overview'), hud);
     const again = () => { ovT = setTimeout(() => { if (tab !== 'overview') return; if (document.hidden) return again(); overview().catch(() => {}); }, 30000); }; again();

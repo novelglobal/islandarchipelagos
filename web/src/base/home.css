@@ -2058,3 +2058,13 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .hm-i { position: absolute; left: 10px; bottom: 10px; z-index: 7; width: 24px; height: 24px; padding: 0; display: grid; place-items: center; border: 1.5px solid #fff; border-radius: 50%; background: transparent; color: #fff; mix-blend-mode: difference; font: 600 12px/1 'IBM Plex Mono', ui-monospace, monospace; opacity: .72; cursor: pointer; }
 #hm .hm-i:hover, #hm .hm-i:focus-visible { opacity: 1; }
 #hm .hm-i.hm-i-top { top: 10px; right: 10px; left: auto; bottom: auto; }
+
+/* the island chart's shelf: the site's books as spines, lit when on this island's shelf */
+#hm .ik-spines { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding: 6px 4px 0; border-bottom: 3px solid currentColor; overflow-x: auto; scrollbar-width: none; }
+#hm .ik-spine { flex: 0 0 22px; height: var(--h, 70%); padding: 6px 0; border: 1px solid currentColor; border-bottom: 0; background: transparent; color: inherit; opacity: .32; cursor: pointer;
+  writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; gap: 6px; overflow: hidden; font: 600 9px/1 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; transition: opacity .2s, transform .2s; }
+#hm .ik-spine i { font-style: normal; font-weight: 400; opacity: .7; }
+#hm .ik-spine b, #hm .ik-spine i { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#hm .ik-spine b { max-height: 70%; } #hm .ik-spine i { max-height: 28%; }
+#hm .ik-spine.on { opacity: 1; }
+#hm .ik-spine:active { transform: rotate(180deg) translateY(4px); }

@@ -33,7 +33,7 @@
     it(p.paper === 0 ? 'no' : p.paper == null ? 'x' : '', svg('pp', '0 0 14 14', '<rect x="3" y="1.5" width="8" height="11" rx="1"/>' + (p.paper === 1 ? '<rect class="f" x="5" y="4" width="4" height="6"/>' : p.paper === 0 ? '<path d="M3 13L11 1" stroke="currentColor" stroke-width="1.6"/>' : '')), p.paper === 1 ? 'HAS PAPER' : p.paper === 0 ? 'NO PAPER' : 'PAPER ?', p.paper === 1 ? 'Has paper' : p.paper === 0 ? 'Out of paper' : 'Paper not known');
     var bars = '', h = [4, 7.5, 11]; for (var k = 0; k < 3; k++) bars += '<rect' + (p.sig != null && p.sig > k ? ' class="y"' : '') + ' x="' + (1 + k * 4.5) + '" y="' + (13 - h[k]) + '" width="3" height="' + h[k] + '"/>';
     it(p.sig == null ? 'x' : '', svg('wf', '0 0 14 14', bars), 'WI-FI', p.sig == null ? 'Wi-Fi not known' : ['Wi-Fi weak', 'Wi-Fi fair', 'Wi-Fi good', 'Wi-Fi strong'][p.sig]);
-    it(p.mesh ? '' : 'x', svg('ms', '0 0 14 14', '<circle cx="7" cy="7" r="1.4"/><path d="M4 4a4.3 4.3 0 0 0 0 6M10 4a4.3 4.3 0 0 1 0 6M2 2a7.2 7.2 0 0 0 0 10M12 2a7.2 7.2 0 0 1 0 10"/>'), p.mesh ? 'MESH' : 'NO MESH', p.mesh ? 'On the mesh: reached by radio, with no internet' : 'Not on the mesh');
+    if (MESH_ON) it(p.mesh ? '' : 'x', svg('ms', '0 0 14 14', '<circle cx="7" cy="7" r="1.4"/><path d="M4 4a4.3 4.3 0 0 0 0 6M10 4a4.3 4.3 0 0 1 0 6M2 2a7.2 7.2 0 0 0 0 10M12 2a7.2 7.2 0 0 1 0 10"/>'), p.mesh ? 'MESH' : 'NO MESH', p.mesh ? 'On the mesh: reached by radio, with no internet' : 'Not on the mesh');
     if (p.queue) it('', el('span', 'q', String(Math.min(99, p.queue))), 'WAITING', p.queue + ' waiting to print');
     return g; }
 
@@ -125,7 +125,8 @@
   try { navigator.permissions.query({ name: 'geolocation' }).then(function (s) { if (s.state === 'granted') { locate(false); compass(); } }, function () { /* ask on LOCATE */ }); } catch (e) { /* ask on LOCATE */ }
 
   function stale() { $('#live').classList.toggle('stale', !LAST || Date.now() - LAST > 70000); }
-  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; LAST = Date.now(); stale(); draw(); }, stale); }
+  var MESH_ON = false;   /* the mesh glance shows only while the owner has the mesh on */
+  function load() { return fetch('/api/isles', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (j) { LIST = j.isles || []; MESH_ON = !!j.meshOn; LAST = Date.now(); stale(); draw(); }, stale); }
   load(); setInterval(function () { if (!D.hidden) load(); else stale(); }, 15000);
   D.addEventListener('visibilitychange', function () { if (!D.hidden) load(); });
 })();

@@ -1542,7 +1542,7 @@
   var moonOn = true;
   function moonSync() { var el = $('#au-moon'); if (!el) return; var t = Date.now(), m = NG.moon(t), h0 = hereOf(); el.hidden = !moonOn || !DARK;
     el.querySelector('path').setAttribute('d', NG.moonPath(m.f, h0.lat, 9)); var w = NG.moonTip(t); el.setAttribute('aria-label', w); el.dataset.fw = w; }
-  fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (st) { if (st && st.moonShow === false) { moonOn = false; moonSync(); } }).catch(function () {});
+  fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (st) { if (st) meshModes(!!st.meshOn); if (st && st.moonShow === false) { moonOn = false; moonSync(); } }).catch(function () {});
   moonSync(); setInterval(moonSync, 6e5);
   /* PRINT's keys say what they are under a mouse: its word, small, over the key a moment after the pointer rests on it */
   var hovT = 0, hov = document.createElement('div'); hov.id = 'au-hov'; hov.hidden = true; document.body.appendChild(hov);
@@ -2231,7 +2231,9 @@
   }
   /* where a finished piece goes: printed, printed and said over the mesh, kept on this phone's wall, or sent to novel.global with no printer
      (waiting for approval, or on the site at once when the approval page says so; never a print, so never the devices) */
-  var PMODES = [['paper', 'print', '80 mm'], ['mesh', 'sig', '80 mm + mesh'], ['wall', 'wall', 'wall only'], ['send', 'live', 'novel.global']];
+  /* the mesh way out shows only while the owner has the mesh on (meshOn); off, it is not among the ways */
+  var PM_MESH = ['mesh', 'sig', '80 mm + mesh'], PMODES = [['paper', 'print', '80 mm'], ['wall', 'wall', 'wall only'], ['send', 'live', 'novel.global']]; if (store.get('da.mesh', 0)) PMODES.splice(1, 0, PM_MESH);
+  function meshModes(on) { store.set('da.mesh', on ? 1 : 0); var i = PMODES.indexOf(PM_MESH); if (on && i < 0) PMODES.splice(1, 0, PM_MESH); if (!on && i >= 0) { PMODES.splice(i, 1); if (S.pmode === 'mesh') { S.pmode = 'paper'; store.set('da.aura.pmode', 'paper'); } } }
   S.pmode = store.get('da.aura.pmode', 'paper'); if (!PMODES.some(function (m) { return m[0] === S.pmode; })) S.pmode = 'paper';
   var pmode = function () { return PMODES.filter(function (m) { return m[0] === S.pmode; })[0]; };
   function printNow() {

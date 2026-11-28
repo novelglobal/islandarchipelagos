@@ -72,6 +72,10 @@ func TestMeshIn(t *testing.T) {
 		p.ServeHTTP(w, r)
 		return w.Code
 	}
+	if send("127.0.0.1:5000", "hello") != 404 {
+		t.Fatal("the mesh door is open as built")
+	}
+	a.update(func(c *Config) { c.Mesh = true })
 	if send("10.42.0.9:5000", "hello") != 403 {
 		t.Fatal("a phone on the island's Wi-Fi reached the mesh door")
 	}

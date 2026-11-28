@@ -624,6 +624,8 @@
     return '<span class="hm-pl" aria-label="Made with">' + l.map(function (u) { return u === 'mark' ? '<i class="pl-ng">' + MARK + '<b>novel.global</b></i>' : '<img alt="" decoding="async" loading="lazy" class="pl-' + esc(u.replace(/^.*\//, '').replace(/\..*$/, '')) + '" src="' + esc(u) + '">'; }).join('') + '</span>'; }
   function logosCheck() { $$('.hm-pl img', col).forEach(function (im) { var gone = function () { var pl = im.parentNode; im.remove(); if (pl && !pl.children.length) pl.remove(); }; if (im.complete && !im.naturalWidth) gone(); else im.addEventListener('error', gone); }); }
   function applyCards(text) {
+    /* the radio listens from this island's own place while its home is the one shown (at.js reads it); the site's own otherwise */
+    store.set('da.radio.at', IH && IH.radio ? IH.radio : null); store.set('da.book.shelf', IH && IH.books && IH.books.length ? IH.books.join('.') : '');
     if (text) { var order = [], hide = {};
       String(text).split(/\n(?=\s*#)/).forEach(function (blk) { var ls = blk.split('\n'), m = /^\s*#\s*([a-z0-9-]{1,24})\s*$/i.exec(ls[0] || ''); if (!m) return; var id = m[1].toLowerCase(), c = byId(id);
         if (!c) { c = { id: id, size: 'full', title: id.toUpperCase(), opens: 'panel', island: 'novelglobal', art: 'plain', motion: 'shadow', where: [-37.8136, 144.9631] }; CARDS.push(c); } order.push(id);
@@ -1728,10 +1730,25 @@
       pane: function (p) { return ikGauge('data-gap', [''].concat(p.gaps || []), p.gap == null ? '' : p.gap, function (g) { return IK_GAP[g]; }, 'Time between one person’s prints here'); } },
     { k: 'test', part: 'home', name: 'TEST', say: 'A copy to try changes on.',
       show: function (p, own, isle) { return own && !isle && ('test' in p || !!p.testOf); }, set: function (p) { return !!(p.test || p.testOf); }, badge: ikNo,
-      pane: function (p) { return testKeep(p).replace(/^<p class="hm-h"[^>]*>TEST<\/p>/, ''); } }
+      pane: function (p) { return testKeep(p).replace(/^<p class="hm-h"[^>]*>TEST<\/p>/, ''); } },
+    { k: 'radio', part: 'home', name: 'RADIO', say: 'Where your radio listens.',
+      show: function (p) { return p.home !== undefined; }, set: function (p) { return !!(p.home && p.home.radio); }, badge: ikNo,
+      pane: function (p) { var r = (p.home || {}).radio || null, w = HK.rat || r, km = (w && w.km) || 3;
+        return (w ? '<p class="ik-say" title="Its centre">' + esc((w.name ? w.name + ' · ' : '') + (+w.lat).toFixed(3) + ', ' + (+w.lng).toFixed(3)) + '</p>' : '<p class="ik-say" title="Unset: the site’s own place">SITE</p>') +
+          '<div class="hm-row"><button class="hm-btn" data-rhere title="Where this phone is now">HERE</button>' + (r ? '<button class="hm-btn" data-roff title="Back to the site’s own place">SITE</button>' : '') + '</div>' +
+          ikGauge('data-rkm', [1, 3, 10, 30], km, function (n) { return n + ' KM'; }, 'How far it listens') +
+          '<form class="hm-row ik-raf"><input name="n" maxlength="40" autocomplete="off" placeholder="PLACE" aria-label="Place" value="' + esc((w && w.name) || '') + '"><input name="c" maxlength="60" autocomplete="off" placeholder="COUNTRY" aria-label="Whose Country" value="' + esc((w && w.country) || '') + '">' +
+          '<button class="hm-btn ik-go"' + (w ? '' : ' disabled') + '>SAVE</button></form>'; } },
+    { k: 'books', part: 'home', name: 'BOOKS', say: 'The books on your shelf.',
+      show: function (p) { return p.home !== undefined; }, set: function (p) { return !!(p.home && p.home.books && p.home.books.length); }, badge: function (p) { var b = (p.home || {}).books; return b && b.length ? String(b.length) : ''; },
+      pane: function (p) { var B = HK.shelf, on = (p.home || {}).books || [];
+        if (!B) return '<p class="ik-say">· · ·</p>';
+        return '<div class="ik-spines" role="group" aria-label="The shelf">' + B.ids.map(function (id, i) { var t = String(B.all[i] || '').split(' · '), k = on.indexOf(id), lit = !on.length || k >= 0;
+          return '<button type="button" class="ik-spine' + (lit ? ' on' : '') + '" data-bk="' + id + '" aria-pressed="' + (k >= 0) + '" title="' + esc(B.all[i] || '') + '" style="--h:' + (62 + (id % 5) * 7) + '%;--t:' + (id % 7) + '"><b>' + esc(t[0] || '') + '</b><i>' + esc(t[1] || '') + '</i></button>'; }).join('') + '</div>' +
+          (on.length ? '<div class="hm-row"><button class="hm-btn" data-bkall title="Every book on the site">ALL</button></div>' : ''); } }
   ];
   var MYCODE = function () { return store.get('da.who.ok', 0) ? store.get('da.who', '') : ''; };
-  var IK_ORD = ['build', 'name', 'pics', 'home', 'passes', 'cards', 'use', 'picks', 'gang', 'links', 'gap', 'printer', 'test'];
+  var IK_ORD = ['build', 'name', 'pics', 'home', 'radio', 'books', 'passes', 'cards', 'use', 'picks', 'gang', 'links', 'gap', 'printer', 'test'];
   /* the next good thing to do on it, shown as a small sun */
   function ikNext(p, has) { var l = (p.home || {}).label || {};
     if (has('pics') && !(p.pics || []).length) return 'pics';
@@ -1741,7 +1758,7 @@
   function ikSeed(s) { var h = 2166136261; s = String(s || 'island'); for (var i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); h = h || 7;
     return function () { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return (h >>> 0) / 4294967296; }; }
   /* where each thing stands on the island drawing (isle-art.js, ISLE.AT), as a share of the scene, so the keys sit on the things */
-  var IK_AT = { use: [125, 7, 1], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36, 1], pics: [229, 47], gang: [171, 52], passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84] };
+  var IK_AT = { use: [125, 7, 1], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36, 1], pics: [229, 47], gang: [171, 52], passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84], radio: [66, 22], books: [80, 66] };
   var ikPos = function (k) { var a = IK_AT[k] || [160, 40]; return 'left:' + ((a[0] - 20) / 2.8).toFixed(2) + '%;top:' + ((a[1] + 30) / 1.4).toFixed(2) + '%'; };
   /* the cards' own painter (card-art.js), for a code or a key kept as a picture; fetched when the menu opens */
   var ARTQ = null; function needArt(cb) { if (window.CARDART) return cb && cb(); if (ARTQ) { if (cb) ARTQ.push(cb); return; } ARTQ = cb ? [cb] : [];
@@ -1821,6 +1838,17 @@
         filePick(false, function (file) { b.textContent = '·'; shrinkPic(file).then(function (bl) { return fetch('/api/island/pics/' + n + q(), { method: 'PUT', headers: { authorization: 'Bearer ' + key, 'content-type': 'image/jpeg' }, body: bl }); }).then(function () { return call(); }).then(fill, function () { b.textContent = '×'; }); }); }); });
       $$('[data-sp]', box).forEach(function (b) { b.addEventListener('click', function () { call({ method: 'POST', body: JSON.stringify({ speed: +b.dataset.sp }) }).then(fill); beep(550, 0.05); }); });
       homeWire(box, p, post);
+      /* BOOKS: the site's shelf as spines; a tap puts one on or off this island's (all lit while none is chosen) */
+      if (HK.at === 'books' && !HK.shelf && !HK.shelfQ) { HK.shelfQ = 1; fetch('/api/book?list=1').then(function (r) { return r.json(); }).then(function (j) { HK.shelfQ = 0; if (j && j.ids) { HK.shelf = { ids: j.ids, all: j.all }; fill(p); } }, function () { HK.shelfQ = 0; }); }
+      $$('[data-bk]', box).forEach(function (b) { b.addEventListener('click', function () { var l = ((p.home || {}).books || []).slice(), id = +b.dataset.bk, i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); beep(i >= 0 ? 440 : 660, 0.04); post({ home: { books: l } }); }); });
+      var ba = $('[data-bkall]', box); if (ba) ba.addEventListener('click', function () { beep(440, 0.05); post({ home: { books: [] } }); });
+      /* RADIO: a centre from this phone, how far, the place and whose Country; held here until SAVE */
+      var rw = function (o) { HK.rat = Object.assign({}, HK.rat || (p.home || {}).radio || { km: 3 }, o); fill(p); };
+      var rh = $('[data-rhere]', box); if (rh) rh.addEventListener('click', function () { if (!navigator.geolocation) { rh.textContent = '×'; return; } rh.textContent = '· · ·';
+        navigator.geolocation.getCurrentPosition(function (g) { beep(660, 0.05); rw({ lat: +g.coords.latitude.toFixed(5), lng: +g.coords.longitude.toFixed(5) }); }, function () { rh.textContent = '×'; }, { enableHighAccuracy: true, timeout: 15000 }); });
+      $$('[data-rkm]', box).forEach(function (b) { b.addEventListener('click', function () { beep(550, 0.05); rw({ km: +b.dataset.rkm }); }); });
+      var ro = $('[data-roff]', box); if (ro) ro.addEventListener('click', function () { HK.rat = null; beep(440, 0.05); post({ home: { radio: null } }); });
+      var rf = $('.ik-raf', box); if (rf) rf.addEventListener('submit', function (e) { e.preventDefault(); var w = HK.rat || (p.home || {}).radio; if (!w) return; var o = { lat: w.lat, lng: w.lng, km: w.km || 3, name: rf.n.value.trim(), country: rf.c.value.trim() }; HK.rat = null; beep(660, 0.05); post({ home: { radio: o } }); });
       /* TEST, MOVE, UNDO: a refusal shows on the key itself, its reason in the hover */
       var tdo = function (b, o) { b.disabled = true; call({ method: 'POST', body: JSON.stringify(o) }).then(function (j) { if (j && j.id) { beep(660, 0.05); fill(j); return; } b.disabled = false; b.textContent = j && j.waiting ? 'WAIT' : '×'; b.title = j && j.waiting ? 'The ghosts are full; later' : String((j && j.error) || 'no'); beep(220, 0.1); }, function () { b.disabled = false; b.textContent = '×'; }); };
       var tb = $('[data-test]', box); if (tb) tb.addEventListener('click', function () { if (p.test) { HK.test = true; HK.mv = null; beep(550, 0.05); call().then(fill); return; } tdo(tb, { action: 'test' }); });

@@ -92,6 +92,10 @@ try {
   const im1 = await call('/api/img?u=' + encodeURIComponent('https://example.org/photos/1/medium.jpg')), im2 = await call('/api/img?u=' + encodeURIComponent('http://static.inaturalist.org/photos/1/medium.jpg')), im3 = await call('/api/img?u=' + encodeURIComponent('https://static.inaturalist.org/sounds/1.mp3'));
   check('photographs pass through from iNaturalist only', im1.status === 400 && im2.status === 400 && im3.status === 400, `${im1.status} ${im2.status} ${im3.status}`);
 
+  /* the mesh is off as built: nothing goes to it, no island is shown on it; one switch in admin turns it on */
+  { const ms0 = await call('/api/settings'), mz = await call('/api/stories', { method: 'POST', ip: '10.0.0.66', body: story('DA-M0FF', { dest: 'mesh', mesh: 'DA-M0FF A LINE' }) }), mp = await call('/api/partners');
+    check('the mesh is off as built: not offered, refused if sent to; one switch turns it on', ms0.json.meshOn === false && mz.status === 403 && mp.json.meshOn === false, JSON.stringify([ms0.json.meshOn, mz.status, mp.json.meshOn]));
+    await call('/api/admin/settings', { method: 'POST', key: KEY, body: { meshOn: true } }); }
   /* a story sent to Milk Bar: it waits, and so does its print */
   const s1 = await call('/api/stories', { method: 'POST', body: story('DA-7K2Q', { dest: 'milkbar', escpos: Buffer.from([0x1B, 0x40, 65, 10]).toString('base64'), mesh: 'DA-7K2Q NOISY MINER', photo: JPEG }) });
   check('a story sent waits for approval, and its print waits with it', s1.status === 201 && s1.json.status === 'waiting' && s1.json.job && s1.json.job.status === 'held', JSON.stringify(s1.json));
@@ -556,6 +560,13 @@ try {
         JSON.stringify(hm1.json.home.main) === '["zine","radio"]' && hm1.json.home.line.startsWith('Harbour wall, by the sea x') && hm1.json.home.line.length <= 60 && hmP.home.line === hm1.json.home.line && hm1.json.home.nines.join() === 'soon,utils' && hm1.json.home.off.join() === 'tarot' && hm1.json.home.label.links.length === 1 && !hm1.json.home.label.film
         && hmF.json.home.label.film.file === 'harbour.mp4' && hmBad.status === 400 && hm2.json.home.nines.join() === 'dev' && hm2.json.home.label.film.file === 'harbour.mp4' && hmP.home && hmP.home.main.join() === 'zine,radio' && hmP.home.label.title === 'Harbour',
         JSON.stringify({ h1: hm1.json.home, f: hmF.json, bad: hmBad.status, h2: hm2.json.home, p: hmP.home }));
+      /* its radio, anywhere: a centre, how far, the place and whose Country; nonsense is dropped; null gives back the site's own */
+      const rd1 = await call('/api/island', { method: 'POST', token: KB, body: { home: { radio: { lat: -36.848461, lng: 174.763336, km: 10, name: 'Tāmaki Makaurau', country: 'Ngāti Whātua Ōrākei' } } } }),
+        rd2 = await call('/api/island', { method: 'POST', token: KB, body: { home: { radio: { lat: 200, lng: 5 } } } }), rd3 = await call('/api/island', { method: 'POST', token: KB, body: { home: { radio: { lat: -36.8, lng: 174.7, km: 7 } } } }),
+        rd4 = await call('/api/island', { method: 'POST', token: KB, body: { home: { radio: null } } });
+      check('an island\'s radio listens from its own place: a centre, 1 to 30 km, the place and whose Country; nonsense dropped; unset, the site\'s own',
+        rd1.json.home.radio && rd1.json.home.radio.lat === -36.84846 && rd1.json.home.radio.km === 10 && rd1.json.home.radio.country === 'Ngāti Whātua Ōrākei' && !rd2.json.home.radio && rd3.json.home.radio.km === 3 && !rd4.json.home.radio && rd4.json.home.main.join() === 'zine,radio',
+        JSON.stringify([rd1.json.home.radio, rd2.json.home.radio, rd3.json.home.radio, rd4.json.home.radio]));
       check('MIRROR: an island shows another island\'s cards, and says so', jM.json.joins.mirror === B && jM.json.joins.to.length === 0 && pt1.json.partners.some(p => p.id === A && p.mirror === B), JSON.stringify(jM.json.joins));
       /* the bench: a ghost's parts (only those in spec/parts) and its cables between its own parts, kept with it */
       const bnS = (k, bench) => call('/api/twin', { method: 'POST', token: k, body: { bench } }), bn0 = await tw(KB);

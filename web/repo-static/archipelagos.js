@@ -150,6 +150,8 @@
 
   /* ───────── the files: everything for a complete build ───────── */
   var FILES = [['ISLAND OS', 'IMG', 'releases/latest'], ['IMAGER LIST', 'JSON', 'releases/latest/download/os-list.json', 1], ['SOURCE', 'ZIP', 'archive/refs/heads/main.zip', 1], ['ISLAND', 'GO', 'tree/main/kit/island'], ['IMAGE', 'PI-GEN', 'tree/main/kit/image'], ['RECEIVER', 'PY', 'tree/main/web/receiver'], ['ENGINE', 'GO', 'tree/main/engine'], ['SPEC', 'JSON', 'tree/main/spec'], ['SITE', 'JS', 'tree/main/web'], ['PARTS', 'TXT', 'build-a-solar-printer.txt', 2]];
+  /* LIST: the imager list's link, copied, to give Raspberry Pi Imager (its Content Repository): the island OS then on its list, Wi-Fi set in the imager */
+  var ol = $('#oslist'); if (ol) ol.addEventListener('click', function () { var u = GH + 'releases/latest/download/os-list.json', t = ol.textContent; (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { ol.textContent = '✓'; }, function () { prompt('', u); }).then(function () { setTimeout(function () { ol.textContent = t; }, 1400); }); });
   $('#files').innerHTML = FILES.map(function (f) { var href = f[3] === 2 ? f[2] : GH + f[2]; return '<li><a href="' + href + '"' + (f[3] === 2 ? ' download' : ' target="_blank" rel="noopener"') + '><span>' + f[0] + '</span><span class="kd">' + f[1] + '</span><span>' + (f[3] ? '↓' : '↗') + '</span></a></li>'; }).join('');
 
   /* the builder: inside novel.global it opens in this same sheet, so the back key comes home */

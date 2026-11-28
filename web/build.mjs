@@ -46,7 +46,7 @@ for (const [fam, w, st, pkg] of fonts) {
 fs.writeFileSync(path.join(out, 'style.css'), '/* Type: Poppins, IBM Plex Mono, VT323, Playfair Display, UnifrakturMaguntia, Sedgwick Ave Display and Rubik Bubbles, SIL Open Font License, kept in vendor/fonts */\n' + faces.join('\n') + '\n\n' + min(read(path.join(src, 'app.css')), 'css'));
 /* the app: every file in src/app, in name order, as one script */
 fs.writeFileSync(path.join(out, 'app.js'), min(fs.readdirSync(path.join(src, 'app')).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(src, 'app', f))).join('\n'), 'js'));
-for (const name of ['config.js', 'places.js', 'examples.js', 'field.js', 'briefs.js', 'field.html']) copy(path.join(src, name), path.join(out, name));
+for (const name of ['config.js', 'at.js', 'places.js', 'examples.js', 'field.js', 'briefs.js', 'field.html']) copy(path.join(src, name), path.join(out, name));
 fs.writeFileSync(path.join(out, 'marks.js'), min(read(path.join(src, 'marks.js')), 'js'));
 /* the guide reads the same marks and words as the app, in the same type */
 fs.writeFileSync(path.join(out, 'guide.html'), read(path.join(src, 'guide.html')).replace('/*FONTS*/', faces.join('\n')));
@@ -102,6 +102,7 @@ try { var dp = JSON.parse(localStorage.getItem('da.prefs') || '{}'); if (localSt
 <body>
 ${body}
 <script src="config.js"></script>
+<script src="at.js"></script>
 <script src="places.js"></script>
 <script src="examples.js"></script>
 <script src="field.js"></script>

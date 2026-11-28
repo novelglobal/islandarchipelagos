@@ -142,7 +142,9 @@
 
   /* ───────── book: one page a day ───────── */
   var book = {
-    feed: function (s, o) { return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1) + (s.shelf ? '&s=' + s.shelf : '') + (o.len === 0 ? '&z=s' : o.len === 1 ? '&z=m' : ''); },
+    /* the shelf a card was given, else the island's own (its keeper's pick, kept on this phone by its home), else the site's */
+    feed: function (s, o) { var ish = ''; try { ish = JSON.parse(localStorage.getItem('da.book.shelf') || '""') || ''; } catch (e) { ish = ''; } if (!/^\d{1,7}(?:\.\d{1,7}){0,39}$/.test(ish)) ish = '';
+      return '/book?b=' + (o.b || 1) + '&p=' + (o.p || 1) + (s.shelf ? '&s=' + s.shelf : ish ? '&s=' + ish : '') + (o.len === 0 ? '&z=s' : o.len === 1 ? '&z=m' : ''); },
     opts: [['pick', 'BOOK', undefined, 'select'], ['go', 'PAGE', undefined, 'select'], ['prev', '‹ PAGE'], ['next', 'PAGE ›'], ['len', 'PAGE'], ['size', 'TEXT'], ['add', '+ ADD A BOOK']],
     /* TEXT: the size of the words (S, M, L); PAGE: how much one printed page holds (SHORT, MEDIUM, LONG); both kept on the phone */
     init: function (o) { var z = 1, n = 2; try { var zs = localStorage.getItem('da.book.sz'), ns = localStorage.getItem('da.book.len'); z = zs == null ? 1 : +zs; n = ns == null ? 2 : +ns; } catch (e) { z = 1; n = 2; }

@@ -78,7 +78,7 @@ func (p *portal) serve(ctx context.Context) {
 type view struct {
 	Name, SSID, Note, Server, Done, Paper string
 	Dots                                  int
-	Setup, Island, Offline, Paused        bool
+	Setup, Island, Offline, Paused, Mesh  bool
 	Nets                                  []Net
 	Known                                 []Known
 	Carts                                 []shelfCart
@@ -88,7 +88,7 @@ func (p *portal) render(w http.ResponseWriter, v view) {
 	c := p.a.conf()
 	v.Name, v.SSID, v.Server = c.Name, setupSSID(c), c.Own.Server
 	v.Offline = c.Mode == "offline"
-	v.Paper, v.Dots, v.Paused = c.Paper, dots, c.Paused
+	v.Paper, v.Dots, v.Paused, v.Mesh = c.Paper, dots, c.Paused, c.Mesh
 	if l := p.a.shelf(); l != nil && v.Island {
 		v.Carts = l.Carts
 	}
@@ -219,6 +219,12 @@ func (p *portal) reopen(w http.ResponseWriter, r *http.Request) {
 		p.a.update(func(c *Config) { c.Paused = !c.Paused })
 		log.Printf("the keeper: paused %v", p.a.paused())
 		p.render(w, view{Done: "ask", Note: words(map[bool]string{true: "PAUSED.", false: "PRINTING."}[p.a.paused()])})
+		return
+	}
+	if r.FormValue("do") == "mesh" {
+		p.a.update(func(c *Config) { c.Mesh = !c.Mesh })
+		log.Printf("the keeper: mesh %v", p.a.conf().Mesh)
+		p.render(w, view{Done: "ask", Note: words(map[bool]string{true: "MESH ON.", false: "MESH OFF."}[p.a.conf().Mesh])})
 		return
 	}
 	p.render(w, view{Done: "reopen"})

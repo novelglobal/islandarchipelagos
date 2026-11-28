@@ -49,6 +49,9 @@
   var build = function () { var b = S.builds[S.at || '_']; if (!b) b = S.builds[S.at || '_'] = STARTS[S.start].p.map(mk); return b; };
   var save = function () { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* this visit only */ } };
   var ISL = 1, SEL = -1, AT = -1;
+  /* the mesh shows only while the owner has it on (meshOn, as last read from the site; off as built) */
+  var meshOk = function () { try { return !!JSON.parse(localStorage.getItem('da.mesh') || '0'); } catch (e) { return false; } };
+  try { fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (st) { if (!st || !('meshOn' in st)) return; var was = meshOk(); try { localStorage.setItem('da.mesh', st.meshOn ? '1' : '0'); } catch (e) { /* this visit */ } if (was !== !!st.meshOn) { tray(); if (window.BENCH_PLUS) BENCH_PLUS(); } }).catch(function () {}); } catch (e) { /* offline */ }
   var partOn = function (k) { var m = PART[k].mod; return !m || ISL >= (NEED[m] || 0); };
   var filled = function () { return build().some(function (p) { return p.t || p.src || p.pts || p.m || p.lat != null || p.v || p.nm; }); };
   /* a start asked for in the address (from the archipelago's STORIES): taken only while nothing has been made yet */
@@ -57,7 +60,7 @@
   /* ───── the paper ───── */
   function tops() { $('#starts').innerHTML = Object.keys(STARTS).map(function (k) { return '<button type="button" data-s="' + k + '" aria-label="' + k + '" class="' + (k === S.start ? 'on' : '') + '">' + STARTS[k].i + '</button>'; }).join(''); }
   function tray() {
-    $('#tray .grid').innerHTML = Object.keys(PART).map(function (k) { var p = PART[k], need = p.mod ? NEED[p.mod] || 0 : 0, on = partOn(k);
+    $('#tray .grid').innerHTML = Object.keys(PART).filter(function (k) { return k !== 'mesh' || meshOk(); }).map(function (k) { var p = PART[k], need = p.mod ? NEED[p.mod] || 0 : 0, on = partOn(k);
       return '<button type="button" data-add="' + k + '" data-g="' + p.g + '"' + (on ? '' : ' disabled') + '>' + (on || !need ? '' : '<span class="pp">' + '●'.repeat(Math.min(ISL, need)) + '○'.repeat(Math.max(0, need - ISL)) + '</span>') + ICON[k] + p.n + '</button>'; }).join('');
   }
   /* an empty box says what goes in it, so a start is half built before a word is typed */

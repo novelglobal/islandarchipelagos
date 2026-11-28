@@ -464,6 +464,8 @@ async function send(db, env, req) {
   }
   /* FREE PRINTING (on to begin with): every print goes straight out. PRINT PASS (off to begin with): a printed pass is neither asked for nor used up */
   const SP = await settingsOf(db), free = !!SP.freePrint;
+  /* the mesh is off unless the owner turns it on (meshOn): then nothing goes to it and no mesh line rides on a print */
+  if (!SP.meshOn) { if (toMesh) return refuse(403, 'the mesh is off'); b.mesh = null; }
   let passed = false, pf = null; if (P && typeof b.pass === 'string' && codeKey(env)) pf = await passFind(db, env, b.pass, P.id);
   if (pf && SP.passOn && (b.escpos || b.mesh)) passed = await passUse(db, pf.code, pf.day, P.id);
   if (b.mesh != null && (typeof b.mesh !== 'string' || enc.encode(b.mesh).length > LIMIT.mesh)) return fail(400, 'mesh');
@@ -543,7 +545,7 @@ async function learnKinds(db, env, req) {
    is the only thing that opens the devices, either way */
 /* allOpen: everything open to everyone: nothing waits on a code having been printed (with FREE PRINTING on, as built, no pass is asked for
    either). It opens, it never proves: a code is printed, and present, only by a print or a pass at an island (Proof of Presence) */
-const SETTINGS = { allOpen: true, openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false, ghostOn: true };
+const SETTINGS = { allOpen: true, openJoin: true, lifeLock: true, exampleEdit: false, phreak: false, lowRes: false, madeShow: false, exampleShow: true, moonShow: true, sendLive: false, buoyScrap: true, blogShow: false, smallTalk: false, smallFind: false, oneIsland: true, jellyStamp: false, sandbox: true, cartridges: false, popOn: false, passOn: true, freePrint: true, touchOn: false, ghostOn: true, meshOn: false };
 /* choices, one of a few: how long a new code is (3 or 6), and what an island's touch screen does with passes (nothing, shows one, takes one typed) */
 const CHOICES = { access: ['open', 'pop'], codeLen: [3, 6], touchPass: ['', 'show', 'type'], printGap: [0, 30, 60, 120, 300, 600], ghostPrint: ['approve', 'straight', 'off'] };
 /* what an island may set for itself: its cards (a pack), how its passes are given, the gap between one person's prints, and who helps run it */
@@ -578,15 +580,20 @@ const homeOfIsle = v => { const h = jsonOf(v); if (!h || typeof h !== 'object') 
   const label = L ? { on: L.on !== false, top: txt(L.top, 60), title: txt(L.title, 80), body: txt(L.body, 1500), fold: Math.max(0, Math.min(6, Math.round(+L.fold) || 0)),
     links: (Array.isArray(L.links) ? L.links : []).filter(k => k && typeof k.t === 'string' && k.t.trim() && /^https:\/\/[^\s"<>]{1,300}$/.test(k.u || '')).slice(0, 4).map(k => ({ t: k.t.trim().slice(0, 60), to: 'url', u: k.u })),
     ...(L.film && FILM.file.test(L.film.file || '') ? { film: { on: true, file: L.film.file } } : {}) } : null;
+  /* its radio: where Direct Action Radio listens from this island (a centre, how far in km, whose Country); unset, the site's own */
+  const R = h.radio && typeof h.radio === 'object' ? h.radio : null, rlat = R ? +R.lat : NaN, rlng = R ? +R.lng : NaN;
+  const radio = R && Number.isFinite(rlat) && Number.isFinite(rlng) && Math.abs(rlat) <= 85 && Math.abs(rlng) <= 180 && (rlat || rlng) ? { lat: Math.round(rlat * 1e5) / 1e5, lng: Math.round(rlng * 1e5) / 1e5, km: [1, 3, 10, 30].includes(+R.km) ? +R.km : 3, ...(txt(R.name, 40).trim() ? { name: txt(R.name, 40).trim() } : {}), ...(txt(R.country, 60).trim() ? { country: txt(R.country, 60).trim() } : {}), ...(txt(R.sov, 60).trim() ? { sov: txt(R.sov, 60).trim() } : {}) } : null;
   const Hh = h.hero && typeof h.hero === 'object' ? h.hero : null, hero = Hh ? { title: txt(Hh.title, 80).trim(), body: txt(Hh.body, 800).trim(), ...(/^\d$/.test(String(Hh.pic)) ? { pic: +Hh.pic } : {}) } : null;
-  return { ...(txt(h.line, 60).trim() ? { line: txt(h.line, 60).replace(/\s+/g, ' ').trim() } : {}), ...(hero && (hero.title || hero.body || hero.pic != null) ? { hero } : {}), ...(h.share ? { share: true } : {}), main: ids(h.main, x => MAINS.includes(x), MAINS.length), nines: ids(h.nines, x => NINES.includes(x), 3), off: ids(h.off, x => /^[a-z0-9-]{1,24}$/.test(x), 40) || [],
+  /* its shelf: which of the site's books its book card holds, in order; unset, all of them */
+  const books = Array.isArray(h.books) ? [...new Set(h.books.map(Number).filter(i => BOOKS.some(b => b[0] === i)))].slice(0, 40) : [];
+  return { ...(books.length ? { books } : {}), ...(txt(h.line, 60).trim() ? { line: txt(h.line, 60).replace(/\s+/g, ' ').trim() } : {}), ...(hero && (hero.title || hero.body || hero.pic != null) ? { hero } : {}), ...(h.share ? { share: true } : {}), ...(radio ? { radio } : {}), main: ids(h.main, x => MAINS.includes(x), MAINS.length), nines: ids(h.nines, x => NINES.includes(x), 3), off: ids(h.off, x => /^[a-z0-9-]{1,24}$/.test(x), 40) || [],
     ...(label && (label.top || label.title || label.body || label.film) ? { label } : {}) }; };
 /* a keeper's change laid over what is there; a label's film is the approval page's to give (film: true keeps it) */
 const homeIn = (was, b, film) => { const o = homeOfIsle(JSON.stringify(was || {})) || {}, n = b && typeof b === 'object' ? b : {};
-  ['main', 'nines', 'off', 'line', 'hero', 'share'].forEach(k => { if (k in n) o[k] = n[k]; });
+  ['main', 'nines', 'off', 'line', 'hero', 'share', 'radio', 'books'].forEach(k => { if (k in n) o[k] = n[k]; });
   if ('label' in n) { const f = o.label && o.label.film; o.label = n.label && typeof n.label === 'object' ? { ...n.label } : null; if (o.label) { if (film === true) { if (f) o.label.film = f; else delete o.label.film; } else if (film !== undefined) o.label.film = film ? { file: film } : null; } }
   else if (film !== undefined && film !== true) o.label = { ...(o.label || {}), film: film ? { file: film } : null };
-  const h = homeOfIsle(JSON.stringify(o)); return h && (h.main || h.nines || h.off.length || h.label || h.line || h.hero || h.share) ? JSON.stringify(h) : null; };
+  const h = homeOfIsle(JSON.stringify(o)); return h && (h.main || h.nines || h.off.length || h.label || h.line || h.hero || h.share || h.radio || h.books) ? JSON.stringify(h) : null; };
 /* an island shown by its link: a real island always, a ghost only while its keeper shares it. Its name, its home and its pictures; never its key or code */
 async function visit(db, env, id) { if (!JOIN_ID.test(id || '')) return fail(404, 'not found');
   const p = await db.prepare('SELECT id, name, ghost, home, test_of, token IS NOT NULL AS paired FROM printers WHERE id = ?').bind(id).first(), h = p && homeOfIsle(p.home);
@@ -668,14 +675,14 @@ async function settingsOf(db) { const { results } = await db.prepare('SELECT k, 
 const LABEL_TEXT = JSON.stringify(LABEL), NOTES_TEXT = JSON.stringify(NOTES);
 /* the partner places: whether a printer is there and listening, and how much it has printed */
 /* a ghost is in the list only for the phone holding its key */
-async function partners(db, req) { const k = req ? bearer(req) : '', oh = /^[A-Za-z0-9_-]{16,64}$/.test(k) ? await sha256(k) : null;
+async function partners(db, req) { const k = req ? bearer(req) : '', oh = /^[A-Za-z0-9_-]{16,64}$/.test(k) ? await sha256(k) : null, meshOn = !!(await settingsOf(db)).meshOn;
   const { results: all } = await db.prepare(`SELECT p.id, p.name, p.paper, p.mesh, p.live, p.two, p.links, p.pack, p.joins, p.ghost, p.test_of, p.home, p.owner, p.token IS NOT NULL AS paired, p.seen,
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status IN ('queued', 'printing')) AS queued,
       (SELECT count(*) FROM jobs j WHERE j.printer = p.id AND j.status = 'printed') AS printed FROM printers p ORDER BY p.created`).all();
   const results = all.filter(p => !p.ghost || (oh && p.owner === oh));
   /* a TEST is named nowhere else either: not in its real island's joins */
   const hid = new Set(all.filter(p => p.test_of && !(oh && p.owner === oh)).map(p => p.id)), joinsOut = p => { const j = joinsOf(p); return { ...j, to: j.to.filter(x => !hid.has(x)), mirror: hid.has(j.mirror) ? null : j.mirror }; };
-  return json({ partners: results.map(p => ({ id: p.id, name: p.name, ...(p.pack && PACKS[p.pack] ? { pack: p.pack, cards: PACKS[p.pack] } : {}), paper: p.paper, paired: !!p.paired, mesh: !!p.mesh && !!p.paired, live: !!p.live, two: !!p.two, links: p.id === 'novelglobal' ? LINKS : linksOf(p.links), ready: !!p.seen && now() - p.seen < 2 * 60e3, queued: p.queued, printed: p.printed, ...(p.ghost ? { ghost: true } : {}), ...(p.home && homeOfIsle(p.home) ? { home: homeOfIsle(p.home) } : {}), ...(() => { const j = joinsOut(p); return { ...(j.to.length ? { to: j.to, only: j.only } : {}), ...(j.mirror ? { mirror: j.mirror } : {}) }; })() })) });
+  return json({ meshOn, partners: results.map(p => ({ id: p.id, name: p.name, ...(p.pack && PACKS[p.pack] ? { pack: p.pack, cards: PACKS[p.pack] } : {}), paper: p.paper, paired: !!p.paired, mesh: meshOn && !!p.mesh && !!p.paired, live: !!p.live, two: !!p.two, links: p.id === 'novelglobal' ? LINKS : linksOf(p.links), ready: !!p.seen && now() - p.seen < 2 * 60e3, queued: p.queued, printed: p.printed, ...(p.ghost ? { ghost: true } : {}), ...(p.home && homeOfIsle(p.home) ? { home: homeOfIsle(p.home) } : {}), ...(() => { const j = joinsOut(p); return { ...(j.to.length ? { to: j.to, only: j.only } : {}), ...(j.mirror ? { mirror: j.mirror } : {}) }; })() })) });
 }
 
 /* the film under the label: one file from the films bucket, played in the page and nowhere else. A play is asked for first and counted: so
@@ -726,11 +733,11 @@ async function isles(db, req) {
   const out = results.filter(p => !(pl[p.id] && pl[p.id].hide)).map(p => { const d = pl[p.id] || {}, pop = popOf(p.id), open = !!p.live && (!!pop || d.open === true), o = { id: p.id, name: p.name || p.id, number: p.number || null, on: !!p.seen && now() - p.seen < 2 * 60e3 && !/"p":0\b/.test(p.net || ''), open };
     let n = null; try { n = p.net ? JSON.parse(p.net) : null; } catch (e) { n = null; }
     { const ih = homeOfIsle(p.home); if (ih) { o.ih = ih; if (ih.line) o.line = ih.line; } } { const ps = (PICS_OF[p.id] || []).slice(0, 3); if (ps.length) o.pics = ps; }
-    o.paper = n && (n.p === 0 || n.p === 1) ? n.p : null; o.sig = n && Number.isFinite(n.rssi) ? (n.rssi >= -55 ? 3 : n.rssi >= -67 ? 2 : n.rssi >= -78 ? 1 : 0) : null; o.mesh = !!p.mesh; o.queue = p.queued || 0;
+    o.paper = n && (n.p === 0 || n.p === 1) ? n.p : null; o.sig = n && Number.isFinite(n.rssi) ? (n.rssi >= -55 ? 3 : n.rssi >= -67 ? 2 : n.rssi >= -78 ? 1 : 0) : null; o.mesh = !!st.meshOn && !!p.mesh; o.queue = p.queued || 0;
     if (open) { ['addr', 'words', 'pic', 'find'].forEach(k => { if (typeof d[k] === 'string' && d[k]) o[k] = d[k]; }); if (Number.isFinite(+d.lat) && Number.isFinite(+d.lng) && (d.lat || d.lng)) { o.lat = +d.lat; o.lng = +d.lng; } else if (n && Array.isArray(n.ll)) o.near = n.ll;
       if (pop && /^[a-z0-9-]{1,40}$/.test(pop.id || '')) { o.pop = pop.id; o.card = !!pop.card; if (pop.home && typeof pop.home === 'object') o.home = pop.home; } }
     return o; });
-  return json({ isles: out, paired: results.length });
+  return json({ isles: out, paired: results.length, meshOn: !!st.meshOn });
 }
 
 /* ───────── a printer's receiver: it asks for the next job, prints it, and says how it went ───────── */
@@ -1400,7 +1407,9 @@ BOOKS.push(
   [54138, 'Camp Cookery', 'Maria Parloa', 1878, 'Bread, fish and stews over a fire, and what to pack, from a teacher of cooking.', ''],
   [48929, 'Backwoods Surgery & Medicine', 'Charles Stuart Moody', 1910, 'Care far from a doctor, as it was done in 1910. Read it as history.', '']);
 const SHELF = { fic: [3261, 32, 18247, 21970, 1906, 10002, 8492, 201, 11438], how: [34607, 29558, 28255, 44215, 54138, 48929] };
-const shelfOf = s => s === 'fic' || s === 'how' ? BOOKS.filter(b => SHELF[s].includes(b[0])) : s === 'non' ? BOOKS.filter(b => !SHELF.fic.includes(b[0]) && !SHELF.how.includes(b[0])) : BOOKS;
+/* an island's own shelf: the books its keeper chose, in their order (s=4341.32.3261); any not on the site's shelf are passed over */
+const shelfPick = s => { const ids = /^\d{1,7}(?:\.\d{1,7}){0,39}$/.test(s || '') ? s.split('.').map(Number) : []; return ids.map(i => BOOKS.find(b => b[0] === i)).filter(Boolean); };
+const shelfOf = s => shelfPick(s).length ? shelfPick(s) : s === 'fic' || s === 'how' ? BOOKS.filter(b => SHELF[s].includes(b[0])) : s === 'non' ? BOOKS.filter(b => !SHELF.fic.includes(b[0]) && !SHELF.how.includes(b[0])) : BOOKS;
 const BOOKP = new Map(), BOOKW = new Map();
 /* Gutenberg, then its mirror (the id's digits as folders, all but the last), then the copy kept when either last answered */
 const gutDir = id => { const d = String(id); return d.length < 2 ? '0/' + d : d.slice(0, -1).split('').join('/') + '/' + d; };
@@ -1435,14 +1444,16 @@ function bookLen(id, pages, max) { const k = id + ':' + max; if (BOOKL.has(k)) r
   pages.join('\n\n').split(/\n\n+/).forEach(p => { if (p.length <= max) return add(p); let bit = ''; p.split(/(?<=[.;:!?])\s+/).forEach(x => { if (bit && bit.length + x.length > max * 0.8) { add(bit); bit = ''; } bit = bit ? bit + ' ' + x : x; }); if (bit) add(bit); });
   if (cur) out.push(cur); if (BOOKL.size > 60) BOOKL.clear(); BOOKL.set(k, out); return out; }
 async function bookThrough(url, env, ctx) {
+  /* the site's shelf alone (for a keeper choosing their island's): no book is fetched */
+  if (url.searchParams.has('list')) return json({ ids: BOOKS.map(b => b[0]), all: BOOKS.map(b => b[1] + ' · ' + b[2]) });
   const q = url.searchParams, L = shelfOf(q.get('s')), bi = Math.max(1, Math.min(L.length, Math.round(+q.get('b') || 1))), bk = L[bi - 1];
   let work = BOOKW.get(bk[0]); if (!work && !BOOKP.has(bk[0])) { work = bookPages(bk, env).finally(() => BOOKW.delete(bk[0])); BOOKW.set(bk[0], work); if (ctx && ctx.waitUntil) ctx.waitUntil(work.catch(() => null)); }
   let pages = BOOKP.get(bk[0]) || await Promise.race([work, new Promise(ok => setTimeout(() => ok('wait'), 3500))]);
-  if (pages === 'wait') return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: bk[4], p: 1, of: 1, text: '', warming: 1 });
+  if (pages === 'wait') return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), ids: L.map(x => x[0]), title: bk[1], author: bk[2], year: bk[3], review: bk[4], p: 1, of: 1, text: '', warming: 1 });
   if (!pages || !pages.length) return fail(502, 'book');
   const zl = { s: 1500, m: 3000 }[q.get('z')]; if (zl) pages = bookLen(bk[0], pages, zl);
   const n = pages.length, p0 = Math.max(1, Math.min(1e6, Math.round(+q.get('p') || 1))), p = ((p0 - 1) % n) + 1;
-  return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
+  return json({ b: bi, books: L.length, all: L.map(x => x[1] + ' · ' + x[2]), ids: L.map(x => x[0]), title: bk[1], author: bk[2], year: bk[3], review: p === 1 ? bk[4] : '', p, of: n, text: pages[p - 1] });
 }
 /* ───────── the book club (another island's card, /bookclub): a hundred titles a genre from Open Library, most printed first (it changes
    slowly, so each list is kept a month); a book's preview (its description and first line); a book a list names, looked up. Each answer

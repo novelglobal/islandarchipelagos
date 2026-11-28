@@ -119,10 +119,12 @@
   function onAir() { return !!ML.link.on || (T && T.ghost ? !!benchRadio() : !!(T && T.mesh)); }
   /* where a line typed here really goes: a radio linked to this screen, or the ghost's own radio on its bench */
   function canSay() { return !!ML.link.on || !!(T && T.ghost && benchRadio()); }
-  function radioDraw() { $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '';
+  /* the radio is there only while the owner has the mesh on (meshOn); off, it is hidden, kept as it is */
+  var MESH_OK = !!store.get('da.mesh', 0);
+  function radioDraw() { $('#rd').hidden = !MESH_OK; $('#rlog').innerHTML = RADIO.length ? RADIO.map(function (r) { return '<li' + (r.f === 'in' ? ' class="in"' : '') + '><i>' + (r.f === 'in' ? '←' : '→') + '</i><span>' + (r.w ? '<b>' + esc(r.w) + '</b> ' : '') + esc(r.t) + '</span></li>'; }).join('') : '';
     var air = onAir(), lk = !!ML.link.on; $('#rs').textContent = air ? 'MESH · ' + RADIO.length : RADIO.length ? String(RADIO.length) : ''; $('#rd').classList.toggle('air', air); $('#xd').classList.toggle('air', air);
-    $('#mf').hidden = !canSay(); $('#madd').hidden = !(T && T.ghost && BN && !ofKind('radio').length);
-    [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
+    $('#mf').hidden = !canSay(); $('#madd').hidden = !(MESH_OK && T && T.ghost && BN && !ofKind('radio').length);
+    [['#mu', 'USB', ML.usb], ['#mb', 'BLUETOOTH', ML.bt]].forEach(function (b) { var e = $(b[0]), mine = lk && ML.link.name === b[1]; e.hidden = !MESH_OK || !b[2] || (lk && !mine); e.classList.toggle('on', mine); e.setAttribute('aria-pressed', String(mine)); }); }
   /* a line out: in the log, through a radio linked here, the bench radio's waves */
   function meshOut(line, mine) { line = String(line || '').trim(); if (!line) return; if (ML.cut) line = ML.cut(line); radio(line, 'out'); clearTimeout(TX); TX = setTimeout(function () { TX = 0; benchDraw(); }, 2400); benchDraw();
     if (ML.link.on && (mine || !T || !T.ghost)) ML.say(line).catch(function (e) { $('#msay').textContent = '× ' + String(e && e.message || e).slice(0, 40).toUpperCase(); }); }
@@ -582,7 +584,7 @@
   var TICKED = { born: 1, strip: 1, welcome: 1, pair: 1 };
   /* ───────── the reward: a ghost built, switched on and paired gives this phone's code, made real (the site says GHOST beside it). With
      proof of presence on, the code waits for a printer. Either way it is shown to keep: a screenshot, or a picture downloaded ───────── */
-  var SITE = null; function site() { return SITE || (SITE = fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })); }
+  var SITE = null; function site() { return SITE || (SITE = fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (st) { if (st && 'meshOn' in st) { MESH_OK = !!st.meshOn; store.set('da.mesh', MESH_OK ? 1 : 0); try { radioDraw(); } catch (e) { /* not drawn yet */ } } return st; }).catch(function () { return {}; })); }
   var WHO_RE = /^(?:[A-HJ-NP-Z2-9]{3}|[A-HJ-NP-Z2-9]{6})$/, RWB = false;
   function whoNew(n) { var C = 'ABCDEFGHJKMNPQRSTVWXYZ23456789', c = '', r = new Uint8Array(n);
     for (var t = 0; t < 50; t++) { crypto.getRandomValues(r); c = ''; for (var i = 0; i < n; i++) c += C[r[i] % 30]; if (/[A-Z]/.test(c) && /[2-9]/.test(c) && c !== '888') break; } return c; }
@@ -684,6 +686,7 @@
   function offDraw() { var b = $('#body'); b.setAttribute('aria-pressed', String(OFF)); b.classList.toggle('off', OFF); if (OFF) { $('#bodyw').textContent = 'OFFLINE'; $('#led').className = 'led'; } else bodyDraw(); }
   $('#body').addEventListener('click', function () { if (!T || !T.ghost) return; OFF = !OFF; clearTimeout(timer); offDraw(); if (!OFF) tick(); });
 
+  site();
   /* ───────── the mesh: a T-Beam for the bench; a real Meshtastic radio linked to this screen (mesh.js); a line out ───────── */
   $('#madd').addEventListener('click', function () { if (!BN || ofKind('radio').length || BN.p.length >= 12) return; partAdd('t-beam'); TRAY = null; benchDraw(); benchSave('T-BEAM'); radioDraw(); setTimeout(function () { look($('.bench .po.want') || $('#bnv'), 'center'); }, 60); });
   var mlink = function (how, name) { if (ML.link.on) { if (ML.link.name === name) ML.link.close(); return; } $('#msay').textContent = '· · ·';

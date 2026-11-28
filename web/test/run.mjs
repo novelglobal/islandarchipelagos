@@ -163,6 +163,26 @@ if (ONLY.includes('dbg')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section dbg: ${e.message.split('\n')[0]}`); }
 
+// ───────── the radio anywhere: ?at= in the link, or an island's own place, moves the radar, the sightings asked for and the weather (ONLY=anywhere) ─────────
+if (run('anywhere')) try {
+  const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'anywhere'); const asked = [];
+  page.on('request', r => { const u = r.url(); if (/\/api\/inat\/observations\?/.test(u) || /open-meteo/.test(u)) asked.push(u); });
+  await page.goto('https://oan.test/studio?at=-36.8485,174.7633,10'); await ready(page); await sleep(2500);
+  const ak = await page.evaluate(() => { const C = window.DA_CONFIG, s = window.__da.S.scan; return { b: C.BBOX, at: C.AT, lat: s.lat, lng: s.lng, ov: C.OVERLAYS.length, co: C.COUNTRY, pp: C.PLACE_PREF }; });
+  const inat = asked.filter(u => /inat/.test(u)), wx = asked.filter(u => /open-meteo/.test(u));
+  await page.evaluate(() => localStorage.setItem('da.radio.at', JSON.stringify({ lat: 51.5072, lng: -0.1276, km: 3, country: 'Here' }))); asked.length = 0;
+  await page.goto('https://oan.test/studio'); await ready(page); await sleep(1500);
+  const ld = await page.evaluate(() => ({ b: window.DA_CONFIG.BBOX, co: window.DA_CONFIG.COUNTRY }));
+  await page.evaluate(() => localStorage.removeItem('da.radio.at')); await page.goto('https://oan.test/studio'); await ready(page); await sleep(800);
+  const mel = await page.evaluate(() => ({ b: window.DA_CONFIG.BBOX, at: window.DA_CONFIG.AT || null, ov: window.DA_CONFIG.OVERLAYS.length }));
+  check('the radio anywhere: a link\'s place (Auckland, 10 km) moves its area, radar, sightings and weather, with no Melbourne-only data and Aotearoa\'s names',
+    ak.b.s < -36.9 && ak.b.n > -36.8 && ak.b.w < 174.7 && ak.b.e > 174.8 && Math.abs(ak.lat + 36.8485) < 0.01 && Math.abs(ak.lng - 174.7633) < 0.01 && ak.ov === 0 && ak.co === '' && ak.pp === 6803
+    && (!inat.length || inat.every(u => /nelat=-36\.7/.test(u))) && (!wx.length || wx.some(u => /latitude=-36\.84/.test(u) && /timezone=auto/.test(u))), JSON.stringify({ ak, inat: inat.slice(0, 2), wx: wx.slice(0, 1) }));
+  check('an island\'s own place, kept on the phone, moves the radio the same way (London, its Country); with none, the site\'s own place stays',
+    ld.b.s > 51.4 && ld.b.n < 51.6 && ld.co === 'HERE' && mel.b.s === -37.823 && !mel.at && mel.ov > 0, JSON.stringify({ ld, mel }));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section anywhere: ${e.message.split('\n')[0]}`); }
+
 // ───────── smoke: the bare radar, then the four destinations ─────────
 if (run('smoke')) try {
   const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'smoke');
@@ -1385,7 +1405,7 @@ if (run('access')) try {
   check('the opener\'s key reads ISLAND ARCHIPELAGOS: FIND A THERMAL PRINTER, orange with black type on one line, no target', go && go.href === '/islands' && /^island archipelagos: find a thermal printer$/i.test(go.t) && /printer/i.test(go.tt) && gw && gw.bg === 'rgb(242, 106, 33)' && gw.c === 'rgb(18, 18, 18)' && gw.ws === 'nowrap' && gw.h < gw.fs * 3.2, JSON.stringify([go, gw]));
   /* the islands: three, one open with its pop-up, one asleep, one out of paper */
   const ISLES = { isles: [{ id: 'milkbar', name: 'Milk Bar', number: 2, on: true, open: true, paper: 1, sig: 3, mesh: true, queue: 2, addr: '1 Test St, Brunswick VIC 3056', lat: -37.77, lng: 144.96, words: 'Mornings', pop: 'milkbar', card: true, home: { order: ['radio'] } },
-    { id: 'deadtree', name: 'Dead Tree', number: 3, on: false, open: false, paper: null, sig: null, mesh: false, queue: 0 }, { id: 'novelglobal', name: 'novel.global', number: 1, on: true, open: false, paper: 0, sig: 1, mesh: false, queue: 0 }], paired: 3 };
+    { id: 'deadtree', name: 'Dead Tree', number: 3, on: false, open: false, paper: null, sig: null, mesh: false, queue: 0 }, { id: 'novelglobal', name: 'novel.global', number: 1, on: true, open: false, paper: 0, sig: 1, mesh: false, queue: 0 }], paired: 3, meshOn: true };
   ISLES.isles[0].find = 'Back counter, under the clock';
   await page.route('**/api/isles', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ISLES) }));
   await page.goto('https://oan.test/islands'); await page.waitForSelector('#list li .row'); await sleep(400); await shot(page, 'islands-open.png');
@@ -1753,7 +1773,12 @@ if (run('guide')) try {
 if (run('paper')) try {
   const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx);
   await ctx.addInitScript(() => { window.__shared = []; window.__sheet = 0; Object.defineProperty(navigator, 'share', { value: () => { window.__sheet++; return Promise.resolve(); }, configurable: true }); Object.defineProperty(navigator, 'clipboard', { value: { writeText: t => { window.__shared.push(t); return Promise.resolve(); } }, configurable: true }); });
+  await admin('settings', { meshOn: false });
   const page = await ctx.newPage(); watch(page, 'paper'); await page.goto('https://oan.test/paper'); await page.waitForSelector('#strip'); await sleep(800);
+  { await page.click('#nib'); const b0 = await page.locator('#strip').boundingBox(); await page.mouse.move(b0.x + 60, b0.y + 60); await page.mouse.down(); for (let i = 1; i <= 8; i++) await page.mouse.move(b0.x + 60 + i * 12, b0.y + 70); await page.mouse.up(); await sleep(300);
+    await page.click('#tick'); await sleep(300); const seen = []; for (let i = 0; i < 6; i++) { const t = (await page.textContent('#to b')).trim(); if (seen.includes(t)) break; seen.push(t); await page.click('#to'); await sleep(150); }
+    check('PAPER: the mesh is off as built: MESH is not among the printers', seen.length && !seen.includes('MESH'), JSON.stringify(seen)); }
+  await admin('settings', { meshOn: true }); await page.goto('https://oan.test/paper'); await page.waitForSelector('#strip'); await sleep(800);
   await page.click('#nib'); const b = await page.locator('#strip').boundingBox();
   await page.mouse.move(b.x + 60, b.y + 60); await page.mouse.down(); for (let i = 1; i <= 20; i++) await page.mouse.move(b.x + 60 + i * 12, b.y + 60 + Math.round(Math.sin(i / 3) * 40)); await page.mouse.up(); await sleep(300);
   await page.click('#tick'); await sleep(300); let to = '';
@@ -2326,6 +2351,7 @@ if (run('base')) try {
 if (run('bench')) try {
   const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await wire(ctx, { plain: true }); await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('bn')) { sessionStorage.setItem('bn', '1'); localStorage.setItem('da.ghost.build', JSON.stringify({ pi: 'Pi 3 A+', printers: 'TM-T88V', power: ['Solar'] })); localStorage.removeItem('da.ghost.seeded'); } } catch (e) { /* private */ } });
+  await admin('settings', { meshOn: true });   /* the radio parts below are there only with the mesh on */
   const page = await ctx.newPage(); watch(page, 'bench'); await page.goto('https://oan.test/archipelagos.html');
   const made = await page.evaluate(async () => { const r = await fetch('/api/ghost', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bench Bb' }) }), j = await r.json(); if (j.key) { localStorage.setItem('da.hm.key', JSON.stringify(j.key)); localStorage.setItem('da.twin.born', JSON.stringify(j.id)); } return { s: r.status, id: j.id }; });
   const pl = await page.evaluate(async () => { const z = ms => new Promise(r => setTimeout(r, ms)), q = s => document.querySelector(s); q('[data-go="hardware"]').click(); await z(200);
@@ -2526,6 +2552,7 @@ for (const HD of [false, true]) if (run('home')) try {
   /* a play from LIVE: refused without a printed code; with one, in the sandbox, up at once as a small card that runs sealed and prints onto its paper */
   if (!HD) { const post = o => apiServer.fetch(new URL('/api/plays', API_O), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(o) });
     await admin('settings', { allOpen: false });   /* what a printed code guards is checked with ALL OPEN off */
+    const pre = (await (await apiServer.fetch(new URL('/api/plays', API_O))).json()).plays.length;
     const bad = (await post({ who: 'KTW', n: '', src: 'print(1)' })).status, nocode = (await post({ who: 'KTW', n: 'Telegram', src: 'print(1)' })).status; await admin('makers', { who: 'KTW' }); const sent = await post({ who: 'KTW', n: 'Telegram', th: 'cyan', src: ["big('HI')", "print('FAR ISLAND')", "say('ok')"].join('\n') }), code = (await sent.json()).code;
     const before = (await (await apiServer.fetch(new URL('/api/plays', API_O))).json()).plays.length;
     const w = (await admin('stories?status=waiting')).stories.find(x => x.code === code); if (w) await admin(`stories/${w.id}`, { action: 'show' });
@@ -2533,7 +2560,7 @@ for (const HD of [false, true]) if (run('home')) try {
     await page.evaluate(() => localStorage.setItem('da.who', '"KTW"')); await page.reload(); await page.waitForSelector('#hm-sb .sl'); await sleep(1500);
     const pl = await page.evaluate(async c => { const z = ms => new Promise(r => setTimeout(r, ms)), id = 'pl-' + c.toLowerCase(), card = document.querySelector(`[data-id="${id}"]`); if (!card) return { card: false }; HOME.open(id); await z(3500);
       const f = document.querySelector('#hm-x iframe'), d = f && f.contentDocument, k = d && d.querySelector('.pk'); return { card: true, small: card.classList.contains('small'), title: card.textContent.trim(), inked: !!(k && k.classList.contains('inked')), h: k ? k.querySelector('canvas').height : 0 }; }, code);
-    check(`home (${tag}): a play from LIVE needs a printed code; with one it goes up at once (sandbox) and stands as a small card in its maker's nine (not everyone's, as built) that runs sealed and prints onto its paper`, bad === 400 && nocode === 401 && sent.status === 201 && before === 1 && after.length === 2 && !anon.some(x => x.n === 'TELEGRAM') && after[0].first && after[1].n === 'TELEGRAM' && pl.card && pl.small && /TELEGRAM/.test(pl.title) && pl.inked && pl.h > 60, JSON.stringify({ bad, nocode, st: sent.status, before, after, pl }));
+    check(`home (${tag}): a play from LIVE needs a printed code; with one it goes up at once (sandbox) and stands as a small card in its maker's nine (not everyone's, as built) that runs sealed and prints onto its paper`, bad === 400 && nocode === 401 && sent.status === 201 && before === pre && after.some(x => x.n === 'TELEGRAM') && !anon.some(x => x.n === 'TELEGRAM') && after[0].first && pl.card && pl.small && /TELEGRAM/.test(pl.title) && pl.inked && pl.h > 60, JSON.stringify({ bad, nocode, st: sent.status, before, after, pl }));
     await admin('settings', { allOpen: true }); await page.evaluate(() => history.back()); await sleep(800); }
   /* v0.7 C: the code's home. /#home opens it; PLACES lists the islands where a pass was kept on the code, never when or how often by day */
   if (!HD) { await page.evaluate(() => { localStorage.setItem('da.who', JSON.stringify('K7Q')); localStorage.setItem('da.who.places', JSON.stringify([{ id: 'milkbar', name: 'Milk Bar', n: 7, use: { kind: 'shop', every: 5 } }, { id: 'novelglobal', name: 'novel.global', n: 1 }])); });
@@ -2574,6 +2601,15 @@ for (const [tag, vp, dark] of [['phone', { width: 390, height: 844, isMobile: tr
   const k2 = await page.evaluate(() => ({ pane: (document.querySelector('.ik-step') || { dataset: {} }).dataset.pane, on: (document.querySelector('.ik-gauge .on') || { dataset: {} }).dataset.gap, set: document.querySelector('.ik-m[data-ik="gap"]').classList.contains('set') }));
   await page.click('.ik-m[data-ik="links"]'); await sleep(300); await page.locator('.ik').scrollIntoViewIfNeeded(); await shot(page, `keeper-${tag}-open.png`);
   const k3 = await page.evaluate(() => ({ pane: (document.querySelector('.ik-step') || { dataset: {} }).dataset.pane, plugs: document.querySelectorAll('.ik-pane .ik-plug').length, panes: document.querySelectorAll('.ik-step').length }));
+  if (tag === 'phone') {   /* RADIO and BOOKS on the chart: its radio's place from this phone, 10 km, named; one book on its shelf */
+    await ctx.grantPermissions(['geolocation'], { origin: 'https://oan.test' }); await ctx.setGeolocation({ latitude: -36.8485, longitude: 174.7633 });
+    await page.click('.ik-m[data-ik="radio"]'); await sleep(300); await page.click('.ik-step [data-rhere]'); await sleep(600); await page.click('.ik-step [data-rkm="10"]'); await sleep(300);
+    await page.fill('.ik-raf input[name="n"]', 'Tāmaki Makaurau'); await page.click('.ik-raf button'); await sleep(1200);
+    await page.click('.ik-m[data-ik="books"]'); await page.waitForSelector('.ik-spine', { timeout: 8000 }).catch(() => {}); const sp = await page.evaluate(() => document.querySelectorAll('.ik-spine').length);
+    await page.click('.ik-spine >> nth=1').catch(() => {}); await sleep(1200); await page.locator('.ik').screenshot({ path: `${SHOTS}/keeper-${tag}-books.png`, animations: 'disabled' }).catch(() => {});
+    const kr = await page.evaluate(async k => { const j = await (await fetch('/api/island', { headers: { authorization: 'Bearer ' + k } })).json(); return { radio: j.home && j.home.radio, books: j.home && j.home.books, at: JSON.parse(localStorage.getItem('da.radio.at') || 'null') }; }, KKEY);
+    check('keeper: RADIO takes its place from the phone, how far and its name; BOOKS shows the shelf as spines and a tap puts one on the island\'s shelf', kr.radio && Math.abs(kr.radio.lat + 36.8485) < 0.001 && kr.radio.km === 10 && kr.radio.name === 'Tāmaki Makaurau' && sp >= 10 && kr.books && kr.books.length === 1, JSON.stringify({ kr, sp }));
+  }
   for (const k of ['printer', 'home', 'passes']) { await page.click(`.ik-m[data-ik="${k}"]`); await sleep(300); await page.locator('.ik').screenshot({ path: `${SHOTS}/keeper-${tag}-${k}.png`, animations: 'disabled' }).catch(() => {}); }
   check(`keeper (${tag}): an island's home is the island itself, the twin's drawing, first in the drawer, set up a step at a time (a strip of the steps, how many are done, the key folded away under ENGINE, BUILD with its SET UP first, then BACK and NEXT through each step, or a tap on the island goes to that step), no word tags on it, a ghost in pencil, no icons; one step shows at a time and a change shows on it; the island page keeps its engine words and tags to itself`,
     made.s === 201 && k0.bench === 'SET UP' && k0.keepk && k0.words === 0 && /printer,home,pics/.test(k0.marks) && k0.coast && k0.pencil && k0.first && !k0.icons && !arc.engine && !arc.tags && !arc.soon && /^BUILD/.test(k0.step1 || '') && k0.at === k0.next && k0.dots >= 10 && !k0.over && /KEEP/i.test(k0.name || '') && !k1.tour && k1.pane === 'pics' && k1.at === 2 && /^\d+ OF \d+ DONE$/.test(k1.sn || '') && k1.eng && k2.pane === 'gap' && k2.on === '60' && k2.set && k3.pane === 'links' && k3.plugs > 3 && k3.panes === 1,

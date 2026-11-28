@@ -194,8 +194,8 @@
   function printers() {
     return fetch('/api/partners', { headers: hdr(), cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
       ISL = ((j && j.partners) || []).filter(function (p) { return p.id === 'novelglobal' || p.ghost || (p.paired && (p.links || []).indexOf('wish') >= 0); })
-        .sort(function (a, b) { return live(b) - live(a); }).concat([MESH]);
-      if (!ISL.some(function (p) { return p.id === TO; })) TO = ISL.length ? ISL[0].id : 'novelglobal'; toDraw(); }).catch(function () { if (!ISL.some(function (p) { return p.id === 'mesh'; })) ISL.push(MESH); toDraw(); }); }
+        .sort(function (a, b) { return live(b) - live(a); }); store.set('da.mesh', j && j.meshOn ? 1 : 0); if (j && j.meshOn) ISL.push(MESH);
+      if (!ISL.some(function (p) { return p.id === TO; })) TO = ISL.length ? ISL[0].id : 'novelglobal'; toDraw(); }).catch(function () { if (store.get('da.mesh', 0) && !ISL.some(function (p) { return p.id === 'mesh'; })) ISL.push(MESH); toDraw(); }); }
   function toNow() { return ISL.filter(function (p) { return p.id === TO; })[0] || null; }
   function toDraw() { var p = toNow(), b = $('#to'); b.querySelector('b').textContent = p ? word(p) : 'novel.global'; b.classList.toggle('on', live(p)); b.setAttribute('aria-label', 'Prints on ' + (p ? word(p) : 'novel.global') + (live(p) ? ', on now' : '')); }
   $('#to').addEventListener('click', function () { open(true); if (ISL.length < 2) return buzz(30); var i = ISL.findIndex(function (p) { return p.id === TO; }); TO = ISL[(i + 1) % ISL.length].id; store.set('da.paper.to', TO); buzz(6); toDraw(); });

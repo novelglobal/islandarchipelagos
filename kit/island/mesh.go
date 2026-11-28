@@ -139,6 +139,10 @@ func (p *portal) meshIn(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "this machine only", http.StatusForbidden)
 		return
 	}
+	if !p.a.conf().Mesh {
+		http.Error(w, "the mesh is off", http.StatusNotFound)
+		return
+	}
 	if p.a.paused() {
 		http.Error(w, "paused", http.StatusServiceUnavailable)
 		return

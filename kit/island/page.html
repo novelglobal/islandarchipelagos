@@ -38,7 +38,8 @@ a{color:inherit}.carts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin
 <form method="post" action="/setup">
 <label class="f">{{words "SLIP KEY (ON THE SLIP)"}}<input type="password" name="pass" autocomplete="off"></label>
 <button>{{words "SETUP"}}</button>
-<button name="do" value="pause" class="alt">{{if .Paused}}{{words "PRINT AGAIN"}}{{else}}{{words "PAUSE"}}{{end}}</button></form>
+<button name="do" value="pause" class="alt">{{if .Paused}}{{words "PRINT AGAIN"}}{{else}}{{words "PAUSE"}}{{end}}</button>
+<details class="more"><summary>···</summary><button name="do" value="mesh" class="alt">{{if .Mesh}}{{words "MESH ON"}}{{else}}{{words "MESH OFF"}}{{end}}</button></details></form>
 
 {{else if .Setup}}
 <form method="post" action="/setup" id="setup">
