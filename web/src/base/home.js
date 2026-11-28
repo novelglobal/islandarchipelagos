@@ -1758,8 +1758,8 @@
   function ikSeed(s) { var h = 2166136261; s = String(s || 'island'); for (var i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); h = h || 7;
     return function () { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return (h >>> 0) / 4294967296; }; }
   /* where each thing stands on the island drawing (isle-art.js, ISLE.AT), as a share of the scene, so the keys sit on the things */
-  var IK_AT = { use: [125, 7, 1], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36, 1], pics: [229, 47], gang: [171, 52], passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84], radio: [66, 22], books: [80, 66] };
-  var ikPos = function (k) { var a = IK_AT[k] || [160, 40]; return 'left:' + ((a[0] - 20) / 2.8).toFixed(2) + '%;top:' + ((a[1] + 30) / 1.4).toFixed(2) + '%'; };
+  var IK_AT = { use: [125, 7, 1], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36, 1], pics: [229, 47], gang: [171, 52], passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84], radio: [-52, 24], books: [376, 48] };
+  var ikPos = function (k) { var a = IK_AT[k] || [160, 40]; return 'left:' + ((a[0] + 120) / 5.6).toFixed(2) + '%;top:' + ((a[1] + 30) / 1.4).toFixed(2) + '%'; };
   /* the cards' own painter (card-art.js), for a code or a key kept as a picture; fetched when the menu opens */
   var ARTQ = null; function needArt(cb) { if (window.CARDART) return cb && cb(); if (ARTQ) { if (cb) ARTQ.push(cb); return; } ARTQ = cb ? [cb] : [];
     var s = D.createElement('script'); s.src = '/card-art.js'; s.onload = function () { var q = ARTQ; ARTQ = null; q.forEach(function (f) { try { f(); } catch (e) { /* next tap */ } }); }; s.onerror = function () { ARTQ = null; }; D.head.appendChild(s); }
@@ -1811,7 +1811,7 @@
       needIsle(function () { var sv = $('.isle-h', box); if (!sv || !sv.isConnected) return; var sh = {}; L.forEach(function (l) { sh[l.k] = has(l.part); });
         var lab = (p.home || {}).label || {}, j0 = p.joins || {};
         window.ISLE.home(sv, { seed: Math.floor(ikSeed(p.id || p.name)() * 40), show: sh, links: (p.all || []).map(function (k) { return (p.links || []).indexOf(k) >= 0; }),
-          has: { pics: !!(p.pics || []).length, picks: HK.pk > 0, gang: !!(p.mods || []).length, passes: (p.ways || ['touch', 'print']).length > 0, test: !!(p.test || p.testOf), use: !!p.use, home: !!(lab.title || lab.body) },
+          has: { radio: !!((p.home || {}).radio), books: !!((p.home || {}).books || []).length, pics: !!(p.pics || []).length, picks: HK.pk > 0, gang: !!(p.mods || []).length, passes: (p.ways || ['touch', 'print']).length > 0, test: !!(p.test || p.testOf), use: !!p.use, home: !!(lab.title || lab.body) },
           n: { pics: (p.pics || []).length, gang: (p.mods || []).length, joins: (j0.to || []).length + (j0.mirror ? 1 : 0) } }); });
       /* a step at a time: BACK, NEXT, a dot for each step (filled once it is done), or the spot on the island itself */
       var step = function (i) { if (i < 0 || i >= go.length) return; HK.at = go[i].k; beep(660, 0.04); fill(p); var st = $('.ik-step', box); if (st && st.scrollIntoView) st.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };

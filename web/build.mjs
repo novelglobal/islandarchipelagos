@@ -103,6 +103,7 @@ try { var dp = JSON.parse(localStorage.getItem('da.prefs') || '{}'); if (localSt
 ${body}
 <script src="config.js"></script>
 <script src="at.js"></script>
+<script src="home-back.js" defer data-top="40"></script>
 <script src="places.js"></script>
 <script src="examples.js"></script>
 <script src="field.js"></script>

@@ -183,6 +183,21 @@ if (run('anywhere')) try {
   await ctx.close();
 } catch (e) { results.push(`FAIL  section anywhere: ${e.message.split('\n')[0]}`); }
 
+// ───────── the way home: every page reached on its own has one small mark top left back to the home, never inside the home's own sheet;
+// the home opens again on the island its visitor set as theirs (ONLY=ways) ─────────
+if (run('ways')) try {
+  const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx); const page = await ctx.newPage(); watch(page, 'ways'); const out = {};
+  for (const u of ['x', 'note', 'kit', 'desk', 'cart?c=weather', 'play', 'field', 'guide', 'paper', 'bookclub', 'archipelagos', 'islands', 'c', 'studio']) {
+    await page.goto('https://oan.test/' + u).catch(() => {}); await sleep(900);
+    out[u] = await page.evaluate(() => [...document.querySelectorAll('a[href="/"], a[href="./"], a[href="index.html"], [data-go=""], .back')].filter(a => { const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
+  }
+  /* the radio last, left as it is (leaving it mid-ask sends it round to iNaturalist itself, as it should when novel.global fails) */
+  const p2 = await ctx.newPage(); await p2.goto('https://oan.test/x?in=1'); await sleep(600); const framed = await p2.evaluate(() => document.querySelectorAll('[data-home-back]').length);
+  const none = Object.keys(out).filter(k => !out[k]);
+  check('the way home: every page reached on its own has a way back to the home (one small mark top left where it had none); none inside the home\'s sheet', !none.length && framed === 0, JSON.stringify({ none, framed, out }));
+  await ctx.close();
+} catch (e) { results.push(`FAIL  section ways: ${e.message.split('\n')[0]}`); }
+
 // ───────── smoke: the bare radar, then the four destinations ─────────
 if (run('smoke')) try {
   const ctx = await newCtx(); await wire(ctx); const page = await ctx.newPage(); watch(page, 'smoke');

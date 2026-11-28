@@ -46,21 +46,25 @@
       t = el('filter', { id: ti }, [el('feTurbulence', { type: 'fractalNoise', baseFrequency: '.7', numOctaves: '2', seed: String(9 + sd) }), el('feColorMatrix', { values: '0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 -.18' }), el('feComposite', { in2: 'SourceGraphic', operator: 'in' })]),
       g = el('g', { 'class': 'paint', filter: 'url(#' + id + ')' }), pool = function (d, c, op) { g.appendChild(el('path', { d: d, style: 'fill:' + c + ';stroke:none', opacity: op })); };
     s.insertBefore(el('defs', {}, [f, t]), s.firstChild);
-    pool('M-10 -40 L330 -40 L330 26 Q250 34 160 30 T-10 34 Z', '#2C64A8', .55);
-    pool('M-10 60 Q80 64 160 62 T330 60 L330 120 L-10 120 Z', '#0B2F5E', .6);
-    pool('M-10 56 Q60 64 120 60 T250 66 T330 60 L330 76 Q240 84 150 78 T-10 82 Z', '#3F7BC2', .35);
-    pool('M-10 -40 L330 -40 L330 -6 Q240 4 150 -2 T-10 2 Z', '#4F88CC', .35);
+    pool('M-130 -40 L450 -40 L450 28 Q330 36 250 30 Q160 26 60 32 T-130 34 Z', '#2C64A8', .55);
+    pool('M-130 60 Q0 66 160 62 T450 60 L450 120 L-130 120 Z', '#0B2F5E', .6);
+    pool('M-130 56 Q-40 66 60 60 T250 66 T450 60 L450 78 Q300 86 150 78 T-130 82 Z', '#3F7BC2', .35);
+    pool('M-130 -40 L450 -40 L450 -6 Q300 6 150 -2 T-130 2 Z', '#4F88CC', .35);
+    /* the two islets either side, and the wash of a chart's paper at its edges */
+    pool('M-100 60 Q-60 38 -10 60 Q-60 68 -100 60 Z', '#7FA8DA', .5); pool('M330 60 Q372 36 420 60 Q372 68 330 60 Z', '#7FA8DA', .5);
+    pool('M-96 58 Q-60 46 -20 58 Z M336 58 Q372 44 412 58 Z', '#F2C94C', .22); pool('M-130 -40 L-60 -40 Q-90 20 -130 40 Z M450 -40 L390 -40 Q420 30 450 60 Z', '#E8DCC0', .16);
     pool('M30 6 Q60 -2 96 4 Q70 12 30 6 Z M196 -8 Q226 -16 252 -6 Q224 0 196 -8 Z', '#F4F1E8', .12);
     pool('M76 61 Q100 41 160 40 T248 61 Q200 68 160 66 T76 61 Z', '#5E8FCB', .55);
     pool('M80 60 Q102 43 160 42 T244 60 Q200 65 160 63 T80 60 Z', '#7FA8DA', .55);
     pool('M96 58 Q130 48 168 48 T228 58 Q190 61 160 60 T96 58 Z', '#B4CEEC', .3);
     pool('M262 30 Q284 8 306 24 Q300 40 280 38 T262 30 Z', '#F2C94C', .18);
-    g.appendChild(el('rect', { x: -10, y: -40, width: 340, height: 160, fill: '#fff', filter: 'url(#' + ti + ')', opacity: .5 }));
+    g.appendChild(el('rect', { x: -130, y: -40, width: 580, height: 160, fill: '#fff', filter: 'url(#' + ti + ')', opacity: .5 }));
     s.insertBefore(g, s.firstChild.nextSibling); }
   var AT = { use: [125, 7], home: [113, 29], cards: [145, 43], picks: [97, 50], printer: [196, 36], pics: [229, 47], gang: [171, 52],
-    passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84] };
+    passes: [136, 80], links: [40, 90], gap: [284, 18], test: [292, 84], radio: [-52, 24], books: [376, 48] };
   function home(s, o) { if (!s || !window.rough) return AT; o = o || {}; var has = o.has || {}, cnt = o.n || {}, sd = o.seed || 0;
-    s.setAttribute('viewBox', '20 -30 280 140'); delete s.dataset.n; draw(s, 5, sd); under(s, sd);
+    /* half its size in a long chart: the island in the middle, an islet either side, the sea and the chart's marks round it */
+    s.setAttribute('viewBox', '-120 -30 560 140'); delete s.dataset.n; draw(s, 5, sd); under(s, sd);
     var rc = rough.svg(s), p = function (x) { var b = { stroke: 'currentColor', strokeWidth: 1, roughness: 1.2, seed: 70 + sd }; for (var k in x) b[k] = x[k]; return b; },
       g = function (k, on, nodes) { if (o.show && !o.show[k]) return null; var q = el('g', { 'class': 'th th-' + k + (on ? ' on' : ' maybe') }); nodes.forEach(function (x) { if (x) q.appendChild(x); }); s.appendChild(q); return q; };
     /* pictures: frames on a line from the hut, one for each picture up to three */
@@ -85,7 +89,31 @@
     var jn = Math.min(3, cnt.joins || 0), jl = [];
     for (var j = 0; j < jn; j++) { var jx = 246 + j * 20, jy = 57 - (j % 2) * 3; jl.push(rc.path('M' + (jx - 7) + ' ' + jy + ' Q' + jx + ' ' + (jy - 4) + ' ' + (jx + 7) + ' ' + jy, p({ seed: 110 + j, strokeWidth: .8 }))); jl.push(el('path', { 'class': 'lane', d: 'M125 12 Q' + ((125 + jx) / 2) + ' ' + (-6 - j * 4) + ' ' + jx + ' ' + (jy - 2) })); }
     if (jn) g('joins', true, jl);
+    chart(s, rc, sd, g, has);
     s.classList.toggle('lamp-off', !has.use); s.classList.toggle('flag-off', !has.home);
     return AT; }
+  /* the chart round it, half treasure map, half solarpunk: a compass rose, a dotted way between the islets, a stipple of shoals; the
+     radio's islet with its mast and a small wind turbine; the books' islet with a chest buried under an X and a row of solar panels */
+  function chart(s, rc, sd, g, has) { var c = function (x) { var b = { stroke: 'currentColor', strokeWidth: .7, roughness: 1.1, seed: 140 + sd }; for (var k in x) b[k] = x[k]; return b; }, mk = el('g', { 'class': 'chart' });
+    /* the horizon carried out to the islets, and their sandbanks */
+    mk.appendChild(rc.line(-120, 58, 0, 58, c({ roughness: .7, seed: 141 }))); mk.appendChild(rc.line(320, 58, 440, 58, c({ roughness: .7, seed: 142 })));
+    [[-100, -10, 143], [330, 420, 144]].forEach(function (q) { mk.appendChild(rc.path('M' + q[0] + ' 59 Q' + ((q[0] + q[1]) / 2) + ' 44 ' + q[1] + ' 59', c({ fill: 'currentColor', fillStyle: 'hachure', hachureGap: 3.4, hachureAngle: -32, fillWeight: .4, seed: q[2] }))); });
+    /* the compass rose, top left */
+    var cx = -96, cy = 2; mk.appendChild(rc.circle(cx, cy, 22, c({ seed: 150, strokeWidth: .5 }))); mk.appendChild(rc.path('M' + cx + ' ' + (cy - 16) + ' L' + (cx + 3) + ' ' + cy + ' L' + cx + ' ' + (cy + 16) + ' L' + (cx - 3) + ' ' + cy + ' Z M' + (cx - 16) + ' ' + cy + ' L' + cx + ' ' + (cy - 3) + ' L' + (cx + 16) + ' ' + cy + ' L' + cx + ' ' + (cy + 3) + ' Z', c({ seed: 151, strokeWidth: .55 })));
+    mk.appendChild(el('text', { 'class': 'cn', x: cx, y: cy - 19, 'text-anchor': 'middle' }, [D.createTextNode('N')]));
+    /* the way: dots from the radio's islet, round the island, to the X */
+    mk.appendChild(el('path', { 'class': 'way', d: 'M-40 60 Q-10 84 60 80 T200 92 T330 76 Q350 66 372 62' }));
+    /* shoals: a stipple of dots */
+    for (var i = 0; i < 46; i++) { var a = (i * 137.5 + sd * 11) % 360, r = 6 + (i * 7 % 23), px = (i % 2 ? 300 : -60) + Math.cos(a) * r * 2.2, py = 74 + Math.sin(a) * r * .5; mk.appendChild(el('circle', { 'class': 'dot', cx: px.toFixed(1), cy: py.toFixed(1), r: (.35 + (i % 3) * .2).toFixed(2) })); }
+    s.appendChild(mk);
+    /* RADIO: a mast with its rings and a small wind turbine beside it */
+    g('radio', !!has.radio, [has.radio ? wash(rc, 'ellipse', [-52, 18, 14, 13], 'orange', 160, .5) : null, rc.line(-52, 54, -52, 20, c({ seed: 161, strokeWidth: .9 })), rc.line(-58, 54, -52, 30, c({ seed: 162 })), rc.line(-46, 54, -52, 30, c({ seed: 163 })),
+      rc.arc(-52, 20, 12, 12, Math.PI * 1.15, Math.PI * 1.85, false, c({ seed: 164 })), rc.arc(-52, 20, 22, 22, Math.PI * 1.2, Math.PI * 1.8, false, c({ seed: 165, strokeWidth: .55 })),
+      rc.line(-30, 55, -30, 34, c({ seed: 166 })), rc.path('M-30 34 L-30 24 M-30 34 L-21 39 M-30 34 L-39 39', c({ seed: 167, strokeWidth: .8 })), el('circle', { 'class': 'node', cx: -52, cy: 20, r: 1.2 })]);
+    /* BOOKS: an X on the islet, a chest under it, two solar panels on the slope */
+    g('books', !!has.books, [has.books ? wash(rc, 'rect', [366, 44, 16, 9], 'yellow', 170, .65) : null, rc.rectangle(366, 44, 16, 9, c({ seed: 171, strokeWidth: .9 })), rc.path('M366 47 L382 47 M374 44 L374 53', c({ seed: 172, strokeWidth: .55 })),
+      rc.path('M352 33 L360 41 M360 33 L352 41', c({ seed: 173, strokeWidth: 1.1 })),
+      wash(rc, 'path', ['M390 52 L404 48 L407 53 L393 57 Z'], 'sky', 174, .55), rc.path('M390 52 L404 48 L407 53 L393 57 Z M397 50 L400 55', c({ seed: 175 })), rc.path('M340 55 L352 51 L354 55 L342 58 Z', c({ seed: 176, strokeWidth: .6 }))]);
+  }
   window.ISLE = { el: el, wash: wash, WC: WC, draw: draw, home: home, under: under, AT: AT };
 })();
