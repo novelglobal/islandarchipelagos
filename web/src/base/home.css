@@ -2083,3 +2083,6 @@ html.hm-night #hm .hm-note { background: #3B3736; color: #F4F2EE; }
 #hm .ik-m { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
 #hm .ik-m i { width: 7px; height: 7px; }
 @media (min-width: 700px) { #hm .ik-m { width: 30px; height: 30px; margin: -15px 0 0 -15px; } #hm .ik-m i { width: 9px; height: 9px; } }
+/* the i's reach: a finger's width round the small circle (44 px), so a tap near it opens the label, never the card behind */
+#hm .hm-i::before { content: ''; position: absolute; inset: -11px; border-radius: 50%; }
+#hm .hm-i.hm-i-nine::before { inset: -13px; }
