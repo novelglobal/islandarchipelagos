@@ -752,19 +752,22 @@
      a turn from day to night (or back) brings them all back. Every word comes from the approval page (LABEL, CARD NOTES) */
   var NT = { t: null, w: 0, el: null };
   var NT_G = { week: 'utils', read: 'utils', deck: 'utils', soon: 'soon', dev: 'dev' };
-  function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } noteWait(); }
+  function noteSet(txt) { try { NT.t = JSON.parse(txt); } catch (e) { NT.t = null; } if (NT.t && NT.t.on !== false && NT.t.as !== 'pop') labelDots(LBL, null); noteWait(); }
+  function notePop() { return !!(NT.t && NT.t.as === 'pop'); }
+  function noteHas(id) { var k = noteKey(id); return !!(k && NT.t && NT.t.on !== false && String(NT.t[k] || '').trim()); }
+  function noteOpen(id) { var was = CUR; NT.force = true; CUR = id; delete NT_SEEN[noteKey(id)]; noteShow(false); CUR = was; NT.force = false; }
   function noteKey(id) { var c = CARDS.filter(function (x) { return x.id === id; })[0]; if (!c || !NT.t) return ''; return NT.t[c.id] ? c.id : NT_G[c.g] || ''; }
   /* a tap off the note while it is up only puts it away: the card behind does not open with it */
   D.addEventListener('click', function (e) { if (!NT.el || NT.hv || NT.el.contains(e.target) || (e.target.closest && e.target.closest('#hm-top, #lb, #hm-x'))) { if (NT.el && NT.hv && !NT.el.contains(e.target)) noteOut(); return; } e.preventDefault(); e.stopPropagation(); noteOut(); }, true);
   /* a tap inside a card's own window (the radio's map, a device) reaches only that window: the page loses focus to it, and the note goes */
   addEventListener('blur', function () { setTimeout(function () { var a = D.activeElement; if (NT.el && a && a.tagName === 'IFRAME') noteOut(); }, 0); });
   function noteOut() { var n = NT.el; NT.el = null; if (!n) return; var nv = n.querySelector('video'); if (nv) { try { nv.pause(); } catch (e) { /* not playing */ } } n.classList.add('nt-out'); setTimeout(function () { n.remove(); }, 260); }
-  function noteWait(hv) { clearTimeout(NT.w); noteOut(); NT.w = setTimeout(function () { noteShow(hv); }, hv ? 600 : 900); }
+  function noteWait(hv) { clearTimeout(NT.w); if (NT.el && NT.byI) return; noteOut(); NT.w = setTimeout(function () { noteShow(hv); }, hv ? 600 : 900); }
   /* each note once a visit as its page arrives; on a desk, with three cards to a page, the card the pointer rests on shows its own */
   var NT_SEEN = {};
   function noteShow(hv) { if (ENV === 'isle' && ENVI) return; var id = hv ? NT.hov : CUR, k = noteKey(id), t = k && NT.t && NT.t.on !== false ? String(NT.t[k] || '').trim() : '';
-    if (!t || (!hv && NT_SEEN[k]) || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
-    NT_SEEN[k] = 1; NT.hv = !!hv;
+    if (!t || (!NT.force && !notePop()) || (!hv && NT_SEEN[k]) || D.getElementById('lb') || H.classList.contains('hm-sheet') || away || D.hidden) return;
+    NT_SEEN[k] = 1; NT.hv = !!hv; NT.byI = !!NT.force;
     var n = D.createElement('div'), ps = t.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean), head = ps[0].length < 60 && ps.length > 1, show = head ? 2 : 1;
     n.className = 'hm-note'; n.setAttribute('role', 'note');
     var nf = NT.t.films && NT.t.films[k]; if (nf && nf.file) { var fv = filmEl(nf, k, function () {}); n.appendChild(fv); n.classList.add('nt-f'); }
@@ -808,10 +811,11 @@
     labelBuild(L, mem, null); }
   /* THE LABEL AS A SMALL i (as built, every card): an i at the foot of each card, left; on the first card's words side, top right (the
      flip key has the foot right). A tap opens the whole label, as the label always opened, with all of it to unfold */
-  function labelDots(L, mem) { var add = function () { [].forEach.call(D.querySelectorAll('.hm-card'), function (cd) { var at = cd.classList.contains('sk-intro') ? [cd.querySelector('.in-front'), cd.querySelector('.in-f')] : [cd];
-        at.forEach(function (el, k) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (k ? ' hm-i-top' : ''); b.textContent = 'i'; b.setAttribute('aria-label', L.title || L.top || 'novel.global'); el.appendChild(b); }); }); };
+  var LBL = null, LBM = null;
+  function labelDots(L, mem) { if (L) { LBL = L; LBM = mem; } var add = function () { [].forEach.call(D.querySelectorAll('.hm-card'), function (cd) { if (!LBL && !(cd.dataset.id && noteHas(cd.dataset.id))) return; var at = cd.classList.contains('sk-intro') ? [cd.querySelector('.in-front'), cd.querySelector('.in-f')] : [cd];
+        at.forEach(function (el, k) { if (!el || el.querySelector(':scope > .hm-i')) return; var b = D.createElement('button'); b.type = 'button'; b.className = 'hm-i' + (k ? ' hm-i-top' : ''); b.textContent = 'i'; b.setAttribute('aria-label', (LBL && (LBL.title || LBL.top)) || 'novel.global'); el.appendChild(b); }); }); };
     add(); if (!labelDots.on) { labelDots.on = true; new MutationObserver(function () { clearTimeout(labelDots.t); labelDots.t = setTimeout(add, 80); }).observe(D.body, { childList: true, subtree: true });
-      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); labelBuild(L, mem, b.getBoundingClientRect()); }, true); } }
+      D.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.hm-i'); if (!b || D.getElementById('lb')) return; e.preventDefault(); e.stopPropagation(); var cd = b.closest('.hm-card'), id = cd && cd.dataset.id; if (id && noteHas(id) && !(NT.el && NT.id === id)) { e.stopImmediatePropagation(); noteOpen(id); return; } if (LBL) labelBuild(LBL, LBM, b.getBoundingClientRect()); }, true); } }
   /* THE LABEL AS A CARD (approval page, LABEL, AS: CARD): a small card at the foot of the first screen with one sentence, the site open behind it.
      A tap opens the whole label over the full screen, its film playing; closed, the small card comes back. × puts it away for the visit */
   function labelMini(L, mem) { if (D.getElementById('lbm') || D.getElementById('lb')) return;
@@ -1201,7 +1205,7 @@
       if (inn) inn.style.transform = RM.matches ? '' : 'translate3d(0,' + (-p * WORDS * r.height).toFixed(1) + 'px,0)'; });
     var pg = pages(), n = 0, best = 1e9, c0 = col.getBoundingClientRect().top; pg.forEach(function (el, i) { var dd = Math.abs(el.getBoundingClientRect().top - c0); if (dd < best) { best = dd; n = i; } });
     var cur = pg[n] ? (pg[n].classList.contains('hm-trio') ? pg[n].querySelector('.hm-card') : pg[n]) : null; var nc = cur ? cur.dataset.id : ''; if (nc !== CUR) { CUR = nc; noteWait(); envAt(nc); } lbmAt(n);
-    if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || nr.bottom < vh * 0.4 || nr.top > vh * 0.6) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
+    if (NT.el && NT.id) { var nk = col.querySelector('.hm-card[data-id="' + NT.id + '"]'), np = nk && (nk.closest('.hm-trio') || nk), nr = np && np.getBoundingClientRect(); if (!nr || (NT.byI ? nr.bottom < 0 || nr.top > vh : nr.bottom < vh * 0.4 || nr.top > vh * 0.6)) noteOut(); } $$('.hm-dots i').forEach(function (d, i) { d.classList.toggle('on', i === n); });
   }
   col.addEventListener('scroll', function () { if (!tick) tick = requestAnimationFrame(parallax); }, { passive: true });
   if (matchMedia('(hover: hover)').matches) col.addEventListener('pointerover', function (e) { var c = e.target.closest && e.target.closest('.hm-card[data-id]'); if (!c || !c.closest('.hm-trio') || c.dataset.id === NT.hov) return;

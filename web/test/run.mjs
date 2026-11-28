@@ -1356,6 +1356,12 @@ if (run('access')) try {
     return { cards: cards.length, with: cards.filter(c => c.querySelector('.hm-i')).length, over: !!document.getElementById('lb'), left: r.left - c.left, foot: c.bottom - r.bottom, top: !!top }; });
   await page.click('.hm-card:not(.sk-intro) > .hm-i'); await sleep(700); const opened = await page.evaluate(() => !!document.getElementById('lb'));
   check('the label as a small i (as built): on every card at its foot left, on the first card\'s words side top right; nothing over the site first; a tap opens the label', dots.cards > 3 && dots.with === dots.cards && !dots.over && dots.left < 20 && dots.foot < 20 && dots.top && opened, JSON.stringify({ dots, opened }));
+  const N0 = (await admin('settings')).notes || ''; await admin('settings', { label: JSON.stringify({ on: false }), notes: JSON.stringify({ on: true, radio: 'A NOTE\n\nOn the radio, for this test.' }) });
+  await page.goto('https://oan.test/'); await page.waitForSelector('.hm-card[data-id="radio"] .hm-i', { timeout: 15000 }); await sleep(2500);
+  const nt0 = await page.evaluate(() => ({ auto: !!document.querySelector('.hm-note[role=note]'), others: document.querySelectorAll('.hm-card:not([data-id="radio"]) .hm-i').length }));
+  await page.click('.hm-card[data-id="radio"] .hm-i'); await sleep(900); const nt1 = await page.evaluate(() => [...document.querySelectorAll('.hm-note[role=note]')].map(n => n.textContent).join(' | '));
+  check('CARD NOTES (as built): opened only from the i on their own card, never by themselves; with the label off, only cards with a note have an i', !nt0.auto && nt0.others === 0 && /On the radio/.test(nt1), JSON.stringify({ nt0, nt1 }));
+  await admin('settings', { notes: N0 });
   /* MORE on a phone: the whole label on the whole screen, read by scrolling, closed by its ×. Never squeezed to fit */
   await admin('settings', { label: JSON.stringify({ on: true, title: 'T', fold: 1, body: ['First words.'].concat(Array.from({ length: 40 }, (_, i) => 'More words, paragraph ' + (i + 2) + ', long enough to need the whole screen and then some more of it.')).join(String.fromCharCode(10, 10)) }) });
   await page.goto('https://oan.test/?label=1'); await page.waitForSelector('#lb .lb-mo', { timeout: 15000 }); await sleep(500);
@@ -1746,7 +1752,7 @@ if (run('guide')) try {
 // ───────── the paper sends to the mesh: MESH among the printers, the drawing as one LoRa message for the phone's share sheet (ONLY=paper) ─────────
 if (run('paper')) try {
   const ctx = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); await wire(ctx);
-  await ctx.addInitScript(() => { window.__shared = []; Object.defineProperty(navigator, 'share', { value: o => { window.__shared.push(o.text); return Promise.resolve(); }, configurable: true }); });
+  await ctx.addInitScript(() => { window.__shared = []; window.__sheet = 0; Object.defineProperty(navigator, 'share', { value: () => { window.__sheet++; return Promise.resolve(); }, configurable: true }); Object.defineProperty(navigator, 'clipboard', { value: { writeText: t => { window.__shared.push(t); return Promise.resolve(); } }, configurable: true }); });
   const page = await ctx.newPage(); watch(page, 'paper'); await page.goto('https://oan.test/paper'); await page.waitForSelector('#strip'); await sleep(800);
   await page.click('#nib'); const b = await page.locator('#strip').boundingBox();
   await page.mouse.move(b.x + 60, b.y + 60); await page.mouse.down(); for (let i = 1; i <= 20; i++) await page.mouse.move(b.x + 60 + i * 12, b.y + 60 + Math.round(Math.sin(i / 3) * 40)); await page.mouse.up(); await sleep(300);
@@ -1754,7 +1760,8 @@ if (run('paper')) try {
   for (let i = 0; i < 6 && to !== 'MESH'; i++) { to = (await page.textContent('#to b')).trim(); if (to !== 'MESH') { await page.click('#to'); await sleep(150); } }
   await page.click('#tick'); await sleep(500); const shared = await page.evaluate(() => window.__shared);
   const msg = shared[0] || '', bytes = msg.startsWith('ng1:') ? Buffer.from(msg.slice(4), 'base64url') : Buffer.alloc(0);
-  check('PAPER: MESH is among the printers; with it the tick hands the drawing to the share sheet as one mesh message (ng1, its strokes, under 240 characters)', to === 'MESH' && msg.length > 8 && msg.length <= 240 && bytes[0] > 0 && bytes.length > 4, JSON.stringify({ to, msg }));
+  const sheet = await page.evaluate(() => window.__sheet);
+  check('PAPER: MESH is among the printers; with it the tick copies the drawing as one mesh message (ng1, its strokes, under 240 characters), never through a share sheet', to === 'MESH' && sheet === 0 && msg.length > 8 && msg.length <= 240 && bytes[0] > 0 && bytes.length > 4, JSON.stringify({ to, msg }));
   await ctx.close();
 } catch (e) { results.push(`FAIL  section paper: ${e.message.split('\n')[0]}`); }
 

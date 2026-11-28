@@ -220,7 +220,7 @@
   function away() { strip.classList.add('feed'); buzz([8, 30, 8]); S.items = []; S.done = []; S.undone = []; editing = null; type.hidden = true; setTimeout(function () { strip.classList.remove('feed'); fit(); }, 720); }
 
   /* MESH: the paper as one LoRa message (format ng1, kit/island/mesh.go; the same as spec/tools/meshdraw.mjs): its pen strokes on a grid
-     64 across, or its words if it has no strokes. Handed to the phone's share sheet (the Meshtastic app, or anything) or copied */
+     64 across, or its words if it has no strokes. Copied, to paste into the Meshtastic app (no share sheet: nothing here is a share button) */
   var MESH = { id: 'mesh', name: 'MESH', ready: true };
   function meshEncode(strokes, h) { var out = [h];
     strokes.forEach(function (s) { if (!s.length) return; var x = s[0][0], y = s[0][1], mv = [];
@@ -234,7 +234,7 @@
     return m.length > 240 ? null : m; }
   function meshSend() { open(false); var m = meshMessage(); if (!m) { shiver(); return buzz(30); }
     var done = function () { say('MESH · ✓'); }, copy = function () { (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(m) : Promise.reject()).then(done, function () { say('×'); }); };
-    if (navigator.share) navigator.share({ text: m }).then(done, function (e) { if (!e || e.name !== 'AbortError') copy(); }); else copy(); }
+    copy(); }
   function print() {
     if (TO === 'mesh') return meshSend();
     open(false); var p = toNow(), dots = p && +p.paper === 58 ? 384 : 512, cd = code(), body = null, shot = null;
